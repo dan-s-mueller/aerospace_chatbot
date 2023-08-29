@@ -6,7 +6,7 @@ import os
 import glob
 import data_import
 import queries
-from dotenv import load_dotenv,find_dotenv
+from dotenv import load_dotenv, find_dotenv
 from langchain.embeddings import OpenAIEmbeddings
 
 # Load API keys
