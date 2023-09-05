@@ -45,7 +45,7 @@ class File(BaseModel):
                 self.file.filename  # pyright: ignore reportPrivateUsage=none
             )[-1].lower()
 
-    def compute_file_sha1(self):
+    async def compute_file_sha1(self):
         """
         Compute the sha1 of the file using a temporary file
         """
