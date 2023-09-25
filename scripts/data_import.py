@@ -57,17 +57,18 @@ def load_docs(index_name,
 
     return vectorstore
 
-# Executed when this module is run to update the database.
-# Pinecone and embeddings model
-pinecone.init(
-    api_key=os.getenv('PINECONE_API_KEY'),
-    environment=os.getenv('PINECONE_ENVIRONMENT') 
-)
-index_name = 'langchain-quickstart'
-embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=os.getenv('OPENAI_API_KEY'))
+def update_database():
+    # Executed when this module is run to update the database.
+    # Pinecone and embeddings model
+    pinecone.init(
+        api_key=os.getenv('PINECONE_API_KEY'),
+        environment=os.getenv('PINECONE_ENVIRONMENT') 
+    )
+    index_name = 'langchain-quickstart'
+    embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=os.getenv('OPENAI_API_KEY'))
 
-# Find all docs in data folder and import them
-current_path=os.path.dirname(os.path.abspath(__file__))
-data_folder='/../data/'
-docs = glob.glob(current_path+data_folder+'*.pdf')   # Only get the PDFs in the directory
-load_docs(index_name,embeddings_model,docs)
+    # Find all docs in data folder and import them
+    current_path=os.path.dirname(os.path.abspath(__file__))
+    data_folder='/../data/'
+    docs = glob.glob(current_path+data_folder+'*.pdf')   # Only get the PDFs in the directory
+    load_docs(index_name,embeddings_model,docs)

@@ -27,7 +27,9 @@ else:
     out_token = 516
 
 # Instantiate llm and embeddings model
-llm = OpenAI(temperature=0,openai_api_key=os.getenv('OPENAI_API_KEY'))
+llm = OpenAI(temperature=0,
+             openai_api_key=os.getenv("OPENAI_API_KEY"),
+             max_tokens=out_token)
 embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=os.getenv('OPENAI_API_KEY'))
 
 # Pinecone
