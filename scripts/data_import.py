@@ -3,11 +3,13 @@
 Script for loading docs into pinecone vector database which can be referenced
 """
 import os
+import glob
 import re
 import pinecone
 from langchain.vectorstores import Pinecone
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
 
 def load_docs(index_name,
               embeddings_model,
@@ -54,3 +56,18 @@ def load_docs(index_name,
         vectorstore = Pinecone.from_documents(texts, embeddings_model, index_name=index_name)
 
     return vectorstore
+
+# Executed when this module is run to update the database.
+# Pinecone and embeddings model
+pinecone.init(
+    api_key=os.getenv('PINECONE_API_KEY'),
+    environment=os.getenv('PINECONE_ENVIRONMENT') 
+)
+index_name = 'langchain-quickstart'
+embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=os.getenv('OPENAI_API_KEY'))
+
+# Find all docs in data folder and import them
+current_path=os.path.dirname(os.path.abspath(__file__))
+data_folder='/../data/'
+docs = glob.glob(current_path+data_folder+'*.pdf')   # Only get the PDFs in the directory
+load_docs(index_name,embeddings_model,docs)

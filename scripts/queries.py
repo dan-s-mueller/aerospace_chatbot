@@ -1,3 +1,7 @@
+"""
+@author: dsmueller3760
+Query from pinecone embeddings
+"""
 from dotenv import load_dotenv, find_dotenv
 from langchain.vectorstores import Pinecone
 from langchain.embeddings import OpenAIEmbeddings
@@ -84,12 +88,14 @@ class QA_Model:
         print('\nGenerated question: '+self.result['generated_question'])
         print('-------------\n')
 
-    def update_model(self,
+    def update_model(self,llm,
                     k=6,
                     search_type='similarity',
                     fetch_k=50,
                     verbose=None,
                     filter=None):
+
+        self.llm=llm
 
         # Set up question generator and qa with sources
         self.question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT,verbose=verbose)

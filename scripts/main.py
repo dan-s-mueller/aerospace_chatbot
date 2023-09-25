@@ -17,7 +17,17 @@ load_dotenv(find_dotenv(),override=True)
 # print(os.getenv('PINECONE_API_KEY'))
 
 # OpenAI
-llm = OpenAI(temperature=0)
+# Set the level of output
+output_size="Detailed"
+if output_size == "To-The-Point":
+    out_token = 50
+elif output_size == "Concise":
+    out_token = 128
+else:
+    out_token = 516
+
+# Instantiate llm and embeddings model
+llm = OpenAI(temperature=0,openai_api_key=os.getenv('OPENAI_API_KEY'))
 embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=os.getenv('OPENAI_API_KEY'))
 
 # Pinecone
@@ -26,16 +36,6 @@ pinecone.init(
     environment=os.getenv('PINECONE_ENVIRONMENT') 
 )
 index_name = 'langchain-quickstart'
-
-# Find all docs in data folder and import them
-current_path=os.path.dirname(os.path.abspath(__file__))
-data_folder='/../data/'
-docs = glob.glob(current_path+data_folder+'*.pdf')   # Only get the PDFs in the directory
-
-refresh=False
-if refresh:
-    data_import.load_docs(index_name,embeddings_model,docs)
-
 
 # filter_list={'source':'AMS_2006.pdf'}
 qa_model_obj=queries.QA_Model(index_name,
@@ -68,6 +68,7 @@ for item in filter_list:
     filter_items.append(filter_item)
 filter_dict={'$or':filter_items}
 
-qa_model_obj.update_model(search_type='similarity',
+qa_model_obj.update_model(llm,
+                          search_type='similarity',
                           filter=filter_dict)
 qa_model_obj.query_docs(query_followup)
