@@ -16,7 +16,7 @@ def load_docs(index_name,
               docs,
               PINECONE_API_KEY=None,
               PINECONE_ENVIRONMENT=None,
-              chunk_size=1500,
+              chunk_size=5000,
               chunk_overlap=0,
               clear=True):
     # Import and initialize Pinecone client
@@ -38,7 +38,7 @@ def load_docs(index_name,
         data = loader.load_and_split()
 
         # This is optional, but needed to play with the data parsing.
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         texts = text_splitter.split_documents(data)
 
         # Tidy this up
