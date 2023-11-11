@@ -75,29 +75,13 @@ OPENAI_API_KEY = st.sidebar.text_input("OpenAI API Key", type="password")
 # PINECONE_ENVIRONMENT = st.sidebar.text_input("Pinecone Environment", type="password")
 index_name = st.sidebar.text_input("Pinecone Index Name",value="canopy--ams")
 
-# DELETE ME
-OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
-
-# Instantiate openai and pinecone things, including keys
-# TODO: update all of these to take from the webpage. Currently they pull from .env file.
-# load_dotenv(find_dotenv(),override=True)
-
-# embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=OPENAI_API_KEY)
-
-# # Pinecone
-# pinecone.init(
-#     api_key=PINECONE_API_KEY,
-#     environment=PINECONE_ENVIRONMENT,
-#     index_name=index_name
-# )
-
-# Add filter toggle
-# filter_toggle = st.checkbox("Filter response with last received sources?")
-
 # Set up chat history
 history = st.session_state.get("history",[])
 chat_history = st.session_state.get("chat_history", [])
 message_id = st.session_state.get("message_id", 0)
+
+# DELETE ME IF IN DATABUTTON
+OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
 
 # Create a text input field for the user query
 user_input = st.text_input("User Input", "",)
@@ -131,54 +115,19 @@ if button_clicked:
         else:
             out_token = 516
 
+        # Initialli
         Tokenizer.initialize()
-        # index_name='canopy--ams'
         kb = KnowledgeBase(index_name=index_name)
         kb.connect()
         context_engine = ContextEngine(kb)
         chat_engine = ChatEngine(context_engine)
 
         response, history = chat(user_input, history)
-        # display(Markdown(response))
 
-        llm = OpenAI(temperature=temperature,
-                     openai_api_key=OPENAI_API_KEY,
-                     max_tokens=out_token)
-        
-        # if message_id>1 and filter_toggle:
-        #     filter_list = list(set(item["source"] for item in qa_model_obj.sources[-1]))
-        #     filter_items=[]
-        #     for item in filter_list:
-        #         filter_item={"source": item}
-        #         filter_items.append(filter_item)
-        #     filter={"$or":filter_items}
-        # else:
-        #     filter_items=None
-        #     filter=None
-        
-        # qa_model_obj=queries.QA_Model(index_name,
-        #                     embeddings_model,
-        #                     llm,
-        #                     k,
-        #                     search_type,
-        #                     verbose,
-        #                     filter=filter)
-
-        # Generate a response using your chat model
-        # qa_model_obj.query_docs(user_input)
-        # ai_response=qa_model_obj.result['answer']
-        
         # Add the user input and AI response to the chat history with message ID
         chat_history.append(f"AI: {response}")
         chat_history.append(f"User: {user_input}")
         chat_history.append(f"Message ID: {message_id}")
-
-        # # Add the user input and AI response to the chat history with message ID
-        # chat_history.append(f"References: {qa_model_obj.sources[-1]}")
-        # chat_history.append(f"AI: {ai_response}")
-        # chat_history.append(f"User: {user_input}")
-        # chat_history.append(f"Source filter: {filter_items}")
-        # chat_history.append(f"Message ID: {message_id}")
         
         # Add a horizontal line between messages
         chat_history.append("---")
@@ -187,7 +136,6 @@ if button_clicked:
         status_placeholder.text("Please enter a prompt.")
     
 # Store the updated chat history and message ID in the session state
-# st.session_state["qa_model_obj"] = qa_model_obj
 st.session_state["chat_history"] = chat_history
 st.session_state["history"] = history
 st.session_state["message_id"] = message_id
