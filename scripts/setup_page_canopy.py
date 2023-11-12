@@ -65,7 +65,7 @@ This chatbot will look up from all Aerospace Mechanism Symposia in the following
 * OpenAI API: https://platform.openai.com/api-keys
 
 ## What's under the hood?
-* Source code: 
+* Source code: https://github.com/dsmueller3760/aerospace_chatbot/blob/main/scripts/setup_page_canopy.py
 * Uses pinecone canopy: https://www.pinecone.io/blog/canopy-rag-framework/
 * Response time ~45 seconds per prompt
 

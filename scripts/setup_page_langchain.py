@@ -32,11 +32,10 @@ This chatbot will look up from all Aerospace Mechanism Symposia in the following
 * OpenAI API: https://platform.openai.com/api-keys
 
 ## What's under the hood?
-* Source code: 
+* Source code: https://github.com/dsmueller3760/aerospace_chatbot/blob/main/scripts/setup_page_langchain.py
 * Uses custom langchain functions with QA retrieval: https://js.langchain.com/docs/modules/chains/popular/chat_vector_db_legacy
-
-## Notes on usage:
-* Leave the Pinecone index name as the default.
+* All prompts will query entire database unless "filter response with last received sources" is activated.
+* Repsonse time ~10 seconds per prompt.
 """)
 st.markdown("---")
 
