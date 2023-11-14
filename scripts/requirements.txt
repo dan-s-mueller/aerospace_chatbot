@@ -1,3 +1,9 @@
-langchain==0.0.300
-pinecone_client==2.2.1
+canopy==8.42
+databutton==0.36.5
+ipython==8.17.2
+langchain==0.0.335
+openai==1.2.4
+pinecone_client==2.2.4
 python-dotenv==1.0.0
+streamlit==1.28.2
+tqdm==4.66.1
