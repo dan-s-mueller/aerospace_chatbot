@@ -27,7 +27,7 @@ class QA_Model:
                  temperature=0,
                  verbose=False,
                  chain_type='stuff',
-                 filter=None):
+                 filter_arg=False):
         
         self.index_name:str=index_name
         self.embeddings_model:OpenAIEmbeddings=embeddings_model
@@ -37,7 +37,7 @@ class QA_Model:
         self.temperature:int=temperature
         self.verbose:bool=verbose
         self.chain_type:str=chain_type
-        self.filter:dict=filter
+        self.filter_arg:bool=filter_arg
 
         load_dotenv(find_dotenv(),override=True)
 
@@ -45,7 +45,9 @@ class QA_Model:
         self.vectorstore = Pinecone.from_existing_index(index_name,embeddings_model)
 
         # Set up question generator and qa with sources
-        self.question_generator = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT,verbose=verbose)
+        self.question_generator = LLMChain(llm=llm, 
+                                           prompt=CONDENSE_QUESTION_PROMPT,
+                                           verbose=verbose)
         self.doc_chain = load_qa_with_sources_chain(llm, chain_type=chain_type,prompt=QA_WSOURCES_PROMPT,verbose=verbose)
 
         # Establish chat history
@@ -54,6 +56,16 @@ class QA_Model:
                                             output_key='answer',
                                             return_messages=True)
 
+        # Implement filter
+        if filter_arg:
+            filter_list = list(set(item["source"] for item in self.sources[-1]))
+            filter_items=[]
+            for item in filter_list:
+                filter_item={"source": item}
+                filter_items.append(filter_item)
+            filter={"$or":filter_items}
+        else:
+            filter=None
 
         if search_type=='mmr':
             search_kwargs={'k':k,'fetch_k':50,'filter':filter} # See as_retriever docs for parameters
@@ -68,38 +80,50 @@ class QA_Model:
                     memory=self.chat_history,
                     verbose=verbose,
                     return_source_documents=True,
-                    return_generated_question=True)
+                    return_generated_question=True,
+                    )
         
         self.sources=[]
 
-    def query_docs(self,query,filter=None):
-        self.result=self.qa({"question": query})
+    def query_docs(self,query,tags=None):
+        self.result=self.qa({'question': query},tags=tags)
 
-        print('-------------')
-        print(query+'\n')
-        print(self.result['answer']+'\n\n'+'Sources:'+'\n')
+        # print('-------------')
+        # print(query+'\n')
+        # print(self.result['answer']+'\n\n'+'Sources:'+'\n')
 
         temp_sources=[]
         for data in self.result['source_documents']:
             temp_sources.append(data.metadata)
-            print(data.metadata)
+            # print(data.metadata)
 
         self.sources.append(temp_sources)
-        print('\nGenerated question: '+self.result['generated_question'])
-        print('-------------\n')
+        # print('\nGenerated question: '+self.result['generated_question'])
+        # print('-------------\n')
 
     def update_model(self,llm,
                     k=6,
                     search_type='similarity',
                     fetch_k=50,
                     verbose=None,
-                    filter=None):
+                    filter_arg=False):
 
         self.llm=llm
 
         # Set up question generator and qa with sources
         self.question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT,verbose=verbose)
         self.doc_chain = load_qa_with_sources_chain(self.llm, chain_type=self.chain_type,prompt=QA_WSOURCES_PROMPT,verbose=verbose)
+
+        # Implement filter
+        if filter_arg:
+            filter_list = list(set(item["source"] for item in self.sources[-1]))
+            filter_items=[]
+            for item in filter_list:
+                filter_item={"source": item}
+                filter_items.append(filter_item)
+            filter={"$or":filter_items}
+        else:
+            filter=None
 
         if search_type=='mmr':
             search_kwargs={'k':k,'fetch_k':fetch_k,'filter':filter} # See as_retriever docs for parameters
@@ -114,4 +138,5 @@ class QA_Model:
             memory=self.chat_history,
             verbose=verbose,
             return_source_documents=True,
-            return_generated_question=True)
+            return_generated_question=True,
+            )
