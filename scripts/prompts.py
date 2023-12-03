@@ -66,3 +66,4 @@ QA_PROMPT=hub.pull("dmueller/ams-chatbot-qa-retrieval")
 # FINAL ANSWER:"""
 QA_WSOURCES_PROMPT=hub.pull("dmueller/ams-chatbot-qa-retrieval-wsources")
 
+QA_GENERATE_PROMPT=hub.pull("dmueller/generate_qa_prompt")

@@ -1,7 +1,3 @@
-"""
-@author: dsmueller3760
-Script for loading docs into pinecone vector database which can be referenced
-"""
 import os
 import glob
 import re
@@ -11,26 +7,28 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 
-def load_docs(index_name,
-              embeddings_model,
-              docs,
+def load_docs(docs,
+              index_name=None,
+              embeddings_model=None,
               PINECONE_API_KEY=None,
               PINECONE_ENVIRONMENT=None,
               chunk_size=5000,
               chunk_overlap=0,
               clear=True):
-    # Import and initialize Pinecone client
-    pinecone.init(
-        api_key=os.getenv('PINECONE_API_KEY'),
-        environment=os.getenv('PINECONE_ENVIRONMENT') 
-    )
-    # pinecone.whoami()
+    """Loads PDF documents. If index_name is blank, it will return a list of the data (texts). If it is a name of a pinecone storage, it will return the vector_store.    """
 
-    # Find the existing index, clear for new start
-    if clear:
-        index=pinecone.Index(index_name)
-        index.delete(delete_all=True) # Clear the index first, then upload
-        print('Cleared database.')
+    if index_name:
+        # Import and initialize Pinecone client
+        pinecone.init(
+            api_key=os.getenv('PINECONE_API_KEY'),
+            environment=os.getenv('PINECONE_ENVIRONMENT') 
+        )
+
+        # Find the existing index, clear for new start
+        if clear:
+            index=pinecone.Index(index_name)
+            index.delete(delete_all=True) # Clear the index first, then upload
+            print('Cleared database.')
 
     for doc in docs:
         print('Parsing: '+doc)
@@ -41,7 +39,7 @@ def load_docs(index_name,
         text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         texts = text_splitter.split_documents(data)
 
-        # Tidy this up
+        # Tidy up text by removing unnecessary characters
         for text in texts:
             text.metadata['source']=os.path.basename(text.metadata['source'])   # Strip path
             text.metadata['page']=text.metadata['page']+1   # Pages are 0 based, update
@@ -52,10 +50,14 @@ def load_docs(index_name,
             # Remove multiple newlines
             text.page_content = re.sub(r"\n\s*\n", "\n\n", text.page_content)
 
-        print('Uploading to pinecone index '+index_name)
-        vectorstore = Pinecone.from_documents(texts, embeddings_model, index_name=index_name)
+        if index_name:
+            print('Uploading to pinecone index '+index_name)
+            vectorstore = Pinecone.from_documents(texts, embeddings_model, index_name=index_name)
 
-    return vectorstore
+    if index_name:
+        return vectorstore
+    else:
+        return texts
 
 def update_database():
     # Executed when this module is run to update the database.
