@@ -3,11 +3,13 @@ from tqdm import tqdm
 import uuid
 import langchain.llms
 import prompts
+import jsonlines
 
 
 def gen_q_from_context(texts,
                        llm,
-                       num_questions_per_chunk=1):
+                       num_questions_per_chunk=1,
+                       file=None):
     """
     Generate num_questions_per_chunk given the input context.
     """
@@ -24,18 +26,21 @@ def gen_q_from_context(texts,
             num_questions_per_chunk=num_questions_per_chunk
         )
 
-        # print("Processing text "+str(i_text))
         response = llm(query)
 
-        result = str(response).strip().split("\n")
-        questions = [
-            re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
-        ]
-        questions = [question for question in questions if len(question) > 0]
+        questions=[]
+        results = str(response).strip().split("\n")
+        for result in results:
+            if result.startswith('QUESTION:'):
+                questions.append(result.replace('QUESTION:',''))
 
         for question in questions:
             qa_train_data.append({'question':question,
                                   'id':str(uuid.uuid4()),
                                   'answer':answer})
-        # print("Completed processing of text "+str(i_text))
+
+    if file:
+        with jsonlines.open(file, mode='w') as writer:
+            writer.write_all(qa_train_data)
+
     return qa_train_data
