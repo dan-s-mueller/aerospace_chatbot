@@ -70,7 +70,7 @@ def load_docs(docs,
                                         source=page.metadata['source'],
                                         metadata={'page':str(page.metadata['page'])})
             elif destination=='langchain':  # text stored as page_content key
-                doc_temp=lancghain_Document(page_content=page.page_content+" "+str(page.metadata),
+                doc_temp=lancghain_Document(page_content=page.page_content,
                                             source=page.metadata['source'],
                                             metadata=page.metadata)
             

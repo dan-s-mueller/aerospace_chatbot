@@ -36,7 +36,6 @@ def gen_q_from_context(texts,
 
         for question in questions:
             qa_train_data.append({'question':question,
-                                  'id':str(uuid.uuid4()),
                                   'answer':answer})
 
     if file:
