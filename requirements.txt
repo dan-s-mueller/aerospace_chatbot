@@ -150,7 +150,7 @@ notebook_shim==0.2.3
 numexpr==2.8.7
 numpy==1.25.2
 oauthlib==3.2.2
-openai==1.3.7
+openai==0.28.0
 openapi-schema-pydantic==1.2.4
 overrides==7.4.0
 packaging==23.2
