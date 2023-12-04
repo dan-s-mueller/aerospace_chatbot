@@ -1,9 +1,0 @@
-canopy-sdk
-databutton
-ipython
-langchain
-openai
-pinecone_client
-python-dotenv
-streamlit
-tqdm
