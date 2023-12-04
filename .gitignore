@@ -2,5 +2,5 @@
 .env
 .pdf
 .DS_Store
+.venv/
 scripts/__pycache__
-venv/
