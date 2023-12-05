@@ -43,3 +43,30 @@ def gen_q_from_context(texts,
             writer.write_all(qa_train_data)
 
     return qa_train_data
+
+def format_dataset(format,
+                   file_in=None,
+                   training_data=None,
+                   file_out=None):
+    """
+    Formats dataset for training in huggingface. Use either file or training_data, not both.
+    """
+    # Read from file if argument was used
+    if file_in and training_data is None:
+        training_data = []
+        with jsonlines.open(file_in) as reader:
+            for line in reader:
+                training_data.append(line)
+    
+    # Format into datasets used to train llms on huggingface. Info here: https://huggingface.co/docs/autotrain/main/en/llm_finetuning
+    if format=='LLM-generic':
+        # Based on this reference dataset: https://huggingface.co/datasets/timdettmers/openassistant-guanaco
+        tune_data=[]
+        for data in training_data:
+            tune_data.append('### Human:'+data['question']+'### Assistant:'+data['answer'])
+    
+    if file_out:
+        with jsonlines.open(file_out, mode='w') as writer:
+            writer.write_all(tune_data)
+    
+    return tune_data
