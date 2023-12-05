@@ -1,4 +1,5 @@
 import re
+import csv
 from tqdm import tqdm
 import uuid
 import langchain.llms
@@ -66,7 +67,14 @@ def format_dataset(format,
             tune_data.append('### Human:'+data['question']+'### Assistant:'+data['answer'])
     
     if file_out:
-        with jsonlines.open(file_out, mode='w') as writer:
-            writer.write_all(tune_data)
+        # with jsonlines.open(file_out, mode='w') as writer:
+        #     writer.write_all(tune_data)
+        # # Open the CSV file in "write" mode with newline=''
+        with open(file_out, 'w', newline='') as file:
+            writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            
+            # Write each line as a single cell in the CSV file
+            for data in tune_data:
+                writer.writerow([data])
     
     return tune_data
