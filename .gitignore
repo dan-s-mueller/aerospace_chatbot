@@ -1,8 +1,6 @@
 
 .env
-.pdf
-notebooks/aerospace_chatbot.code-workspace
+*.pdf
 .DS_Store
 scripts/__pycache__
 scripts/tmp_trainer
-.DS_Store
