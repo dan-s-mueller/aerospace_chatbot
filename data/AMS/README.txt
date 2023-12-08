@@ -1,8 +1,8 @@
-Documents uploaded to pinecone database AMS:
-AMS_1996, 
-AMS_1997, 
-AMS_1998, 
-AMS_1999, 
+Documents are not uploaded to git. The list of documents which were uploaded to pinecone database AMS:
+AMS_1996, https://ntrs.nasa.gov/citations/19960025595
+AMS_1997, https://ntrs.nasa.gov/citations/19970021613
+AMS_1998, https://ntrs.nasa.gov/citations/19980193156
+AMS_1999, https://ntrs.nasa.gov/citations/19990053852
 AMS_2000, https://ntrs.nasa.gov/citations/20000048380
 AMS_2001, https://ntrs.nasa.gov/citations/20010071164
 AMS_2002, https://ntrs.nasa.gov/citations/20020050182
