@@ -205,7 +205,7 @@ xxhash = "3.4.1"
 yarl = "1.9.3"
 zipp = "3.17.0"
 ipywidgets = "^8.1.1"
-canopy-sdk = "^0.2.0"
+autotrain-advanced = "^0.6.51"
 
 
 [build-system]

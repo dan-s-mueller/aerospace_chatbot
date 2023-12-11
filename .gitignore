@@ -1,6 +1,9 @@
 
 .env
 *.pdf
-.DS_Store
+!AAAMLP.pdf
+*.DS_Store
+llms
+.venv
 scripts/__pycache__
 scripts/tmp_trainer
