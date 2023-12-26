@@ -1,10 +1,8 @@
 
 .env
 *.pdf
-!AAAMLP.pdf
 *.DS_Store
 llms
 .venv
 .vscode
 scripts/__pycache__
-scripts/tmp_trainer
