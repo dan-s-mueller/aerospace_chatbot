@@ -1,24 +1,34 @@
-"""
-@author: dsmueller3760
-Query from pinecone embeddings
-"""
+import os
+import time
+import logging
+
 from dotenv import load_dotenv, find_dotenv
-from langchain.vectorstores import Pinecone
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.llms import OpenAI
+
+import pinecone
+
+from langchain_community.vectorstores import Pinecone
+from langchain_community.vectorstores import Chroma
+
+# import langchain_openai.OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import VoyageEmbeddings
+
+# import langchain_openai.OpenAI
+from langchain_community.llms import OpenAI
+from langchain_community.llms import HuggingFaceHub
 
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.chains.llm import LLMChain
-from langchain import PromptTemplate
 
 from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, QA_WSOURCES_PROMPT
 
-
+logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 class QA_Model:
     def __init__(self, 
+                 index_type,
                  index_name,
                  embeddings_model,
                  llm,
@@ -29,6 +39,7 @@ class QA_Model:
                  chain_type='stuff',
                  filter_arg=False):
         
+        self.index_type:str=index_type
         self.index_name:str=index_name
         self.embeddings_model:OpenAIEmbeddings=embeddings_model
         self.llm=llm
@@ -42,7 +53,17 @@ class QA_Model:
         load_dotenv(find_dotenv(),override=True)
 
         # Read in from the vector database
-        self.vectorstore = Pinecone.from_existing_index(index_name,embeddings_model)
+        if index_type=='Pinecone':
+            PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')  # TODO: figure out how to pass api keys to queries.py
+            PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
+            pinecone.init(
+                api_key=PINECONE_API_KEY,
+                environment=PINECONE_ENVIRONMENT
+            )
+            logging.info('Pinecone index name: '+str(index_name))
+            logging.info('Embedding model: '+str(embeddings_model))
+            self.vectorstore = Pinecone.from_existing_index(index_name,embeddings_model)
+            logging.info('Vectorstore: '+str(self.vectorstore))
 
         # Set up question generator and qa with sources
         self.question_generator = LLMChain(llm=llm, 
@@ -116,6 +137,7 @@ class QA_Model:
 
         # Implement filter
         if filter_arg:
+            print(self.sources)
             filter_list = list(set(item["source"] for item in self.sources[-1]))
             filter_items=[]
             for item in filter_list:

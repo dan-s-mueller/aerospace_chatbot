@@ -1,5 +1,6 @@
 
 .env
+*.log
 *.pdf
 *.DS_Store
 .venv/
