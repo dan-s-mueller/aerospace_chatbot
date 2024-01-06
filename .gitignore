@@ -1,7 +1,7 @@
 
 .env
 *.pdf
-.DS_Store
+*.DS_Store
 .venv/
 scripts/__pycache__
 scripts/tmp_trainer
