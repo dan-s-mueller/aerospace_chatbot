@@ -21,6 +21,7 @@ watchdog = "^3.0.0"
 chromadb = "^0.4.22"
 jsonlines = "^4.0.0"
 langchain-openai = "^0.0.2"
+pypdf = "^3.17.4"
 
 
 [build-system]

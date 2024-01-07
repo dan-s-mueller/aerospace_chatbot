@@ -23,19 +23,10 @@ import streamlit as st
 from dotenv import load_dotenv,find_dotenv,dotenv_values
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
-# config = {
-#     'databases': ['Pinecone','ChromaDB','RAGatouille'],
-#     'llms': ['OpenAI','Hugging Face'],
-#     'hf_models': ['mistralai/Mixtral-8x7B-Instruct-v0.1', 'ai-aerospace/autotrain-ams_v0.1_100_Mistral-7B-Instruct-v0.1', 'meta-llama/Llama-2-7b-chat-hf'],
-#     'hf_rag_models': ['colbert-ir/colbertv2.0'],
-#     'embedding_models': ['Openai','Voyage'],
-#     'rag_types' : ['Standard','Parent-Child','Hypothetical Questions','Summaries']
-# }
-# # Write config to a json file
-# with open('config.json', 'w') as f:
-#     json.dump(config, f, indent=4)
 with open('config.json', 'r') as f:
     config = json.load(f)
+with open('index_data.json', 'r') as f:
+    index_data = json.load(f)
 populate=False  # Populates the app. Only does so after parameters are set so it doesn't error out.
 
 # Set the page title
@@ -77,26 +68,7 @@ smart_agent=st.sidebar.checkbox('Smart agent?')
 logging.info('RAG type: '+rag_type)
 logging.info('Smart agent: '+str(smart_agent))
 
-# Select the index name automatically based on the parameters selected
-# index_suffix="-ams"
-# index_data = {
-#     "Pinecone": {
-#         "Openai": "pinecone-openai"+index_suffix,
-#         "Voyage": "pinecone-voyage"+index_suffix,
-#     },
-#     "ChromaDB": {
-#         "Openai": "chromadb-openai"+index_suffix,
-#         "Voyage": "chromadb-voyage"+index_suffix,
-#     },
-#     "RAGatouille": {
-#         "colbert-ir/colbertv2.0": "RAGatouille-colbertv2.0"+index_suffix
-#     },
-# }
-# # Write index_data to a json file
-# with open('index_data.json', 'w') as f:
-#     json.dump(index_data, f,indent=4)
-with open('index_data.json', 'r') as f:
-    index_data = json.load(f)
+# Index Name   
 index_name=index_data[index_type][embedding_type]
 index_name_md=st.sidebar.markdown('Index name: '+index_name)
 logging.info('Index name: '+index_name)

@@ -6,7 +6,7 @@ st.set_page_config(
     page_title="Aerospace Chatbot: AMS",
 )
 st.title("Aerospace Chatbot Homepage")
-st.markdown("Code base: ")
+st.markdown("Code base: https://github.com/dsmueller3760/aerospace_chatbot/tree/rag_study")
 st.markdown('---')
 st.title("Chatbots")
 st.markdown("""
