@@ -16,44 +16,22 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_core.documents import Document as lancghain_Document
 
+from dotenv import load_dotenv,find_dotenv,dotenv_values
+load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
-def load_docs(docs,
-              index_name=None,
-              embeddings_model=None,
-              PINECONE_API_KEY=None,
-              PINECONE_ENVIRONMENT=None,
-              chunk_size=5000,
-              chunk_overlap=0,
-              clear=False,
-              destination='langchain',
-              use_json=False,
-              file=None):
-    """
-    Loads PDF documents. If index_name is blank, it will return a list of the data (texts). If it is a name of a pinecone storage, it will return the vector_store.    
-    destination: 
-        'langchain' uses the Document object definition from langchain_core.documents import Document.
-        'canopy' uses the Document object definition from canopy.models.data_models import Document. Not in use.
-    """
+# Set secrets from environment file
+OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
+VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
+PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')
+PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
+HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
-    if index_name:
-        # Import and initialize Pinecone client
-        pinecone.init(
-            api_key=os.getenv('PINECONE_API_KEY'),
-            environment=os.getenv('PINECONE_ENVIRONMENT') 
-        )
-
-        # Find the existing index, clear for new start
-        if clear:
-            try:
-                pinecone.describe_index(index_name)
-            except:
-                raise Exception(f"Index {index_name} does not exist")
-            index=pinecone.Index(index_name)
-            index.delete(delete_all=True) # Clear the index first, then upload
-            logging.info('Cleared database '+index_name)
-
-    # Read docs
+def chunk_docs(docs,
+               file=None,
+               chunk_size=5000,
+               chunk_overlap=0,
+               use_json=False):
     docs_out=[]
     if file:
         logging.info('Jsonl file identified: '+file)
@@ -65,8 +43,9 @@ def load_docs(docs,
             for line in file_data:
                 doc_temp = lancghain_Document(page_content=line['text'],
                                               source=line['metadata']['source'],
+                                              page=line['metadata']['page'],
                                               metadata=line['metadata'])
-                if has_meaningful_content(doc_temp, destination=destination):
+                if has_meaningful_content(doc_temp):
                     docs_out.append(doc_temp)
             logging.info('Parsed: '+file)
             logging.info('Number of entries: '+str(len(docs_out)))
@@ -88,24 +67,14 @@ def load_docs(docs,
             for page in pages:
                 page.metadata['source']=os.path.basename(page.metadata['source'])   # Strip path
                 page.metadata['page']=int(page.metadata['page'])+1   # Pages are 0 based, update
-                # Merge hyphenated words
-                page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)
-                # Fix newlines in the middle of sentences
-                page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())
-                # Remove multiple newlines
-                page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)
-
-                if destination=='langchain':  # text stored as page_content key
-                    doc_temp=lancghain_Document(page_content=page.page_content,
-                                                source=page.metadata['source'],
-                                                metadata=page.metadata)
-                # elif destination=='canopy':   # text stored as text key
-                #     doc_temp=canopy_Document(id=page.metadata['source']+"_"+str(page.metadata['page'])+str(uuid.uuid4()),
-                #                             text=page.page_content,
-                #                             source=page.metadata['source'],
-                #                             metadata={'page':str(page.metadata['page'])})
-                
-                if has_meaningful_content(page,destination=destination):
+                page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
+                page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
+                page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
+                doc_temp=lancghain_Document(page_content=page.page_content,
+                                            source=page.metadata['source'],
+                                            page=page.metadata['page'],
+                                            metadata=page.metadata)
+                if has_meaningful_content(page):
                     docs_out.append(doc_temp)
             logging.info('Parsed: '+doc)
         if file:
@@ -113,72 +82,92 @@ def load_docs(docs,
             with jsonlines.open(file, mode='w') as writer:
                 for doc in docs_out: 
                     writer.write(doc.dict())
+    return docs_out
+def load_docs(docs,
+              index_name=None,
+              embeddings_model=None,
+              chunk_size=5000,
+              chunk_overlap=0,
+              clear=False,
+              use_json=False,
+              file=None):
+    """
+    Loads PDF documents. If index_name is blank, it will return a list of the data (texts). If it is a name of a pinecone storage, it will return the vector_store.    
+    """
+    # Chunk docs
+    docs_out=chunk_docs(docs,
+                        file=file,
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                        use_json=use_json)
+    # Initialize client
+    if index_name:
+        # Import and initialize Pinecone client
+        pinecone.init(
+            api_key=PINECONE_API_KEY,
+            environment=PINECONE_ENVIRONMENT
+        )
+        # Find the existing index, clear for new start
+        if clear:
+            try:
+                pinecone.describe_index(index_name)
+            except:
+                raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+            index=pinecone.Index(index_name)
+            index.delete(delete_all=True) # Clear the index first, then upload
+            logging.info('Cleared database '+index_name)
+    # Upsert docs
     if index_name:
         try:
             pinecone.describe_index(index_name)
-            logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
-            vectorstore = Pinecone.from_documents(docs_out, embeddings_model, index_name=index_name)
         except:
             logging.info(f"Index {index_name} does not exist. Creating new index.")
             logging.info('Size of embedding used: '+str(1536))  # TODO: set this to be backed out of the embedding size
             pinecone.create_index(index_name,dimension=1536)
             logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
-            vectorstore = Pinecone.from_documents(docs_out, embeddings_model, index_name=index_name)
-            logging.info('Entries added to index: '+str(vectorstore.num_documents))
-
+            pass
+        else:
+            logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
+        index = pinecone.Index(index_name)
+        vectorstore = Pinecone(index, embeddings_model, "page_content") # Set the vector store to calculate embeddings on page_content
+        vectorstore = pinecone_batch_upsert(vectorstore,docs_out)
+    # Return vectorstore or docs
     if index_name:
         return vectorstore
     else:
         return docs_out
-
-def update_database():
-    # Executed when this module is run to update the database.
-    # Pinecone and embeddings model
-    pinecone.init(
-        api_key=os.getenv('PINECONE_API_KEY'),
-        environment=os.getenv('PINECONE_ENVIRONMENT') 
-    )
-    index_name = 'langchain-quickstart'
-    embeddings_model = OpenAIEmbeddings(model="text-embedding-ada-002",openai_api_key=os.getenv('OPENAI_API_KEY'))
-
-    # Find all docs in data folder and import them
-    current_path=os.path.dirname(os.path.abspath(__file__))
-    data_folder='/../data/'
-    docs = glob.glob(current_path+data_folder+'*.pdf')   # Only get the PDFs in the directory
-    load_docs(index_name,embeddings_model,docs)
-
-def read_docs(file,destination='langchain'):
+def delete_index(index_type,index_name):
     """
-    Reads the tile output from load_docs and formats it into a list of documents.
+    Deletes an existing Pinecone index with the given index_name.
     """
-    with open(file, 'r') as f:
-        lines = f.readlines()
-    list_of_docs = []
-    for line in lines:
-        dict_ = json.loads(line)
-        if destination=='langchain':  # text stored as page_content key
-            doc_=lancghain_Document(page_content=dict_['page_content'],
-                                        source=dict_['metadata']['source'],
-                                        metadata=dict_['metadata'])
-        # elif destination=='canopy':   # text stored as text key
-        #     doc_=canopy_Document(id=dict_['id'],
-        #                             text=dict_['page_content'],
-        #                             source=dict_['metadata']['source'],
-        #                             metadata=dict_['metadata'])
-        list_of_docs.append(doc_)
-    return list_of_docs
-
-
-def has_meaningful_content(page,destination='langchain'):
+    if index_type=="Pinecone":
+        # Import and initialize Pinecone client
+        pinecone.init(
+            api_key=PINECONE_API_KEY,
+            environment=PINECONE_ENVIRONMENT
+        )
+        try:
+            pinecone.describe_index(index_name)
+            logging.info(f"Index {index_name} exists.")
+        except:
+            raise Exception(f"Index {index_name} does not exist, cannot delete.")
+        else:
+            pinecone.delete_index(index_name)
+            logging.info(f"Index {index_name} deleted.")
+    elif index_type=="ChromaDB":
+        raise NotImplementedError
+def pinecone_batch_upsert(vectorstore,docs_out):
+    # Batch insert the chunks into the vector store
+    batch_size = 100  # Define your preferred batch size
+    for i in range(0, len(docs_out), batch_size):
+        chunk_batch = docs_out[i:i + batch_size]
+        vectorstore.add_documents(chunk_batch)
+    return vectorstore
+def has_meaningful_content(page):
     """
     Test whether the page has more than 30% words and is more than 5 words.
     """
-
-    if destination=='langchain':
-        text=page.page_content
-    elif destination=='canopy':
-        text=page.text
-    
+    text=page.page_content
     num_words = len(text.split())
     alphanumeric_pct = sum(c.isalnum() for c in text) / len(text)
     if num_words < 5 or alphanumeric_pct < 0.3:

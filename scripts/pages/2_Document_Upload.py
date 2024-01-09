@@ -18,8 +18,8 @@ from langchain_community.embeddings import VoyageEmbeddings
 from langchain_community.llms import OpenAI
 from langchain_community.llms import HuggingFaceHub
 
-from langchain.document_loaders import PyPDFLoader
-from langchain.document_loaders import UnstructuredPDFLoader, OnlinePDFLoader, PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import UnstructuredPDFLoader, OnlinePDFLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 import streamlit as st
@@ -121,13 +121,18 @@ if st.button('Load docs into vector database'):
     data_import.load_docs(index_name=index_name,
                           embeddings_model=embeddings_model,
                           docs=docs,
-                          PINECONE_API_KEY=os.getenv('PINECONE_API_KEY'),
-                          PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT'),
                           chunk_size=5000,
                           chunk_overlap=0,
                           use_json=use_json,
                           clear=clear_database,
                           file=data_folder+'ams_data.jsonl')
+    end_time = time.time()  # Stop the timer
+    elapsed_time = end_time - start_time 
+    st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
+# Add a button to delete the index
+if st.button('Delete existing index'):
+    start_time = time.time()  # Start the timer
+    data_import.delete_index(index_type,index_name)
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
     st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
