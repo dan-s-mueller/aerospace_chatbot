@@ -125,20 +125,16 @@ class QA_Model:
         self.sources=[]
 
     def query_docs(self,query,tags=None):
+        logging.info('Query: '+str(query))
         self.result=self.qa({'question': query},tags=tags)
-
-        # print('-------------')
-        # print(query+'\n')
-        # print(self.result['answer']+'\n\n'+'Sources:'+'\n')
+        logging.info('QA result: '+str(self.result))
 
         temp_sources=[]
         for data in self.result['source_documents']:
             temp_sources.append(data.metadata)
-            # print(data.metadata)
+            logging.info('Source: '+str(data.metadata))
 
         self.sources.append(temp_sources)
-        # print('\nGenerated question: '+self.result['generated_question'])
-        # print('-------------\n')
 
     def update_model(self,llm,
                     k=6,

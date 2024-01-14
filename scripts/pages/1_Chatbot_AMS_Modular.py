@@ -93,6 +93,7 @@ if populate:
                                   k=sb['model_options']['k'],
                                   search_type=sb['model_options']['search_type'],
                                   filter_arg=False)
+    logging.info('QA model object set: '+str(qa_model_obj))
 
     # Display assistant response in chat message container
     if prompt := st.chat_input('Prompt here'):
@@ -110,12 +111,14 @@ if populate:
                     out_token = 50
                 else:
                     out_token = 516
+                logging.info('Output tokens: '+str(out_token))
 
                 # Define LLM parameters and qa model object
                 llm = OpenAI(model_name=sb['llm_model'],
                              temperature=sb['model_options']['temperature'],
                              openai_api_key=secrets['OPENAI_API_KEY'],
                              max_tokens=out_token)
+                logging.info('LLM model set: '+str(llm))
 
                 message_id += 1
                 st.write('Message: '+str(message_id))
@@ -126,6 +129,8 @@ if populate:
                                               k=sb['model_options']['k'],
                                               search_type=sb['model_options']['search_type'],
                                               filter_arg=filter_toggle)
+                    logging.info('QA model object updated: '+str(qa_model_obj))
+
                     if filter_toggle:
                         filter_list = list(set(item['source'] for item in qa_model_obj.sources[-1]))
                         filter_items=[]
