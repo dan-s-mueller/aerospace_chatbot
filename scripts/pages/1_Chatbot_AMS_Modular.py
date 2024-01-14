@@ -53,9 +53,9 @@ populate=True
 
 if populate:
     if sb['embedding_type']=='Openai':
-        embeddings_model=OpenAIEmbeddings(model=sb['embedding_type'],openai_api_key=secrets['OPENAI_API_KEY'])
+        embeddings_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
     elif sb['embedding_type']=='Voyage':
-        embeddings_model=VoyageEmbeddings(voyage_api_key=secrets['VOYAGE_API_KEY'])
+        embeddings_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
     logging.info('Embedding model set: '+str(embeddings_model))
 
     # Set up chat history

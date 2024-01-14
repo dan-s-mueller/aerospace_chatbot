@@ -62,6 +62,8 @@ def load_sidebar(config_file,
 
         if sb_out['embedding_type']=='Openai':
             sb_out['embedding_name']='text-embedding-ada-002'
+        elif sb_out['embedding_type']=='Voyage':
+            sb_out['embedding_name']='voyage-02'
         logging.info('Embedding type: '+sb_out['embedding_type'])
         if 'embedding_name' in locals() or 'embedding_name' in globals():
             logging.info('Embedding name: '+sb_out['embedding_name'])

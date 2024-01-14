@@ -45,16 +45,16 @@ class QA_Model:
                  chain_type='stuff',
                  filter_arg=False):
         
-        self.index_type:str=index_type
-        self.index_name:str=index_name
-        self.embeddings_model:OpenAIEmbeddings=embeddings_model
+        self.index_type=index_type
+        self.index_name=index_name
+        self.embeddings_model=embeddings_model
         self.llm=llm
-        self.k:int=k
-        self.search_type:str=search_type
-        self.temperature:int=temperature
-        self.verbose:bool=verbose
-        self.chain_type:str=chain_type
-        self.filter_arg:bool=filter_arg
+        self.k=k
+        self.search_type=search_type
+        self.temperature=temperature
+        self.verbose=verbose
+        self.chain_type=chain_type
+        self.filter_arg=filter_arg
 
         load_dotenv(find_dotenv(),override=True)
 
