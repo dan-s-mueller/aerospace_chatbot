@@ -18,9 +18,6 @@ from langchain_community.embeddings import VoyageEmbeddings
 from langchain_community.llms import OpenAI
 from langchain_community.llms import HuggingFaceHub
 
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
 import streamlit as st
 
 # Set up the page, enable logging 
@@ -62,7 +59,7 @@ logging.info('Docs: '+str(docs))
 
 # Add an expandable box for options
 with st.expander("Options"):
-    use_json = st.checkbox('Use existing jsonl, if available?', value=True)
+    use_json = st.checkbox('Use existing jsonl, if available (will ignore chunk method, size, and overlap)?', value=True)
     clear_database = st.checkbox('Clear existing database?')
     chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
     if chunk_method=='tiktoken_recursive':

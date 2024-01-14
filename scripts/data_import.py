@@ -13,7 +13,10 @@ from langchain_community.vectorstores import Pinecone
 from langchain_community.document_loaders import PyPDFLoader
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import VoyageEmbeddings
+
 from langchain_core.documents import Document as lancghain_Document
 
 from dotenv import load_dotenv,find_dotenv,dotenv_values
@@ -128,8 +131,8 @@ def load_docs(index_type,
                 pinecone.describe_index(index_name)
             except:
                 logging.info(f"Index {index_name} does not exist. Creating new index.")
-                logging.info('Size of embedding used: '+str(1536))  # TODO: set this to be backed out of the embedding size
-                pinecone.create_index(index_name,dimension=1536)
+                logging.info('Size of embedding used: '+str(embedding_size(embeddings_model)))  # TODO: set this to be backed out of the embedding size
+                pinecone.create_index(index_name,dimension=embedding_size(embeddings_model))
                 logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
                 pass
             else:
@@ -168,7 +171,7 @@ def delete_index(index_type,index_name):
         raise NotImplementedError
 def pinecone_batch_upsert(vectorstore,docs_out):
     # Batch insert the chunks into the vector store
-    batch_size = 100  # Define your preferred batch size
+    batch_size = 50  # Define your preferred batch size
     for i in range(0, len(docs_out), batch_size):
         chunk_batch = docs_out[i:i + batch_size]
         vectorstore.add_documents(chunk_batch)
@@ -184,3 +187,13 @@ def has_meaningful_content(page):
         return False
     else:
         return True
+def embedding_size(embedding_model):
+    """
+    Returns the embedding size of the model.
+    """
+    if isinstance(embedding_model,OpenAIEmbeddings):
+        return 1536 # https://platform.openai.com/docs/models/embeddings, test-embedding-ada-002
+    elif isinstance(embedding_model,VoyageEmbeddings):
+        return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
+    else:
+        raise NotImplementedError
