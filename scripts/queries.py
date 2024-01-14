@@ -9,7 +9,6 @@ import pinecone
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
 
-# import langchain_openai.OpenAIEmbeddings
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
