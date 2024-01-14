@@ -4,5 +4,6 @@
 *.pdf
 *.DS_Store
 .venv/
+db/
 scripts/__pycache__
 scripts/tmp_trainer

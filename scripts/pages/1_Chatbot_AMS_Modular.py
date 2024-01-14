@@ -90,8 +90,8 @@ if populate:
                                   sb['index_name'],
                                   embeddings_model,
                                   llm,
-                                  sb['model_options']['k'],
-                                  sb['model_options']['search_type'],
+                                  k=sb['model_options']['k'],
+                                  search_type=sb['model_options']['search_type'],
                                   filter_arg=False)
 
     # Display assistant response in chat message container

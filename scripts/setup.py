@@ -92,7 +92,7 @@ def load_sidebar(config_file,
         st.sidebar.title('Model Options')
         output_level = st.sidebar.selectbox('Level of Output', ['Concise', 'Detailed'], index=1)
         k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
-        search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=1)
+        search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=0)
         temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.0, step=0.1)
         sb_out['model_options']={'output_level':output_level,
                                  'k':k,

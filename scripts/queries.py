@@ -60,8 +60,6 @@ class QA_Model:
 
         # Read in from the vector database
         if index_type=='Pinecone':
-            PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')  # TODO: figure out how to pass api keys to queries.py
-            PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
             pinecone.init(
                 api_key=PINECONE_API_KEY,
                 environment=PINECONE_ENVIRONMENT
@@ -70,27 +68,40 @@ class QA_Model:
             logging.info('Embedding model: '+str(embeddings_model))
             self.vectorstore = Pinecone.from_existing_index(index_name,embeddings_model)
             logging.info('Vectorstore: '+str(self.vectorstore))
-
+        elif index_type=='ChromaDB':
+            logging.info('Chroma index name: '+str(index_name))
+            logging.info('Embedding model: '+str(embeddings_model))
+            self.vectorstore = Chroma(persist_directory=f'../db/{index_name}',
+                                      embedding_function=embeddings_model)
+            logging.info('Vectorstore: '+str(self.vectorstore))
+        elif index_type=='RAGatouille':
+            raise NotImplementedError
+        
         # Set up question generator and qa with sources
         self.question_generator = LLMChain(llm=llm, 
                                            prompt=CONDENSE_QUESTION_PROMPT,
                                            verbose=verbose)
+        logging.info('Question generator: '+str(self.question_generator))
         self.doc_chain = load_qa_with_sources_chain(llm, chain_type=chain_type,prompt=QA_WSOURCES_PROMPT,verbose=verbose)
+        logging.info('Doc chain: '+str(self.doc_chain))
 
         # Establish chat history
         self.chat_history=ConversationBufferMemory(memory_key='chat_history',
                                             input_key='question',
                                             output_key='answer',
                                             return_messages=True)
+        logging.info('Chat history: '+str(self.chat_history))
 
         # Implement filter
         if filter_arg:
+            logging.info('Filtering sources')
             filter_list = list(set(item["source"] for item in self.sources[-1]))
             filter_items=[]
             for item in filter_list:
                 filter_item={"source": item}
                 filter_items.append(filter_item)
             filter={"$or":filter_items}
+            logging.info('Filter: '+str(filter))
         else:
             filter=None
 
@@ -109,6 +120,7 @@ class QA_Model:
                     return_source_documents=True,
                     return_generated_question=True,
                     )
+        logging.info('ConversationalRetrieverChain: '+str(self.qa))   
         
         self.sources=[]
 

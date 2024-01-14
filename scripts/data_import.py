@@ -5,18 +5,20 @@ import logging
 import uuid
 
 import pinecone
+import chromadb
 
 import json, jsonlines
 from tqdm import tqdm
 
 from langchain_community.vectorstores import Pinecone
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.vectorstores import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document as lancghain_Document
 
 from dotenv import load_dotenv,find_dotenv,dotenv_values
@@ -98,7 +100,8 @@ def load_docs(index_type,
               chunk_overlap=0,
               clear=False,
               use_json=False,
-              file=None):
+              file=None,
+              batch_size=50):
     """
     Loads PDF documents. If index_name is blank, it will return a list of the data (texts). If it is a name of a pinecone storage, it will return the vector_store.    
     """
@@ -139,9 +142,23 @@ def load_docs(index_type,
                 logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
             index = pinecone.Index(index_name)
             vectorstore = Pinecone(index, embeddings_model, "page_content") # Set the vector store to calculate embeddings on page_content
-            vectorstore = pinecone_batch_upsert(vectorstore,docs_out)
+            vectorstore = batch_upsert(index_type,
+                                       vectorstore,
+                                       docs_out,
+                                       batch_size=batch_size)
         elif index_type=="ChromaDB":
-            raise NotImplementedError
+            # Upsert docs. Defaults to putting this in the ../db directory
+            logging.info(f"Creating new index {index_name}.")
+            index = chromadb.PersistentClient(path=f'../db/{index_name}')
+            vectorstore = Chroma(index_name,
+                                 embeddings_model,
+                                 persist_directory=f'../db/{index_name}')
+            logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
+            vectorstore = batch_upsert(index_type,
+                                       vectorstore,
+                                       docs_out,
+                                       batch_size=batch_size)
+            logging.info("Documents upserted to f{index_name}.")
         elif index_type=="RAGatouille":
             raise NotImplementedError
     # Return vectorstore or docs
@@ -169,12 +186,14 @@ def delete_index(index_type,index_name):
             logging.info(f"Index {index_name} deleted.")
     elif index_type=="ChromaDB":
         raise NotImplementedError
-def pinecone_batch_upsert(vectorstore,docs_out):
+def batch_upsert(index_type,vectorstore,docs_out,batch_size=50):
     # Batch insert the chunks into the vector store
-    batch_size = 50  # Define your preferred batch size
     for i in range(0, len(docs_out), batch_size):
         chunk_batch = docs_out[i:i + batch_size]
-        vectorstore.add_documents(chunk_batch)
+        if index_type=="Pinecone":
+            vectorstore.add_documents(chunk_batch)
+        elif index_type=="ChromaDB":
+            vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone, leaving if statement just in case
     return vectorstore
 def has_meaningful_content(page):
     """

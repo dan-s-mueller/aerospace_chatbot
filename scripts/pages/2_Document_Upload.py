@@ -47,7 +47,7 @@ elif sb['embedding_type']=='Voyage':
     embeddings_model=VoyageEmbeddings(voyage_api_key=secrets['VOYAGE_API_KEY'])
 logging.info('Embedding model set: '+str(embeddings_model))
 
-# Upload
+# Find docs
 index_name_md=st.markdown('Enter a directory relative to the current directory, or an absolute path.')
 data_folder = st.text_input('Enter a directory','../data/AMS/')
 if not os.path.isdir(data_folder):
@@ -62,6 +62,9 @@ with st.expander("Options"):
     use_json = st.checkbox('Use existing jsonl, if available (will ignore chunk method, size, and overlap)?', value=True)
     clear_database = st.checkbox('Clear existing database?')
     chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
+    if sb['embedding_type']=='Openai':
+        # OpenAI will time out if the batch size is too large
+        batch_size=st.number_input('Batch size for upsert', min_value=1, step=1, value=100)
     if chunk_method=='tiktoken_recursive':
         chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=5000)
         chunk_overlap=st.number_input('Chunk overlap', min_value=0, step=1, value=0)
@@ -79,7 +82,8 @@ if st.button('Load docs into vector database'):
                           chunk_overlap=chunk_overlap,
                           use_json=use_json,
                           clear=clear_database,
-                          file=data_folder+'ams_data.jsonl')
+                          file=data_folder+'ams_data.jsonl',
+                          batch_size=batch_size)
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
     st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
