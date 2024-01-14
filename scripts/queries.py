@@ -24,7 +24,13 @@ from langchain.chains.llm import LLMChain
 
 from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, QA_WSOURCES_PROMPT
 
-logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+# logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+# Set secrets from environment file
+OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
+VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
+PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')
+PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
+HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
 class QA_Model:
     def __init__(self, 

@@ -18,7 +18,7 @@ from langchain_core.documents import Document as lancghain_Document
 
 from dotenv import load_dotenv,find_dotenv,dotenv_values
 load_dotenv(find_dotenv(),override=True)
-logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+# logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
@@ -28,6 +28,7 @@ PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
 def chunk_docs(docs,
+               chunk_method='tiktoken_recursive',
                file=None,
                chunk_size=5000,
                chunk_overlap=0,
@@ -59,8 +60,10 @@ def chunk_docs(docs,
             loader = PyPDFLoader(doc)
             data = loader.load_and_split()
 
-            # This is optional, but needed to play with the data parsing.
-            text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            if chunk_method=='tiktoken_recursive':
+                text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            else:
+                raise NotImplementedError
             pages = text_splitter.split_documents(data)
 
             # Tidy up text by removing unnecessary characters
@@ -83,9 +86,11 @@ def chunk_docs(docs,
                 for doc in docs_out: 
                     writer.write(doc.dict())
     return docs_out
-def load_docs(docs,
+def load_docs(index_type,
+              docs,
+              embeddings_model,
               index_name=None,
-              embeddings_model=None,
+              chunk_method='tiktoken_recursive',
               chunk_size=5000,
               chunk_overlap=0,
               clear=False,
@@ -96,41 +101,46 @@ def load_docs(docs,
     """
     # Chunk docs
     docs_out=chunk_docs(docs,
+                        chunk_method=chunk_method,
                         file=file,
                         chunk_size=chunk_size,
                         chunk_overlap=chunk_overlap,
                         use_json=use_json)
     # Initialize client
     if index_name:
-        # Import and initialize Pinecone client
-        pinecone.init(
-            api_key=PINECONE_API_KEY,
-            environment=PINECONE_ENVIRONMENT
-        )
-        # Find the existing index, clear for new start
-        if clear:
+        if index_type=="Pinecone":
+            # Import and initialize Pinecone client
+            pinecone.init(
+                api_key=PINECONE_API_KEY,
+                environment=PINECONE_ENVIRONMENT
+            )
+            # Find the existing index, clear for new start
+            if clear:
+                try:
+                    pinecone.describe_index(index_name)
+                except:
+                    raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+                index=pinecone.Index(index_name)
+                index.delete(delete_all=True) # Clear the index first, then upload
+                logging.info('Cleared database '+index_name)
+            # Upsert docs
             try:
                 pinecone.describe_index(index_name)
             except:
-                raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-            index=pinecone.Index(index_name)
-            index.delete(delete_all=True) # Clear the index first, then upload
-            logging.info('Cleared database '+index_name)
-    # Upsert docs
-    if index_name:
-        try:
-            pinecone.describe_index(index_name)
-        except:
-            logging.info(f"Index {index_name} does not exist. Creating new index.")
-            logging.info('Size of embedding used: '+str(1536))  # TODO: set this to be backed out of the embedding size
-            pinecone.create_index(index_name,dimension=1536)
-            logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
-            pass
-        else:
-            logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
-        index = pinecone.Index(index_name)
-        vectorstore = Pinecone(index, embeddings_model, "page_content") # Set the vector store to calculate embeddings on page_content
-        vectorstore = pinecone_batch_upsert(vectorstore,docs_out)
+                logging.info(f"Index {index_name} does not exist. Creating new index.")
+                logging.info('Size of embedding used: '+str(1536))  # TODO: set this to be backed out of the embedding size
+                pinecone.create_index(index_name,dimension=1536)
+                logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
+                pass
+            else:
+                logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
+            index = pinecone.Index(index_name)
+            vectorstore = Pinecone(index, embeddings_model, "page_content") # Set the vector store to calculate embeddings on page_content
+            vectorstore = pinecone_batch_upsert(vectorstore,docs_out)
+        elif index_type=="ChromaDB":
+            raise NotImplementedError
+        elif index_type=="RAGatouille":
+            raise NotImplementedError
     # Return vectorstore or docs
     if index_name:
         return vectorstore

@@ -1,4 +1,4 @@
-import queries
+import queries, setup
 
 import os
 import time
@@ -11,7 +11,7 @@ import openai
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
 
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
 from langchain_community.llms import OpenAI
@@ -22,11 +22,14 @@ import streamlit as st
 # Set up the page, enable logging
 from dotenv import load_dotenv,find_dotenv,dotenv_values
 load_dotenv(find_dotenv(),override=True)
-logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
-with open('config.json', 'r') as f:
-    config = json.load(f)
-with open('index_data.json', 'r') as f:
-    index_data = json.load(f)
+logging.basicConfig(filename='app_1.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+
+# with open('../config/config.json', 'r') as f:
+#     config = json.load(f)
+#     databases = {db['name']: db for db in config['databases']}
+#     llms  = {m['name']: m for m in config['llms']}
+# with open('../config/index_data.json', 'r') as f:
+#     index_data = json.load(f)
 populate=False  # Populates the app. Only does so after parameters are set so it doesn't error out.
 
 # Set the page title
@@ -40,84 +43,97 @@ with st.expander('''What's under the hood?'''):
     ''')
 filter_toggle=st.checkbox('Filter response with last received sources?')
 
-# Add a sidebar for input options
-st.title('Input')
+sb=setup.load_sidebar(config_file='../config/config.json',
+                        index_data_file='../config/index_data.json',
+                        vector_databases=True,
+                        embeddings=True,
+                        rag_type=True,
+                        index_name=True,
+                        llm=True,
+                        model_options=True,
+                        secret_keys=True)
 
-# Vector databases
-st.sidebar.title('Vector database')
-index_type=st.sidebar.selectbox('Index type', config['databases'], index=0)
-logging.info('Index type: '+index_type)
+# # Add a sidebar for input options
+# st.title('Input')
 
-# Embeddings
-st.sidebar.title('Embeddings')
-if index_type=='RAGatouille':    # Default to selecting hugging face model for RAGatouille, otherwise select alternates
-    embedding_type=st.sidebar.selectbox('Embedding type', config['hf_rag_models'], index=0)
-else:
-    embedding_type=st.sidebar.selectbox('Embedding type', config['embedding_models'], index=0)
+# # Vector databases
+# st.sidebar.title('Vector database')
+# index_type=st.sidebar.selectbox('Index type', list(databases.keys()), index=0)
+# logging.info('Index type: '+index_type)
 
-if embedding_type=='Openai':
-    embedding_name='text-embedding-ada-002'
-logging.info('Embedding type: '+embedding_type)
-if 'embedding_name' in locals() or 'embedding_name' in globals():
-    logging.info('Embedding name: '+embedding_name)
+# # Embeddings
+# st.sidebar.title('Embeddings')
+# if index_type=='RAGatouille':    # Default to selecting hugging face model for RAGatouille, otherwise select alternates
+#     embedding_type=st.sidebar.selectbox('Hugging face rag models', databases[index_type]['hf_rag_models'], index=0)
+# else:
+#     embedding_type=st.sidebar.selectbox('Embedding models', databases[index_type]['embedding_models'], index=0)
 
-# RAG Type
-st.sidebar.title('RAG Type')
-rag_type=st.sidebar.selectbox('RAG type', config['rag_types'], index=0)
-smart_agent=st.sidebar.checkbox('Smart agent?')
-logging.info('RAG type: '+rag_type)
-logging.info('Smart agent: '+str(smart_agent))
+# if embedding_type=='Openai':
+#     embedding_name='text-embedding-ada-002'
+# logging.info('Embedding type: '+embedding_type)
+# if 'embedding_name' in locals() or 'embedding_name' in globals():
+#     logging.info('Embedding name: '+embedding_name)
 
-# Index Name   
-index_name=index_data[index_type][embedding_type]
-index_name_md=st.sidebar.markdown('Index name: '+index_name)
-logging.info('Index name: '+index_name)
+# # RAG Type
+# st.sidebar.title('RAG Type')
+# rag_type=st.sidebar.selectbox('RAG type', config['rag_types'], index=0)
+# smart_agent=st.sidebar.checkbox('Smart agent?')
+# logging.info('RAG type: '+rag_type)
+# logging.info('Smart agent: '+str(smart_agent))
 
-# Add input fields in the sidebar
-st.sidebar.title('RAG Options')
-output_level = st.sidebar.selectbox('Level of Output', ['Concise', 'Detailed'], index=1)
-k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
-search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=1)
-temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.0, step=0.1)
-verbose = st.sidebar.checkbox('Verbose output')
-chain_type = st.sidebar.selectbox('Chain Type', ['stuff', 'map_reduce'], index=0)
-rag_options={'output_level':output_level,
-             'k':k,
-             'search_type':search_type,
-             'temperature':temperature,
-             'verbose':verbose,
-             'chain_type':chain_type}
-logging.info('RAG options: '+str(rag_options))
+# # Index Name   
+# index_name=index_data[index_type][embedding_type]
+# index_name_md=st.sidebar.markdown('Index name: '+index_name)
+# logging.info('Index name: '+index_name)
 
-# LLM
-st.sidebar.title('LLM')
-llm_model=st.sidebar.selectbox('LLM model', config['llms'], index=0)
-if llm_model=='Hugging Face':
-    hf_model=st.sidebar.selectbox('Hugging Face model', config['hf_models'], index=0)
-logging.info('LLM model: '+llm_model)
+# # Add input fields in the sidebar
+# st.sidebar.title('RAG Options')
+# output_level = st.sidebar.selectbox('Level of Output', ['Concise', 'Detailed'], index=1)
+# k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
+# search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=1)
+# temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.0, step=0.1)
+# verbose = st.sidebar.checkbox('Verbose output')
+# chain_type = st.sidebar.selectbox('Chain Type', ['stuff', 'map_reduce'], index=0)
+# rag_options={'output_level':output_level,
+#              'k':k,
+#              'search_type':search_type,
+#              'temperature':temperature,
+#              'verbose':verbose,
+#              'chain_type':chain_type}
+# logging.info('RAG options: '+str(rag_options))
 
-# Add a section for secret keys
-st.sidebar.title('Secret keys')
-if llm_model=='OpenAI' or embedding_type=='Openai':
-    OPENAI_API_KEY = st.sidebar.text_input('OpenAI API Key', type='password')
-    openai.api_key = OPENAI_API_KEY
+# # LLM
+# st.sidebar.title('LLM')
+# llm_source=st.sidebar.selectbox('LLM model', list(llms.keys()), index=0)
+# logging.info('LLM source: '+llm_source)
+# if llm_source=='OpenAI':
+#     llm_model=st.sidebar.selectbox('OpenAI model', llms[llm_source]['models'], index=0)
+# if llm_source=='Hugging Face':
+#     llm_model=st.sidebar.selectbox('Hugging Face model', llms[llm_source]['models'], index=0)
 
-if llm_model=='Hugging Face':
-    HUGGINGFACEHUB_API_TOKEN = st.sidebar.text_input('Hugging Face API Key', type='password')
+# # Add a section for secret keys
+# st.sidebar.title('Secret keys')
+# if llm_source=='OpenAI' or embedding_type=='Openai':
+#     OPENAI_API_KEY = st.sidebar.text_input('OpenAI API Key', type='password')
+#     openai.api_key = OPENAI_API_KEY
 
-if embedding_type=='Voyage':
-    VOYAGE_API_KEY = st.sidebar.text_input('Voyage API Key', type='password')
+# if llm_source=='Hugging Face':
+#     HUGGINGFACEHUB_API_TOKEN = st.sidebar.text_input('Hugging Face API Key', type='password')
 
-if index_type=='Pinecone':
-    PINECONE_ENVIRONMENT=st.sidebar.text_input('Pinecone Environment')
-    PINECONE_API_KEY=st.sidebar.text_input('Pinecone API Key',type='password')
-    pinecone.init(
-        api_key=PINECONE_API_KEY,
-        environment=PINECONE_ENVIRONMENT
-    )
+# if embedding_type=='Voyage':
+#     VOYAGE_API_KEY = st.sidebar.text_input('Voyage API Key', type='password')
+
+# if index_type=='Pinecone':
+#     PINECONE_ENVIRONMENT=st.sidebar.text_input('Pinecone Environment')
+#     PINECONE_API_KEY=st.sidebar.text_input('Pinecone API Key',type='password')
+#     pinecone.init(
+#         api_key=PINECONE_API_KEY,
+#         environment=PINECONE_ENVIRONMENT
+#     )
 
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
+openai.api_key = OPENAI_API_KEY
 VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
 PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')
 PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
@@ -126,9 +142,9 @@ HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
 populate=True
 
 if populate:
-    if embedding_type=='Openai':
-        embeddings_model=OpenAIEmbeddings(model=embedding_name,openai_api_key=OPENAI_API_KEY)
-    elif embedding_type=='Voyage':
+    if sb['embedding_type']=='Openai':
+        embeddings_model=OpenAIEmbeddings(model=sb['embedding_type'],openai_api_key=OPENAI_API_KEY)
+    elif sb['embedding_type']=='Voyage':
         embeddings_model=VoyageEmbeddings(voyage_api_key=VOYAGE_API_KEY)
     logging.info('Embedding model set: '+str(embeddings_model))
 
@@ -143,29 +159,29 @@ if populate:
             st.markdown(message['content'])
 
     # Process some items
-    if output_level == 'Concise':
+    if sb['model_options']['output_level'] == 'Concise':
         out_token = 50
     else:
         out_token = 516
     logging.info('Output tokens: '+str(out_token))
 
     # Define LLM parameters and qa model object
-    if llm_model=='OpenAI':
-        llm = OpenAI(temperature=temperature,
-                        openai_api_key=OPENAI_API_KEY,
-                        max_tokens=out_token)
-    elif llm_model=='Hugging Face':
-        llm = HuggingFaceHub(repo_id=hf_model,
-                            model_kwargs={"temperature": temperature, "max_length": out_token})
+    if sb['llm_source']=='OpenAI':
+        llm = OpenAI(model_name=sb['llm_model'],
+                     temperature=sb['model_options']['temperature'],
+                     openai_api_key=OPENAI_API_KEY,
+                     max_tokens=out_token)
+    elif sb['llm_source']=='Hugging Face':
+        llm = HuggingFaceHub(repo_id=sb['llm_model'],
+                            model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
     logging.info('LLM model set: '+str(llm))
 
-    qa_model_obj=queries.QA_Model(index_type,
-                                  index_name,
+    qa_model_obj=queries.QA_Model(sb['index_type'],
+                                  sb['index_name'],
                                   embeddings_model,
                                   llm,
-                                  k,
-                                  search_type,
-                                  verbose,
+                                  sb['model_options']['k'],
+                                  sb['model_options']['search_type'],
                                   filter_arg=False)
 
     # Display assistant response in chat message container
@@ -180,15 +196,16 @@ if populate:
                 t_start=time.time()
 
                 # Process some items
-                if output_level == 'Concise':
+                if sb['model_options']['output_level'] == 'Concise':
                     out_token = 50
                 else:
                     out_token = 516
 
                 # Define LLM parameters and qa model object
-                llm = OpenAI(temperature=temperature,
-                                openai_api_key=OPENAI_API_KEY,
-                                max_tokens=out_token)
+                llm = OpenAI(model_name=sb['llm_model'],
+                             temperature=sb['model_options']['temperature'],
+                             openai_api_key=OPENAI_API_KEY,
+                             max_tokens=out_token)
 
                 message_id += 1
                 st.write('Message: '+str(message_id))
@@ -196,10 +213,9 @@ if populate:
                 if message_id>1:
                     qa_model_obj=st.session_state['qa_model_obj']
                     qa_model_obj.update_model(llm,
-                                        k=k,
-                                        search_type=search_type,
-                                        verbose=verbose,
-                                        filter_arg=filter_toggle)
+                                              k=sb['model_options']['k'],
+                                              search_type=sb['model_options']['search_type'],
+                                              filter_arg=filter_toggle)
                     if filter_toggle:
                         filter_list = list(set(item['source'] for item in qa_model_obj.sources[-1]))
                         filter_items=[]
