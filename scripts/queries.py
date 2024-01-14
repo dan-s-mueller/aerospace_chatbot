@@ -75,11 +75,15 @@ class QA_Model:
         elif index_type=='RAGatouille':
             raise NotImplementedError
         
+        # TODO: udpdate with lcel using this https://python.langchain.com/docs/expression_language/cookbook/retrieval#with-memory-and-returning-source-documents
+
         # Set up question generator and qa with sources
         self.question_generator = LLMChain(llm=llm, 
                                            prompt=CONDENSE_QUESTION_PROMPT,
                                            verbose=verbose)
         logging.info('Question generator: '+str(self.question_generator))
+
+        # Set up doc chain
         self.doc_chain = load_qa_with_sources_chain(llm, chain_type=chain_type,prompt=QA_WSOURCES_PROMPT,verbose=verbose)
         logging.info('Doc chain: '+str(self.doc_chain))
 
@@ -103,11 +107,13 @@ class QA_Model:
         else:
             filter=None
 
+        #  Set search type
         if search_type=='mmr':
             search_kwargs={'k':k,'fetch_k':50,'filter':filter} # See as_retriever docs for parameters
         else:
             search_kwargs={'k':k,'filter':filter} # See as_retriever docs for parameters
 
+        # Set up conversational retrieval chain
         self.qa = ConversationalRetrievalChain(
                     retriever=self.vectorstore.as_retriever(search_type=search_type,
                                                             search_kwargs=search_kwargs),  
