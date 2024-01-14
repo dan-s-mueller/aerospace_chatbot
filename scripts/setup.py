@@ -116,3 +116,34 @@ def load_sidebar(config_file,
             sb_out['keys']['PINECONE_ENVIRONMENT']=st.sidebar.text_input('Pinecone Environment')
             sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password')
     return sb_out
+def set_secrets(sb):
+    """
+    Sets secrets from environment file, or from sidebar if not available.
+    """
+    secrets={}
+    secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
+    if not secrets['OPENAI_API_KEY']:
+        secrets['OPENAI_API_KEY'] = sb['keys']['OPENAI_API_KEY']
+        os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
+        openai.api_key = secrets['OPENAI_API_KEY']
+
+    secrets['VOYAGE_API_KEY'] = os.getenv('VOYAGE_API_KEY')
+    if not secrets['VOYAGE_API_KEY']:
+        secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
+        os.environ['VOYAGE_API_KEY'] = secrets['VOYAGE_API_KEY']
+
+    secrets['PINECONE_ENVIRONMENT'] = os.getenv('PINECONE_ENVIRONMENT')
+    if not secrets['PINECONE_ENVIRONMENT']:
+        secrets['PINECONE_ENVIRONMENT'] = sb['keys']['PINECONE_ENVIRONMENT']
+        os.environ['PINECONE_ENVIRONMENT'] = secrets['PINECONE_ENVIRONMENT']
+
+    secrets['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
+    if not secrets['PINECONE_API_KEY']:
+        secrets['PINECONE_API_KEY'] = sb['keys']['PINECONE_API_KEY']
+        os.environ['PINECONE_API_KEY'] = secrets['PINECONE_API_KEY']
+
+    secrets['HUGGINGFACEHUB_API_TOKEN'] = os.getenv('HUGGINGFACEHUB_API_TOKEN')
+    if not secrets['HUGGINGFACEHUB_API_TOKEN']:
+        secrets['HUGGINGFACEHUB_API_TOKEN'] = sb['keys']['HUGGINGFACEHUB_API_TOKEN']
+        os.environ['HUGGINGFACEHUB_API_TOKEN'] = secrets['HUGGINGFACEHUB_API_TOKEN']
+    return secrets
