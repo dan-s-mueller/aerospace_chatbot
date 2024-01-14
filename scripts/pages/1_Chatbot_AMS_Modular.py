@@ -79,7 +79,7 @@ if populate:
     if sb['llm_source']=='OpenAI':
         llm = OpenAI(model_name=sb['llm_model'],
                      temperature=sb['model_options']['temperature'],
-                     openai_api_key=OPENAI_API_KEY,
+                     openai_api_key=secrets['OPENAI_API_KEY'],
                      max_tokens=out_token)
     elif sb['llm_source']=='Hugging Face':
         llm = HuggingFaceHub(repo_id=sb['llm_model'],
@@ -114,7 +114,7 @@ if populate:
                 # Define LLM parameters and qa model object
                 llm = OpenAI(model_name=sb['llm_model'],
                              temperature=sb['model_options']['temperature'],
-                             openai_api_key=OPENAI_API_KEY,
+                             openai_api_key=secrets['OPENAI_API_KEY'],
                              max_tokens=out_token)
 
                 message_id += 1
