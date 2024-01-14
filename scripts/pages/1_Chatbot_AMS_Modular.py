@@ -53,12 +53,6 @@ secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise fro
 populate=True
 
 if populate:
-    if sb['embedding_type']=='Openai':
-        embeddings_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
-    elif sb['embedding_type']=='Voyage':
-        embeddings_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
-    logging.info('Embedding model set: '+str(embeddings_model))
-
     # Set up chat history
     qa_model_obj = st.session_state.get('qa_model_obj',[])
     message_id = st.session_state.get('message_id', 0)
@@ -76,7 +70,14 @@ if populate:
         out_token = 516
     logging.info('Output tokens: '+str(out_token))
 
-    # Define LLM parameters and qa model object
+    # Define embeddings
+    if sb['embedding_type']=='Openai':
+        embeddings_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
+    elif sb['embedding_type']=='Voyage':
+        embeddings_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
+    logging.info('Embedding model set: '+str(embeddings_model))
+
+    # Define LLM
     if sb['llm_source']=='OpenAI':
         llm = OpenAI(model_name=sb['llm_model'],
                      temperature=sb['model_options']['temperature'],
@@ -87,6 +88,7 @@ if populate:
                             model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
     logging.info('LLM model set: '+str(llm))
 
+    # Initialize QA model object
     qa_model_obj=queries.QA_Model(sb['index_type'],
                                   sb['index_name'],
                                   embeddings_model,
@@ -96,11 +98,13 @@ if populate:
                                   filter_arg=False)
     logging.info('QA model object set: '+str(qa_model_obj))
 
-    # Display assistant response in chat message container
+    # Define chat
     if prompt := st.chat_input('Prompt here'):
+        # User prompt
         st.session_state.messages.append({'role': 'user', 'content': prompt})
         with st.chat_message('user'):
             st.markdown(prompt)
+        # Assistant response
         with st.chat_message('assistant'):
             message_placeholder = st.empty()
 
@@ -114,17 +118,18 @@ if populate:
                     out_token = 516
                 logging.info('Output tokens: '+str(out_token))
 
-                # Define LLM parameters and qa model object
-                llm = OpenAI(model_name=sb['llm_model'],
-                             temperature=sb['model_options']['temperature'],
-                             openai_api_key=secrets['OPENAI_API_KEY'],
-                             max_tokens=out_token)
-                logging.info('LLM model set: '+str(llm))
-
                 message_id += 1
                 st.write('Message: '+str(message_id))
                 
+                # For messages after first, udpate model if it changed and use history
                 if message_id>1:
+                    # Define LLM parameters and qa model object
+                    llm = OpenAI(model_name=sb['llm_model'],
+                                temperature=sb['model_options']['temperature'],
+                                openai_api_key=secrets['OPENAI_API_KEY'],
+                                max_tokens=out_token)
+                    logging.info('LLM model set: '+str(llm))
+
                     qa_model_obj=st.session_state['qa_model_obj']
                     qa_model_obj.update_model(llm,
                                               k=sb['model_options']['k'],

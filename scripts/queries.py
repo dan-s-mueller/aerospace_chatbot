@@ -12,8 +12,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
-# import langchain_openai.OpenAI
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI, ChatOpenAI
 from langchain_community.llms import HuggingFaceHub
 
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
@@ -63,16 +62,16 @@ class QA_Model:
                 api_key=PINECONE_API_KEY,
                 environment=PINECONE_ENVIRONMENT
             )
-            logging.info('Pinecone index name: '+str(index_name))
-            logging.info('Embedding model: '+str(embeddings_model))
+            logging.info('Chat pinecone index name: '+str(index_name))
+            logging.info('Chat embedding model: '+str(embeddings_model))
             self.vectorstore = Pinecone.from_existing_index(index_name,embeddings_model)
-            logging.info('Vectorstore: '+str(self.vectorstore))
+            logging.info('Chat vectorstore: '+str(self.vectorstore))
         elif index_type=='ChromaDB':
-            logging.info('Chroma index name: '+str(index_name))
-            logging.info('Embedding model: '+str(embeddings_model))
+            logging.info('Chat chroma index name: '+str(index_name))
+            logging.info('Chat embedding model: '+str(embeddings_model))
             self.vectorstore = Chroma(persist_directory=f'../db/{index_name}',
                                       embedding_function=embeddings_model)
-            logging.info('Vectorstore: '+str(self.vectorstore))
+            logging.info('Chat vectorstore: '+str(self.vectorstore))
         elif index_type=='RAGatouille':
             raise NotImplementedError
         
