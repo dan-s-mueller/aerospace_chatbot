@@ -47,6 +47,7 @@ class QA_Model:
                  llm,
                  k=6,
                  search_type='similarity',
+                 fetch_k=50,
                  temperature=0,
                  verbose=False,
                  chain_type='stuff',
@@ -58,10 +59,12 @@ class QA_Model:
         self.llm=llm
         self.k=k
         self.search_type=search_type
+        self.fetch_k=fetch_k
         self.temperature=temperature
         self.verbose=verbose
         self.chain_type=chain_type
         self.filter_arg=filter_arg
+        self.sources=[]
 
         load_dotenv(find_dotenv(),override=True)
 
@@ -108,8 +111,6 @@ class QA_Model:
         # result = final_chain.invoke(inputs)
         # result
         # self.memory.save_context(inputs, {"answer": result["answer"].content})
-
-        self.sources=[]
 
     def query_docs(self,query,tags=None):
         # TODO: figure out where to put tags
