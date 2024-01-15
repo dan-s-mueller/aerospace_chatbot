@@ -9,7 +9,7 @@ import pinecone
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
 
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
 from langchain_openai import OpenAI, ChatOpenAI
@@ -49,7 +49,6 @@ class QA_Model:
                  search_type='similarity',
                  fetch_k=50,
                  temperature=0,
-                 verbose=False,
                  chain_type='stuff',
                  filter_arg=False):
         
@@ -61,7 +60,6 @@ class QA_Model:
         self.search_type=search_type
         self.fetch_k=fetch_k
         self.temperature=temperature
-        self.verbose=verbose
         self.chain_type=chain_type
         self.filter_arg=filter_arg
         self.sources=[]
@@ -76,14 +74,27 @@ class QA_Model:
             )
             logging.info('Chat pinecone index name: '+str(index_name))
             logging.info('Chat embedding model: '+str(embeddings_model))
-            self.vectorstore = Pinecone.from_existing_index(index_name,embeddings_model)
+            index = pinecone.Index(index_name)
+            self.vectorstore = Pinecone(index,embeddings_model,'page_content')
             logging.info('Chat vectorstore: '+str(self.vectorstore))
+
+            # Test query
+            test_query = self.vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
+            logging.info('Test query: '+str(test_query))
+            if not test_query:
+                raise ValueError("Pinecone vector database is not configured properly. Test query failed.")
         elif index_type=='ChromaDB':
             logging.info('Chat chroma index name: '+str(index_name))
             logging.info('Chat embedding model: '+str(embeddings_model))
             self.vectorstore = Chroma(persist_directory=f'../db/{index_name}',
                                       embedding_function=embeddings_model)
             logging.info('Chat vectorstore: '+str(self.vectorstore))
+
+            # Test query
+            test_query = self.vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
+            logging.info('Test query: '+str(test_query))
+            if not test_query:
+                raise ValueError("Chroma vector database is not configured properly. Test query failed.")
         elif index_type=='RAGatouille':
             raise NotImplementedError
 
@@ -96,7 +107,7 @@ class QA_Model:
 
         # Intialize memory
         self.memory = ConversationBufferMemory(
-                        return_messages=True, output_key="answer", input_key="question")
+                        return_messages=True, output_key='answer', input_key='question')
         logging.info('Memory: '+str(self.memory))
 
         # Assemble main chain
@@ -107,44 +118,40 @@ class QA_Model:
                                                       search_kwargs)
 
         # Usage
-        # inputs = {"question": "where did harrison work?"}
+        # inputs = {'question': 'where did harrison work?'}
         # result = final_chain.invoke(inputs)
         # result
-        # self.memory.save_context(inputs, {"answer": result["answer"].content})
+        # self.memory.save_context(inputs, {'answer': result['answer'].content})
 
     def query_docs(self,query,tags=None):
         # TODO: figure out where to put tags
 
         self.memory.load_memory_variables({})
-        logging.info('Memory content before qa result: '+str(self.memory.content))
+        logging.info('Memory content before qa result: '+str(self.memory))
 
         logging.info('Query: '+str(query))
         self.result = self.conversational_qa_chain.invoke({'question': query})
         logging.info('QA result: '+str(self.result))
 
-        self.memory.save_context({'question': query}, {"answer": self.result["answer"].content})
-        logging.info('Memory content after qa result: '+str(self.memory.content))
+        self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
+        self.result['answer'].content += '\nSources: \n'+self.sources
+        logging.info('Sources: '+str(self.sources))
+        logging.info('Response with sources: '+str(self.result['answer'].content))
 
-        temp_sources=[]
-        for data in self.result['source_documents']:
-            temp_sources.append(data.page_content)
-            logging.info('Source: '+str(data.page_content))
-
-        self.sources.append(temp_sources)
+        self.memory.save_context({'question': query}, {'answer': self.result['answer'].content})
+        logging.info('Memory content after qa result: '+str(self.memory))
 
     def update_model(self,
                      llm,
                      k=6,
                      search_type='similarity',
                      fetch_k=50,
-                     verbose=None,
                      filter_arg=False):
 
         self.llm=llm
         self.k=k
         self.search_type=search_type
         self.fetch_k=fetch_k
-        self.verbose=verbose
         self.filter_arg=filter_arg
 
         # Set up question generator and qa with sources
@@ -168,7 +175,10 @@ class QA_Model:
 # Internal functions
 def _combine_documents(docs, 
                         document_prompt=DEFAULT_DOCUMENT_PROMPT, 
-                        document_separator="\n\n"):
+                        document_separator='\n\n'):
+    '''
+    Combine a list of documents into a single string.
+    '''
     # TODO: this would be where stuff, map reduce, etc. would go
     doc_strings = [format_document(doc, document_prompt) for doc in docs]
     return document_separator.join(doc_strings)
@@ -177,38 +187,41 @@ def _define_qa_chain(llm,
                      memory,
                      search_type,
                      search_kwargs):
-    # This adds a "memory" key to the input object
+    '''
+    Define the conversational QA chain.
+    '''
+    # This adds a 'memory' key to the input object
     loaded_memory = RunnablePassthrough.assign(
                         chat_history=RunnableLambda(memory.load_memory_variables) 
-                        | itemgetter("history"))  
+                        | itemgetter('history'))  
     logging.info('Loaded memory: '+str(loaded_memory))
     
     # Assemble main chain
     standalone_question = {
-        "standalone_question": {
-            "question": lambda x: x["question"],
-            "chat_history": lambda x: get_buffer_string(x["chat_history"])}
+        'standalone_question': {
+            'question': lambda x: x['question'],
+            'chat_history': lambda x: get_buffer_string(x['chat_history'])}
         | CONDENSE_QUESTION_PROMPT
         | llm
         | StrOutputParser()}
     logging.info('Condense inputs as a standalong question: '+str(standalone_question))
     retrieved_documents = {
-        "source_documents": itemgetter("standalone_question") 
+        'source_documents': itemgetter('standalone_question') 
                             | vectorstore.as_retriever(search_type=search_type,
                                                        search_kwargs=search_kwargs),
-        "question": lambda x: x["standalone_question"]}
+        'question': lambda x: x['standalone_question']}
     logging.info('Retrieved documents: '+str(retrieved_documents))
     # Now we construct the inputs for the final prompt
     final_inputs = {
-        "context": lambda x: _combine_documents(x["docs"]),
-        "question": itemgetter("question")}
+        'context': lambda x: _combine_documents(x['source_documents']),
+        'question': itemgetter('question')}
     logging.info('Combined documents: '+str(final_inputs))
     # And finally, we do the part that returns the answers
     answer = {
-        "answer": final_inputs 
+        'answer': final_inputs 
                     | QA_PROMPT 
                     | llm,
-        "docs": itemgetter("docs")}
+        'references': itemgetter('source_documents')}
     conversational_qa_chain = loaded_memory | standalone_question | retrieved_documents | answer
     logging.info('Conversational QA chain: '+str(conversational_qa_chain))
     return conversational_qa_chain
@@ -217,14 +230,17 @@ def _process_retriever_args(filter_arg,
                             search_type,
                             k,
                             fetch_k):
+    '''
+    Process arguments for retriever.
+    '''
     # Implement filter
     if filter_arg:
-        filter_list = list(set(item["source"] for item in sources[-1]))
+        filter_list = list(set(item['source'] for item in sources[-1]))
         filter_items=[]
         for item in filter_list:
-            filter_item={"source": item}
+            filter_item={'source': item}
             filter_items.append(filter_item)
-        filter={"$or":filter_items}
+        filter={'$or':filter_items}
     else:
         filter=None
 

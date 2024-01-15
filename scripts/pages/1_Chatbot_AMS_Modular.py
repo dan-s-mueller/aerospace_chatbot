@@ -136,18 +136,10 @@ if populate:
                                               search_type=sb['model_options']['search_type'],
                                               filter_arg=filter_toggle)
                     logging.info('QA model object updated: '+str(qa_model_obj))
-
-                    if filter_toggle:
-                        filter_list = list(set(item['source'] for item in qa_model_obj.sources[-1]))
-                        filter_items=[]
-                        for item in filter_list:
-                            filter_item={'source': item}
-                            filter_items.append(filter_item)
-                        filter={'$or':filter_items}
                 
                 st.write('Searching vector database, generating prompt...')
                 qa_model_obj.query_docs(prompt)
-                ai_response=qa_model_obj.result['answer']
+                ai_response=qa_model_obj.result['answer'].content
                 message_placeholder.markdown(ai_response)
                 t_delta=time.time() - t_start
                 status.update(label='Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)

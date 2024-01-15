@@ -149,16 +149,21 @@ def load_docs(index_type,
         elif index_type=="ChromaDB":
             # Upsert docs. Defaults to putting this in the ../db directory
             logging.info(f"Creating new index {index_name}.")
-            index = chromadb.PersistentClient(path=f'../db/{index_name}')
-            vectorstore = Chroma(index_name,
-                                 embeddings_model,
-                                 persist_directory=f'../db/{index_name}')
+            # index = chromadb.PersistentClient(path=f'../db/{index_name}')
+            vectorstore = Chroma(persist_directory=f'../db/chroma/{index_name}',
+                                 embedding_function=embeddings_model)
             logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
             vectorstore = batch_upsert(index_type,
                                        vectorstore,
                                        docs_out,
                                        batch_size=batch_size)
             logging.info("Documents upserted to f{index_name}.")
+            # Test query
+            test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
+            logging.info('Test query: '+str(test_query))
+            if not test_query:
+                raise ValueError("Chroma vector database is not configured properly. Test query failed.")       
+
         elif index_type=="RAGatouille":
             raise NotImplementedError
     # Return vectorstore or docs

@@ -45,7 +45,7 @@ def load_sidebar(config_file,
         logging.info('Loaded: '+config_file)
     with open(index_data_file, 'r') as f:
         index_data = json.load(f)
-        logging.info('Loaded: '+config_file)
+        logging.info('Loaded: '+index_data_file)
 
     if vector_databases:
         # Vector databases
