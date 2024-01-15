@@ -45,7 +45,7 @@ def load_sidebar(config_file,
         logging.info('Loaded: '+config_file)
     with open(index_data_file, 'r') as f:
         index_data = json.load(f)
-        logging.info('Loaded: '+config_file)
+        logging.info('Loaded: '+index_data_file)
 
     if vector_databases:
         # Vector databases
@@ -105,6 +105,7 @@ def load_sidebar(config_file,
     if secret_keys:
         # Add a section for secret keys
         st.sidebar.title('Secret keys')
+        st.sidebar.markdown('If .env file is in directory, will use that first.')
         sb_out['keys']={}
         if sb_out['llm_source']=='OpenAI' or sb_out['embedding_type']=='Openai':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
