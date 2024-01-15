@@ -15,7 +15,7 @@ from langchain_community.vectorstores import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
 from langchain_community.document_loaders import PyPDFLoader
@@ -149,8 +149,9 @@ def load_docs(index_type,
         elif index_type=="ChromaDB":
             # Upsert docs. Defaults to putting this in the ../db directory
             logging.info(f"Creating new index {index_name}.")
-            # index = chromadb.PersistentClient(path=f'../db/{index_name}')
-            vectorstore = Chroma(persist_directory=f'../db/chroma/{index_name}',
+            persistent_client = chromadb.PersistentClient(path='../db/chromadb')            
+            vectorstore = Chroma(client=persistent_client,
+                                 collection_name=index_name,
                                  embedding_function=embeddings_model)
             logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
             vectorstore = batch_upsert(index_type,

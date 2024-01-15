@@ -23,6 +23,7 @@ langchain = "^0.1.0"
 tenacity = "^8.2.3"
 openai = "^1.7.2"
 langchain-openai = "^0.0.2.post1"
+sentence-transformers = "^2.2.2"
 
 
 [build-system]

@@ -5,6 +5,7 @@ import logging
 from dotenv import load_dotenv, find_dotenv
 
 import pinecone
+import chromadb
 
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
@@ -24,7 +25,7 @@ from langchain.chains.llm import LLMChain
 from operator import itemgetter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
-from langchain.schema.runnable import RunnableMap, RunnableParallel
+from langchain.schema.runnable import RunnableMap, RunnableParallel, RunnableConfig
 from langchain.schema import format_document
 from langchain.prompts.prompt import PromptTemplate
 from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
@@ -86,7 +87,9 @@ class QA_Model:
         elif index_type=='ChromaDB':
             logging.info('Chat chroma index name: '+str(index_name))
             logging.info('Chat embedding model: '+str(embeddings_model))
-            self.vectorstore = Chroma(persist_directory=f'../db/{index_name}',
+            persistent_client = chromadb.PersistentClient(path='../db/chromadb')            
+            self.vectorstore = Chroma(client=persistent_client,
+                                      collection_name=index_name,
                                       embedding_function=embeddings_model)
             logging.info('Chat vectorstore: '+str(self.vectorstore))
 
@@ -116,16 +119,7 @@ class QA_Model:
                                                       self.memory,
                                                       self.search_type,
                                                       search_kwargs)
-
-        # Usage
-        # inputs = {'question': 'where did harrison work?'}
-        # result = final_chain.invoke(inputs)
-        # result
-        # self.memory.save_context(inputs, {'answer': result['answer'].content})
-
-    def query_docs(self,query,tags=None):
-        # TODO: figure out where to put tags
-
+    def query_docs(self,query):
         self.memory.load_memory_variables({})
         logging.info('Memory content before qa result: '+str(self.memory))
 
@@ -153,24 +147,20 @@ class QA_Model:
         self.search_type=search_type
         self.fetch_k=fetch_k
         self.filter_arg=filter_arg
-
-        # Set up question generator and qa with sources
-        self.question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT,verbose=self.verbose)
-        self.doc_chain = load_qa_with_sources_chain(self.llm, chain_type=self.chain_type,prompt=QA_WSOURCES_PROMPT,verbose=self.verbose)
-
+        
         # Define retriever search parameters
         search_kwargs = _process_retriever_args(self.filter_arg,
                                                 self.sources,
                                                 self.search_type,
                                                 self.k,
                                                 self.fetch_k)
-
         # Update conversational retrieval chain
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.vectorstore,
                                                       self.memory,
                                                       self.search_type,
                                                       search_kwargs)
+        logging.info('Updated qa chain: '+str(self.conversational_qa_chain))
 
 # Internal functions
 def _combine_documents(docs, 
