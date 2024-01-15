@@ -61,6 +61,8 @@ for message in st.session_state.messages:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
 
+
+
 # Define chat
 if prompt := st.chat_input('Prompt here'):
     # User prompt
@@ -143,3 +145,9 @@ if prompt := st.chat_input('Prompt here'):
             
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
         logging.info(f'Messaging complete for {st.session_state.message_id}.')
+
+# Add reset button
+if st.button('Restart session'):
+    st.session_state.qa_model_obj = []
+    st.session_state.message_id = 0
+    st.session_state.messages = []
