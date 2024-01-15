@@ -15,7 +15,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI, ChatOpenAI
 from langchain_community.llms import HuggingFaceHub
 
 import streamlit as st
@@ -39,14 +39,14 @@ with st.expander('''What's under the hood?'''):
 filter_toggle=st.checkbox('Filter response with last received sources?')
 
 sb=setup.load_sidebar(config_file='../config/config.json',
-                        index_data_file='../config/index_data.json',
-                        vector_databases=True,
-                        embeddings=True,
-                        rag_type=True,
-                        index_name=True,
-                        llm=True,
-                        model_options=True,
-                        secret_keys=True)
+                      index_data_file='../config/index_data.json',
+                      vector_databases=True,
+                      embeddings=True,
+                      rag_type=True,
+                      index_name=True,
+                      llm=True,
+                      model_options=True,
+                      secret_keys=True)
 
 secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
 
@@ -79,10 +79,10 @@ if populate:
 
     # Define LLM
     if sb['llm_source']=='OpenAI':
-        llm = OpenAI(model_name=sb['llm_model'],
-                     temperature=sb['model_options']['temperature'],
-                     openai_api_key=secrets['OPENAI_API_KEY'],
-                     max_tokens=out_token)
+        llm = ChatOpenAI(model_name=sb['llm_model'],
+                         temperature=sb['model_options']['temperature'],
+                         openai_api_key=secrets['OPENAI_API_KEY'],
+                         max_tokens=out_token)
     elif sb['llm_source']=='Hugging Face':
         llm = HuggingFaceHub(repo_id=sb['llm_model'],
                             model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})

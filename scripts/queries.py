@@ -20,9 +20,17 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.chains.llm import LLMChain
 
-from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, QA_WSOURCES_PROMPT
+# For LCEL upgrade
+from operator import itemgetter
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain.schema.runnable import RunnableMap, RunnableParallel
+from langchain.schema import format_document
+from langchain.prompts.prompt import PromptTemplate
+from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
 
-# logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, QA_WSOURCES_PROMPT, DEFAULT_DOCUMENT_PROMPT
+
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
 VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
@@ -30,6 +38,7 @@ PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')
 PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
+# Class and functions
 class QA_Model:
     def __init__(self, 
                  index_type,
@@ -74,109 +83,154 @@ class QA_Model:
             logging.info('Chat vectorstore: '+str(self.vectorstore))
         elif index_type=='RAGatouille':
             raise NotImplementedError
-        
-        # TODO: udpdate with lcel using this https://python.langchain.com/docs/expression_language/cookbook/retrieval#with-memory-and-returning-source-documents
 
-        # Set up question generator and qa with sources
-        self.question_generator = LLMChain(llm=llm, 
-                                           prompt=CONDENSE_QUESTION_PROMPT,
-                                           verbose=verbose)
-        logging.info('Question generator: '+str(self.question_generator))
+        # Define retriever search parameters
+        search_kwargs = _process_retriever_args(self.filter_arg,
+                                                self.sources,
+                                                self.search_type,
+                                                self.k,
+                                                self.fetch_k)
 
-        # Set up doc chain
-        self.doc_chain = load_qa_with_sources_chain(llm, chain_type=chain_type,prompt=QA_WSOURCES_PROMPT,verbose=verbose)
-        logging.info('Doc chain: '+str(self.doc_chain))
+        # Intialize memory
+        self.memory = ConversationBufferMemory(
+                        return_messages=True, output_key="answer", input_key="question")
+        logging.info('Memory: '+str(self.memory))
 
-        # Establish chat history
-        self.chat_history=ConversationBufferMemory(memory_key='chat_history',
-                                            input_key='question',
-                                            output_key='answer',
-                                            return_messages=True)
-        logging.info('Chat history: '+str(self.chat_history))
+        # Assemble main chain
+        self.conversational_qa_chain=_define_qa_chain(self.llm,
+                                                      self.vectorstore,
+                                                      self.memory,
+                                                      self.search_type,
+                                                      search_kwargs)
 
-        # Implement filter
-        if filter_arg:
-            logging.info('Filtering sources')
-            filter_list = list(set(item["source"] for item in self.sources[-1]))
-            filter_items=[]
-            for item in filter_list:
-                filter_item={"source": item}
-                filter_items.append(filter_item)
-            filter={"$or":filter_items}
-            logging.info('Filter: '+str(filter))
-        else:
-            filter=None
+        # Usage
+        # inputs = {"question": "where did harrison work?"}
+        # result = final_chain.invoke(inputs)
+        # result
+        # self.memory.save_context(inputs, {"answer": result["answer"].content})
 
-        #  Set search type
-        if search_type=='mmr':
-            search_kwargs={'k':k,'fetch_k':50,'filter':filter} # See as_retriever docs for parameters
-        else:
-            search_kwargs={'k':k,'filter':filter} # See as_retriever docs for parameters
-
-        # Set up conversational retrieval chain
-        self.qa = ConversationalRetrievalChain(
-                    retriever=self.vectorstore.as_retriever(search_type=search_type,
-                                                            search_kwargs=search_kwargs),  
-                    combine_docs_chain=self.doc_chain, 
-                    question_generator=self.question_generator,
-                    memory=self.chat_history,
-                    verbose=verbose,
-                    return_source_documents=True,
-                    return_generated_question=True,
-                    )
-        logging.info('ConversationalRetrieverChain: '+str(self.qa))   
-        
         self.sources=[]
 
     def query_docs(self,query,tags=None):
+        # TODO: figure out where to put tags
+
+        self.memory.load_memory_variables({})
+        logging.info('Memory content before qa result: '+str(self.memory.content))
+
         logging.info('Query: '+str(query))
-        self.result=self.qa({'question': query},tags=tags)
+        self.result = self.conversational_qa_chain.invoke({'question': query})
         logging.info('QA result: '+str(self.result))
+
+        self.memory.save_context({'question': query}, {"answer": self.result["answer"].content})
+        logging.info('Memory content after qa result: '+str(self.memory.content))
 
         temp_sources=[]
         for data in self.result['source_documents']:
-            temp_sources.append(data.metadata)
-            logging.info('Source: '+str(data.metadata))
+            temp_sources.append(data.page_content)
+            logging.info('Source: '+str(data.page_content))
 
         self.sources.append(temp_sources)
 
-    def update_model(self,llm,
-                    k=6,
-                    search_type='similarity',
-                    fetch_k=50,
-                    verbose=None,
-                    filter_arg=False):
+    def update_model(self,
+                     llm,
+                     k=6,
+                     search_type='similarity',
+                     fetch_k=50,
+                     verbose=None,
+                     filter_arg=False):
 
         self.llm=llm
+        self.k=k
+        self.search_type=search_type
+        self.fetch_k=fetch_k
+        self.verbose=verbose
+        self.filter_arg=filter_arg
 
         # Set up question generator and qa with sources
-        self.question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT,verbose=verbose)
-        self.doc_chain = load_qa_with_sources_chain(self.llm, chain_type=self.chain_type,prompt=QA_WSOURCES_PROMPT,verbose=verbose)
+        self.question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT,verbose=self.verbose)
+        self.doc_chain = load_qa_with_sources_chain(self.llm, chain_type=self.chain_type,prompt=QA_WSOURCES_PROMPT,verbose=self.verbose)
 
-        # Implement filter
-        if filter_arg:
-            print(self.sources)
-            filter_list = list(set(item["source"] for item in self.sources[-1]))
-            filter_items=[]
-            for item in filter_list:
-                filter_item={"source": item}
-                filter_items.append(filter_item)
-            filter={"$or":filter_items}
-        else:
-            filter=None
+        # Define retriever search parameters
+        search_kwargs = _process_retriever_args(self.filter_arg,
+                                                self.sources,
+                                                self.search_type,
+                                                self.k,
+                                                self.fetch_k)
 
-        if search_type=='mmr':
-            search_kwargs={'k':k,'fetch_k':fetch_k,'filter':filter} # See as_retriever docs for parameters
-        else:
-            search_kwargs={'k':k,'filter':filter} # See as_retriever docs for parameters
+        # Update conversational retrieval chain
+        self.conversational_qa_chain=_define_qa_chain(self.llm,
+                                                      self.vectorstore,
+                                                      self.memory,
+                                                      self.search_type,
+                                                      search_kwargs)
 
-        self.qa = ConversationalRetrievalChain(
-            retriever=self.vectorstore.as_retriever(search_type=search_type,
-                                                            search_kwargs=search_kwargs),
-            combine_docs_chain=self.doc_chain, 
-            question_generator=self.question_generator,
-            memory=self.chat_history,
-            verbose=verbose,
-            return_source_documents=True,
-            return_generated_question=True,
-            )
+# Internal functions
+def _combine_documents(docs, 
+                        document_prompt=DEFAULT_DOCUMENT_PROMPT, 
+                        document_separator="\n\n"):
+    # TODO: this would be where stuff, map reduce, etc. would go
+    doc_strings = [format_document(doc, document_prompt) for doc in docs]
+    return document_separator.join(doc_strings)
+def _define_qa_chain(llm,
+                     vectorstore,
+                     memory,
+                     search_type,
+                     search_kwargs):
+    # This adds a "memory" key to the input object
+    loaded_memory = RunnablePassthrough.assign(
+                        chat_history=RunnableLambda(memory.load_memory_variables) 
+                        | itemgetter("history"))  
+    logging.info('Loaded memory: '+str(loaded_memory))
+    
+    # Assemble main chain
+    standalone_question = {
+        "standalone_question": {
+            "question": lambda x: x["question"],
+            "chat_history": lambda x: get_buffer_string(x["chat_history"])}
+        | CONDENSE_QUESTION_PROMPT
+        | llm
+        | StrOutputParser()}
+    logging.info('Condense inputs as a standalong question: '+str(standalone_question))
+    retrieved_documents = {
+        "source_documents": itemgetter("standalone_question") 
+                            | vectorstore.as_retriever(search_type=search_type,
+                                                       search_kwargs=search_kwargs),
+        "question": lambda x: x["standalone_question"]}
+    logging.info('Retrieved documents: '+str(retrieved_documents))
+    # Now we construct the inputs for the final prompt
+    final_inputs = {
+        "context": lambda x: _combine_documents(x["docs"]),
+        "question": itemgetter("question")}
+    logging.info('Combined documents: '+str(final_inputs))
+    # And finally, we do the part that returns the answers
+    answer = {
+        "answer": final_inputs 
+                    | QA_PROMPT 
+                    | llm,
+        "docs": itemgetter("docs")}
+    conversational_qa_chain = loaded_memory | standalone_question | retrieved_documents | answer
+    logging.info('Conversational QA chain: '+str(conversational_qa_chain))
+    return conversational_qa_chain
+def _process_retriever_args(filter_arg,
+                            sources,
+                            search_type,
+                            k,
+                            fetch_k):
+    # Implement filter
+    if filter_arg:
+        filter_list = list(set(item["source"] for item in sources[-1]))
+        filter_items=[]
+        for item in filter_list:
+            filter_item={"source": item}
+            filter_items.append(filter_item)
+        filter={"$or":filter_items}
+    else:
+        filter=None
+
+    # Impement filtering and number of documents to return
+    if search_type=='mmr':
+        search_kwargs={'k':k,'fetch_k':fetch_k,'filter':filter} # See as_retriever docs for parameters
+    else:
+        search_kwargs={'k':k,'filter':filter} # See as_retriever docs for parameters
+    
+    return search_kwargs
