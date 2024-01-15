@@ -115,11 +115,15 @@ if prompt := st.chat_input('Prompt here'):
                 logging.info('QA model object set: '+str(st.session_state.qa_model_obj))
             if st.session_state.message_id>1:
                 logging.info('Updating model with sidebar settings...')
-                # Define LLM parameters and qa model object
-                llm = OpenAI(model_name=sb['llm_model'],
-                            temperature=sb['model_options']['temperature'],
-                            openai_api_key=secrets['OPENAI_API_KEY'],
-                            max_tokens=out_token)
+                # Update LLM
+                if sb['llm_source']=='OpenAI':
+                    llm = ChatOpenAI(model_name=sb['llm_model'],
+                                    temperature=sb['model_options']['temperature'],
+                                    openai_api_key=secrets['OPENAI_API_KEY'],
+                                    max_tokens=out_token)
+                elif sb['llm_source']=='Hugging Face':
+                    llm = HuggingFaceHub(repo_id=sb['llm_model'],
+                                        model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
                 logging.info('LLM model set: '+str(llm))
 
                 # qa_model_obj=st.session_state['qa_model_obj']
@@ -130,6 +134,7 @@ if prompt := st.chat_input('Prompt here'):
                 logging.info('QA model object updated: '+str(st.session_state.qa_model_obj))
             
             st.write('Searching vector database, generating prompt...')
+            logging.info('Searching vector database, generating prompt...')
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.result['answer'].content
             message_placeholder.markdown(ai_response)

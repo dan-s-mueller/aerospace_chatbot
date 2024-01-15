@@ -4,6 +4,7 @@ import logging
 
 from dotenv import load_dotenv, find_dotenv
 
+import openai
 import pinecone
 import chromadb
 
@@ -119,7 +120,7 @@ class QA_Model:
                                                       self.memory,
                                                       self.search_type,
                                                       search_kwargs)
-    def query_docs(self,query):
+    def query_docs(self,query):        
         self.memory.load_memory_variables({})
         logging.info('Memory content before qa result: '+str(self.memory))
 
