@@ -21,9 +21,10 @@ from langchain_community.embeddings import VoyageEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document as lancghain_Document
 
+from ragatouille import RAGPretrainedModel
+
 from dotenv import load_dotenv,find_dotenv,dotenv_values
 load_dotenv(find_dotenv(),override=True)
-# logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
@@ -93,7 +94,7 @@ def chunk_docs(docs,
     return docs_out
 def load_docs(index_type,
               docs,
-              embeddings_model,
+              query_model,
               index_name=None,
               chunk_method='tiktoken_recursive',
               chunk_size=5000,
@@ -134,14 +135,14 @@ def load_docs(index_type,
                 pinecone.describe_index(index_name)
             except:
                 logging.info(f"Index {index_name} does not exist. Creating new index.")
-                logging.info('Size of embedding used: '+str(embedding_size(embeddings_model)))  # TODO: set this to be backed out of the embedding size
-                pinecone.create_index(index_name,dimension=embedding_size(embeddings_model))
+                logging.info('Size of embedding used: '+str(embedding_size(query_model)))  # TODO: set this to be backed out of the embedding size
+                pinecone.create_index(index_name,dimension=embedding_size(query_model))
                 logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
                 pass
             else:
                 logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
             index = pinecone.Index(index_name)
-            vectorstore = Pinecone(index, embeddings_model, "page_content") # Set the vector store to calculate embeddings on page_content
+            vectorstore = Pinecone(index, query_model, "page_content") # Set the vector store to calculate embeddings on page_content
             vectorstore = batch_upsert(index_type,
                                        vectorstore,
                                        docs_out,
@@ -152,7 +153,7 @@ def load_docs(index_type,
             persistent_client = chromadb.PersistentClient(path='../db/chromadb')            
             vectorstore = Chroma(client=persistent_client,
                                  collection_name=index_name,
-                                 embedding_function=embeddings_model)
+                                 embedding_function=query_model)
             logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
             vectorstore = batch_upsert(index_type,
                                        vectorstore,
@@ -166,12 +167,102 @@ def load_docs(index_type,
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")       
 
         elif index_type=="RAGatouille":
-            raise NotImplementedError
-    # Return vectorstore or docs
-    if index_name:
-        return vectorstore
-    else:
-        return docs_out
+            logging.info(f'Setting up RAGatouille model {query_model}')
+            
+            def load_docs(index_type,
+                          docs,
+                          query_model,
+                          index_name=None,
+                          chunk_method='tiktoken_recursive',
+                          chunk_size=5000,
+                          chunk_overlap=0,
+                          clear=False,
+                          use_json=False,
+                          file=None,
+                          batch_size=50):
+                """
+                Loads PDF documents. If index_name is blank, it will return a list of the data (texts). If it is a name of a pinecone storage, it will return the vector_store.    
+                """
+                # Chunk docs
+                docs_out=chunk_docs(docs,
+                                    chunk_method=chunk_method,
+                                    file=file,
+                                    chunk_size=chunk_size,
+                                    chunk_overlap=chunk_overlap,
+                                    use_json=use_json)
+                # Initialize client
+                if index_name:
+                    if index_type=="Pinecone":
+                        # Import and initialize Pinecone client
+                        pinecone.init(
+                            api_key=PINECONE_API_KEY,
+                            environment=PINECONE_ENVIRONMENT
+                        )
+                        # Find the existing index, clear for new start
+                        if clear:
+                            try:
+                                pinecone.describe_index(index_name)
+                            except:
+                                raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+                            index=pinecone.Index(index_name)
+                            index.delete(delete_all=True) # Clear the index first, then upload
+                            logging.info('Cleared database '+index_name)
+                        # Upsert docs
+                        try:
+                            pinecone.describe_index(index_name)
+                        except:
+                            logging.info(f"Index {index_name} does not exist. Creating new index.")
+                            logging.info('Size of embedding used: '+str(embedding_size(query_model)))  # TODO: set this to be backed out of the embedding size
+                            pinecone.create_index(index_name,dimension=embedding_size(query_model))
+                            logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
+                            pass
+                        else:
+                            logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
+                        index = pinecone.Index(index_name)
+                        vectorstore = Pinecone(index, query_model, "page_content") # Set the vector store to calculate embeddings on page_content
+                        vectorstore = batch_upsert(index_type,
+                                                   vectorstore,
+                                                   docs_out,
+                                                   batch_size=batch_size)
+                    elif index_type=="ChromaDB":
+                        # Upsert docs. Defaults to putting this in the ../db directory
+                        logging.info(f"Creating new index {index_name}.")
+                        persistent_client = chromadb.PersistentClient(path='../db/chromadb')            
+                        vectorstore = Chroma(client=persistent_client,
+                                             collection_name=index_name,
+                                             embedding_function=query_model)
+                        logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
+                        vectorstore = batch_upsert(index_type,
+                                                   vectorstore,
+                                                   docs_out,
+                                                   batch_size=batch_size)
+                        logging.info("Documents upserted to f{index_name}.")
+                        # Test query
+                        test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
+                        logging.info('Test query: '+str(test_query))
+                        if not test_query:
+                            raise ValueError("Chroma vector database is not configured properly. Test query failed.")       
+
+                    elif index_type=="RAGatouille":
+                        logging.info(f'Setting up RAGatouille model {query_model}')
+                        vectorstore = RAGPretrainedModel.from_pretrained(query_model)
+                        logging.info('RAGatouille model set: '+str(vectorstore))
+
+                        docs_out_content = [doc.page_content for doc in docs_out]
+                        vectorstore.index(
+                            collection=docs_out_content,
+                            index_name=index_name,
+                            max_document_length=chunk_size,
+                            overwrite_index=True,
+                            split_documents=True,
+                        )
+                        logging.info('RAGatouille index created: '+str(vectorstore))
+
+                # Return vectorstore or docs
+                if index_name:
+                    return vectorstore
+                else:
+                    return docs_out
 def delete_index(index_type,index_name):
     """
     Deletes an existing Pinecone index with the given index_name.

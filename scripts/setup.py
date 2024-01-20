@@ -1,27 +1,8 @@
-
-import data_import
-
 import os
-import time
 import logging
 import json
-import glob
 
-import pinecone
 import openai
-
-from langchain_community.vectorstores import Pinecone
-from langchain_community.vectorstores import Chroma
-
-# from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.embeddings import VoyageEmbeddings
-
-from langchain_community.llms import OpenAI
-from langchain_community.llms import HuggingFaceHub
-
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 import streamlit as st
 
@@ -57,15 +38,15 @@ def load_sidebar(config_file,
         # Embeddings
         st.sidebar.title('Embeddings')
         if sb_out['index_type']=='RAGatouille':    # Default to selecting hugging face model for RAGatouille, otherwise select alternates
-           sb_out['embedding_type']=st.sidebar.selectbox('Hugging face rag models', databases[sb_out['index_type']]['hf_rag_models'], index=0)
+           sb_out['query_model']=st.sidebar.selectbox('Hugging face rag models', databases[sb_out['index_type']]['hf_rag_models'], index=0)
         else:
-            sb_out['embedding_type']=st.sidebar.selectbox('Embedding models', databases[sb_out['index_type']]['embedding_models'], index=0)
+            sb_out['query_model']=st.sidebar.selectbox('Embedding models', databases[sb_out['index_type']]['embedding_models'], index=0)
 
-        if sb_out['embedding_type']=='Openai':
+        if sb_out['query_model']=='Openai':
             sb_out['embedding_name']='text-embedding-ada-002'
-        elif sb_out['embedding_type']=='Voyage':
+        elif sb_out['query_model']=='Voyage':
             sb_out['embedding_name']='voyage-02'
-        logging.info('Embedding type: '+sb_out['embedding_type'])
+        logging.info('Query type: '+sb_out['query_model'])
         if 'embedding_name' in locals() or 'embedding_name' in globals():
             logging.info('Embedding name: '+sb_out['embedding_name'])
     if rag_type:
@@ -78,7 +59,7 @@ def load_sidebar(config_file,
     if index_name:
         # Index Name 
         st.sidebar.title('Index Name')  
-        sb_out['index_name']=index_data[sb_out['index_type']][sb_out['embedding_type']]
+        sb_out['index_name']=index_data[sb_out['index_type']][sb_out['query_model']]
         st.sidebar.markdown('Index name: '+sb_out['index_name'])
         logging.info('Index name: '+sb_out['index_name'])
     if llm:
@@ -107,13 +88,13 @@ def load_sidebar(config_file,
         st.sidebar.title('Secret keys')
         st.sidebar.markdown('If .env file is in directory, will use that first.')
         sb_out['keys']={}
-        if sb_out['llm_source']=='OpenAI' or sb_out['embedding_type']=='Openai':
+        if sb_out['llm_source']=='OpenAI' or sb_out['query_type']=='Openai':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
 
         if sb_out['llm_source']=='Hugging Face':
             sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password')
 
-        if sb_out['embedding_type']=='Voyage':
+        if sb_out['query_model']=='Voyage':
             sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password')
 
         if sb_out['index_type']=='Pinecone':

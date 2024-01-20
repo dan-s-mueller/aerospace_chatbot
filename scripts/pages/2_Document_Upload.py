@@ -3,20 +3,12 @@ import data_import, setup
 import os
 import time
 import logging
-import json
 import glob
-
-# import pinecone
-# import openai
-
-# from langchain_community.vectorstores import Pinecone
-# from langchain_community.vectorstores import Chroma
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
-from langchain_community.llms import OpenAI
-from langchain_community.llms import HuggingFaceHub
+from ragatouille import RAGPretrainedModel
 
 import streamlit as st
 
@@ -41,11 +33,18 @@ sb=setup.load_sidebar(config_file='../config/config.json',
 secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
 
 # Populate the main screen
-if sb['embedding_type']=='Openai':
-    embeddings_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
-elif sb['embedding_type']=='Voyage':
-    embeddings_model=VoyageEmbeddings(voyage_api_key=secrets['VOYAGE_API_KEY'])
-logging.info('Embedding model set: '+str(embeddings_model))
+logging.info(f'index_type test, {sb["index_type"]}')
+
+if sb["index_type"]=='RAGatouille':
+    logging.info('Set hugging face model for queries.')
+    query_model=sb['query_model']
+elif sb['query_model']=='Openai' or 'Voyage':
+    logging.info('Set embeddings model for queries.')
+    if sb['query_model']=='Openai':
+        query_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
+    elif sb['query_model']=='Voyage':
+        query_model=VoyageEmbeddings(voyage_api_key=secrets['VOYAGE_API_KEY'])
+logging.info('Query model set: '+str(query_model))
 
 # Find docs
 index_name_md=st.markdown('Enter a directory relative to the current directory, or an absolute path.')
@@ -62,9 +61,11 @@ with st.expander("Options"):
     use_json = st.checkbox('Use existing jsonl, if available (will ignore chunk method, size, and overlap)?', value=True)
     clear_database = st.checkbox('Clear existing database?')
     chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
-    if sb['embedding_type']=='Openai':
+    if sb['query_model']=='Openai' or 'ChromaDB':
         # OpenAI will time out if the batch size is too large
         batch_size=st.number_input('Batch size for upsert', min_value=1, step=1, value=100)
+    else:
+        batch_size=None
     if chunk_method=='tiktoken_recursive':
         chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=5000)
         chunk_overlap=st.number_input('Chunk overlap', min_value=0, step=1, value=0)
@@ -76,7 +77,7 @@ if st.button('Load docs into vector database'):
     start_time = time.time()  # Start the timer
     data_import.load_docs(sb['index_type'],
                           docs,
-                          embeddings_model,
+                          query_model=query_model,
                           index_name=sb['index_name'],
                           chunk_size=chunk_size,
                           chunk_overlap=chunk_overlap,
