@@ -61,8 +61,6 @@ for message in st.session_state.messages:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
 
-
-
 # Define chat
 if prompt := st.chat_input('Prompt here'):
     # User prompt
@@ -128,7 +126,6 @@ if prompt := st.chat_input('Prompt here'):
                                         model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
                 logging.info('LLM model set: '+str(llm))
 
-                # qa_model_obj=st.session_state['qa_model_obj']
                 st.session_state.qa_model_obj.update_model(llm,
                                                            k=sb['model_options']['k'],
                                                            search_type=sb['model_options']['search_type'],

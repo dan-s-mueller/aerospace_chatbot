@@ -6,14 +6,13 @@ import logging
 import json
 import glob
 
-import pinecone
-import openai
+# import pinecone
+# import openai
 
-from langchain_community.vectorstores import Pinecone
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Pinecone
+# from langchain_community.vectorstores import Chroma
 
-# from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
 from langchain_community.llms import OpenAI

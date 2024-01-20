@@ -191,7 +191,13 @@ def delete_index(index_type,index_name):
             pinecone.delete_index(index_name)
             logging.info(f"Index {index_name} deleted.")
     elif index_type=="ChromaDB":
-        raise NotImplementedError
+        # Delete existing collection
+        logging.info(f"Deleting index {index_name}.")
+        persistent_client = chromadb.PersistentClient(path='../db/chromadb')  
+        persistent_client.delete_collection(name=index_name)  
+        logging.info("Index deleted.")
+    elif index_type=="RAGatouille":
+            raise NotImplementedError
 def batch_upsert(index_type,vectorstore,docs_out,batch_size=50):
     # Batch insert the chunks into the vector store
     for i in range(0, len(docs_out), batch_size):

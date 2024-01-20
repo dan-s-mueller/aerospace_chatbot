@@ -11,27 +11,19 @@ import chromadb
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
 
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import VoyageEmbeddings
-
 from langchain_openai import OpenAI, ChatOpenAI
 from langchain_community.llms import HuggingFaceHub
 
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
-from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain.chains.llm import LLMChain
 
-# For LCEL upgrade
 from operator import itemgetter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
-from langchain.schema.runnable import RunnableMap, RunnableParallel, RunnableConfig
 from langchain.schema import format_document
-from langchain.prompts.prompt import PromptTemplate
-from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
+from langchain_core.messages import get_buffer_string
 
-from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, QA_WSOURCES_PROMPT, DEFAULT_DOCUMENT_PROMPT
+from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT
 
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
