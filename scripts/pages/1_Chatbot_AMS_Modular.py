@@ -17,6 +17,8 @@ from langchain_community.embeddings import VoyageEmbeddings
 from langchain_openai import OpenAI, ChatOpenAI
 from langchain_community.llms import HuggingFaceHub
 
+from ragatouille import RAGPretrainedModel
+
 import streamlit as st
 
 # Set up the page, enable logging
@@ -87,11 +89,13 @@ if prompt := st.chat_input('Prompt here'):
             
             if st.session_state.message_id==1:
                 # Define embeddings
-                if sb['embedding_type']=='Openai':
-                    embeddings_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
-                elif sb['embedding_type']=='Voyage':
-                    embeddings_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
-                logging.info('Embedding model set: '+str(embeddings_model))
+                if sb['query_model']=='Openai':
+                    query_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
+                elif sb['query_model']=='Voyage':
+                    query_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
+                elif sb['index_type']=='RAGatouille':
+                    query_model=RAGPretrainedModel.from_index('../db/.ragatouille/colbert/indexes/'+sb['index_name'])
+                logging.info('Query model set: '+str(query_model))
 
                 # Define LLM
                 if sb['llm_source']=='OpenAI':
@@ -107,7 +111,7 @@ if prompt := st.chat_input('Prompt here'):
                     # Initialize QA model object
                 st.session_state.qa_model_obj=queries.QA_Model(sb['index_type'],
                                                                sb['index_name'],
-                                                               embeddings_model,
+                                                               query_model,
                                                                llm,
                                                                k=sb['model_options']['k'],
                                                                search_type=sb['model_options']['search_type'],

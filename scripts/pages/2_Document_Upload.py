@@ -59,6 +59,10 @@ logging.info('Docs: '+str(docs))
 # Add an expandable box for options
 with st.expander("Options"):
     use_json = st.checkbox('Use existing jsonl, if available (will ignore chunk method, size, and overlap)?', value=True)
+    if use_json:
+        json_file=st.text_input('Jsonl file',data_folder+'ams_data.jsonl')
+    else:
+        json_file=None
     clear_database = st.checkbox('Clear existing database?')
     chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
     if sb['query_model']=='Openai' or 'ChromaDB':
@@ -83,7 +87,7 @@ if st.button('Load docs into vector database'):
                           chunk_overlap=chunk_overlap,
                           use_json=use_json,
                           clear=clear_database,
-                          file=data_folder+'ams_data.jsonl',
+                          file=json_file,
                           batch_size=batch_size)
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 

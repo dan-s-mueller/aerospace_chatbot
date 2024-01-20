@@ -3,6 +3,7 @@
 *.log
 *.pdf
 *.DS_Store
+.ragatouille/
 .venv/
 db/
 scripts/__pycache__

@@ -37,7 +37,7 @@ class QA_Model:
     def __init__(self, 
                  index_type,
                  index_name,
-                 embeddings_model,
+                 query_model,
                  llm,
                  k=6,
                  search_type='similarity',
@@ -48,7 +48,7 @@ class QA_Model:
         
         self.index_type=index_type
         self.index_name=index_name
-        self.embeddings_model=embeddings_model
+        self.query_model=query_model
         self.llm=llm
         self.k=k
         self.search_type=search_type
@@ -67,9 +67,9 @@ class QA_Model:
                 environment=PINECONE_ENVIRONMENT
             )
             logging.info('Chat pinecone index name: '+str(index_name))
-            logging.info('Chat embedding model: '+str(embeddings_model))
+            logging.info('Chat query model: '+str(query_model))
             index = pinecone.Index(index_name)
-            self.vectorstore = Pinecone(index,embeddings_model,'page_content')
+            self.vectorstore = Pinecone(index,query_model,'page_content')
             logging.info('Chat vectorstore: '+str(self.vectorstore))
 
             # Test query
@@ -79,11 +79,11 @@ class QA_Model:
                 raise ValueError("Pinecone vector database is not configured properly. Test query failed.")
         elif index_type=='ChromaDB':
             logging.info('Chat chroma index name: '+str(index_name))
-            logging.info('Chat embedding model: '+str(embeddings_model))
+            logging.info('Chat query model: '+str(query_model))
             persistent_client = chromadb.PersistentClient(path='../db/chromadb')            
             self.vectorstore = Chroma(client=persistent_client,
                                       collection_name=index_name,
-                                      embedding_function=embeddings_model)
+                                      embedding_function=query_model)
             logging.info('Chat vectorstore: '+str(self.vectorstore))
 
             # Test query
@@ -92,7 +92,15 @@ class QA_Model:
             if not test_query:
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")
         elif index_type=='RAGatouille':
-            raise NotImplementedError
+            # Easy because the index is picked up directly.
+            self.vectorstore=query_model
+            logging.info('Chat query model:'+str(query_model))
+
+             # Test query
+            test_query = self.vectorstore.search('What are examples of aerosapce adhesives to avoid?')
+            logging.info('Test query: '+str(test_query))
+            if not test_query:
+                raise ValueError("Chroma vector database is not configured properly. Test query failed.")
 
         # Define retriever search parameters
         search_kwargs = _process_retriever_args(self.filter_arg,
