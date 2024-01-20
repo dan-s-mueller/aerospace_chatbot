@@ -60,6 +60,13 @@ class QA_Model:
 
         load_dotenv(find_dotenv(),override=True)
 
+        # Define retriever search parameters
+        search_kwargs = _process_retriever_args(self.filter_arg,
+                                                self.sources,
+                                                self.search_type,
+                                                self.k,
+                                                self.fetch_k)
+
         # Read in from the vector database
         if index_type=='Pinecone':
             pinecone.init(
@@ -77,6 +84,10 @@ class QA_Model:
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Pinecone vector database is not configured properly. Test query failed.")
+            
+            self.retriever=self.vectorstore.as_retriever(search_type=search_type,
+                                                         search_kwargs=search_kwargs)
+            logging.info('Chat retriever: '+str(self.retriever))
         elif index_type=='ChromaDB':
             logging.info('Chat chroma index name: '+str(index_name))
             logging.info('Chat query model: '+str(query_model))
@@ -91,6 +102,10 @@ class QA_Model:
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")
+            
+            self.retriever=self.vectorstore.as_retriever(search_type=search_type,
+                                                         search_kwargs=search_kwargs)
+            logging.info('Chat retriever: '+str(self.retriever))
         elif index_type=='RAGatouille':
             # Easy because the index is picked up directly.
             self.vectorstore=query_model
@@ -101,13 +116,9 @@ class QA_Model:
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")
-
-        # Define retriever search parameters
-        search_kwargs = _process_retriever_args(self.filter_arg,
-                                                self.sources,
-                                                self.search_type,
-                                                self.k,
-                                                self.fetch_k)
+            
+            self.retriever=self.vectorstore.as_langchain_retriever()
+            logging.info('Chat retriever: '+str(self.retriever))
 
         # Intialize memory
         self.memory = ConversationBufferMemory(
@@ -116,7 +127,7 @@ class QA_Model:
 
         # Assemble main chain
         self.conversational_qa_chain=_define_qa_chain(self.llm,
-                                                      self.vectorstore,
+                                                      self.retriever,
                                                       self.memory,
                                                       self.search_type,
                                                       search_kwargs)
@@ -157,7 +168,7 @@ class QA_Model:
                                                 self.fetch_k)
         # Update conversational retrieval chain
         self.conversational_qa_chain=_define_qa_chain(self.llm,
-                                                      self.vectorstore,
+                                                      self.retriever,
                                                       self.memory,
                                                       self.search_type,
                                                       search_kwargs)
@@ -174,7 +185,7 @@ def _combine_documents(docs,
     doc_strings = [format_document(doc, document_prompt) for doc in docs]
     return document_separator.join(doc_strings)
 def _define_qa_chain(llm,
-                     vectorstore,
+                     retriever,
                      memory,
                      search_type,
                      search_kwargs):
@@ -198,8 +209,7 @@ def _define_qa_chain(llm,
     logging.info('Condense inputs as a standalong question: '+str(standalone_question))
     retrieved_documents = {
         'source_documents': itemgetter('standalone_question') 
-                            | vectorstore.as_retriever(search_type=search_type,
-                                                       search_kwargs=search_kwargs),
+                            | retriever,
         'question': lambda x: x['standalone_question']}
     logging.info('Retrieved documents: '+str(retrieved_documents))
     # Now we construct the inputs for the final prompt
