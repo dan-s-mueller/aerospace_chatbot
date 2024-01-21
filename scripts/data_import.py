@@ -183,6 +183,10 @@ def load_docs(index_type,
             )
 
             # Move the directory to the db folder
+            ragatouille_path = os.path.join(db_path, '.ragatouille')
+            if os.path.exists(ragatouille_path):
+                shutil.rmtree(ragatouille_path)
+                logging.info(f"RAGatouille index deleted from {ragatouille_path}")
             shutil.move('./.ragatouille', db_path)
             logging.info(f"RAGatouille index created in {db_path}:"+str(vectorstore))
 
