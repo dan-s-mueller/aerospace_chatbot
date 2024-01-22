@@ -9,3 +9,4 @@ QA_GENERATE_PROMPT=hub.pull("dmueller/generate_qa_prompt")
 
 # Prompts defined here only
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
+TEST_QUERY_PROMPT='What are examples of adhesives to use when potting motors for launch vehicle or spacecraft mechanisms?'

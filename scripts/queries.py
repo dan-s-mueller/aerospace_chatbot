@@ -23,7 +23,7 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain.schema import format_document
 from langchain_core.messages import get_buffer_string
 
-from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT
+from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT, TEST_QUERY_PROMPT
 
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
@@ -80,10 +80,12 @@ class QA_Model:
             logging.info('Chat vectorstore: '+str(self.vectorstore))
 
             # Test query
-            test_query = self.vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
+            test_query = self.vectorstore.similarity_search(TEST_QUERY_PROMPT)
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Pinecone vector database is not configured properly. Test query failed.")
+            else:
+                logging.info('Test query succeeded!')
             
             self.retriever=self.vectorstore.as_retriever(search_type=search_type,
                                                          search_kwargs=search_kwargs)
@@ -98,10 +100,12 @@ class QA_Model:
             logging.info('Chat vectorstore: '+str(self.vectorstore))
 
             # Test query
-            test_query = self.vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
+            test_query = self.vectorstore.similarity_search(TEST_QUERY_PROMPT)
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")
+            else:
+                logging.info('Test query succeeded!')
             
             self.retriever=self.vectorstore.as_retriever(search_type=search_type,
                                                          search_kwargs=search_kwargs)
@@ -112,10 +116,12 @@ class QA_Model:
             logging.info('Chat query model:'+str(query_model))
 
              # Test query
-            test_query = self.vectorstore.search('What are examples of aerosapce adhesives to avoid?')
+            test_query = self.vectorstore.search(TEST_QUERY_PROMPT)
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")
+            else:
+                logging.info('Test query succeeded!')
             
             self.retriever=self.vectorstore.as_langchain_retriever()
             logging.info('Chat retriever: '+str(self.retriever))
