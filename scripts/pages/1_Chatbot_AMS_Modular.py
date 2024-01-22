@@ -22,7 +22,7 @@ from ragatouille import RAGPretrainedModel
 import streamlit as st
 
 # Set up the page, enable logging
-from dotenv import load_dotenv,find_dotenv,dotenv_values
+from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app_1.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
@@ -108,13 +108,17 @@ if prompt := st.chat_input('Prompt here'):
                                         model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
                 logging.info('LLM model set: '+str(llm))
 
-                    # Initialize QA model object
+                # Initialize QA model object
+                if 'search_type' in sb['model_options']: 
+                    search_type=sb['model_options']['search_type']
+                else:
+                    search_type=None
                 st.session_state.qa_model_obj=queries.QA_Model(sb['index_type'],
                                                                sb['index_name'],
                                                                query_model,
                                                                llm,
                                                                k=sb['model_options']['k'],
-                                                               search_type=sb['model_options']['search_type'],
+                                                               search_type=search_type,
                                                                filter_arg=False)
                 logging.info('QA model object set: '+str(st.session_state.qa_model_obj))
             if st.session_state.message_id>1:

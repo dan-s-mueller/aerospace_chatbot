@@ -149,10 +149,10 @@ class QA_Model:
             extracted_metadata = []
             pattern = r'\{([^}]*)\}(?=[^{}]*$)' # Regular expression pattern to match the last curly braces
 
-            for ref in self.result['answer'].references:
-                match = re.search(pattern, ref)
+            for ref in self.result['references']:
+                match = re.search(pattern, ref.page_content)
                 if match:
-                    extracted_metadata.append(match.group(1))
+                    extracted_metadata.append("{"+match.group(1)+"}")
             self.sources = '\n'.join(extracted_metadata)
             self.result['answer'].content += '\nSources: \n'+self.sources
             logging.info('Sources: '+str(self.sources))
