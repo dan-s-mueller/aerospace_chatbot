@@ -28,7 +28,6 @@ load_dotenv(find_dotenv(),override=True)
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
 VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
-PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')
 PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
@@ -171,11 +170,11 @@ def load_docs(index_type,
             logging.info('RAGatouille model set: '+str(vectorstore))
 
             # Create an index from the vectorstore.
-            docs_out_content = [doc.page_content for doc in docs_out]
+            # docs_out_content = [doc.page_content for doc in docs_out]
             if chunk_size>500:
                 raise ValueError("RAGatouille cannot handle chunks larger than 500 tokens. Reduce token count.")
             vectorstore.index(
-                collection=docs_out_content,
+                collection=docs_out,
                 index_name=index_name,
                 max_document_length=chunk_size,
                 overwrite_index=True,
@@ -202,8 +201,7 @@ def delete_index(index_type,index_name):
     if index_type=="Pinecone":
         # Import and initialize Pinecone client
         pinecone.init(
-            api_key=PINECONE_API_KEY,
-            environment=PINECONE_ENVIRONMENT
+            api_key=PINECONE_API_KEY
         )
         try:
             pinecone.describe_index(index_name)

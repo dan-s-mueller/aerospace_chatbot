@@ -28,7 +28,6 @@ from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
 VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
-PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')
 PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
@@ -70,8 +69,7 @@ class QA_Model:
         # Read in from the vector database
         if index_type=='Pinecone':
             pinecone.init(
-                api_key=PINECONE_API_KEY,
-                environment=PINECONE_ENVIRONMENT
+                api_key=PINECONE_API_KEY
             )
             logging.info('Chat pinecone index name: '+str(index_name))
             logging.info('Chat query model: '+str(query_model))

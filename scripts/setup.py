@@ -117,10 +117,10 @@ def set_secrets(sb):
         secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
         os.environ['VOYAGE_API_KEY'] = secrets['VOYAGE_API_KEY']
 
-    secrets['PINECONE_ENVIRONMENT'] = os.getenv('PINECONE_ENVIRONMENT')
-    if not secrets['PINECONE_ENVIRONMENT']:
-        secrets['PINECONE_ENVIRONMENT'] = sb['keys']['PINECONE_ENVIRONMENT']
-        os.environ['PINECONE_ENVIRONMENT'] = secrets['PINECONE_ENVIRONMENT']
+    # secrets['PINECONE_ENVIRONMENT'] = os.getenv('PINECONE_ENVIRONMENT')
+    # if not secrets['PINECONE_ENVIRONMENT']:
+    #     secrets['PINECONE_ENVIRONMENT'] = sb['keys']['PINECONE_ENVIRONMENT']
+    #     os.environ['PINECONE_ENVIRONMENT'] = secrets['PINECONE_ENVIRONMENT']
 
     secrets['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
     if not secrets['PINECONE_API_KEY']:
