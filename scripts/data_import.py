@@ -35,7 +35,7 @@ HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
 def chunk_docs(docs,
                chunk_method='tiktoken_recursive',
                file=None,
-               chunk_size=5000,
+               chunk_size=500,
                chunk_overlap=0,
                use_json=False):
     docs_out=[]
@@ -60,6 +60,8 @@ def chunk_docs(docs,
             logging.info(str(docs_out[-1]))
     else:
         logging.info('No jsonl found. Reading and parsing docs.')
+        logging.info('Chunk size (tokens): '+str(chunk_size))
+        logging.info('Chunk overlap (tokens): '+str(chunk_overlap))
         for doc in tqdm(docs,desc='Reading and parsing docs'):
             logging.info('Parsing: '+doc)
             loader = PyPDFLoader(doc)
@@ -79,29 +81,34 @@ def chunk_docs(docs,
                 page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
                 page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
                 # Remove non-English characters, non-numbers, non-standard punctuation, and non-math symbols
-                allowed_chars = string.ascii_letters + string.digits + string.punctuation + "∞∫≈≠≤≥∑∏π√∀∁∂∃∄∅∆∇∈∉∊∋∌∍∎∏∐∑−∓∔∕∖∗∘∙√∛∜∝∞∟∠∡∢∣∤∥∦∧∨∩∪∫∬∭∮∯∰∱∲∳∴∵∶∷∸∹∺∻∼∽∾∿≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿⊀⊁⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋⊌⊍⊎⊏⊐⊑⊒⊓⊔⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡⊢⊣⊤⊥⊦⊧⊨⊩⊪⊫⊬⊭⊮⊯⊰⊱⊲⊳⊴⊵⊶⊷⊸⊹⊺⊻⊼⊽⊾⊿⋀⋁⋂⋃⋄⋅⋆⋇⋈⋉⋊⋋⋌⋍⋎⋏⋐⋑⋒⋓⋔⋕⋖⋗⋘⋙⋚⋛⋜⋝⋞⋟⋠⋡⋢⋣⋤⋥⋦⋧⋨⋩⋪⋫⋬⋭⋮⋯⋰⋱⋲⋳⋴⋵⋶⋷⋸⋹⋺⋻⋼⋽⋾⋿"
-                page.page_content = re.sub(f"[^{re.escape(allowed_chars)}]", "", page.page_content)
+                # allowed_chars = string.ascii_letters + string.digits + string.punctuation + "∞∫≈≠≤≥∑∏π√∀∁∂∃∄∅∆∇∈∉∊∋∌∍∎∏∐∑−∓∔∕∖∗∘∙√∛∜∝∞∟∠∡∢∣∤∥∦∧∨∩∪∫∬∭∮∯∰∱∲∳∴∵∶∷∸∹∺∻∼∽∾∿≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿⊀⊁⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋⊌⊍⊎⊏⊐⊑⊒⊓⊔⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡⊢⊣⊤⊥⊦⊧⊨⊩⊪⊫⊬⊭⊮⊯⊰⊱⊲⊳⊴⊵⊶⊷⊸⊹⊺⊻⊼⊽⊾⊿⋀⋁⋂⋃⋄⋅⋆⋇⋈⋉⋊⋋⋌⋍⋎⋏⋐⋑⋒⋓⋔⋕⋖⋗⋘⋙⋚⋛⋜⋝⋞⋟⋠⋡⋢⋣⋤⋥⋦⋧⋨⋩⋪⋫⋬⋭⋮⋯⋰⋱⋲⋳⋴⋵⋶⋷⋸⋹⋺⋻⋼⋽⋾⋿"
+                # page.page_content = re.sub(f"[^{re.escape(allowed_chars)}]", "", page.page_content)
                 # Add metadata to the end of the page content, some RAG models don't have metadata.
-                page.page_content = page.page_content + str(page.metadata)
+                page.page_content += str(page.metadata)
                 doc_temp=lancghain_Document(page_content=page.page_content,
                                             source=page.metadata['source'],
                                             page=page.metadata['page'],
                                             metadata=page.metadata)
                 if has_meaningful_content(page):
                     docs_out.append(doc_temp)
-            logging.info('Parsed: '+doc)
+        logging.info('Parsed: '+doc)
+        logging.info('Sample entries:')
+        logging.info(str(docs_out[0]))
+        logging.info(str(docs_out[-1]))
         if file:
             # Write to a jsonl file, save it.
-            with jsonlines.open(file+'_'+str(chunk_size)+'_'+str(chunk_overlap), mode='w') as writer:
+            logging.info('Writing to jsonl file: '+file)
+            with jsonlines.open(file, mode='w') as writer:
                 for doc in docs_out: 
                     writer.write(doc.dict())
+            logging.info('Written: '+file)
     return docs_out
 def load_docs(index_type,
               docs,
               query_model,
               index_name=None,
               chunk_method='tiktoken_recursive',
-              chunk_size=5000,
+              chunk_size=500,
               chunk_overlap=0,
               clear=False,
               use_json=False,
@@ -176,7 +183,6 @@ def load_docs(index_type,
 
             # Create an index from the vectorstore.
             docs_out_colbert = [doc.page_content for doc in docs_out]
-            # docs_out_colbert = docs_out
             if chunk_size>500:
                 raise ValueError("RAGatouille cannot handle chunks larger than 500 tokens. Reduce token count.")
             vectorstore.index(
