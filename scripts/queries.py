@@ -1,6 +1,6 @@
 import os
-import time
 import logging
+import re
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -11,10 +11,6 @@ import chromadb
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
 
-from langchain_openai import OpenAI, ChatOpenAI
-from langchain_community.llms import HuggingFaceHub
-
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.memory import ConversationBufferMemory
 
 from operator import itemgetter
@@ -143,10 +139,24 @@ class QA_Model:
         self.result = self.conversational_qa_chain.invoke({'question': query})
         logging.info('QA result: '+str(self.result))
 
-        self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
-        self.result['answer'].content += '\nSources: \n'+self.sources
-        logging.info('Sources: '+str(self.sources))
-        logging.info('Response with sources: '+str(self.result['answer'].content))
+        if self.index_type!='RAGatouille':
+            self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
+            self.result['answer'].content += '\nSources: \n'+self.sources
+            logging.info('Sources: '+str(self.sources))
+            logging.info('Response with sources: '+str(self.result['answer'].content))
+        else:
+            # RAGatouille doesn't have metadata, need to extract from context first.
+            extracted_metadata = []
+            pattern = r'\{([^}]*)\}(?=[^{}]*$)' # Regular expression pattern to match the last curly braces
+
+            for ref in self.result['answer'].references:
+                match = re.search(pattern, ref)
+                if match:
+                    extracted_metadata.append(match.group(1))
+            self.sources = '\n'.join(extracted_metadata)
+            self.result['answer'].content += '\nSources: \n'+self.sources
+            logging.info('Sources: '+str(self.sources))
+            logging.info('Response with sources: '+str(self.result['answer'].content))
 
         self.memory.save_context({'question': query}, {'answer': self.result['answer'].content})
         logging.info('Memory content after qa result: '+str(self.memory))

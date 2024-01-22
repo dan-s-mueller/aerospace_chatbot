@@ -68,8 +68,8 @@ with st.expander("Options"):
     else:
         batch_size=None
     if chunk_method=='tiktoken_recursive':
-        chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=500)
-        chunk_overlap=st.number_input('Chunk overlap', min_value=0, step=1, value=0)
+        chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=625)
+        chunk_overlap=st.number_input('Chunk overlap (tokens)', min_value=0, step=1, value=0)
     else:
         raise NotImplementedError
 

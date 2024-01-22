@@ -47,7 +47,7 @@ def chunk_docs(docs,
                 file_data = [json.loads(line) for line in file_in]
             # Process the file data and put it into the same format as docs_out
             for line in file_data:
-                doc_temp = lancghain_Document(page_content=line['text'],
+                doc_temp = lancghain_Document(page_content=line['page_content'],
                                               source=line['metadata']['source'],
                                               page=line['metadata']['page'],
                                               metadata=line['metadata'])
@@ -80,9 +80,6 @@ def chunk_docs(docs,
                 page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
                 page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
                 page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
-                # Remove non-English characters, non-numbers, non-standard punctuation, and non-math symbols
-                # allowed_chars = string.ascii_letters + string.digits + string.punctuation + "∞∫≈≠≤≥∑∏π√∀∁∂∃∄∅∆∇∈∉∊∋∌∍∎∏∐∑−∓∔∕∖∗∘∙√∛∜∝∞∟∠∡∢∣∤∥∦∧∨∩∪∫∬∭∮∯∰∱∲∳∴∵∶∷∸∹∺∻∼∽∾∿≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿⊀⊁⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋⊌⊍⊎⊏⊐⊑⊒⊓⊔⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡⊢⊣⊤⊥⊦⊧⊨⊩⊪⊫⊬⊭⊮⊯⊰⊱⊲⊳⊴⊵⊶⊷⊸⊹⊺⊻⊼⊽⊾⊿⋀⋁⋂⋃⋄⋅⋆⋇⋈⋉⋊⋋⋌⋍⋎⋏⋐⋑⋒⋓⋔⋕⋖⋗⋘⋙⋚⋛⋜⋝⋞⋟⋠⋡⋢⋣⋤⋥⋦⋧⋨⋩⋪⋫⋬⋭⋮⋯⋰⋱⋲⋳⋴⋵⋶⋷⋸⋹⋺⋻⋼⋽⋾⋿"
-                # page.page_content = re.sub(f"[^{re.escape(allowed_chars)}]", "", page.page_content)
                 # Add metadata to the end of the page content, some RAG models don't have metadata.
                 page.page_content += str(page.metadata)
                 doc_temp=lancghain_Document(page_content=page.page_content,
