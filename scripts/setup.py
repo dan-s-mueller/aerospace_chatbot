@@ -8,13 +8,13 @@ import streamlit as st
 
 def load_sidebar(config_file,
                  index_data_file,
-                 vector_databases=True,
-                 embeddings=True,
-                 rag_type=True,
-                 index_name=True,
-                 llm=True,
-                 model_options=True,
-                 secret_keys=True):
+                 vector_databases=False,
+                 embeddings=False,
+                 rag_type=False,
+                 index_name=False,
+                 llm=False,
+                 model_options=False,
+                 secret_keys=False):
     """
     Sets up the sidebar based no toggled options. Returns variables with options.
     """
@@ -50,12 +50,13 @@ def load_sidebar(config_file,
         if 'embedding_name' in locals() or 'embedding_name' in globals():
             logging.info('Embedding name: '+sb_out['embedding_name'])
     if rag_type:
-        # RAG Type
-        st.sidebar.title('RAG Type')
-        sb_out['rag_type']=st.sidebar.selectbox('RAG type', config['rag_types'], index=0)
-        sb_out['smart_agent']=st.sidebar.checkbox('Smart agent?')
-        logging.info('RAG type: '+sb_out['rag_type'])
-        logging.info('Smart agent: '+str(sb_out['smart_agent']))
+        if sb_out['index_type']!='RAGatouille': # RAGatouille doesn't have a rag_type
+            # RAG Type
+            st.sidebar.title('RAG Type')
+            sb_out['rag_type']=st.sidebar.selectbox('RAG type', config['rag_types'], index=0)
+            sb_out['smart_agent']=st.sidebar.checkbox('Smart agent?')
+            logging.info('RAG type: '+sb_out['rag_type'])
+            logging.info('Smart agent: '+str(sb_out['smart_agent']))
     if index_name:
         # Index Name 
         st.sidebar.title('Index Name')  
@@ -73,32 +74,40 @@ def load_sidebar(config_file,
             sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', llms[sb_out['llm_source']]['models'], index=0)
     if model_options:
         # Add input fields in the sidebar
-        st.sidebar.title('Model Options')
-        output_level = st.sidebar.selectbox('Level of Output', ['Concise', 'Detailed'], index=1)
-        k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
-        search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=0)
+        st.sidebar.title('LLM Options')
         temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.0, step=0.1)
-        sb_out['model_options']={'output_level':output_level,
-                                 'k':k,
-                                 'search_type':search_type,
-                                 'temperature':temperature}
+        output_level = st.sidebar.selectbox('Level of Output', ['Concise', 'Detailed'], index=1)
+
+        st.sidebar.title('Retrieval Options')
+        k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
+        if sb_out['index_type']!='RAGatouille':
+            search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=0)
+            sb_out['model_options']={'output_level':output_level,
+                                    'k':k,
+                                    'search_type':search_type,
+                                    'temperature':temperature}
+        else:
+            sb_out['model_options']={'output_level':output_level,
+                                    'k':k,
+                                    'temperature':temperature}
         logging.info('Model options: '+str(sb_out['model_options']))
     if secret_keys:
         # Add a section for secret keys
         st.sidebar.title('Secret keys')
         st.sidebar.markdown('If .env file is in directory, will use that first.')
         sb_out['keys']={}
-        if sb_out['llm_source']=='OpenAI' or sb_out['query_type']=='Openai':
+        if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI':
+            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
+        elif 'query_type' in sb_out and sb_out['query_type'] == 'Openai':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
 
-        if sb_out['llm_source']=='Hugging Face':
+        if 'llm_source' in sb_out and sb_out['llm_source']=='Hugging Face':
             sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password')
 
-        if sb_out['query_model']=='Voyage':
+        if 'query_model' in sb_out and sb_out['query_model']=='Voyage':
             sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password')
 
-        if sb_out['index_type']=='Pinecone':
-            sb_out['keys']['PINECONE_ENVIRONMENT']=st.sidebar.text_input('Pinecone Environment')
+        if 'index_type' in sb_out and sb_out['index_type']=='Pinecone':
             sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password')
     return sb_out
 def set_secrets(sb):
@@ -116,11 +125,6 @@ def set_secrets(sb):
     if not secrets['VOYAGE_API_KEY']:
         secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
         os.environ['VOYAGE_API_KEY'] = secrets['VOYAGE_API_KEY']
-
-    # secrets['PINECONE_ENVIRONMENT'] = os.getenv('PINECONE_ENVIRONMENT')
-    # if not secrets['PINECONE_ENVIRONMENT']:
-    #     secrets['PINECONE_ENVIRONMENT'] = sb['keys']['PINECONE_ENVIRONMENT']
-    #     os.environ['PINECONE_ENVIRONMENT'] = secrets['PINECONE_ENVIRONMENT']
 
     secrets['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
     if not secrets['PINECONE_API_KEY']:

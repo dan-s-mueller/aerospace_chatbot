@@ -13,7 +13,7 @@ from ragatouille import RAGPretrainedModel
 import streamlit as st
 
 # Set up the page, enable logging 
-from dotenv import load_dotenv,find_dotenv,dotenv_values
+from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app_2.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
@@ -71,7 +71,7 @@ with st.expander("Options"):
     else:
         batch_size=None
     if chunk_method=='tiktoken_recursive':
-        chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=5000)
+        chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=500)
         chunk_overlap=st.number_input('Chunk overlap', min_value=0, step=1, value=0)
     else:
         raise NotImplementedError

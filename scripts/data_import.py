@@ -2,6 +2,7 @@ import os
 import re
 import logging
 import shutil
+import string
 
 import pinecone
 import chromadb
@@ -12,7 +13,7 @@ from tqdm import tqdm
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
@@ -22,7 +23,7 @@ from langchain_core.documents import Document as lancghain_Document
 
 from ragatouille import RAGPretrainedModel
 
-from dotenv import load_dotenv,find_dotenv,dotenv_values
+from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 
 # Set secrets from environment file
@@ -77,6 +78,11 @@ def chunk_docs(docs,
                 page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
                 page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
                 page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
+                # Remove non-English characters, non-numbers, non-standard punctuation, and non-math symbols
+                allowed_chars = string.ascii_letters + string.digits + string.punctuation + "∞∫≈≠≤≥∑∏π√∀∁∂∃∄∅∆∇∈∉∊∋∌∍∎∏∐∑−∓∔∕∖∗∘∙√∛∜∝∞∟∠∡∢∣∤∥∦∧∨∩∪∫∬∭∮∯∰∱∲∳∴∵∶∷∸∹∺∻∼∽∾∿≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿⊀⊁⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋⊌⊍⊎⊏⊐⊑⊒⊓⊔⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡⊢⊣⊤⊥⊦⊧⊨⊩⊪⊫⊬⊭⊮⊯⊰⊱⊲⊳⊴⊵⊶⊷⊸⊹⊺⊻⊼⊽⊾⊿⋀⋁⋂⋃⋄⋅⋆⋇⋈⋉⋊⋋⋌⋍⋎⋏⋐⋑⋒⋓⋔⋕⋖⋗⋘⋙⋚⋛⋜⋝⋞⋟⋠⋡⋢⋣⋤⋥⋦⋧⋨⋩⋪⋫⋬⋭⋮⋯⋰⋱⋲⋳⋴⋵⋶⋷⋸⋹⋺⋻⋼⋽⋾⋿"
+                page.page_content = re.sub(f"[^{re.escape(allowed_chars)}]", "", page.page_content)
+                # Add metadata to the end of the page content, some RAG models don't have metadata.
+                page.page_content = page.page_content + str(page.metadata)
                 doc_temp=lancghain_Document(page_content=page.page_content,
                                             source=page.metadata['source'],
                                             page=page.metadata['page'],
@@ -86,7 +92,7 @@ def chunk_docs(docs,
             logging.info('Parsed: '+doc)
         if file:
             # Write to a jsonl file, save it.
-            with jsonlines.open(file, mode='w') as writer:
+            with jsonlines.open(file+'_'+str(chunk_size)+'_'+str(chunk_overlap), mode='w') as writer:
                 for doc in docs_out: 
                     writer.write(doc.dict())
     return docs_out
@@ -117,8 +123,7 @@ def load_docs(index_type,
         if index_type=="Pinecone":
             # Import and initialize Pinecone client
             pinecone.init(
-                api_key=PINECONE_API_KEY,
-                environment=PINECONE_ENVIRONMENT
+                api_key=PINECONE_API_KEY
             )
             # Find the existing index, clear for new start
             if clear:
@@ -170,11 +175,12 @@ def load_docs(index_type,
             logging.info('RAGatouille model set: '+str(vectorstore))
 
             # Create an index from the vectorstore.
-            # docs_out_content = [doc.page_content for doc in docs_out]
+            docs_out_colbert = [doc.page_content for doc in docs_out]
+            # docs_out_colbert = docs_out
             if chunk_size>500:
                 raise ValueError("RAGatouille cannot handle chunks larger than 500 tokens. Reduce token count.")
             vectorstore.index(
-                collection=docs_out,
+                collection=docs_out_colbert,
                 index_name=index_name,
                 max_document_length=chunk_size,
                 overwrite_index=True,
