@@ -6,6 +6,10 @@ import openai
 
 import streamlit as st
 
+# Set up the page, enable logging 
+from dotenv import load_dotenv,find_dotenv
+load_dotenv(find_dotenv(),override=True)
+
 def load_sidebar(config_file,
                  index_data_file,
                  vector_databases=False,
@@ -98,15 +102,12 @@ def load_sidebar(config_file,
         sb_out['keys']={}
         if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
-        elif 'query_type' in sb_out and sb_out['query_type'] == 'Openai':
+        if 'query_model' in sb_out and sb_out['query_model'] == 'Openai':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
-
         if 'llm_source' in sb_out and sb_out['llm_source']=='Hugging Face':
             sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password')
-
         if 'query_model' in sb_out and sb_out['query_model']=='Voyage':
             sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password')
-
         if 'index_type' in sb_out and sb_out['index_type']=='Pinecone':
             sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password')
     return sb_out
@@ -116,6 +117,7 @@ def set_secrets(sb):
     """
     secrets={}
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
+    openai.api_key = secrets['OPENAI_API_KEY']
     if not secrets['OPENAI_API_KEY']:
         secrets['OPENAI_API_KEY'] = sb['keys']['OPENAI_API_KEY']
         os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
