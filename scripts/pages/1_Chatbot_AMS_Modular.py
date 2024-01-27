@@ -24,7 +24,7 @@ import streamlit as st
 # Set up the page, enable logging
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
-logging.basicConfig(filename='app_1.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='app_1_chatbot_ams_modular.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Set the page title
 st.set_page_config(

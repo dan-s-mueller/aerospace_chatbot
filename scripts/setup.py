@@ -31,7 +31,7 @@ def load_sidebar(config_file,
     if vector_databases:
         # Vector databases
         st.sidebar.title('Vector database')
-        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=0)
+        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=1)
         logging.info('Index type: '+sb_out['index_type'])
 
     if embeddings:
