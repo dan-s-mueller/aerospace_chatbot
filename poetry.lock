@@ -4401,7 +4401,7 @@ umap-learn = "*"
 type = "git"
 url = "https://github.com/dsmueller3760/RAGxplorer.git"
 reference = "load_db"
-resolved_reference = "bbf63b507d9003733954f2767dc89ba4c289788e"
+resolved_reference = "fff8ea212cb1764052923dbc94f112de363344f1"
 
 [[package]]
 name = "referencing"
