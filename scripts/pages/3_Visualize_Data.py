@@ -19,6 +19,7 @@ logging.basicConfig(filename='app_3_visualize_data.log', filemode='w', format='%
 # Set the page title
 st.set_page_config(
     page_title='Visualize Data',
+    layout='wide'
 )
 st.title('Visualize Data')
 
@@ -100,8 +101,10 @@ with st.expander("Visualize data",expanded=True):
         if st.session_state.client is None:
             st.session_state.client = RAGxplorer(embedding_model=sb['embedding_name'])
         
-        fig = st.session_state.client.visualize_query(query, path_to_db='../db/chromadb/', viz_data_df_path=import_file_path)
-        st.plotly_chart(fig)
+        fig = st.session_state.client.visualize_query(query, 
+                                                      path_to_db='../db/chromadb/', viz_data_df_path=import_file_path,
+                                                      verbose=True)
+        st.plotly_chart(fig,use_container_width=True)
 
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time
