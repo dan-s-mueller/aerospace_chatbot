@@ -62,11 +62,18 @@ with st.expander("Under the hood",expanded=True):
 
 with st.expander("Create visualization data",expanded=True):
     # Add a button to run the function
-    vector_qty=st.number_input('Query size in database', min_value=1, step=10, value=50)
+    limit_size = st.checkbox('Limit size of data visualization?', value=True)
+    if limit_size:
+        vector_qty=st.number_input('Query size in database', min_value=1, step=10, value=50)
+    else:
+        vector_qty=None
     export_df = st.checkbox('Export visualization data?', value=True)
     if export_df:
         current_time = datetime.now().strftime("%Y.%m.%d.%H.%M")
-        df_export_path = st.text_input('Export file', f'../data/AMS/ams_data-400-0-{vector_qty}.json')
+        if limit_size:
+            df_export_path = st.text_input('Export file', f'../data/AMS/ams_data-400-0-{vector_qty}.json')
+        else:
+            df_export_path=st.text_input('Export file', f'../data/AMS/ams_data-400-0-all.json')
     if st.button('Create visualization data'):
         start_time = time.time()  # Start the timer
         
@@ -74,6 +81,9 @@ with st.expander("Create visualization data",expanded=True):
         st.session_state.client.load_db(path_to_db='../db/chromadb/',index_name=sb['index_name'],
                                         df_export_path=df_export_path,
                                         vector_qty=vector_qty,
+                                        umap_params={'n_neighbors': 5, 
+                                                     'n_components': 2,
+                                                     'random_state':42},
                                         verbose=True)
 
         end_time = time.time()  # Stop the timer
