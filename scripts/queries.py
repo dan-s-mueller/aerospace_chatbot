@@ -74,7 +74,10 @@ class QA_Model:
             logging.info('Chat vectorstore: '+str(self.vectorstore))
 
             # Test query
-            test_query = self.vectorstore.similarity_search(TEST_QUERY_PROMPT)
+            try:
+                test_query = self.vectorstore.similarity_search(TEST_QUERY_PROMPT)
+            except:
+                raise Exception("Pinecone vector database is not configured properly. Test query failed. Likely the index does not exist.")
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Pinecone vector database is not configured properly. Test query failed.")
@@ -94,7 +97,10 @@ class QA_Model:
             logging.info('Chat vectorstore: '+str(self.vectorstore))
 
             # Test query
-            test_query = self.vectorstore.similarity_search(TEST_QUERY_PROMPT)
+            try:
+                test_query = self.vectorstore.similarity_search(TEST_QUERY_PROMPT)
+            except:
+                raise Exception("Chroma vector database is not configured properly. Test query failed. Likely the index does not exist.")
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")
@@ -110,7 +116,10 @@ class QA_Model:
             logging.info('Chat query model:'+str(query_model))
 
              # Test query
-            test_query = self.vectorstore.search(TEST_QUERY_PROMPT)
+            try:
+                test_query = self.vectorstore.search(TEST_QUERY_PROMPT)
+            except:
+                raise Exception("RAGatouille vector database is not configured properly.")
             logging.info('Test query: '+str(test_query))
             if not test_query:
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")
