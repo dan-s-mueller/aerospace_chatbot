@@ -118,23 +118,23 @@ def set_secrets(sb):
     secrets={}
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
     openai.api_key = secrets['OPENAI_API_KEY']
-    if not secrets['OPENAI_API_KEY']:
+    if not secrets['OPENAI_API_KEY'] and 'keys' in sb and 'OPENAI_API_KEY' in sb['keys']:
         secrets['OPENAI_API_KEY'] = sb['keys']['OPENAI_API_KEY']
         os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
         openai.api_key = secrets['OPENAI_API_KEY']
 
     secrets['VOYAGE_API_KEY'] = os.getenv('VOYAGE_API_KEY')
-    if not secrets['VOYAGE_API_KEY']:
+    if not secrets['VOYAGE_API_KEY'] and 'keys' in sb and 'VOYAGE_API_KEY' in sb['keys']:
         secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
         os.environ['VOYAGE_API_KEY'] = secrets['VOYAGE_API_KEY']
 
     secrets['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
-    if not secrets['PINECONE_API_KEY']:
+    if not secrets['PINECONE_API_KEY'] and 'keys' in sb and 'PINECONE_API_KEY' in sb['keys']:
         secrets['PINECONE_API_KEY'] = sb['keys']['PINECONE_API_KEY']
         os.environ['PINECONE_API_KEY'] = secrets['PINECONE_API_KEY']
 
     secrets['HUGGINGFACEHUB_API_TOKEN'] = os.getenv('HUGGINGFACEHUB_API_TOKEN')
-    if not secrets['HUGGINGFACEHUB_API_TOKEN']:
+    if not secrets['HUGGINGFACEHUB_API_TOKEN'] and 'keys' in sb and 'HUGGINGFACEHUB_API_TOKEN' in sb['keys']:
         secrets['HUGGINGFACEHUB_API_TOKEN'] = sb['keys']['HUGGINGFACEHUB_API_TOKEN']
         os.environ['HUGGINGFACEHUB_API_TOKEN'] = secrets['HUGGINGFACEHUB_API_TOKEN']
     return secrets
