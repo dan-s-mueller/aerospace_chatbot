@@ -13,6 +13,17 @@ st.markdown("""
 Chatbots for aerospace mechanisms symposia, using all available papers published since 2000
 * Modular version meant to study retrieval methods
 """)
+st.subheader("Running Locally")
+'''
+It is recommended to run this streamlit app locally for improved performance. The hosted hugging face version is for proof of concept.
+You must have poetry installed locally to manage depdenencies. To run locally, clone the repository and run the following commands.
+```poetry config virtualenvs.in-project true
+```poetry install
+```source .venv/bin/activate
+```cd ./scripts
+```streamlit run Start.py
+'''
+
 st.subheader("AMS")
 '''
 This chatbot will look up from all Aerospace Mechanism Symposia in the following location: https://github.com/dsmueller3760/aerospace_chatbot/tree/main/data/AMS
@@ -21,7 +32,3 @@ This chatbot will look up from all Aerospace Mechanism Symposia in the following
 * Pinecone: https://docs.pinecone.io/docs/projects#api-keys
 * OpenAI API: https://platform.openai.com/api-keys
 '''
-
-# # Establish secrets
-# PINECONE_ENVIRONMENT=os.getenv('PINECONE_ENVIRONMENT')
-# PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')

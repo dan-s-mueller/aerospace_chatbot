@@ -27,6 +27,7 @@ sentence-transformers = "^2.2.2"
 ragatouille = "^0.0.4b2"
 nbformat = "^5.9.2"
 ragxplorer = {git = "https://github.com/dsmueller3760/RAGxplorer.git", rev = "load_db"}
+pydantic = "^2.6.0"
 
 
 [build-system]
