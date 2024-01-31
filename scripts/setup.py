@@ -102,25 +102,16 @@ def load_sidebar(config_file,
         sb_out['keys']={}
         if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
-            if sb_out['keys']['OPENAI_API_KEY']=='':
-                raise Exception('OpenAI API Key is required.')
         elif 'query_model' in sb_out and sb_out['query_model'] == 'Openai':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
-            if sb_out['keys']['OPENAI_API_KEY']=='':
-                raise Exception('OpenAI API Key is required.')
         if 'llm_source' in sb_out and sb_out['llm_source']=='Hugging Face':
             sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password')
-            if sb_out['keys']['HUGGINGFACEHUB_API_TOKEN']=='':
-                raise Exception('Hugging Face API Key is required.')
         if 'query_model' in sb_out and sb_out['query_model']=='Voyage':
             sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password')
-            if sb_out['keys']['VOYAGE_API_KEY']=='':
-                raise Exception('Voyage API Key is required.')
         if 'index_type' in sb_out and sb_out['index_type']=='Pinecone':
             sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password')
-            if sb_out['keys']['PINECONE_API_KEY']=='':
-                raise Exception('Pinecone API Key is required.')
     return sb_out
+
 def set_secrets(sb):
     """
     Sets secrets from environment file, or from sidebar if not available.
@@ -131,20 +122,28 @@ def set_secrets(sb):
     if not secrets['OPENAI_API_KEY'] and 'keys' in sb and 'OPENAI_API_KEY' in sb['keys']:
         secrets['OPENAI_API_KEY'] = sb['keys']['OPENAI_API_KEY']
         os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
+        if os.environ['OPENAI_API_KEY']=='':
+            raise Exception('OpenAI API Key is required.')
         openai.api_key = secrets['OPENAI_API_KEY']
 
     secrets['VOYAGE_API_KEY'] = os.getenv('VOYAGE_API_KEY')
     if not secrets['VOYAGE_API_KEY'] and 'keys' in sb and 'VOYAGE_API_KEY' in sb['keys']:
         secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
         os.environ['VOYAGE_API_KEY'] = secrets['VOYAGE_API_KEY']
+        if os.environ['VOYAGE_API_KEY']=='':
+            raise Exception('Voyage API Key is required.')
 
     secrets['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
     if not secrets['PINECONE_API_KEY'] and 'keys' in sb and 'PINECONE_API_KEY' in sb['keys']:
         secrets['PINECONE_API_KEY'] = sb['keys']['PINECONE_API_KEY']
         os.environ['PINECONE_API_KEY'] = secrets['PINECONE_API_KEY']
+        if os.environ['PINECONE_API_KEY']=='':
+            raise Exception('Pinecone API Key is required.')
 
     secrets['HUGGINGFACEHUB_API_TOKEN'] = os.getenv('HUGGINGFACEHUB_API_TOKEN')
     if not secrets['HUGGINGFACEHUB_API_TOKEN'] and 'keys' in sb and 'HUGGINGFACEHUB_API_TOKEN' in sb['keys']:
         secrets['HUGGINGFACEHUB_API_TOKEN'] = sb['keys']['HUGGINGFACEHUB_API_TOKEN']
         os.environ['HUGGINGFACEHUB_API_TOKEN'] = secrets['HUGGINGFACEHUB_API_TOKEN']
+        if os.environ['HUGGINGFACEHUB_API_TOKEN']=='':
+            raise Exception('Hugging Face API Key is required.')
     return secrets
