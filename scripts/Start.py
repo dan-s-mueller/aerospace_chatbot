@@ -8,7 +8,6 @@ st.set_page_config(
 st.title("Aerospace Chatbot Homepage")
 st.markdown("Code base: https://github.com/dsmueller3760/aerospace_chatbot/tree/rag_study")
 st.markdown('---')
-st.title("Chatbots")
 st.markdown("""
 This space contains chatbots and tools for exploring data in the aerospace mechanisms symposia, using all available papers published since 2000.
 """)
