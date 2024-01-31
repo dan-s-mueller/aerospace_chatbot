@@ -29,6 +29,7 @@ logging.basicConfig(filename='app_1_chatbot_ams_modular.log', filemode='w', form
 # Set the page title
 st.set_page_config(
     page_title='Aerospace Chatbot: Modular',
+    layout='wide'
 )
 st.title('Aerospace Mechanisms Chatbot')
 with st.expander('''What's under the hood?'''):

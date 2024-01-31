@@ -82,17 +82,17 @@ def load_sidebar(config_file,
         temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.0, step=0.1)
         output_level = st.sidebar.selectbox('Level of Output', ['Concise', 'Detailed'], index=1)
 
-        st.sidebar.title('Retrieval Options')
-        k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
-        if sb_out['index_type']!='RAGatouille':
-            search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=0)
-            sb_out['model_options']={'output_level':output_level,
-                                    'k':k,
-                                    'search_type':search_type,
-                                    'temperature':temperature}
+        if 'index_type' in sb_out:
+            st.sidebar.title('Retrieval Options')
+            k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
+            if sb_out['index_type']!='RAGatouille':
+                search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=0)
+                sb_out['model_options']={'output_level':output_level,
+                                        'k':k,
+                                        'search_type':search_type,
+                                        'temperature':temperature}
         else:
             sb_out['model_options']={'output_level':output_level,
-                                    'k':k,
                                     'temperature':temperature}
         logging.info('Model options: '+str(sb_out['model_options']))
     if secret_keys:

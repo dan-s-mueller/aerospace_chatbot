@@ -56,6 +56,7 @@ st.info('You must have created a database using Document Upload in ChromaDB for 
 with st.expander("Under the hood",expanded=True):
     st.markdown('''
                 Uses modified version of https://github.com/gabrielchua/RAGxplorer/tree/main?tab=readme-ov-file to connect to existing database created.
+                Modified version here: https://github.com/dsmueller3760/RAGxplorer/tree/load_db
                 Assumes that chroma databases are located in ../db/chroma
                 Query size in database: Take a random sample of this size from the database to visualize.
                 ''')

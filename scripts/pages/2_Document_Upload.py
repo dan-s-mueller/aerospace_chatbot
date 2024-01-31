@@ -20,6 +20,7 @@ logging.basicConfig(filename='app_2_document_upload.log', filemode='w', format='
 # Set the page title
 st.set_page_config(
     page_title='Upload PDFs',
+    layout='wide'
 )
 st.title('Upload PDFs')
 
