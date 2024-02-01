@@ -39,7 +39,8 @@ class QA_Model:
                  fetch_k=50,
                  temperature=0,
                  chain_type='stuff',
-                 filter_arg=False):
+                 filter_arg=False,
+                 local_db_path='../db'):
         
         self.index_type=index_type
         self.index_name=index_name
@@ -90,7 +91,7 @@ class QA_Model:
         elif index_type=='ChromaDB':
             logging.info('Chat chroma index name: '+str(index_name))
             logging.info('Chat query model: '+str(query_model))
-            persistent_client = chromadb.PersistentClient(path='../db/chromadb')            
+            persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
             self.vectorstore = Chroma(client=persistent_client,
                                       collection_name=index_name,
                                       embedding_function=query_model)

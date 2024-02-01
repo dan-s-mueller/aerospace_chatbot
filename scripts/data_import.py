@@ -110,7 +110,8 @@ def load_docs(index_type,
               clear=False,
               use_json=False,
               file=None,
-              batch_size=50):
+              batch_size=50,
+              local_db_path='../db'):
     """
     Loads PDF documents. If index_name is blank, it will return a list of the data (texts). If it is a name of a pinecone storage, it will return the vector_store.    
     """
@@ -122,7 +123,6 @@ def load_docs(index_type,
                         chunk_overlap=chunk_overlap,
                         use_json=use_json)
     # Initialize client
-    db_path='../db/'
     if index_name:
         if index_type=="Pinecone":
             # Import and initialize Pinecone client
@@ -156,9 +156,9 @@ def load_docs(index_type,
                                        docs_out,
                                        batch_size=batch_size)
         elif index_type=="ChromaDB":
-            # Upsert docs. Defaults to putting this in the ../db directory
+            # Upsert docs. Defaults to putting this in the local_db_path directory
             logging.info(f"Creating new index {index_name}.")
-            persistent_client = chromadb.PersistentClient(path=db_path+'/chromadb')            
+            persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
             vectorstore = Chroma(client=persistent_client,
                                  collection_name=index_name,
                                  embedding_function=query_model)
@@ -192,20 +192,21 @@ def load_docs(index_type,
             logging.info(f"Index created: {vectorstore}")
 
             # Move the directory to the db folder
-            logging.info(f"Moving RAGatouille index to {db_path}")
-            ragatouille_path = os.path.join(db_path, '.ragatouille')
+            logging.info(f"Moving RAGatouille index to {local_db_path}")
+            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
             if os.path.exists(ragatouille_path):
                 shutil.rmtree(ragatouille_path)
                 logging.info(f"RAGatouille index deleted from {ragatouille_path}")
             shutil.move('./.ragatouille', db_path)
-            logging.info(f"RAGatouille index created in {db_path}:"+str(vectorstore))
+            logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
 
     # Return vectorstore or docs
     if index_name:
         return vectorstore
     else:
         return docs_out
-def delete_index(index_type,index_name):
+def delete_index(index_type,index_name,
+                 local_db_path='../db'):
     """
     Deletes an existing Pinecone index with the given index_name.
     """
@@ -225,7 +226,7 @@ def delete_index(index_type,index_name):
     elif index_type=="ChromaDB":
         # Delete existing collection
         logging.info(f"Deleting index {index_name}.")
-        persistent_client = chromadb.PersistentClient(path='../db/chromadb')  
+        persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')  
         persistent_client.delete_collection(name=index_name)  
         logging.info("Index deleted.")
     elif index_type=="RAGatouille":
