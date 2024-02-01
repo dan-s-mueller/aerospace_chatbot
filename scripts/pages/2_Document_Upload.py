@@ -12,7 +12,8 @@ from ragatouille import RAGPretrainedModel
 
 import streamlit as st
 
-# Set up the page, enable logging 
+# Set up the page, enable logging, read environment variables
+# TODO add loda_db_path env variable and set default if not in .venv file.
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app_2_document_upload.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)

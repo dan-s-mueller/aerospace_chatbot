@@ -11,7 +11,8 @@ from ragxplorer import RAGxplorer
 
 import streamlit as st
 
-# Set up the page, enable logging 
+# Set up the page, enable logging, read environment variables
+# TODO add loda_db_path env variable and set default if not in .venv file.
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app_3_visualize_data.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
@@ -57,7 +58,7 @@ with st.expander("Under the hood",expanded=True):
     st.markdown('''
                 Uses modified version of https://github.com/gabrielchua/RAGxplorer/tree/main?tab=readme-ov-file to connect to existing database created.
                 Modified version here: https://github.com/dsmueller3760/RAGxplorer/tree/load_db
-                Assumes that chroma databases are located in ../db/chroma
+                Assumes that chroma databases are located in local_db_path variable.
                 Query size in database: Take a random sample of this size from the database to visualize.
                 ''')
 
