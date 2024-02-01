@@ -1,4 +1,5 @@
 import setup
+import data_import
 
 import time
 import logging
@@ -76,7 +77,8 @@ with st.expander("Process Chunked Data",expanded=True):
     if st.button('Process chunked data'):
         start_time = time.time()  # Start the timer
         
-        # Do something
+        data_import.process_chunk(chunked_file,llm,
+                  clean_data=False,tag_data=False,question_data=False)
 
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 

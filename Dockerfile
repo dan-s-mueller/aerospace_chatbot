@@ -9,15 +9,15 @@ RUN useradd -m -u 1000 user
 USER user
 
 # Set home to the user's home directory
-ENV HOME=/home/user \
-	PATH=/home/user/.local/bin:$PATH
+ENV HOME=/data \
+	PATH=/data/.local/bin:$PATH
 
 # Change permissions for to read/write/execute
-RUN mkdir -p $HOME/app
-RUN chmod 777 $HOME/app
+# RUN mkdir $HOME/app
+# RUN chmod 777 $HOME/app
 
 # Set the working directory to the user's home directory
-WORKDIR $HOME/app
+WORKDIR $HOME
 
 # Install poetry
 RUN pip3 install poetry
@@ -30,16 +30,16 @@ COPY --chown=user pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true
 
 # Set the name of the virtual environment
-RUN poetry config virtualenvs.path $HOME/app/.venv
+RUN poetry config virtualenvs.path $HOME/.venv
 
 #  Install dependencies
 RUN poetry install
 
 # Set the .venv folder as the virtual environment directory
-ENV PATH="$HOME/app/.venv/bin:$PATH"
+ENV PATH="$HOME/.venv/bin:$PATH"
 
 # Copy the current directory contents into the container
-COPY --chown=user . $HOME/app
+COPY --chown=user . $HOME
 
 # Make a port available to the world outside this container
 # The EXPOSE instruction informs Docker that the container listens on the specified network ports at runtime. Your container needs to listen to Streamlit’s (default) port 8501.
@@ -49,7 +49,7 @@ EXPOSE 8501
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
 # Update working directory to be consistent with where Start.py is
-WORKDIR $HOME/app/scripts
+WORKDIR $HOME/scripts
 
 # An ENTRYPOINT allows you to configure a container that will run as an executable. Here, it also contains the entire streamlit run command for your app, so you don’t have to call it from the command line
 ENTRYPOINT ["streamlit", "run", "Start.py", "--server.port=8501", "--server.address=0.0.0.0"]

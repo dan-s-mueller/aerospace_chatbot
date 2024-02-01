@@ -260,3 +260,18 @@ def embedding_size(embedding_model):
         return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
     else:
         raise NotImplementedError
+def process_chunk(json_file,llm,
+                  clean_data=False,tag_data=False,question_data=False):
+    docs_out=[]
+    with open(json_file, "r") as file_in:
+        file_data = [json.loads(line) for line in file_in]
+        # Process the file data and put it into the same format as docs_out
+        for line in file_data:
+            doc_temp = lancghain_Document(page_content=line['page_content'],
+                                            source=line['metadata']['source'],
+                                            page=line['metadata']['page'],
+                                            metadata=line['metadata'])
+            docs_out.append(doc_temp)
+    # clean data
+    # tag data
+    # question data
