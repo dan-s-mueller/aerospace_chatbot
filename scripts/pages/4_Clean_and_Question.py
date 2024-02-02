@@ -12,8 +12,6 @@ from langchain_community.embeddings import VoyageEmbeddings
 from langchain_openai import OpenAI, ChatOpenAI
 from langchain_community.llms import HuggingFaceHub
 
-from ragxplorer import RAGxplorer
-
 import streamlit as st
 
 # Set up the page, enable logging 
@@ -34,6 +32,9 @@ sb=setup.load_sidebar(config_file='../config/config.json',
                       model_options=True,
                       secret_keys=True)
 secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+
+# This is janky but works (needs secrets to initialize properly)
+from ragxplorer import RAGxplorer
 
 # Set up session state variables
 if 'client' not in st.session_state:
