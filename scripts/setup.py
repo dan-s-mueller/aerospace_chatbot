@@ -101,15 +101,15 @@ def load_sidebar(config_file,
         st.sidebar.markdown('If .env file is in directory, will use that first.')
         sb_out['keys']={}
         if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI':
-            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
+            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',help='Find here: https://platform.openai.com/api-keys')
         elif 'query_model' in sb_out and sb_out['query_model'] == 'Openai':
-            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
+            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',help='Find here: https://platform.openai.com/api-keys')
         if 'llm_source' in sb_out and sb_out['llm_source']=='Hugging Face':
-            sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password')
+            sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password',help='Find here: https://huggingface.co/settings/tokens')
         if 'query_model' in sb_out and sb_out['query_model']=='Voyage':
-            sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password')
+            sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password',help='Find here: https://dash.voyageai.com/api-keys')
         if 'index_type' in sb_out and sb_out['index_type']=='Pinecone':
-            sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password')
+            sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password',help='Find here: https://www.pinecone.io')
         if os.getenv('LOCAL_DB_PATH')!='':
             sb_out['keys']['LOCAL_DB_PATH'] = st.sidebar.text_input('Local Database Path','/data',help='Path to local database (e.g. chroma)')
         else:

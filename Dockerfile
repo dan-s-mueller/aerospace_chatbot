@@ -47,3 +47,6 @@ WORKDIR $HOME/scripts
 
 # An ENTRYPOINT allows you to configure a container that will run as an executable. Here, it also contains the entire streamlit run command for your app, so you don’t have to call it from the command line
 ENTRYPOINT ["streamlit", "run", "Start.py", "--server.port=8501", "--server.address=0.0.0.0"]
+
+# docker build -t ams-chatbot .
+# docker run -p 8501:8501 ams-chatbot
