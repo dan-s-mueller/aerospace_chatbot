@@ -197,7 +197,7 @@ def load_docs(index_type,
             if os.path.exists(ragatouille_path):
                 shutil.rmtree(ragatouille_path)
                 logging.info(f"RAGatouille index deleted from {ragatouille_path}")
-            shutil.move('./.ragatouille', db_path)
+            shutil.move('./.ragatouille', local_db_path)
             logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
 
     # Return vectorstore or docs

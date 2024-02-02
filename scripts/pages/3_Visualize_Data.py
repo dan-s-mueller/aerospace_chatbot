@@ -12,7 +12,6 @@ from ragxplorer import RAGxplorer
 import streamlit as st
 
 # Set up the page, enable logging, read environment variables
-# TODO add loda_db_path env variable and set default if not in .venv file.
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app_3_visualize_data.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
@@ -80,7 +79,8 @@ with st.expander("Create visualization data",expanded=True):
         start_time = time.time()  # Start the timer
         
         st.session_state.client = RAGxplorer(embedding_model=sb['embedding_name'])
-        st.session_state.client.load_db(path_to_db='../db/chromadb/',index_name=sb['index_name'],
+        st.session_state.client.load_db(path_to_db=sb['keys']['LOCAL_DB_PATH']+'/chromadb/',
+                                        index_name=sb['index_name'],
                                         df_export_path=df_export_path,
                                         vector_qty=vector_qty,
                                         umap_params={'n_neighbors': 5, 
@@ -114,7 +114,8 @@ with st.expander("Visualize data",expanded=True):
             st.session_state.client = RAGxplorer(embedding_model=sb['embedding_name'])
         
         fig = st.session_state.client.visualize_query(query, 
-                                                      path_to_db='../db/chromadb/', viz_data_df_path=import_file_path,
+                                                      path_to_db=sb['keys']['LOCAL_DB_PATH']+'/chromadb/', 
+                                                      viz_data_df_path=import_file_path,
                                                       verbose=True)
         st.plotly_chart(fig,use_container_width=True)
 

@@ -13,7 +13,6 @@ from ragatouille import RAGPretrainedModel
 import streamlit as st
 
 # Set up the page, enable logging, read environment variables
-# TODO add loda_db_path env variable and set default if not in .venv file.
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app_2_document_upload.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
@@ -97,14 +96,17 @@ if st.button('Load docs into vector database'):
                           use_json=use_json,
                           clear=clear_database,
                           file=json_file,
-                          batch_size=batch_size)
+                          batch_size=batch_size,
+                          local_db_path=sb['keys']['LOCAL_DB_PATH'])
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
     st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
 # Add a button to delete the index
 if st.button('Delete existing index'):
     start_time = time.time()  # Start the timer
-    data_import.delete_index(sb['index_type'],sb['index_name'])
+    data_import.delete_index(sb['index_type'],
+                             sb['index_name'],
+                             local_db_path=sb['keys']['LOCAL_DB_PATH'])
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
     st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")

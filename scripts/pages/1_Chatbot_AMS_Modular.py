@@ -22,7 +22,6 @@ from ragatouille import RAGPretrainedModel
 import streamlit as st
 
 # Set up the page, enable logging, read environment variables
-# TODO add loda_db_path env variable and set default if not in .venv file.
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app_1_chatbot_ams_modular.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
@@ -96,7 +95,7 @@ if prompt := st.chat_input('Prompt here'):
                 elif sb['query_model']=='Voyage':
                     query_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
                 elif sb['index_type']=='RAGatouille':
-                    query_model=RAGPretrainedModel.from_index('../db/.ragatouille/colbert/indexes/'+sb['index_name'])
+                    query_model=RAGPretrainedModel.from_index(sb['keys']['LOCAL_DB_PATH']+'/.ragatouille/colbert/indexes/'+sb['index_name'])
                 logging.info('Query model set: '+str(query_model))
 
                 # Define LLM
@@ -121,7 +120,8 @@ if prompt := st.chat_input('Prompt here'):
                                                                llm,
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
-                                                               filter_arg=False)
+                                                               filter_arg=False,
+                                                               local_db_path=sb['keys']['LOCAL_DB_PATH'])
                 logging.info('QA model object set: '+str(st.session_state.qa_model_obj))
             if st.session_state.message_id>1:
                 logging.info('Updating model with sidebar settings...')
