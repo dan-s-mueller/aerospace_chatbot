@@ -111,9 +111,10 @@ def load_sidebar(config_file,
         if 'index_type' in sb_out and sb_out['index_type']=='Pinecone':
             sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password',help='Find here: https://www.pinecone.io')
         if os.getenv('LOCAL_DB_PATH')!='':
-            sb_out['keys']['LOCAL_DB_PATH'] = st.sidebar.text_input('Local Database Path','/data',help='Path to local database (e.g. chroma)')
-        else:
             sb_out['keys']['LOCAL_DB_PATH'] = os.getenv('LOCAL_DB_PATH')
+            st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='From .env file.')
+        else:
+            sb_out['keys']['LOCAL_DB_PATH'] = st.sidebar.text_input('Local Database Path','/data',help='Path to local database (e.g. chroma)')
     return sb_out
 
 def set_secrets(sb):
