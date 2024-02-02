@@ -31,3 +31,11 @@ This chatbot will look up from all Aerospace Mechanism Symposia in the following
 * Pinecone: https://docs.pinecone.io/docs/projects#api-keys
 * OpenAI API: https://platform.openai.com/api-keys
 '''
+
+st.subheader("API Key Links")
+'''
+* OpenAI: https://platform.openai.com/api-keys
+* Pinecone: https://www.pinecone.io
+* Hugging Face: https://huggingface.co/settings/tokens
+* Voyage: https://dash.voyageai.com/api-keys
+'''

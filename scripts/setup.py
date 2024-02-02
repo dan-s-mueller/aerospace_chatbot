@@ -101,18 +101,18 @@ def load_sidebar(config_file,
         st.sidebar.markdown('If .env file is in directory, will use that first.')
         sb_out['keys']={}
         if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI':
-            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',help='Find here: https://platform.openai.com/api-keys')
+            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
         elif 'query_model' in sb_out and sb_out['query_model'] == 'Openai':
-            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',help='Find here: https://platform.openai.com/api-keys')
+            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password')
         if 'llm_source' in sb_out and sb_out['llm_source']=='Hugging Face':
-            sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password',help='Find here: https://huggingface.co/settings/tokens')
+            sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password')
         if 'query_model' in sb_out and sb_out['query_model']=='Voyage':
-            sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password',help='Find here: https://dash.voyageai.com/api-keys')
+            sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password')
         if 'index_type' in sb_out and sb_out['index_type']=='Pinecone':
-            sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password',help='Find here: https://www.pinecone.io')
+            sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password')
         if os.getenv('LOCAL_DB_PATH') is None:
             sb_out['keys']['LOCAL_DB_PATH'] = st.sidebar.text_input('Local Database Path','/data',help='Path to local database (e.g. chroma)')
-            os.environ['OPENAI_API_KEY'] = sb_out['keys']['LOCAL_DB_PATH']
+            os.environ['LOCAL_DB_PATH'] = sb_out['keys']['LOCAL_DB_PATH']
         else:
             sb_out['keys']['LOCAL_DB_PATH'] = os.getenv('LOCAL_DB_PATH')
             st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='From .env file.')
@@ -124,33 +124,45 @@ def set_secrets(sb):
     Sets secrets from environment file, or from sidebar if not available.
     """
     secrets={}
+
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
-    openai.api_key = secrets['OPENAI_API_KEY']
+    logging.info('OpenAI API Key: '+str(secrets['OPENAI_API_KEY']))
     if not secrets['OPENAI_API_KEY'] and 'keys' in sb and 'OPENAI_API_KEY' in sb['keys']:
+        logging.info('Setting OpenAI API Key from sidebar...')
         secrets['OPENAI_API_KEY'] = sb['keys']['OPENAI_API_KEY']
         os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
+        logging.info('OpenAI API Key: '+str(os.environ['OPENAI_API_KEY']))
         if os.environ['OPENAI_API_KEY']=='':
             raise Exception('OpenAI API Key is required.')
-        openai.api_key = secrets['OPENAI_API_KEY']
+    openai.api_key = secrets['OPENAI_API_KEY']
 
     secrets['VOYAGE_API_KEY'] = os.getenv('VOYAGE_API_KEY')
+    logging.info('Voyage API Key: '+str(secrets['VOYAGE_API_KEY']))
     if not secrets['VOYAGE_API_KEY'] and 'keys' in sb and 'VOYAGE_API_KEY' in sb['keys']:
+        logging.info('Setting Voyage API Key from sidebar...')
         secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
         os.environ['VOYAGE_API_KEY'] = secrets['VOYAGE_API_KEY']
+        logging.info('Voyage API Key: '+str(os.environ['VOYAGE_API_KEY']))
         if os.environ['VOYAGE_API_KEY']=='':
             raise Exception('Voyage API Key is required.')
 
     secrets['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
+    logging.info('Pinecone API Key: '+str(secrets['PINECONE_API_KEY']))
     if not secrets['PINECONE_API_KEY'] and 'keys' in sb and 'PINECONE_API_KEY' in sb['keys']:
+        logging.info('Setting Pinecone API Key from sidebar...')
         secrets['PINECONE_API_KEY'] = sb['keys']['PINECONE_API_KEY']
         os.environ['PINECONE_API_KEY'] = secrets['PINECONE_API_KEY']
+        logging.info('Pinecone API Key: '+str(os.environ['PINECONE_API_KEY']))
         if os.environ['PINECONE_API_KEY']=='':
             raise Exception('Pinecone API Key is required.')
 
     secrets['HUGGINGFACEHUB_API_TOKEN'] = os.getenv('HUGGINGFACEHUB_API_TOKEN')
+    logging.info('Hugging Face API Key: '+str(secrets['HUGGINGFACEHUB_API_TOKEN']))
     if not secrets['HUGGINGFACEHUB_API_TOKEN'] and 'keys' in sb and 'HUGGINGFACEHUB_API_TOKEN' in sb['keys']:
+        logging.info('Setting Hugging Face API Key from sidebar...')
         secrets['HUGGINGFACEHUB_API_TOKEN'] = sb['keys']['HUGGINGFACEHUB_API_TOKEN']
         os.environ['HUGGINGFACEHUB_API_TOKEN'] = secrets['HUGGINGFACEHUB_API_TOKEN']
+        logging.info('Hugging Face API Key: '+str(os.environ['HUGGINGFACEHUB_API_TOKEN']))
         if os.environ['HUGGINGFACEHUB_API_TOKEN']=='':
             raise Exception('Hugging Face API Key is required.')
     return secrets
