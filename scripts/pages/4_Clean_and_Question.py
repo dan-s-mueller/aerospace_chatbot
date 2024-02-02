@@ -27,7 +27,7 @@ st.set_page_config(
     layout='wide'
 )
 st.title('Clean and Question Data')
-
+# TODO: add database status icons
 sb=setup.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
                       llm=True,

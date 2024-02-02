@@ -22,7 +22,7 @@ st.set_page_config(
     layout='wide'
 )
 st.title('Visualize Data')
-
+# TODO: add database status icons
 sb=setup.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
                       vector_databases=True,

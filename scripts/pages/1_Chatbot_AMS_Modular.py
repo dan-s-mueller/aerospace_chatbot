@@ -31,6 +31,7 @@ st.set_page_config(
     page_title='Aerospace Chatbot: Modular',
     layout='wide'
 )
+# TODO: add database status icons
 st.title('Aerospace Mechanisms Chatbot')
 with st.expander('''What's under the hood?'''):
     st.markdown('''
