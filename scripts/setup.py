@@ -110,11 +110,13 @@ def load_sidebar(config_file,
             sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password',help='Find here: https://dash.voyageai.com/api-keys')
         if 'index_type' in sb_out and sb_out['index_type']=='Pinecone':
             sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password',help='Find here: https://www.pinecone.io')
-        if os.getenv('LOCAL_DB_PATH')!='':
+        if os.getenv('LOCAL_DB_PATH') is None:
+            sb_out['keys']['LOCAL_DB_PATH'] = st.sidebar.text_input('Local Database Path','/data',help='Path to local database (e.g. chroma)')
+            os.environ['OPENAI_API_KEY'] = sb_out['keys']['LOCAL_DB_PATH']
+        else:
             sb_out['keys']['LOCAL_DB_PATH'] = os.getenv('LOCAL_DB_PATH')
             st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='From .env file.')
-        else:
-            sb_out['keys']['LOCAL_DB_PATH'] = st.sidebar.text_input('Local Database Path','/data',help='Path to local database (e.g. chroma)')
+            
     return sb_out
 
 def set_secrets(sb):
