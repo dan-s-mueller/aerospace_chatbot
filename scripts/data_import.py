@@ -3,6 +3,9 @@ import re
 import logging
 import shutil
 import string
+import uuid
+import random
+from typing import List
 
 import pinecone
 import chromadb
@@ -23,6 +26,10 @@ from langchain_core.documents import Document as lancghain_Document
 
 from ragatouille import RAGPretrainedModel
 
+import RAGxplorer
+from RAGxplorer import rag
+
+
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 
@@ -32,12 +39,26 @@ VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
 PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
-def chunk_docs(docs,
-               chunk_method='tiktoken_recursive',
-               file=None,
-               chunk_size=500,
-               chunk_overlap=0,
-               use_json=False):
+def chunk_docs(docs: List[str],
+               chunk_method:str='tiktoken_recursive',
+               file:str=None,
+               chunk_size:int=500,
+               chunk_overlap:int=0,
+               use_json:bool=False):
+    """
+    Chunk the given list of documents into smaller chunks based on the specified method.
+
+    Args:
+        docs (List[str]): List of documents to be chunked.
+        chunk_method (str, optional): Method for chunking the documents. Defaults to 'tiktoken_recursive'.
+        file (str, optional): Path to the jsonl file. Defaults to None.
+        chunk_size (int, optional): Size of each chunk in tokens. Defaults to 500.
+        chunk_overlap (int, optional): Number of overlapping tokens between chunks. Defaults to 0.
+        use_json (bool, optional): Flag indicating whether to use the jsonl file instead of parsing the docs. Defaults to False.
+
+    Returns:
+        List[lancghain_Document]: List of chunked documents.
+    """
     docs_out=[]
     if file:
         logging.info('Jsonl file to be used: '+file)
@@ -276,3 +297,43 @@ def process_chunk(json_file,llm,
     # clean data
     # tag data
     # question data
+def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_qty:int,verbose:bool=False):
+    """Reduce the number of vectors in the RAGxplorer client's vector database.
+
+    Args:
+        rx_client (RAGxplorer): The RAGxplorer client object.
+        chroma_client (chromadb): The chromadb client object.
+        vector_qty (int): The desired number of vectors to keep.
+        verbose (bool, optional): Whether to print verbose output. Defaults to False.
+
+    Returns:
+        RAGxplorer: The updated RAGxplorer client object.
+    """
+    ids = rx_client._vectordb.get()['ids']
+    embeddings = rx_client.get_doc_embeddings(rx_client._vectordb)
+    text = rx_client.get_docs(rx_client._vectordb)
+
+    if verbose:
+        print(' ~ Reducing the number of vectors from '+str(len(embeddings))+' to '+str(vector_qty)+'...')
+    indices = random.sample(range(len(embeddings)), vector_qty)
+    id = str(uuid.uuid4())[:8]
+    temp_index_name=rx_client._vectordb.name+'-'+id
+    
+    # Create a temporary index with the reduced number of vectors
+    chroma_client.create_collection(name=temp_index_name,embedding_function=rx_client._chosen_embedding_model)
+    temp_collection = chroma_client.get_collection(name=temp_index_name,embedding_function=rx_client._chosen_embedding_model)
+    temp_collection.add(
+        ids=[ids[i] for i in indices],
+        embeddings=[embeddings[i] for i in indices],
+        documents=[text[i] for i in indices]
+    )
+
+    # Replace the original index with the temporary one
+    rx_client._vectordb = temp_collection
+    rx_client._documents.embeddings = rag.get_doc_embeddings(rx_client._vectordb)
+    rx_client._documents.text = rag.get_docs(rx_client._vectordb)
+    rx_client._documents.ids = rx_client._vectordb.get()['ids']
+    if verbose:
+        print('Reduced number of vectors to '+str(len(rx_client._documents.embeddings))+' ✓')
+        print('Copy of database saved as '+temp_index_name+' ✓')
+    return rx_client

@@ -1,5 +1,7 @@
 import setup
+import data_import
 
+import json
 import time
 import logging
 from datetime import datetime
@@ -8,8 +10,9 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
 from ragxplorer import RAGxplorer
-
+import chromadb
 import streamlit as st
+import pandas as pd
 
 # Set up the page, enable logging, read environment variables
 from dotenv import load_dotenv,find_dotenv
@@ -32,8 +35,10 @@ sb=setup.load_sidebar(config_file='../config/config.json',
 secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
 
 # Set up session state variables
-if 'client' not in st.session_state:
-    st.session_state.client = None
+if 'rx_client' not in st.session_state:
+    st.session_state.rx_client = None
+if 'chroma_client' not in st.session_state:
+    st.session_state.chroma_client = None
 
 # Populate the main screen
 logging.info(f'index_type test, {sb["index_type"]}')
@@ -51,6 +56,10 @@ elif sb['query_model']=='Openai' or 'Voyage':
 logging.info('Query model set: '+str(query_model))
 
 st.info('You must have created a database using Document Upload in ChromaDB for this to work.')
+
+# Set the ragxplorer and chromadb clients
+st.session_state.rx_client = RAGxplorer(embedding_model=sb['embedding_name'])
+st.session_state.chroma_client = chromadb.PersistentClient(path=sb['keys']['LOCAL_DB_PATH']+'/chromadb/')
 
 # Add an expandable with description of what's going on.
 with st.expander("Under the hood",expanded=True):
@@ -78,16 +87,21 @@ with st.expander("Create visualization data",expanded=True):
     if st.button('Create visualization data'):
         start_time = time.time()  # Start the timer
         
-        st.session_state.client = RAGxplorer(embedding_model=sb['embedding_name'])
-        st.session_state.client.load_db(path_to_db=sb['keys']['LOCAL_DB_PATH']+'/chromadb/',
-                                        index_name=sb['index_name'],
-                                        df_export_path=df_export_path,
-                                        vector_qty=vector_qty,
-                                        umap_params={'n_neighbors': 5, 
-                                                     'n_components': 2,
-                                                     'random_state':42},
-                                        verbose=True)
-
+        umap_params={'n_neighbors': 5,'n_components': 2,'random_state':42}  # TODO: expose umap_params as an option
+        collection=st.session_state.chroma_client.get_collection(name=sb['index_name'],
+                                                                 embedding_function=st.session_state.rx_client._chosen_embedding_model)
+        st.session_state.rx_client.load_chroma(collection,
+                                               umap_params=umap_params,
+                                               initialize_projector=True)
+        if limit_size:
+            st.session_state.rx_client = data_import.reduce_vector_query_size(st.session_state.rx_client,
+                                                                            st.session_state.chroma_client,
+                                                                            vector_qty,
+                                                                            verbose=True)
+        st.session_state.rx_client.run_projector()
+        if export_df:
+            data_import.export_data_viz(st.session_state.rx_client,df_export_path)
+        
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 
         st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
@@ -110,13 +124,22 @@ with st.expander("Visualize data",expanded=True):
     if st.button('Visualize data'):
         start_time = time.time()  # Start the timer
 
-        if st.session_state.client is None:
-            st.session_state.client = RAGxplorer(embedding_model=sb['embedding_name'])
-        
-        fig = st.session_state.client.visualize_query(query, 
-                                                      path_to_db=sb['keys']['LOCAL_DB_PATH']+'/chromadb/', 
-                                                      viz_data_df_path=import_file_path,
-                                                      verbose=True)
+        if import_data:
+            with open(import_file_path, 'r') as f:
+                data = json.load(f)
+            index_name=data['visualization_index_name']
+            umap_params=data['umap_params']
+            viz_data=pd.read_json(data['viz_data'], orient='split')
+
+            collection=st.session_state.chroma_client.get_collection(name=index_name,
+                                                                 embedding_function=st.session_state.rx_client._chosen_embedding_model)
+            st.session_state.rx_client.load_chroma(collection,
+                                                umap_params=umap_params,
+                                                initialize_projector=True)
+            fig = st.session_state.rx_client.visualize_query(query,
+                                                             import_projection_data=viz_data)
+        else:
+            fig = st.session_state.rx_client.visualize_query(query)
         st.plotly_chart(fig,use_container_width=True)
 
         end_time = time.time()  # Stop the timer
