@@ -32,7 +32,11 @@ sb=setup.load_sidebar(config_file='../config/config.json',
                       embeddings=True,
                       index_name=True,
                       secret_keys=True)
-secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+try:
+    secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+except setup.SecretKeyException as e:
+    st.warning(f"{e}")
+    st.stop()
 
 # Set up session state variables
 if 'rx_client' not in st.session_state:

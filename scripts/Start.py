@@ -1,4 +1,5 @@
 import streamlit as st
+import setup
 import os
 
 # Set up page
@@ -6,11 +7,27 @@ st.set_page_config(
     page_title="Aerospace Chatbot: AMS",
 )
 st.title("Aerospace Chatbot Homepage")
-st.markdown("Code base: https://github.com/dsmueller3760/aerospace_chatbot/tree/rag_study")
-st.markdown('---')
+st.subheader("Aerospace Mechanisms Symposia (AMS)")
 st.markdown("""
 This space contains chatbots and tools for exploring data in the aerospace mechanisms symposia, using all available papers published since 2000.
+Those papers are located here: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbots/tree/main/data/AMS
 """)
+st.subheader("Code Details")
+st.markdown("Code base: https://github.com/dsmueller3760/aerospace_chatbot/tree/rag_study")
+st.markdown(
+    '''
+    API key links:
+    * OpenAI: https://platform.openai.com/api-keys
+    * Pinecone: https://www.pinecone.io
+    * Hugging Face: https://huggingface.co/settings/tokens
+    * Voyage: https://dash.voyageai.com/api-keys
+    ''')
+with st.expander("Connection Status",expanded=False):
+    st.markdown("**API keys** (Indicates status of local variable. It does not guarantee the key itself is correct):")
+    st.markdown(setup.test_key_status())
+    st.markdown(setup.show_pinecone_connections())
+    st.markdown('Status of chroma databases in config.json:')
+
 st.subheader("Running Locally")
 '''
 It is recommended to run this streamlit app locally for improved performance. The hosted hugging face version is for proof of concept.
@@ -21,21 +38,4 @@ You must have poetry installed locally to manage depdenencies. To run locally, c
     source .venv/bin/activate
     cd ./scripts
     streamlit run Start.py
-'''
-
-st.subheader("Aerospace Mechanisms Symposia (AMS)")
-'''
-This chatbot will look up from all Aerospace Mechanism Symposia in the following location: https://github.com/dsmueller3760/aerospace_chatbot/tree/main/data/AMS
-* Available models: https://platform.openai.com/docs/models
-* Model parameters: https://platform.openai.com/docs/api-reference/chat/create
-* Pinecone: https://docs.pinecone.io/docs/projects#api-keys
-* OpenAI API: https://platform.openai.com/api-keys
-'''
-
-st.subheader("API Key Links")
-'''
-* OpenAI: https://platform.openai.com/api-keys
-* Pinecone: https://www.pinecone.io
-* Hugging Face: https://huggingface.co/settings/tokens
-* Voyage: https://dash.voyageai.com/api-keys
 '''

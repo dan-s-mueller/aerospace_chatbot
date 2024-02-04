@@ -31,7 +31,11 @@ sb=setup.load_sidebar(config_file='../config/config.json',
                       llm=True,
                       model_options=True,
                       secret_keys=True)
-secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+try:
+    secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+except setup.SecretKeyException as e:
+    st.warning(f"{e}")
+    st.stop()
 
 # This is janky but works (needs secrets to initialize properly)
 from ragxplorer import RAGxplorer

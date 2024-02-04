@@ -33,14 +33,6 @@ st.set_page_config(
 )
 # TODO: add database status icons
 st.title('Aerospace Mechanisms Chatbot')
-with st.expander('''What's under the hood?'''):
-    st.markdown('''
-    This chatbot will look up from all Aerospace Mechanism Symposia in the following location: https://github.com/dsmueller3760/aerospace_chatbot/tree/main/data/AMS
-    Example questions:
-    * What are examples of latch failures which have occurred due to improper fitup?
-    * What are examples of lubricants which should be avoided for space mechanism applications?
-    ''')
-filter_toggle=st.checkbox('Filter response with last received sources?')
 
 sb=setup.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
@@ -51,8 +43,20 @@ sb=setup.load_sidebar(config_file='../config/config.json',
                       llm=True,
                       model_options=True,
                       secret_keys=True)
+try:
+    secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+except setup.SecretKeyException as e:
+    st.warning(f"{e}")
+    st.stop()
 
-secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+with st.expander('''What's under the hood?'''):
+    st.markdown('''
+    This chatbot will look up from all Aerospace Mechanism Symposia in the following location: https://github.com/dsmueller3760/aerospace_chatbot/tree/main/data/AMS
+    Example questions:
+    * What are examples of latch failures which have occurred due to improper fitup?
+    * What are examples of lubricants which should be avoided for space mechanism applications?
+    ''')
+filter_toggle=st.checkbox('Filter response with last received sources?')
 
 # Set up chat history
 if 'qa_model_obj' not in st.session_state:
