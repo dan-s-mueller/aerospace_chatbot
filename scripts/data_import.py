@@ -26,8 +26,7 @@ from langchain_core.documents import Document as lancghain_Document
 
 from ragatouille import RAGPretrainedModel
 
-import RAGxplorer
-from RAGxplorer import rag
+from ragxplorer import RAGxplorer, rag
 
 
 from dotenv import load_dotenv,find_dotenv

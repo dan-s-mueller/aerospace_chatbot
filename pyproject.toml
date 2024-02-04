@@ -26,7 +26,7 @@ sentence-transformers = "^2.2.2"
 ragatouille = "^0.0.4b2"
 nbformat = "^5.9.2"
 pydantic = "^2.6.0"
-ragxplorer = "^0.1.9"
+RAGxplorer = { git = "https://github.com/dan-s-mueller/RAGxplorer.git", branch = "load_options" }
 
 
 [build-system]
