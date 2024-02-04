@@ -4,6 +4,8 @@ import json
 
 import openai
 from pinecone import Pinecone
+import chromadb
+
 import streamlit as st
 
 from prompts import TEST_QUERY_PROMPT
@@ -199,14 +201,11 @@ def test_key_status():
     else:
         key_status['Hugging Face API Key'] = {'status': True}
 
-    # Chroma client local database
-    # sb['keys']['LOCAL_DB_PATH'])
-
     # Ragatouille local database
         
     return _format_key_status(key_status)
 
-def show_pinecone_connections():
+def show_pinecone_indexes():
     if os.getenv('PINECONE_API_KEY') is None:
         pinecone_status = {'status': False, 'message': 'Pinecone API Key is not set.'}
     else:
@@ -219,6 +218,28 @@ def show_pinecone_connections():
     
     return _format_pinecone_status(pinecone_status)
     # return pinecone_status['message'][0]
+
+def show_chroma_collections():
+    if os.getenv('LOCAL_DB_PATH') is None:
+        chroma_status = {'status': False, 'message': 'Local database path is not set.'}
+    else:
+        persistent_client = chromadb.PersistentClient(path=os.getenv('LOCAL_DB_PATH')+'/chromadb')            
+        collections=persistent_client.list_collections()
+        if len(collections)==0:
+            chroma_status = {'status': False, 'message': 'No collections found'}
+        else:   
+            chroma_status = {'status': True, 'message': collections}
+    return _format_chroma_status(chroma_status)
+
+def test_ragatouille_status():
+    path=os.getenv('LOCAL_DB_PATH')+'/.ragatouille/colbert/indexes'
+    indexes = []
+    for item in os.listdir(path):
+        item_path = os.path.join(path, item)
+        if os.path.isdir(item_path):
+            indexes.append(item)
+
+    return _format_ragatouille_status(indexes)
 
 def _format_key_status(key_status:str):
     formatted_status = ""
@@ -238,8 +259,30 @@ def _format_pinecone_status(pinecone_status):
             state = index['status']['state']
             status = ":heavy_check_mark:"
             index_description += f"- {name}: {state} ({status})\n"
-        markdown_string = f"**Pinecone Collections**\n{index_description}"
+        markdown_string = f"**Pinecone Indexes**\n{index_description}"
     else:
         message = pinecone_status['message']
+        markdown_string = f"**Pinecone Indexes**\n- {message}: :x:"
+    return markdown_string
+
+def _format_chroma_status(chroma_status):
+    collection_description=''
+    if chroma_status['status']:
+        for index in chroma_status['message']:
+            name = index.name
+            status = ":heavy_check_mark:"
+            collection_description += f"- {name}: ({status})\n"
+        markdown_string = f"**ChromaDB Collections**\n{collection_description}"
+    else:
+        message = chroma_status['message']
         markdown_string = f"**Pinecone Status**\n- {message}: :x:"
     return markdown_string
+
+def _format_ragatouille_status(indexes):
+    if len(indexes) == 0:
+        return "**Ragatouille Indexes**\n- :x: No Ragatouille indexes initialized."
+    else:
+        index_description = ""
+        for index in indexes:
+            index_description += f"- {index}: :heavy_check_mark:\n"
+        return f"**Ragatouille Indexes**\n{index_description}"

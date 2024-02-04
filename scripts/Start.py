@@ -25,8 +25,10 @@ st.markdown(
 with st.expander("Connection Status",expanded=False):
     st.markdown("**API keys** (Indicates status of local variable. It does not guarantee the key itself is correct):")
     st.markdown(setup.test_key_status())
-    st.markdown(setup.show_pinecone_connections())
+    st.markdown(setup.show_pinecone_indexes())
     st.markdown('Status of chroma databases in config.json:')
+    st.markdown(setup.show_chroma_collections())
+    st.markdown(setup.test_ragatouille_status())
 
 st.subheader("Running Locally")
 '''
