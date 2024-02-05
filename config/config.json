@@ -30,8 +30,11 @@
             "name": "Hugging Face",
             "models": [
                 "mistralai/Mixtral-8x7B-Instruct-v0.1",
+                "mistralai/Mistral-7B-Instruct-v0.2",
                 "ai-aerospace/autotrain-ams_v0.1_100_Mistral-7B-Instruct-v0.1",
-                "meta-llama/Llama-2-7b-chat-hf"
+                "meta-llama/Llama-2-7b-chat-hf",
+                "meta-llama/Llama-2-70b-chat-hf",
+                "WizardLM/WizardLM-70B-V1.0"
             ]
         }
     ],

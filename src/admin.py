@@ -51,9 +51,15 @@ def load_sidebar(config_file,
         # Embeddings
         st.sidebar.title('Embeddings')
         if sb_out['index_type']=='RAGatouille':    # Default to selecting hugging face model for RAGatouille, otherwise select alternates
-           sb_out['query_model']=st.sidebar.selectbox('Hugging face rag models', databases[sb_out['index_type']]['hf_rag_models'], index=0)
+           sb_out['query_model']=st.sidebar.selectbox('Hugging face rag models', 
+                                                      databases[sb_out['index_type']]['hf_rag_models'], 
+                                                      index=0,
+                                                      help="Models listed are compatible with the selected index type.")
         else:
-            sb_out['query_model']=st.sidebar.selectbox('Embedding models', databases[sb_out['index_type']]['embedding_models'], index=0)
+            sb_out['query_model']=st.sidebar.selectbox('Embedding models', 
+                                                       databases[sb_out['index_type']]['embedding_models'], 
+                                                       index=0,
+                                                       help="Models listed are compatible with the selected index type.")
 
         if sb_out['query_model']=='Openai':
             sb_out['embedding_name']='text-embedding-ada-002'
@@ -66,6 +72,10 @@ def load_sidebar(config_file,
         if sb_out['index_type']!='RAGatouille': # RAGatouille doesn't have a rag_type
             # RAG Type
             st.sidebar.title('RAG Type')
+
+            # TODO: add other advanced RAG types
+            st.sidebar.warning('RAG type only set up for standard, other features under construction.')
+
             sb_out['rag_type']=st.sidebar.selectbox('RAG type', config['rag_types'], index=0)
             sb_out['smart_agent']=st.sidebar.checkbox('Smart agent?')
             logging.info('RAG type: '+sb_out['rag_type'])
@@ -88,7 +98,7 @@ def load_sidebar(config_file,
     if model_options:
         # Add input fields in the sidebar
         st.sidebar.title('LLM Options')
-        temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.0, step=0.1)
+        temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1)
         output_level = st.sidebar.selectbox('Level of Output', ['Concise', 'Detailed'], index=1)
 
         if 'index_type' in sb_out:

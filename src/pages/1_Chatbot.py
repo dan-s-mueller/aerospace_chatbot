@@ -56,7 +56,9 @@ with st.expander('''What's under the hood?'''):
     * What are examples of latch failures which have occurred due to improper fitup?
     * What are examples of lubricants which should be avoided for space mechanism applications?
     ''')
-filter_toggle=st.checkbox('Filter response with last received sources?')
+
+# TODO: implement this filtering
+# filter_toggle=st.checkbox('Filter response with last received sources?')
 
 # Set up chat history
 if 'qa_model_obj' not in st.session_state:
@@ -144,7 +146,7 @@ if prompt := st.chat_input('Prompt here'):
                 st.session_state.qa_model_obj.update_model(llm,
                                                            k=sb['model_options']['k'],
                                                            search_type=sb['model_options']['search_type'],
-                                                           filter_arg=filter_toggle)
+                                                           filter_arg=False)
                 logging.info('QA model object updated: '+str(st.session_state.qa_model_obj))
             
             st.write('Searching vector database, generating prompt...')

@@ -13,10 +13,12 @@ from langchain_community.llms import HuggingFaceHub
 
 import streamlit as st
 
+from ragxplorer import RAGxplorer
+
 # Set up the page, enable logging 
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
-logging.basicConfig(filename='app_4_clean_and_question.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='app_4_data_processing.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Set the page title
 st.set_page_config(
@@ -24,7 +26,6 @@ st.set_page_config(
     layout='wide'
 )
 st.title('Clean and Question Data')
-# TODO: add database status icons
 sb=admin.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
                       llm=True,
@@ -36,9 +37,6 @@ except admin.SecretKeyException as e:
     st.warning(f"{e}")
     st.stop()
 
-# This is janky but works (needs secrets to initialize properly)
-from ragxplorer import RAGxplorer
-
 # Set up session state variables
 if 'client' not in st.session_state:
     st.session_state.client = None
@@ -46,9 +44,7 @@ if 'client' not in st.session_state:
 # Populate the main screen
 # Add an expandable with description of what's going on.
 with st.expander("Under the hood",expanded=True):
-    st.markdown('''
-                
-                ''')
+    st.warning("Under construction")
 
 chunked_file = st.text_input('Chunked raw text file', f'../data/AMS/ams_data-400-0.jsonl')
 

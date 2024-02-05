@@ -108,7 +108,7 @@ with st.expander("Create visualization data",expanded=True):
             
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 
-        st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
+        st.markdown(f":heavy_check_mark: Created visualization data in {elapsed_time:.2f} seconds")
 
 with st.expander("Visualize data",expanded=True):
     import_data = st.checkbox('Import visualization data?', value=True)
@@ -154,3 +154,4 @@ with st.expander("Visualize data",expanded=True):
 
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time
+        st.markdown(f":heavy_check_mark: Created visualization in {elapsed_time:.2f} seconds")

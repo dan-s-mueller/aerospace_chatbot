@@ -341,8 +341,11 @@ def embedding_size(embedding_model:any):
         return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
     else:
         raise NotImplementedError
-def process_chunk(json_file,llm,
-                  clean_data=False,tag_data=False,question_data=False):
+def process_chunk(json_file:str,
+                  llm:any,
+                  clean_data:bool=False,
+                  tag_data:bool=False,
+                  question_data:bool=False):
     docs_out=[]
     with open(json_file, "r") as file_in:
         file_data = [json.loads(line) for line in file_in]
@@ -353,9 +356,11 @@ def process_chunk(json_file,llm,
                                             page=line['metadata']['page'],
                                             metadata=line['metadata'])
             docs_out.append(doc_temp)
-    # clean data
-    # tag data
-    # question data
+    # TODO: write out this function
+    # clean data: use cheap llm to clean data
+    # tag data: use llm to tag data and add metadata for filtering/grouping later
+    # question data: use llm to generate questions from data
+    
 def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_qty:int,verbose:bool=False):
     """Reduce the number of vectors in the RAGxplorer client's vector database.
 
