@@ -92,6 +92,7 @@ with st.expander("Create visualization data",expanded=True):
         start_time = time.time()  # Start the timer
         
         umap_params={'n_neighbors': 5,'n_components': 2,'random_state':42}  # TODO: expose umap_params as an option
+        logging.info(f'embedding_function: {st.session_state.rx_client._chosen_embedding_model}')
         collection=st.session_state.chroma_client.get_collection(name=sb['index_name'],
                                                                  embedding_function=st.session_state.rx_client._chosen_embedding_model)
         st.session_state.rx_client.load_chroma(collection,
@@ -105,7 +106,7 @@ with st.expander("Create visualization data",expanded=True):
         st.session_state.rx_client.run_projector()
         if export_df:
             data_import.export_data_viz(st.session_state.rx_client,df_export_path)
-        
+            
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 
         st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
@@ -127,23 +128,30 @@ with st.expander("Visualize data",expanded=True):
 
     if st.button('Visualize data'):
         start_time = time.time()  # Start the timer
-
+        logging.info('Starting visualization for query: '+query)
         if import_data:
             with open(import_file_path, 'r') as f:
                 data = json.load(f)
             index_name=data['visualization_index_name']
             umap_params=data['umap_params']
             viz_data=pd.read_json(data['viz_data'], orient='split')
-
+            logging.info('Loaded data from file: '+import_file_path)
+            logging.info(f'embedding_function: {st.session_state.rx_client._chosen_embedding_model}')
             collection=st.session_state.chroma_client.get_collection(name=index_name,
-                                                                 embedding_function=st.session_state.rx_client._chosen_embedding_model)
+                                                                     embedding_function=st.session_state.rx_client._chosen_embedding_model)
+            logging.info('Loaded collection: '+index_name)
             st.session_state.rx_client.load_chroma(collection,
                                                 umap_params=umap_params,
                                                 initialize_projector=True)
+            logging.info('Loaded chroma collection: '+index_name)
             fig = st.session_state.rx_client.visualize_query(query,
-                                                             import_projection_data=viz_data)
+                                                             import_projection_data=viz_data,
+                                                             verbose=True)
+            logging.info('Visualized query: '+query)
         else:
+            logging.info('No data loaded from file.')
             fig = st.session_state.rx_client.visualize_query(query)
+            logging.info('Visualized query: '+query)
         st.plotly_chart(fig,use_container_width=True)
 
         end_time = time.time()  # Stop the timer

@@ -275,7 +275,7 @@ def _format_chroma_status(chroma_status):
         markdown_string = f"**ChromaDB Collections**\n{collection_description}"
     else:
         message = chroma_status['message']
-        markdown_string = f"**Pinecone Status**\n- {message}: :x:"
+        markdown_string = f"**ChromaDB Collections**\n- {message}: :x:"
     return markdown_string
 
 def _format_ragatouille_status(indexes):

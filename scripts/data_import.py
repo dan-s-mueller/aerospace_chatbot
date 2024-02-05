@@ -309,8 +309,8 @@ def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_
         RAGxplorer: The updated RAGxplorer client object.
     """
     ids = rx_client._vectordb.get()['ids']
-    embeddings = rx_client.get_doc_embeddings(rx_client._vectordb)
-    text = rx_client.get_docs(rx_client._vectordb)
+    embeddings = rag.get_doc_embeddings(rx_client._vectordb)
+    text = rag.get_docs(rx_client._vectordb)
 
     if verbose:
         print(' ~ Reducing the number of vectors from '+str(len(embeddings))+' to '+str(vector_qty)+'...')
@@ -336,3 +336,19 @@ def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_
         print('Reduced number of vectors to '+str(len(rx_client._documents.embeddings))+' ✓')
         print('Copy of database saved as '+temp_index_name+' ✓')
     return rx_client
+
+def export_data_viz(rx_client:RAGxplorer,df_export_path:str):
+    """Export visualization data and UMAP parameters of RAGxplorer object to a JSON file.
+
+    Args:
+        rx_client (RAGxplorer): The RAGxplorer object containing the visualization data.
+        df_export_path (str): The file path to export the JSON data.
+
+    """
+    export_data = {'visualization_index_name' : rx_client._vectordb.name,
+                   'umap_params': rx_client._projector.get_params(),
+                   'viz_data': rx_client._VizData.base_df.to_json(orient='split')}
+
+    # Save the data to a JSON file
+    with open(df_export_path, 'w') as f:
+        json.dump(export_data, f, indent=4)
