@@ -1,5 +1,6 @@
+import admin
+
 import streamlit as st
-import setup
 import os
 
 # Set up page
@@ -37,6 +38,6 @@ You must have poetry installed locally to manage depdenencies. To run locally, c
     poetry config virtualenvs.in-project true
     poetry install
     source .venv/bin/activate
-    cd ./scripts
-    streamlit run Start.py
+    cd ./src
+    streamlit run Home.py
 '''
