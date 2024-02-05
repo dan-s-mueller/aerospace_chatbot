@@ -145,8 +145,7 @@ with st.expander("Visualize data",expanded=True):
                                                 initialize_projector=True)
             logging.info('Loaded chroma collection: '+index_name)
             fig = st.session_state.rx_client.visualize_query(query,
-                                                             import_projection_data=viz_data,
-                                                             verbose=True)
+                                                             import_projection_data=viz_data)
             logging.info('Visualized query: '+query)
         else:
             logging.info('No data loaded from file.')
