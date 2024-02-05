@@ -7,11 +7,14 @@ import uuid
 import random
 from typing import List
 
-import pinecone
+from pinecone import Pinecone as pinecone_client
+from pinecone import PodSpec
 import chromadb
 
 import json, jsonlines
 from tqdm import tqdm
+
+import streamlit as st
 
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
@@ -28,7 +31,6 @@ from ragatouille import RAGPretrainedModel
 
 from ragxplorer import RAGxplorer, rag
 
-
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 
@@ -43,7 +45,8 @@ def chunk_docs(docs: List[str],
                file:str=None,
                chunk_size:int=500,
                chunk_overlap:int=0,
-               use_json:bool=False):
+               use_json:bool=False,
+               show_progress:bool=False):
     """
     Chunk the given list of documents into smaller chunks based on the specified method.
 
@@ -54,35 +57,43 @@ def chunk_docs(docs: List[str],
         chunk_size (int, optional): Size of each chunk in tokens. Defaults to 500.
         chunk_overlap (int, optional): Number of overlapping tokens between chunks. Defaults to 0.
         use_json (bool, optional): Flag indicating whether to use the jsonl file instead of parsing the docs. Defaults to False.
+        show_progress (bool, optional): Flag indicating whether to show progress bar. Defaults to False.
 
     Returns:
         List[lancghain_Document]: List of chunked documents.
     """
+
+    if show_progress:
+        progress_text = "Chunking in progress..."
+        my_bar = st.progress(0, text=progress_text)
     docs_out=[]
     if file:
         logging.info('Jsonl file to be used: '+file)
     if use_json and os.path.exists(file):
-            logging.info('Jsonl file found, using this instead of parsing docs.')
-            with open(file, "r") as file_in:
-                file_data = [json.loads(line) for line in file_in]
-            # Process the file data and put it into the same format as docs_out
-            for line in file_data:
-                doc_temp = lancghain_Document(page_content=line['page_content'],
-                                              source=line['metadata']['source'],
-                                              page=line['metadata']['page'],
-                                              metadata=line['metadata'])
-                if has_meaningful_content(doc_temp):
-                    docs_out.append(doc_temp)
-            logging.info('Parsed: '+file)
-            logging.info('Number of entries: '+str(len(docs_out)))
-            logging.info('Sample entries:')
-            logging.info(str(docs_out[0]))
-            logging.info(str(docs_out[-1]))
+        logging.info('Jsonl file found, using this instead of parsing docs.')
+        with open(file, "r") as file_in:
+            file_data = [json.loads(line) for line in file_in]
+        # Process the file data and put it into the same format as docs_out
+        for i, line in enumerate(file_data):
+            doc_temp = lancghain_Document(page_content=line['page_content'],
+                                          source=line['metadata']['source'],
+                                          page=line['metadata']['page'],
+                                          metadata=line['metadata'])
+            if has_meaningful_content(doc_temp):
+                docs_out.append(doc_temp)
+            if show_progress:
+                progress_percentage = i / len(file_data)
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        logging.info('Parsed: '+file)
+        logging.info('Number of entries: '+str(len(docs_out)))
+        logging.info('Sample entries:')
+        logging.info(str(docs_out[0]))
+        logging.info(str(docs_out[-1]))
     else:
         logging.info('No jsonl found. Reading and parsing docs.')
         logging.info('Chunk size (tokens): '+str(chunk_size))
         logging.info('Chunk overlap (tokens): '+str(chunk_overlap))
-        for doc in tqdm(docs,desc='Reading and parsing docs'):
+        for i, doc in enumerate(docs):
             logging.info('Parsing: '+doc)
             loader = PyPDFLoader(doc)
             data = loader.load_and_split()
@@ -108,6 +119,9 @@ def chunk_docs(docs: List[str],
                                             metadata=page.metadata)
                 if has_meaningful_content(page):
                     docs_out.append(doc_temp)
+            if show_progress:
+                progress_percentage = i / len(docs)
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         logging.info('Parsed: '+doc)
         logging.info('Sample entries:')
         logging.info(str(docs_out[0]))
@@ -119,6 +133,8 @@ def chunk_docs(docs: List[str],
                 for doc in docs_out: 
                     writer.write(doc.dict())
             logging.info('Written: '+file)
+        if show_progress:
+            my_bar.empty()
     return docs_out
 def load_docs(index_type,
               docs,
@@ -131,7 +147,8 @@ def load_docs(index_type,
               use_json=False,
               file=None,
               batch_size=50,
-              local_db_path='../db'):
+              local_db_path='../db',
+              show_progress=False):
     """
     Loads PDF documents. If index_name is blank, it will return a list of the data (texts). If it is a name of a pinecone storage, it will return the vector_store.    
     """
@@ -145,37 +162,34 @@ def load_docs(index_type,
     # Initialize client
     if index_name:
         if index_type=="Pinecone":
-            # Import and initialize Pinecone client
-            pinecone.init(
-                api_key=PINECONE_API_KEY
-            )
-            # Find the existing index, clear for new start
             if clear:
-                try:
-                    pinecone.describe_index(index_name)
-                except:
-                    raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-                index=pinecone.Index(index_name)
-                index.delete(delete_all=True) # Clear the index first, then upload
-                logging.info('Cleared database '+index_name)
+                delete_index(index_type,index_name,local_db_path=local_db_path)
             # Upsert docs
+            logging.info(f"Creating new index {index_name}.")
+            pc = pinecone_client(api_key=PINECONE_API_KEY)
             try:
-                pinecone.describe_index(index_name)
+                pc.describe_index(index_name)
             except:
                 logging.info(f"Index {index_name} does not exist. Creating new index.")
                 logging.info('Size of embedding used: '+str(embedding_size(query_model)))  # TODO: set this to be backed out of the embedding size
-                pinecone.create_index(index_name,dimension=embedding_size(query_model))
+                pc.create_index(index_name,
+                                dimension=embedding_size(query_model),
+                                metric="cosine",
+                                spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
                 logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
                 pass
             else:
                 logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
-            index = pinecone.Index(index_name)
+            index = pc.Index(index_name)
             vectorstore = Pinecone(index, query_model, "page_content") # Set the vector store to calculate embeddings on page_content
             vectorstore = batch_upsert(index_type,
                                        vectorstore,
                                        docs_out,
-                                       batch_size=batch_size)
+                                       batch_size=batch_size,
+                                       show_progress=show_progress)
         elif index_type=="ChromaDB":
+            if clear:
+                delete_index(index_type,index_name,local_db_path=local_db_path)
             # Upsert docs. Defaults to putting this in the local_db_path directory
             logging.info(f"Creating new index {index_name}.")
             persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
@@ -186,7 +200,8 @@ def load_docs(index_type,
             vectorstore = batch_upsert(index_type,
                                        vectorstore,
                                        docs_out,
-                                       batch_size=batch_size)
+                                       batch_size=batch_size,
+                                       show_progress=show_progress)
             logging.info("Documents upserted to f{index_name}.")
             # Test query
             test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
@@ -194,6 +209,8 @@ def load_docs(index_type,
             if not test_query:
                 raise ValueError("Chroma vector database is not configured properly. Test query failed.")       
         elif index_type=="RAGatouille":
+            if clear:
+                delete_index(index_type,index_name,local_db_path=local_db_path)
             logging.info(f'Setting up RAGatouille model {query_model}')
             vectorstore = RAGPretrainedModel.from_pretrained(query_model)
             logging.info('RAGatouille model set: '+str(vectorstore))
@@ -225,40 +242,76 @@ def load_docs(index_type,
         return vectorstore
     else:
         return docs_out
-def delete_index(index_type,index_name,
-                 local_db_path='../db'):
+def delete_index(index_type: str, index_name: str, local_db_path: str = '../db'):
     """
-    Deletes an existing Pinecone index with the given index_name.
+    Delete an index based on the specified index type and name.
+
+    Args:
+        index_type (str): The type of index to delete. Valid options are "Pinecone", "ChromaDB", and "RAGatouille".
+        index_name (str): The name of the index to delete.
+        local_db_path (str, optional): The path to the local database. Defaults to '../db'.
+
+    Raises:
+        Exception: If the specified index does not exist.
+
+    Returns:
+        None
     """
-    if index_type=="Pinecone":
-        # Import and initialize Pinecone client
-        pinecone.init(
-            api_key=PINECONE_API_KEY
-        )
+    if index_type == "Pinecone":
+        pc = pinecone_client(api_key=PINECONE_API_KEY)
         try:
-            pinecone.describe_index(index_name)
-            logging.info(f"Index {index_name} exists.")
+            pc.describe_index(index_name)
         except:
-            raise Exception(f"Index {index_name} does not exist, cannot delete.")
-        else:
-            pinecone.delete_index(index_name)
-            logging.info(f"Index {index_name} deleted.")
-    elif index_type=="ChromaDB":
-        # Delete existing collection
-        logging.info(f"Deleting index {index_name}.")
-        persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')  
-        persistent_client.delete_collection(name=index_name)  
-        logging.info("Index deleted.")
-    elif index_type=="RAGatouille":
-            raise NotImplementedError
-def batch_upsert(index_type,vectorstore,docs_out,batch_size=50):
-    # Batch insert the chunks into the vector store
+            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+        index = pc.Index(index_name)
+        index.delete(delete_all=True)  # Clear the index first, then upload
+        logging.info('Cleared database ' + index_name)
+    elif index_type == "ChromaDB":
+        try:
+            persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
+            indices = persistent_client.list_collections()
+            logging.info('Available databases: ' + str(indices))
+            for idx in indices:
+                if index_name in idx.name:
+                    logging.info(f"Clearing index {idx.name}...")
+                    persistent_client.delete_collection(name=idx.name)
+                    logging.info(f"Index {idx.name} cleared.")
+        except:
+            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+        logging.info('Cleared database and matching databases ' + index_name)
+    elif index_type == "RAGatouille":
+        try:
+            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
+            shutil.rmtree(ragatouille_path)
+        except:
+            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+def batch_upsert(index_type:str,vectorstore:any,docs_out:List,batch_size:int=50,show_progress:bool=False):
+    """
+    Upserts a batch of documents into a vector store.
+
+    Parameters:
+    index_type (str): The type of vector store index (e.g., "Pinecone", "ChromaDB").
+    vectorstore (any): The vector store object.
+    docs_out (List): The list of documents to upsert.
+    batch_size (int, optional): The size of each batch. Defaults to 50.
+
+    Returns:
+    any: The updated vector store object.
+    """
+    if show_progress:
+        progress_text = "Upsert in progress..."
+    my_bar = st.progress(0, text=progress_text)
     for i in range(0, len(docs_out), batch_size):
         chunk_batch = docs_out[i:i + batch_size]
         if index_type=="Pinecone":
             vectorstore.add_documents(chunk_batch)
         elif index_type=="ChromaDB":
             vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone, leaving if statement just in case
+        if show_progress:
+            progress_percentage = i / len(docs_out)
+            my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+    if show_progress:
+        my_bar.empty()
     return vectorstore
 def has_meaningful_content(page):
     """
@@ -271,9 +324,18 @@ def has_meaningful_content(page):
         return False
     else:
         return True
-def embedding_size(embedding_model):
+def embedding_size(embedding_model:any):
     """
-    Returns the embedding size of the model.
+    Returns the size of the embedding for a given embedding model.
+
+    Parameters:
+    embedding_model (any): The embedding model to get the size for.
+
+    Returns:
+    int: The size of the embedding.
+
+    Raises:
+    NotImplementedError: If the embedding model is not supported.
     """
     if isinstance(embedding_model,OpenAIEmbeddings):
         return 1536 # https://platform.openai.com/docs/models/embeddings, test-embedding-ada-002

@@ -85,10 +85,11 @@ if st.button('Chunk docs to jsonl file'):
                            chunk_method=chunk_method,
                            chunk_size=chunk_size,
                            chunk_overlap=chunk_overlap,
-                           use_json=False)
+                           use_json=False,
+                           show_progress=True)
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
-    st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
+    st.markdown(f":heavy_check_mark: Chunked docs in {elapsed_time:.2f} seconds")
 if st.button('Load docs into vector database'):
     start_time = time.time()  # Start the timer
     data_import.load_docs(sb['index_type'],
@@ -101,10 +102,11 @@ if st.button('Load docs into vector database'):
                           clear=clear_database,
                           file=json_file,
                           batch_size=batch_size,
-                          local_db_path=sb['keys']['LOCAL_DB_PATH'])
+                          local_db_path=sb['keys']['LOCAL_DB_PATH'],
+                          show_progress=True)
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
-    st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
+    st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
 # Add a button to delete the index
 if st.button('Delete existing index'):
     start_time = time.time()  # Start the timer
@@ -113,4 +115,4 @@ if st.button('Delete existing index'):
                              local_db_path=sb['keys']['LOCAL_DB_PATH'])
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
-    st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
+    st.markdown(f":heavy_check_mark: Deleted existing database(s) in {elapsed_time:.2f} seconds")

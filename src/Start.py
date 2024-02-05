@@ -22,7 +22,7 @@ st.markdown(
     * Hugging Face: https://huggingface.co/settings/tokens
     * Voyage: https://dash.voyageai.com/api-keys
     ''')
-with st.expander("Connection Status",expanded=False):
+with st.expander("Connection Status",expanded=True):
     st.markdown("**API keys** (Indicates status of local variable. It does not guarantee the key itself is correct):")
     st.markdown(setup.test_key_status())
     st.markdown(setup.show_pinecone_indexes())

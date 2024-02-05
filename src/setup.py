@@ -74,7 +74,7 @@ def load_sidebar(config_file,
         # Index Name 
         st.sidebar.title('Index Name')  
         sb_out['index_name']=index_data[sb_out['index_type']][sb_out['query_model']]
-        st.sidebar.markdown('Index name: '+sb_out['index_name'])
+        st.sidebar.markdown('Index name: '+sb_out['index_name'],help='config/index_data.json contains index names')
         logging.info('Index name: '+sb_out['index_name'])
     if llm:
         # LLM

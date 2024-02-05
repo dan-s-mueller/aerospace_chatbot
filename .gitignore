@@ -6,5 +6,4 @@
 .ragatouille/
 .venv/
 db/
-scripts/__pycache__
-scripts/tmp_trainer
+src/__pycache__
