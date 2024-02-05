@@ -15,14 +15,14 @@ import streamlit as st
 # Set up the page, enable logging, read environment variables
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
-logging.basicConfig(filename='app_2_document_upload.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='app_2_database_processing.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Set the page title
 st.set_page_config(
-    page_title='Upload PDFs',
+    page_title='Database Processing',
     layout='wide'
 )
-st.title('Upload PDFs')
+st.title('Database Processing')
 # TODO: add database status icons
 sb=setup.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
@@ -35,6 +35,11 @@ try:
 except setup.SecretKeyException as e:
     st.warning(f"{e}")
     st.stop()
+
+with st.expander('''What's under the hood?'''):
+    st.markdown('''
+    This is where you manage databases and process input documents.
+    ''')
 
 # Populate the main screen
 logging.info(f'index_type test, {sb["index_type"]}')
@@ -51,8 +56,7 @@ elif sb['query_model']=='Openai' or 'Voyage':
 logging.info('Query model set: '+str(query_model))
 
 # Find docs
-index_name_md=st.markdown('Enter a directory relative to the current directory, or an absolute path.')
-data_folder = st.text_input('Enter a directory','../data/AMS/')
+data_folder = st.text_input('Enter a directory','../data/AMS/',help='Enter a directory relative to the current directory, or an absolute path.')
 if not os.path.isdir(data_folder):
     st.error('The entered directory does not exist')
 docs = glob.glob(data_folder+'*.pdf')   # Only get the PDFs in the directory

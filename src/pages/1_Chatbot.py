@@ -24,7 +24,7 @@ import streamlit as st
 # Set up the page, enable logging, read environment variables
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
-logging.basicConfig(filename='app_1_chatbot_ams_modular.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='app_1_chatbot.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Set the page title
 st.set_page_config(
@@ -32,7 +32,7 @@ st.set_page_config(
     layout='wide'
 )
 # TODO: add database status icons
-st.title('Aerospace Mechanisms Chatbot')
+st.title('Aerospace Chatbot: Modular')
 
 sb=setup.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
