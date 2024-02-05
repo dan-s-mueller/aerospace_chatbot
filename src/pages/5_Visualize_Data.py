@@ -1,5 +1,4 @@
-import setup
-import data_import
+import admin, data_processing
 
 import json
 import time
@@ -26,15 +25,15 @@ st.set_page_config(
 )
 st.title('Visualize Data')
 # TODO: add database status icons
-sb=setup.load_sidebar(config_file='../config/config.json',
+sb=admin.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
                       vector_databases=True,
                       embeddings=True,
                       index_name=True,
                       secret_keys=True)
 try:
-    secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
-except setup.SecretKeyException as e:
+    secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+except admin.SecretKeyException as e:
     st.warning(f"{e}")
     st.stop()
 
@@ -99,13 +98,13 @@ with st.expander("Create visualization data",expanded=True):
                                                umap_params=umap_params,
                                                initialize_projector=True)
         if limit_size:
-            st.session_state.rx_client = data_import.reduce_vector_query_size(st.session_state.rx_client,
+            st.session_state.rx_client = data_processing.reduce_vector_query_size(st.session_state.rx_client,
                                                                             st.session_state.chroma_client,
                                                                             vector_qty,
                                                                             verbose=True)
         st.session_state.rx_client.run_projector()
         if export_df:
-            data_import.export_data_viz(st.session_state.rx_client,df_export_path)
+            data_processing.export_data_viz(st.session_state.rx_client,df_export_path)
             
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 

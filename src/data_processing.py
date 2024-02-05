@@ -2,7 +2,6 @@ import os
 import re
 import logging
 import shutil
-import string
 import uuid
 import random
 from typing import List
@@ -12,7 +11,6 @@ from pinecone import PodSpec
 import chromadb
 
 import json, jsonlines
-from tqdm import tqdm
 
 import streamlit as st
 

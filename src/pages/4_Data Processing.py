@@ -1,5 +1,4 @@
-import setup
-import data_import
+import admin, data_processing
 
 import time
 import logging
@@ -26,14 +25,14 @@ st.set_page_config(
 )
 st.title('Clean and Question Data')
 # TODO: add database status icons
-sb=setup.load_sidebar(config_file='../config/config.json',
+sb=admin.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
                       llm=True,
                       model_options=True,
                       secret_keys=True)
 try:
-    secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
-except setup.SecretKeyException as e:
+    secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+except admin.SecretKeyException as e:
     st.warning(f"{e}")
     st.stop()
 
@@ -82,7 +81,7 @@ with st.expander("Process Chunked Data",expanded=True):
     if st.button('Process chunked data'):
         start_time = time.time()  # Start the timer
         
-        data_import.process_chunk(chunked_file,llm,
+        data_processing.process_chunk(chunked_file,llm,
                   clean_data=False,tag_data=False,question_data=False)
 
         end_time = time.time()  # Stop the timer

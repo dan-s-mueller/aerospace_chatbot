@@ -1,4 +1,4 @@
-import queries, setup
+import admin, queries
 
 import os
 import time
@@ -34,7 +34,7 @@ st.set_page_config(
 # TODO: add database status icons
 st.title('Aerospace Chatbot: Modular')
 
-sb=setup.load_sidebar(config_file='../config/config.json',
+sb=admin.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
                       vector_databases=True,
                       embeddings=True,
@@ -44,8 +44,8 @@ sb=setup.load_sidebar(config_file='../config/config.json',
                       model_options=True,
                       secret_keys=True)
 try:
-    secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
-except setup.SecretKeyException as e:
+    secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+except admin.SecretKeyException as e:
     st.warning(f"{e}")
     st.stop()
 

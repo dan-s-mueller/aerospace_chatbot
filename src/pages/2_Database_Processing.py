@@ -1,4 +1,4 @@
-import data_import, setup
+import admin, data_processing
 
 import os
 import time
@@ -24,15 +24,15 @@ st.set_page_config(
 )
 st.title('Database Processing')
 # TODO: add database status icons
-sb=setup.load_sidebar(config_file='../config/config.json',
+sb=admin.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
                       vector_databases=True,
                       embeddings=True,
                       index_name=True,
                       secret_keys=True)
 try:
-    secrets=setup.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
-except setup.SecretKeyException as e:
+    secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+except admin.SecretKeyException as e:
     st.warning(f"{e}")
     st.stop()
 
@@ -84,7 +84,7 @@ with st.expander("Options"):
 # Add a button to run the function
 if st.button('Chunk docs to jsonl file'):
     start_time = time.time()  # Start the timer
-    data_import.chunk_docs(docs,
+    data_processing.chunk_docs(docs,
                            file=json_file,
                            chunk_method=chunk_method,
                            chunk_size=chunk_size,
@@ -96,7 +96,7 @@ if st.button('Chunk docs to jsonl file'):
     st.markdown(f":heavy_check_mark: Chunked docs in {elapsed_time:.2f} seconds")
 if st.button('Load docs into vector database'):
     start_time = time.time()  # Start the timer
-    data_import.load_docs(sb['index_type'],
+    data_processing.load_docs(sb['index_type'],
                           docs,
                           query_model=query_model,
                           index_name=sb['index_name'],
@@ -114,7 +114,7 @@ if st.button('Load docs into vector database'):
 # Add a button to delete the index
 if st.button('Delete existing index'):
     start_time = time.time()  # Start the timer
-    data_import.delete_index(sb['index_type'],
+    data_processing.delete_index(sb['index_type'],
                              sb['index_name'],
                              local_db_path=sb['keys']['LOCAL_DB_PATH'])
     end_time = time.time()  # Stop the timer
