@@ -106,7 +106,7 @@ def load_sidebar(config_file,
         logging.info('Model options: '+str(sb_out['model_options']))
     if secret_keys:
         # Add a section for secret keys
-        st.sidebar.title('Secret keys',help='See Start page under Connection Status for status of keys.')
+        st.sidebar.title('Secret keys',help='See Home page under Connection Status for status of keys.')
         st.sidebar.markdown('If .env file is in directory, will use that first.')
         sb_out['keys']={}
         if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI':
