@@ -149,6 +149,8 @@ class QA_Model:
         self.result = self.conversational_qa_chain.invoke({'question': query})
         logging.info('QA result: '+str(self.result))
 
+        # TODO: Add custom processing for each llm type. They all have different kinds of output but are mapped to keys in coversational_qa_chain
+
         if self.index_type!='RAGatouille':
             self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
             self.result['answer'].content += '\nSources: \n'+self.sources
