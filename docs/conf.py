@@ -1,5 +1,6 @@
 import os
 import sys
+sys.path.insert(0, os.path.abspath('..'))
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -15,22 +16,15 @@ author = 'Dan Mueller'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
-extensions = []
-
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+extensions = [
+    'sphinx.ext.autodoc',  # Core library for html generation from docstrings
+    'sphinx.ext.autosummary',  # Create neat summary tables
+    'sphinx.ext.napoleon',  # Support for NumPy and Google style docstrings
+]
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
-
-# Custom stuff
-sys.path.insert(0, os.path.abspath('../src'))
-extensions = [
-    'sphinx.ext.napoleon',
-]
