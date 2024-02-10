@@ -1,11 +1,7 @@
 Welcome to Aerospace Chatbot's documentation!
 =============================================
-.. automodule:: src.data_processing
-    :members:
-
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    api
 
 Indices and tables
 ==================

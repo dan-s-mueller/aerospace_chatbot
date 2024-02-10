@@ -148,7 +148,26 @@ def load_docs(index_type,
               local_db_path='../db',
               show_progress=False):
     """
-    Loads PDF documents. If index_name is blank, it will return a list of the data (texts). If it is a name of a pinecone storage, it will return the vector_store.    
+    Load documents into an index for a given index type.
+
+    Args:
+        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
+        docs (list): The list of documents to load into the index.
+        query_model (str): The query model to use for embedding calculation.
+        index_name (str, optional): The name of the index. Defaults to None.
+        chunk_method (str, optional): The method for chunking the documents. Defaults to 'tiktoken_recursive'.
+        chunk_size (int, optional): The size of each chunk. Defaults to 500.
+        chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
+        clear (bool, optional): Whether to clear the index before loading documents. Defaults to False.
+        use_json (bool, optional): Whether to use JSON format for documents. Defaults to False.
+        file (str, optional): The file to load documents from. Defaults to None.
+        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
+        local_db_path (str, optional): The path to the local database. Defaults to '../db'.
+        show_progress (bool, optional): Whether to show progress during upsert. Defaults to False.
+
+    Returns:
+        vectorstore (object): The vector store containing the loaded documents, if index_name is provided.
+        docs_out (list): The chunked documents, if index_name is not provided.
     """
     # Chunk docs
     docs_out=chunk_docs(docs,
@@ -283,27 +302,30 @@ def delete_index(index_type: str, index_name: str, local_db_path: str = '../db')
             shutil.rmtree(ragatouille_path)
         except:
             raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-def batch_upsert(index_type:str,vectorstore:any,docs_out:List,batch_size:int=50,show_progress:bool=False):
+from typing import List
+
+def batch_upsert(index_type: str, vectorstore: any, docs_out: List, batch_size: int = 50, show_progress: bool = False):
     """
     Upserts a batch of documents into a vector store.
 
-    Parameters:
-    index_type (str): The type of vector store index (e.g., "Pinecone", "ChromaDB").
-    vectorstore (any): The vector store object.
-    docs_out (List): The list of documents to upsert.
-    batch_size (int, optional): The size of each batch. Defaults to 50.
+    Args:
+        index_type (str): The type of vector store index ("Pinecone" or "ChromaDB").
+        vectorstore (any): The vector store object.
+        docs_out (List): The list of documents to upsert.
+        batch_size (int, optional): The size of each batch. Defaults to 50.
+        show_progress (bool, optional): Whether to show progress bar. Defaults to False.
 
     Returns:
-    any: The updated vector store object.
+        any: The updated vector store object.
     """
     if show_progress:
         progress_text = "Upsert in progress..."
     my_bar = st.progress(0, text=progress_text)
     for i in range(0, len(docs_out), batch_size):
         chunk_batch = docs_out[i:i + batch_size]
-        if index_type=="Pinecone":
+        if index_type == "Pinecone":
             vectorstore.add_documents(chunk_batch)
-        elif index_type=="ChromaDB":
+        elif index_type == "ChromaDB":
             vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone, leaving if statement just in case
         if show_progress:
             progress_percentage = i / len(docs_out)
@@ -313,9 +335,15 @@ def batch_upsert(index_type:str,vectorstore:any,docs_out:List,batch_size:int=50,
     return vectorstore
 def has_meaningful_content(page):
     """
-    Test whether the page has more than 30% words and is more than 5 words.
+    Check if a page has meaningful content.
+
+    Args:
+        page (Page): The page object to check.
+
+    Returns:
+        bool: True if the page has meaningful content, False otherwise.
     """
-    text=page.page_content
+    text = page.page_content
     num_words = len(text.split())
     alphanumeric_pct = sum(c.isalnum() for c in text) / len(text)
     if num_words < 5 or alphanumeric_pct < 0.3:
@@ -326,14 +354,14 @@ def embedding_size(embedding_model:any):
     """
     Returns the size of the embedding for a given embedding model.
 
-    Parameters:
-    embedding_model (any): The embedding model to get the size for.
+    Args:
+        embedding_model (object): The embedding model to get the size for.
 
     Returns:
-    int: The size of the embedding.
+        int: The size of the embedding.
 
     Raises:
-    NotImplementedError: If the embedding model is not supported.
+        NotImplementedError: If the embedding model is not supported.
     """
     if isinstance(embedding_model,OpenAIEmbeddings):
         return 1536 # https://platform.openai.com/docs/models/embeddings, test-embedding-ada-002
