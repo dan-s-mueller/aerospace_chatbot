@@ -7,3 +7,8 @@
 .venv/
 db/
 src/__pycache__
+
+# Sphinx documentation
+docs/_build/
+docs/_static/
+docs/_templates/
