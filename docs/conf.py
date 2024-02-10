@@ -31,3 +31,6 @@ html_static_path = ['_static']
 
 # Custom stuff
 sys.path.insert(0, os.path.abspath('../src'))
+extensions = [
+    'sphinx.ext.napoleon',
+]
