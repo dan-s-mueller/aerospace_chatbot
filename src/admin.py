@@ -125,7 +125,6 @@ def load_sidebar(config_file,
                     if index['status']['state']=='Ready':
                         name.append(index['name'])
                 sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
-
         elif sb_out['index_type']=='RAGatouille':
             indices=show_ragatouille_indexes(format=False)
             if len(indices)>0:
@@ -163,9 +162,9 @@ def load_sidebar(config_file,
                                         'k':k,
                                         'search_type':search_type,
                                         'temperature':temperature}
-        else:
-            sb_out['model_options']={'output_level':output_level,
-                                    'temperature':temperature}
+            else:
+                sb_out['model_options']={'output_level':output_level,
+                                        'temperature':temperature}
         logging.info('Model options: '+str(sb_out['model_options']))
     if secret_keys:
         # Add a section for secret keys
