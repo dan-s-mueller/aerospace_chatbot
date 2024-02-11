@@ -122,7 +122,8 @@ def load_sidebar(config_file,
         # Add input fields in the sidebar
         st.sidebar.title('LLM Options')
         temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1)
-        output_level = st.sidebar.selectbox('Level of Output', ['Concise', 'Detailed'], index=1)
+        output_level = st.sidebar.number_input('Max output tokens', min_value=50, step=10, value=1000,
+                                               help='Max output tokens for LLM. Concise: 50, Verbose: 1000. Limit depends on model.')
 
         if 'index_type' in sb_out:
             st.sidebar.title('Retrieval Options')

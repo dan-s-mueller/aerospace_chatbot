@@ -28,7 +28,7 @@ logging.basicConfig(filename='app_1_chatbot.log', filemode='w', format='%(name)s
 
 # Set the page title
 st.set_page_config(
-    page_title='Aerospace Chatbot: Modular',
+    page_title='Aerospace Chatbot',
     layout='wide'
 )
 # TODO: add database status icons
@@ -91,13 +91,6 @@ if prompt := st.chat_input('Prompt here'):
             st.session_state.message_id += 1
             st.write('Starting reponse generation for message: '+str(st.session_state.message_id))
             logging.info('Starting reponse generation for message: '+str(st.session_state.message_id))
-
-             # Process some items
-            if sb['model_options']['output_level'] == 'Concise':
-                out_token = 50
-            else:
-                out_token = 1000
-            logging.info('Output tokens: '+str(out_token))
             
             if st.session_state.message_id==1:
                 # Define embeddings
@@ -114,10 +107,11 @@ if prompt := st.chat_input('Prompt here'):
                     llm = ChatOpenAI(model_name=sb['llm_model'],
                                     temperature=sb['model_options']['temperature'],
                                     openai_api_key=secrets['OPENAI_API_KEY'],
-                                    max_tokens=out_token)
+                                    max_tokens=sb['model_options']['output_level'])
                 elif sb['llm_source']=='Hugging Face':
                     llm = HuggingFaceHub(repo_id=sb['llm_model'],
-                                        model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
+                                        model_kwargs={"temperature": sb['model_options']['temperature'], 
+                                                      "max_length": sb['model_options']['output_level']})
                 logging.info('LLM model set: '+str(llm))
 
                 # Initialize QA model object
@@ -141,10 +135,11 @@ if prompt := st.chat_input('Prompt here'):
                     llm = ChatOpenAI(model_name=sb['llm_model'],
                                     temperature=sb['model_options']['temperature'],
                                     openai_api_key=secrets['OPENAI_API_KEY'],
-                                    max_tokens=out_token)
+                                    max_tokens=sb['model_options']['output_level'])
                 elif sb['llm_source']=='Hugging Face':
                     llm = HuggingFaceHub(repo_id=sb['llm_model'],
-                                        model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
+                                        model_kwargs={"temperature": sb['model_options']['temperature'], 
+                                                      "max_length": sb['model_options']['output_level']})
                 logging.info('LLM model set: '+str(llm))
 
                 st.session_state.qa_model_obj.update_model(llm,

@@ -5,7 +5,7 @@ import os
 
 # Set up page
 st.set_page_config(
-    page_title="Aerospace Chatbot: AMS",
+    page_title="Aerospace Chatbot",
 )
 st.title("Aerospace Chatbot Homepage")
 st.subheader("Aerospace Mechanisms Symposia (AMS)")
