@@ -153,13 +153,14 @@ class QA_Model:
         self.result = self.conversational_qa_chain.invoke({'question': query})
         logging.info('QA result: '+str(self.result))
 
-        # TODO: Add custom processing for each llm type. They all have different kinds of output but are mapped to keys in coversational_qa_chain
-
         if self.index_type!='RAGatouille':
             self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
-            self.result['answer'].content += '\nSources: \n'+self.sources
+            if self.llm.__class__.__name__=='ChatOpenAI':
+                self.ai_response=self.result['answer'].content + '\nSources: \n'+self.sources
+            elif self.llm.__class__.__name__=='HuggingFaceHub':
+                self.ai_response=self.result['answer'] + '\nSources: \n'+self.sources
             logging.info('Sources: '+str(self.sources))
-            logging.info('Response with sources: '+str(self.result['answer'].content))
+            logging.info('Response with sources: '+str(self.ai_response))
         else:
             # RAGatouille doesn't have metadata, need to extract from context first.
             extracted_metadata = []
@@ -170,11 +171,15 @@ class QA_Model:
                 if match:
                     extracted_metadata.append("{"+match.group(1)+"}")
             self.sources = '\n'.join(extracted_metadata)
-            self.result['answer'].content += '\nSources: \n'+self.sources
-            logging.info('Sources: '+str(self.sources))
-            logging.info('Response with sources: '+str(self.result['answer'].content))
 
-        self.memory.save_context({'question': query}, {'answer': self.result['answer'].content})
+            if self.llm.__class__.__name__=='ChatOpenAI':
+                self.ai_response=self.result['answer'].content + '\nSources: \n'+self.sources
+            elif self.llm.__class__.__name__=='HuggingFaceHub':
+                self.ai_response=self.result['answer'] + '\nSources: \n'+self.sources
+            logging.info('Sources: '+str(self.sources))
+            logging.info('Response with sources: '+str(self.ai_response))
+
+        self.memory.save_context({'question': query}, {'answer': self.ai_response})
         logging.info('Memory content after qa result: '+str(self.memory))
 
     def update_model(self,

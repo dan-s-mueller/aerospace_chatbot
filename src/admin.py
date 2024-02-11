@@ -109,7 +109,6 @@ def load_sidebar(config_file,
     if llm:
         # LLM
         st.sidebar.title('LLM')
-        st.sidebar.warning('OpenAI LLMs functional, the rest are under construction.')
         sb_out['llm_source']=st.sidebar.selectbox('LLM model', list(llms.keys()), index=0)
         logging.info('LLM source: '+sb_out['llm_source'])
         if sb_out['llm_source']=='OpenAI':

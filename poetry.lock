@@ -5645,22 +5645,6 @@ files = [
 doc = ["reno", "sphinx", "tornado (>=4.5)"]
 
 [[package]]
-name = "text-generation"
-version = "0.6.1"
-description = "Hugging Face Text Generation Python Client"
-optional = false
-python-versions = ">=3.7,<4.0"
-files = [
-    {file = "text_generation-0.6.1-py3-none-any.whl", hash = "sha256:ebca00587eeabc0f5118f66ee1048bf690bd7735a9a10361c533c31c8c0bf994"},
-    {file = "text_generation-0.6.1.tar.gz", hash = "sha256:730e662aa7812f73c08ab953e008e90455f3d046f81efa0ef3de462bd4cf63d9"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.8,<4.0"
-huggingface-hub = ">=0.12,<1.0"
-pydantic = ">1.10,<3"
-
-[[package]]
 name = "thinc"
 version = "8.2.3"
 description = "A refreshing functional take on deep learning, compatible with your favorite libraries"
@@ -7113,4 +7097,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "2d848d2fcdce6abcc7857bc246976b7fb7ea2d4879617fb105766eca007217a8"
+content-hash = "d7978ff272c63a08c4293294959c3e20316d7e8f7923c3102f9b9fc3a6de8a1d"

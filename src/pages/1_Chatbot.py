@@ -96,7 +96,7 @@ if prompt := st.chat_input('Prompt here'):
             if sb['model_options']['output_level'] == 'Concise':
                 out_token = 50
             else:
-                out_token = 516
+                out_token = 1000
             logging.info('Output tokens: '+str(out_token))
             
             if st.session_state.message_id==1:
@@ -156,7 +156,7 @@ if prompt := st.chat_input('Prompt here'):
             st.write('Searching vector database, generating prompt...')
             logging.info('Searching vector database, generating prompt...')
             st.session_state.qa_model_obj.query_docs(prompt)
-            ai_response=st.session_state.qa_model_obj.result['answer'].content
+            ai_response=st.session_state.qa_model_obj.ai_response
             message_placeholder.markdown(ai_response)
             t_delta=time.time() - t_start
             status.update(label='Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)

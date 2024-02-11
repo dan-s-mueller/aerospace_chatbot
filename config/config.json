@@ -30,20 +30,12 @@
             "name": "Hugging Face",
             "models": [
                 {
-                    "model":"NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
-                    "endpoint":"https://api-inference.huggingface.co/models/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO"
-                },
-                {
-                    "model":"mistralai/Mistral-7B-v0.1",
-                    "endpoint":"https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1"
-                },
-                {
-                    "model":"google/flan-t5-xxl",
-                    "endpoint":"https://api-inference.huggingface.co/models/google/flan-t5-xxl"
+                    "model":"mistralai/Mistral-7B-Instruct-v0.2",
+                    "endpoint":""
                 },
                 {
                     "model":"meta-llama/Llama-2-70b-chat-hf",
-                    "endpoint":"https://api-inference.huggingface.co/models/meta-llama/Llama-2-70b-chat-hf"
+                    "endpoint":""
                 
                 }
             ]
