@@ -1,7 +1,19 @@
-Welcome to Aerospace Chatbot's documentation!
+Aerospace Chatbot Documentation
 =============================================
+
 .. toctree::
-    api
+    :maxdepth: 4
+    :caption: Functionality
+
+    help/streamlit_apps
+    help/structure
+    help/configs
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+
+   modules/api
 
 Indices and tables
 ==================
@@ -10,7 +22,8 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-aerospace_chatbot
+
+Aerospace Chatbot
 =================
 Aerospace discipline-specific chatbots and AI tools.
 

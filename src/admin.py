@@ -15,6 +15,13 @@ from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 
 class SecretKeyException(Exception):
+    """Exception raised for secret key related errors.
+
+    Attributes:
+        message -- explanation of the error
+        id -- unique identifier for the error
+    """
+
     def __init__(self, message, id):
         super().__init__(message)
         self.id = id
@@ -29,7 +36,21 @@ def load_sidebar(config_file,
                  model_options=False,
                  secret_keys=False):
     """
-    Sets up the sidebar based no toggled options. Returns variables with options.
+    Loads the sidebar configuration for the chatbot.
+
+    Args:
+        config_file (str): The path to the configuration file.
+        index_data_file (str): The path to the index data file.
+        vector_databases (bool, optional): Whether to include vector databases in the sidebar. Defaults to False.
+        embeddings (bool, optional): Whether to include embeddings in the sidebar. Defaults to False.
+        rag_type (bool, optional): Whether to include RAG type in the sidebar. Defaults to False.
+        index_name (bool, optional): Whether to include index name in the sidebar. Defaults to False.
+        llm (bool, optional): Whether to include LLM in the sidebar. Defaults to False.
+        model_options (bool, optional): Whether to include model options in the sidebar. Defaults to False.
+        secret_keys (bool, optional): Whether to include secret keys in the sidebar. Defaults to False.
+
+    Returns:
+        dict: The sidebar configuration.
     """
     sb_out={}
     with open(config_file, 'r') as f:
@@ -140,9 +161,6 @@ def load_sidebar(config_file,
     return sb_out
 
 def set_secrets(sb):
-    """
-    Sets secrets from environment file, or from sidebar if not available.
-    """
     secrets={}
 
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
@@ -266,6 +284,15 @@ def _format_key_status(key_status:str):
     return formatted_status
 
 def _format_pinecone_status(pinecone_status):
+    """
+    Formats the Pinecone status into a markdown string.
+
+    Args:
+        pinecone_status (dict): The Pinecone status dictionary.
+
+    Returns:
+        str: The formatted markdown string.
+    """
     index_description=''
     if pinecone_status['status']:
         for index in pinecone_status['message']:
@@ -280,6 +307,15 @@ def _format_pinecone_status(pinecone_status):
     return markdown_string
 
 def _format_chroma_status(chroma_status):
+    """
+    Formats the chroma status dictionary into a markdown string.
+
+    Args:
+        chroma_status (dict): The chroma status dictionary containing the status and message.
+
+    Returns:
+        str: The formatted markdown string.
+    """
     collection_description=''
     if chroma_status['status']:
         for index in chroma_status['message']:
@@ -293,6 +329,15 @@ def _format_chroma_status(chroma_status):
     return markdown_string
 
 def _format_ragatouille_status(indexes):
+    """
+    Formats the status of Ragatouille indexes.
+
+    Args:
+        indexes (list): List of Ragatouille indexes.
+
+    Returns:
+        str: Formatted status of Ragatouille indexes.
+    """
     if len(indexes) == 0:
         return "**Ragatouille Indexes**\n- :x: No Ragatouille indexes initialized."
     else:
