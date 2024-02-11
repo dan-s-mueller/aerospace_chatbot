@@ -63,6 +63,7 @@ docs = glob.glob(data_folder+'*.pdf')   # Only get the PDFs in the directory
 st.markdown('PDFs found: '+str(docs))
 st.markdown('Number of PDFs found: ' + str(len(docs)))
 logging.info('Docs: '+str(docs))
+database_appendix=st.text_input('Appendix for database name','ams')
 
 # Add an expandable box for options
 with st.expander("Options"):
@@ -99,7 +100,7 @@ if st.button('Load docs into vector database'):
     data_processing.load_docs(sb['index_type'],
                           docs,
                           query_model=query_model,
-                          index_name=sb['index_name'],
+                          index_name=sb['index_name']+'-'+database_appendix,
                           chunk_size=chunk_size,
                           chunk_overlap=chunk_overlap,
                           use_json=use_json,

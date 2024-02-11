@@ -104,8 +104,37 @@ def load_sidebar(config_file,
         # Index Name 
         st.sidebar.title('Index Name')  
         sb_out['index_name']=index_data[sb_out['index_type']][sb_out['query_model']]
-        st.sidebar.markdown('Index name: '+sb_out['index_name'],help='config/index_data.json contains index names')
+        st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='config/index_data.json contains index base names. An index appendix is added on creation under Database Processing.')
         logging.info('Index name: '+sb_out['index_name'])
+        
+        # For each index type, list indices available for the base name
+        if sb_out['index_type']=='ChromaDB':
+            indices=show_chroma_collections(format=False)
+            if indices['status']:
+                name=[]
+                for index in indices['message']:
+                    name.append(index.name)
+                sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+            else:
+                st.sidebar.markdown('No collections found.',help='Check the status on Home.')
+        elif sb_out['index_type']=='Pinecone':
+            indices=show_pinecone_indexes(format=False)
+            if indices['status']:
+                name=[]
+                for index in indices['message']:
+                    if index['status']['state']=='Ready':
+                        name.append(index['name'])
+                sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+
+        elif sb_out['index_type']=='RAGatouille':
+            indices=show_ragatouille_indexes(format=False)
+            if len(indices)>0:
+                name=[]
+                for index in indices:
+                    name.append(index)
+                sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+            else:
+                st.sidebar.markdown('No collections found.',help='Check the status on Home.')
     if llm:
         # LLM
         st.sidebar.title('LLM')
@@ -236,7 +265,7 @@ def test_key_status():
         
     return _format_key_status(key_status)
 
-def show_pinecone_indexes():
+def show_pinecone_indexes(format=True):
     if os.getenv('PINECONE_API_KEY') is None:
         pinecone_status = {'status': False, 'message': 'Pinecone API Key is not set.'}
     else:
@@ -247,10 +276,12 @@ def show_pinecone_indexes():
         else:
             pinecone_status = {'status': True, 'message': indexes}
     
-    return _format_pinecone_status(pinecone_status)
-    # return pinecone_status['message'][0]
+    if format:
+        return _format_pinecone_status(pinecone_status)
+    else:
+        return pinecone_status
 
-def show_chroma_collections():
+def show_chroma_collections(format=True):
     if os.getenv('LOCAL_DB_PATH') is None:
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
     else:
@@ -264,9 +295,12 @@ def show_chroma_collections():
             chroma_status = {'status': False, 'message': 'No collections found'}
         else:   
             chroma_status = {'status': True, 'message': collections}
-    return _format_chroma_status(chroma_status)
-
-def test_ragatouille_status():
+    if format:
+        return _format_chroma_status(chroma_status)
+    else:
+        return chroma_status
+    
+def show_ragatouille_indexes(format=True):
     path=os.getenv('LOCAL_DB_PATH')+'/.ragatouille/colbert/indexes'
     try:
         indexes = []
@@ -276,9 +310,11 @@ def test_ragatouille_status():
                 indexes.append(item)
     except:
         indexes = []
-
-    return _format_ragatouille_status(indexes)
-
+    if format:
+        return _format_ragatouille_status(indexes)
+    else:
+        return indexes
+    
 def _format_key_status(key_status:str):
     formatted_status = ""
     for key, value in key_status.items():

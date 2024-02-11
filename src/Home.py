@@ -25,10 +25,11 @@ st.markdown(
     ''')
 with st.expander("Connection Status",expanded=True):
     st.markdown("**API keys** (Indicates status of local variable. It does not guarantee the key itself is correct):")
+    
     st.markdown(admin.test_key_status())
     st.markdown(admin.show_pinecone_indexes())
     st.markdown(admin.show_chroma_collections())
-    st.markdown(admin.test_ragatouille_status())
+    st.markdown(admin.show_ragatouille_indexes())
 
 st.subheader("Running Locally")
 '''
