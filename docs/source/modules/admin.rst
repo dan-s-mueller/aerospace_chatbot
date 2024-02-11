@@ -1,4 +1,4 @@
-admin module
+admin
 ============
 
 .. automodule:: admin

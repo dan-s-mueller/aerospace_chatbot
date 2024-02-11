@@ -63,13 +63,17 @@ with st.expander('''What's under the hood?'''):
 # Set up chat history
 if 'qa_model_obj' not in st.session_state:
     st.session_state.qa_model_obj = []
+    logging.info('QA model object initialized.')
 if 'message_id' not in st.session_state:
     st.session_state.message_id = 0
+    logging.info('Message ID initialized.')
 if 'messages' not in st.session_state:
     st.session_state.messages = []
+    logging.info('Messages initialized.')
 for message in st.session_state.messages:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
+    logging.info('Chat history loaded.')
 
 # Define chat
 if prompt := st.chat_input('Prompt here'):

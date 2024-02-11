@@ -1,4 +1,4 @@
-data\_processing module
+data\_processing
 =======================
 
 .. automodule:: data_processing

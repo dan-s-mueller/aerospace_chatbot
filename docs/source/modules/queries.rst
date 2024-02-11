@@ -1,4 +1,4 @@
-queries module
+queries
 ==============
 
 .. automodule:: queries

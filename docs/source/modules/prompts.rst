@@ -1,4 +1,4 @@
-prompts module
+prompts
 ==============
 
 .. automodule:: prompts
