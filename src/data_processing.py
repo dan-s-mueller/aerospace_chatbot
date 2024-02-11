@@ -209,6 +209,7 @@ def load_docs(index_type,
                 delete_index(index_type,index_name,local_db_path=local_db_path)
             # Upsert docs. Defaults to putting this in the local_db_path directory
             logging.info(f"Creating new index {index_name}.")
+            logging.info(f"Local database path: {local_db_path+'/chromadb'}")
             persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
             vectorstore = Chroma(client=persistent_client,
                                  collection_name=index_name,

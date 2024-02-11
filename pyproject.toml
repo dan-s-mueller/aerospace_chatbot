@@ -29,6 +29,7 @@ RAGxplorer = { git = "https://github.com/gabrielchua/RAGxplorer.git", branch = "
 pinecone-client = "^3.0.2"
 sphinx = "7.2.6"
 sphinx-rtd-theme = "2.0.0"
+text-generation = "^0.6.1"
 
 
 [build-system]

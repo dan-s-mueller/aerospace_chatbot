@@ -91,7 +91,11 @@ class QA_Model:
         elif index_type=='ChromaDB':
             logging.info('Chat chroma index name: '+str(index_name))
             logging.info('Chat query model: '+str(query_model))
-            persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
+            logging.info('Local db path: '+str(local_db_path))
+            try:
+                persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')   
+            except:
+                raise ValueError("Chroma vector database needs to be reset. Clear cache.")
             self.vectorstore = Chroma(client=persistent_client,
                                       collection_name=index_name,
                                       embedding_function=query_model)
@@ -104,7 +108,7 @@ class QA_Model:
                 raise Exception("Chroma vector database is not configured properly. Test query failed. Likely the index does not exist.")
             logging.info('Test query: '+str(test_query))
             if not test_query:
-                raise ValueError("Chroma vector database is not configured properly. Test query failed.")
+                raise ValueError("Chroma vector database or llm is not configured properly. Test query failed.")
             else:
                 logging.info('Test query succeeded!')
             

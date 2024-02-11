@@ -94,13 +94,12 @@ def load_sidebar(config_file,
             # RAG Type
             st.sidebar.title('RAG Type')
 
-            # TODO: add other advanced RAG types
-            st.sidebar.warning('RAG type only set up for standard, other features under construction.')
-
             sb_out['rag_type']=st.sidebar.selectbox('RAG type', config['rag_types'], index=0)
-            sb_out['smart_agent']=st.sidebar.checkbox('Smart agent?')
             logging.info('RAG type: '+sb_out['rag_type'])
-            logging.info('Smart agent: '+str(sb_out['smart_agent']))
+
+            # TODO: add other advanced RAG types
+            # sb_out['smart_agent']=st.sidebar.checkbox('Smart agent?')
+            # logging.info('Smart agent: '+str(sb_out['smart_agent']))
     if index_name:
         # Index Name 
         st.sidebar.title('Index Name')  
@@ -116,9 +115,10 @@ def load_sidebar(config_file,
         if sb_out['llm_source']=='OpenAI':
             sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0)
         if sb_out['llm_source']=='Hugging Face':
-            {m['model']: m for m in config['llms']['models']}
-            sb_out['llm_endpoint_url']=
-            sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', sb_out['llm_endpoint_url'], index=0)
+            sb_out['hf_models']=llms['Hugging Face']['models']
+            sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', 
+                                                     [item['model'] for item in llms['Hugging Face']['models']], 
+                                                     index=0)
     if model_options:
         # Add input fields in the sidebar
         st.sidebar.title('LLM Options')
@@ -254,7 +254,7 @@ def show_chroma_collections():
     if os.getenv('LOCAL_DB_PATH') is None:
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
     else:
-        persistent_client = chromadb.PersistentClient(path=os.getenv('LOCAL_DB_PATH')+'/chromadb')            
+        persistent_client = chromadb.PersistentClient(path=os.getenv('LOCAL_DB_PATH')+'/chromadb')
         collections=persistent_client.list_collections()
         if len(collections)==0:
             chroma_status = {'status': False, 'message': 'No collections found'}
