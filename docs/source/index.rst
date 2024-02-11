@@ -15,14 +15,6 @@ Aerospace Chatbot Documentation
 
    modules/api
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-
 Aerospace Chatbot
 =================
 Aerospace discipline-specific chatbots and AI tools.
@@ -36,3 +28,9 @@ Dependencies are managed with `poetry <https://python-poetry.org/>`_. Detailed i
     poetry install
 
 * ``poetry.lock`` and ``pyproject.toml`` are committed to this directory and are the working dependencies.
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
