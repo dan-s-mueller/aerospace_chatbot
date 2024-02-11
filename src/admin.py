@@ -254,7 +254,11 @@ def show_chroma_collections():
     if os.getenv('LOCAL_DB_PATH') is None:
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
     else:
-        persistent_client = chromadb.PersistentClient(path=os.getenv('LOCAL_DB_PATH')+'/chromadb')
+        chromadb.Client
+        try:
+            persistent_client = chromadb.PersistentClient(path=os.getenv('LOCAL_DB_PATH')+'/chromadb')
+        except:
+            raise ValueError("Chroma vector database needs to be reset. Clear cache.")
         collections=persistent_client.list_collections()
         if len(collections)==0:
             chroma_status = {'status': False, 'message': 'No collections found'}
