@@ -118,6 +118,13 @@ if prompt := st.chat_input('Prompt here'):
                 elif sb['llm_source']=='Hugging Face':
                     llm = HuggingFaceHub(repo_id=sb['llm_model'],
                                         model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
+                    llm = ChatOpenAI(
+                        model_name="tgi",
+                        openai_api_key="<HF_API_TOKEN>",
+                        openai_api_base="<ENDPOINT_URL>" + "/v1/",
+                    )
+
+
                 logging.info('LLM model set: '+str(llm))
 
                 # Initialize QA model object

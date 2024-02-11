@@ -29,12 +29,23 @@
         {
             "name": "Hugging Face",
             "models": [
-                "mistralai/Mixtral-8x7B-Instruct-v0.1",
-                "mistralai/Mistral-7B-Instruct-v0.2",
-                "ai-aerospace/autotrain-ams_v0.1_100_Mistral-7B-Instruct-v0.1",
-                "meta-llama/Llama-2-7b-chat-hf",
-                "meta-llama/Llama-2-70b-chat-hf",
-                "WizardLM/WizardLM-70B-V1.0"
+                {
+                    "model":"NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+                    "endpoint":"https://api-inference.huggingface.co/models/NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO"
+                },
+                {
+                    "model":"mistralai/Mistral-7B-v0.1",
+                    "endpoint":"https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1"
+                },
+                {
+                    "model":"google/flan-t5-xxl",
+                    "endpoint":"https://api-inference.huggingface.co/models/google/flan-t5-xxl"
+                },
+                {
+                    "model":"meta-llama/Llama-2-70b-chat-hf",
+                    "endpoint":"https://api-inference.huggingface.co/models/meta-llama/Llama-2-70b-chat-hf"
+                
+                }
             ]
         }
     ],

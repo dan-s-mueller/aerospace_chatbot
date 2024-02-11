@@ -116,7 +116,9 @@ def load_sidebar(config_file,
         if sb_out['llm_source']=='OpenAI':
             sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0)
         if sb_out['llm_source']=='Hugging Face':
-            sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', llms[sb_out['llm_source']]['models'], index=0)
+            {m['model']: m for m in config['llms']['models']}
+            sb_out['llm_endpoint_url']=
+            sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', sb_out['llm_endpoint_url'], index=0)
     if model_options:
         # Add input fields in the sidebar
         st.sidebar.title('LLM Options')
