@@ -25,6 +25,9 @@ from langchain_community.embeddings import VoyageEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document as lancghain_Document
 
+from langchain_community.retrievers import ParentDocumentRetriever
+from langchain_community.storage import InMemoryStore
+
 from ragatouille import RAGPretrainedModel
 
 from ragxplorer import RAGxplorer, rag
@@ -137,6 +140,7 @@ def chunk_docs(docs: List[str],
 def load_docs(index_type,
               docs,
               query_model,
+              rag_type='Standard',
               index_name=None,
               chunk_method='tiktoken_recursive',
               chunk_size=500,
@@ -169,13 +173,19 @@ def load_docs(index_type,
         vectorstore (object): The vector store containing the loaded documents, if index_name is provided.
         docs_out (list): The chunked documents, if index_name is not provided.
     """
+
     # Chunk docs
-    docs_out=chunk_docs(docs,
-                        chunk_method=chunk_method,
-                        file=file,
-                        chunk_size=chunk_size,
-                        chunk_overlap=chunk_overlap,
-                        use_json=use_json)
+    if rag_type!='Standard':
+        # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
+        raise NotImplementedError
+    else:
+        docs_out=chunk_docs(docs,
+                            rag_type='Standard',
+                            chunk_method=chunk_method,
+                            file=file,
+                            chunk_size=chunk_size,
+                            chunk_overlap=chunk_overlap,
+                            use_json=use_json)
     # Initialize client
     if index_name:
         if index_type=="Pinecone":
@@ -199,6 +209,9 @@ def load_docs(index_type,
                 logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
             index = pc.Index(index_name)
             vectorstore = Pinecone(index, query_model, "page_content") # Set the vector store to calculate embeddings on page_content
+            if rag_type!='Standard':
+                # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
+                raise NotImplementedError
             vectorstore = batch_upsert(index_type,
                                        vectorstore,
                                        docs_out,
@@ -214,7 +227,10 @@ def load_docs(index_type,
             vectorstore = Chroma(client=persistent_client,
                                  collection_name=index_name,
                                  embedding_function=query_model)
-            logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
+            
+            if rag_type!='Standard':
+                # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
+                raise NotImplementedError
             vectorstore = batch_upsert(index_type,
                                        vectorstore,
                                        docs_out,
@@ -233,6 +249,10 @@ def load_docs(index_type,
             vectorstore = RAGPretrainedModel.from_pretrained(query_model)
             logging.info('RAGatouille model set: '+str(vectorstore))
 
+            if rag_type!='Standard':
+                # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
+                raise NotImplementedError
+            
             # Create an index from the vectorstore.
             docs_out_colbert = [doc.page_content for doc in docs_out]
             if chunk_size>500:

@@ -152,7 +152,7 @@ def load_sidebar(config_file,
         temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1)
         output_level = st.sidebar.number_input('Max output tokens', min_value=50, step=10, value=1000,
                                                help='Max output tokens for LLM. Concise: 50, Verbose: 1000. Limit depends on model.')
-
+        # Set different options for if ragatouille is used, since it has fewer parameters to select
         if 'index_type' in sb_out:
             st.sidebar.title('Retrieval Options')
             k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
