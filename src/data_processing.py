@@ -69,6 +69,7 @@ def chunk_docs(docs: List[str],
     if file:
         logging.info('Jsonl file to be used: '+file)
     if use_json and os.path.exists(file):
+        # Read from pre-parsed jsonl file
         if rag_type=='Standard':   
             logging.info('Jsonl file found, using this instead of parsing docs.')
             with open(file, "r") as file_in:
@@ -92,6 +93,7 @@ def chunk_docs(docs: List[str],
         else:
             raise ValueError("Json import not supported for non-standard RAG types. Please parse the documents (use_json=False).")
     else:
+        # Parse docs directly
         logging.info('No jsonl found. Reading and parsing docs.')
         logging.info('Chunk size (tokens): '+str(chunk_size))
         logging.info('Chunk overlap (tokens): '+str(chunk_overlap))
@@ -99,6 +101,15 @@ def chunk_docs(docs: List[str],
             logging.info('Parsing: '+doc)
             loader = PyPDFLoader(doc)
             page_data = loader.load()
+
+            # Clean up page info, update some metadata
+            for page in page_data:
+                page.metadata['source']=os.path.basename(page.metadata['source'])   # Strip path
+                page.metadata['page']=int(page.metadata['page'])+1   # Pages are 0 based, update
+                page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
+                page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
+                page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
+
 
             if rag_type=='Standard':
                 if chunk_method=='tiktoken_recursive':
@@ -109,20 +120,23 @@ def chunk_docs(docs: List[str],
 
                 # Tidy up text by removing unnecessary characters
                 for chunk in page_chunks:
-                    chunk.metadata['source']=os.path.basename(chunk.metadata['source'])   # Strip path
-                    chunk.metadata['page']=int(chunk.metadata['page'])+1   # Pages are 0 based, update
-                    chunk.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", chunk.page_content)   # Merge hyphenated words
-                    chunk.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", chunk.page_content.strip())  # Fix newlines in the middle of sentences
-                    chunk.page_content = re.sub(r"\n\s*\n", "\n\n", chunk.page_content)   # Remove multiple newlines
                     # Add metadata to the end of the page content, some RAG models don't have metadata.
                     chunk.page_content += str(chunk.metadata)
-                    chunk_temp=lancghain_Document(page_content=chunk.page_content,
-                                                source=chunk.metadata['source'],
-                                                page=chunk.metadata['page'],
-                                                metadata=chunk.metadata)
+                    # chunk_temp=lancghain_Document(page_content=chunk.page_content,
+                    #                             source=chunk.metadata['source'],
+                    #                             page=chunk.metadata['page'],
+                    #                             metadata=chunk.metadata)
                     if has_meaningful_content(chunk):
-                        chunks.append(chunk_temp)
-            elif rag_type=='Parent Child'
+                        chunks.append(chunk)
+            elif rag_type=='Parent-Child': 
+                if chunk_method=='tiktoken_recursive':
+                    k_parent=5
+                    parent_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
+                    child_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                else:
+                    raise NotImplementedError
+            else:
+                raise NotImplementedError
             if show_progress:
                 progress_percentage = i / len(docs)
                 my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
