@@ -18,6 +18,8 @@ from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.retrievers import ParentDocumentRetriever
+from langchain.storage import InMemoryStore
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
@@ -244,7 +246,7 @@ def load_docs(index_type,
             raise NotImplementedError
         vectorstore = batch_upsert(index_type,
                                     vectorstore,
-                                    docs_out,
+                                    chunker,
                                     batch_size=batch_size,
                                     show_progress=show_progress)
     elif index_type=="ChromaDB":
@@ -263,7 +265,7 @@ def load_docs(index_type,
             raise NotImplementedError
         vectorstore = batch_upsert(index_type,
                                     vectorstore,
-                                    docs_out,
+                                    chunker,
                                     batch_size=batch_size,
                                     show_progress=show_progress)
         logging.info("Documents upserted to f{index_name}.")
@@ -350,35 +352,43 @@ def delete_index(index_type: str, index_name: str, local_db_path: str = '../db')
             raise Exception(f"Cannot clear index {index_name} because it does not exist.")
 from typing import List
 
-def batch_upsert(index_type: str, vectorstore: any, docs_out: List, batch_size: int = 50, show_progress: bool = False):
-    """
-    Upserts a batch of documents into a vector store.
-
-    Args:
-        index_type (str): The type of vector store index ("Pinecone" or "ChromaDB").
-        vectorstore (any): The vector store object.
-        docs_out (List): The list of documents to upsert.
-        batch_size (int, optional): The size of each batch. Defaults to 50.
-        show_progress (bool, optional): Whether to show progress bar. Defaults to False.
-
-    Returns:
-        any: The updated vector store object.
-    """
+def batch_upsert(index_type:str, 
+                 vectorstore:any, 
+                 chunker:dict, 
+                 batch_size:int = 50, 
+                 show_progress:bool = False):
     if show_progress:
         progress_text = "Upsert in progress..."
     my_bar = st.progress(0, text=progress_text)
-    for i in range(0, len(docs_out), batch_size):
-        chunk_batch = docs_out[i:i + batch_size]
-        if index_type == "Pinecone":
-            vectorstore.add_documents(chunk_batch)
-        elif index_type == "ChromaDB":
-            vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone, leaving if statement just in case
-        if show_progress:
-            progress_percentage = i / len(docs_out)
-            my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+
+    if chunker['rag']=='Standard':
+        # Upsert each chunk in batches
+        for i in range(0, len(chunker['chunks']), batch_size):
+            chunk_batch = chunker['chunks'][i:i + batch_size]
+            if index_type == "Pinecone":
+                vectorstore.add_documents(chunk_batch)
+            elif index_type == "ChromaDB":
+                vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone, leaving if statement just in case
+            if show_progress:
+                progress_percentage = i / len(chunker['chunks'])
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        retriever=vectorstore.as_retriever()
+    elif chunker['rag']=='Parent-Child':
+        # Create a parent document retriever, add documents
+        # TODO: untested
+        store=InMemoryStore()
+        retriever = ParentDocumentRetriever(
+            vectorstore=vectorstore,
+            docstore=store,
+            parent_splitter=chunker['splitters'][0], # Parent index 0
+            child_splitter=chunker['splitters'][1], # Child index 1
+        )
+        retriever.add_documents(chunker['pages'])
+    else:
+        raise NotImplementedError
     if show_progress:
         my_bar.empty()
-    return vectorstore
+    return vectorstore, retriever
 def has_meaningful_content(page):
     """
     Check if a page has meaningful content.
