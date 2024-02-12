@@ -17,16 +17,13 @@ import streamlit as st
 from langchain_community.vectorstores import Pinecone
 from langchain_community.vectorstores import Chroma
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document as lancghain_Document
-
-from langchain_community.retrievers import ParentDocumentRetriever
-from langchain_community.storage import InMemoryStore
 
 from ragatouille import RAGPretrainedModel
 
@@ -42,6 +39,7 @@ PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
 def chunk_docs(docs: List[str],
+               rag_type:str='Standard',
                chunk_method:str='tiktoken_recursive',
                file:str=None,
                chunk_size:int=500,
@@ -67,29 +65,32 @@ def chunk_docs(docs: List[str],
     if show_progress:
         progress_text = "Chunking in progress..."
         my_bar = st.progress(0, text=progress_text)
-    docs_out=[]
+    chunks=[]
     if file:
         logging.info('Jsonl file to be used: '+file)
     if use_json and os.path.exists(file):
-        logging.info('Jsonl file found, using this instead of parsing docs.')
-        with open(file, "r") as file_in:
-            file_data = [json.loads(line) for line in file_in]
-        # Process the file data and put it into the same format as docs_out
-        for i, line in enumerate(file_data):
-            doc_temp = lancghain_Document(page_content=line['page_content'],
-                                          source=line['metadata']['source'],
-                                          page=line['metadata']['page'],
-                                          metadata=line['metadata'])
-            if has_meaningful_content(doc_temp):
-                docs_out.append(doc_temp)
-            if show_progress:
-                progress_percentage = i / len(file_data)
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        logging.info('Parsed: '+file)
-        logging.info('Number of entries: '+str(len(docs_out)))
-        logging.info('Sample entries:')
-        logging.info(str(docs_out[0]))
-        logging.info(str(docs_out[-1]))
+        if rag_type=='Standard':   
+            logging.info('Jsonl file found, using this instead of parsing docs.')
+            with open(file, "r") as file_in:
+                file_data = [json.loads(line) for line in file_in]
+            # Process the file data and put it into the same format as chunks
+            for i, line in enumerate(file_data):
+                doc_temp = lancghain_Document(page_content=line['page_content'],
+                                            source=line['metadata']['source'],
+                                            page=line['metadata']['page'],
+                                            metadata=line['metadata'])
+                if has_meaningful_content(doc_temp):
+                    chunks.append(doc_temp)
+                if show_progress:
+                    progress_percentage = i / len(file_data)
+                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+            logging.info('Parsed: '+file)
+            logging.info('Number of entries: '+str(len(chunks)))
+            logging.info('Sample entries:')
+            logging.info(str(chunks[0]))
+            logging.info(str(chunks[-1]))
+        else:
+            raise ValueError("Json import not supported for non-standard RAG types. Please parse the documents (use_json=False).")
     else:
         logging.info('No jsonl found. Reading and parsing docs.')
         logging.info('Chunk size (tokens): '+str(chunk_size))
@@ -97,46 +98,48 @@ def chunk_docs(docs: List[str],
         for i, doc in enumerate(docs):
             logging.info('Parsing: '+doc)
             loader = PyPDFLoader(doc)
-            data = loader.load_and_split()
+            page_data = loader.load()
 
-            if chunk_method=='tiktoken_recursive':
-                text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-            else:
-                raise NotImplementedError
-            pages = text_splitter.split_documents(data)
+            if rag_type=='Standard':
+                if chunk_method=='tiktoken_recursive':
+                    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+                else:
+                    raise NotImplementedError
+                page_chunks = text_splitter.split_documents(page_data)
 
-            # Tidy up text by removing unnecessary characters
-            for page in pages:
-                page.metadata['source']=os.path.basename(page.metadata['source'])   # Strip path
-                page.metadata['page']=int(page.metadata['page'])+1   # Pages are 0 based, update
-                page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
-                page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
-                page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
-                # Add metadata to the end of the page content, some RAG models don't have metadata.
-                page.page_content += str(page.metadata)
-                doc_temp=lancghain_Document(page_content=page.page_content,
-                                            source=page.metadata['source'],
-                                            page=page.metadata['page'],
-                                            metadata=page.metadata)
-                if has_meaningful_content(page):
-                    docs_out.append(doc_temp)
+                # Tidy up text by removing unnecessary characters
+                for chunk in page_chunks:
+                    chunk.metadata['source']=os.path.basename(chunk.metadata['source'])   # Strip path
+                    chunk.metadata['page']=int(chunk.metadata['page'])+1   # Pages are 0 based, update
+                    chunk.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", chunk.page_content)   # Merge hyphenated words
+                    chunk.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", chunk.page_content.strip())  # Fix newlines in the middle of sentences
+                    chunk.page_content = re.sub(r"\n\s*\n", "\n\n", chunk.page_content)   # Remove multiple newlines
+                    # Add metadata to the end of the page content, some RAG models don't have metadata.
+                    chunk.page_content += str(chunk.metadata)
+                    chunk_temp=lancghain_Document(page_content=chunk.page_content,
+                                                source=chunk.metadata['source'],
+                                                page=chunk.metadata['page'],
+                                                metadata=chunk.metadata)
+                    if has_meaningful_content(chunk):
+                        chunks.append(chunk_temp)
+            elif rag_type=='Parent Child'
             if show_progress:
                 progress_percentage = i / len(docs)
                 my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         logging.info('Parsed: '+doc)
         logging.info('Sample entries:')
-        logging.info(str(docs_out[0]))
-        logging.info(str(docs_out[-1]))
+        logging.info(str(chunks[0]))
+        logging.info(str(chunks[-1]))
         if file:
             # Write to a jsonl file, save it.
             logging.info('Writing to jsonl file: '+file)
             with jsonlines.open(file, mode='w') as writer:
-                for doc in docs_out: 
+                for doc in chunks: 
                     writer.write(doc.dict())
             logging.info('Written: '+file)
         if show_progress:
             my_bar.empty()
-    return docs_out
+    return chunks
 def load_docs(index_type,
               docs,
               query_model,

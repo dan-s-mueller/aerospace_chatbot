@@ -6,6 +6,7 @@ from dotenv import load_dotenv, find_dotenv
 
 import openai
 import pinecone
+from pinecone import Pinecone as pinecone_client
 import chromadb
 
 from langchain_community.vectorstores import Pinecone
@@ -65,12 +66,16 @@ class QA_Model:
 
         # Read in from the vector database
         if index_type=='Pinecone':
-            pinecone.init(
-                api_key=PINECONE_API_KEY
-            )
+            pc = pinecone_client(api_key=PINECONE_API_KEY)
             logging.info('Chat pinecone index name: '+str(index_name))
             logging.info('Chat query model: '+str(query_model))
-            index = pinecone.Index(index_name)
+            try:
+                pc.describe_index(index_name)
+            except:
+                raise ValueError(f"Index {index_name} does not exist. Please create it first.")
+            else:
+                logging.info(f"Index {index_name} exists.")
+            index = pc.Index(index_name)
             self.vectorstore = Pinecone(index,query_model,'page_content')
             logging.info('Chat vectorstore: '+str(self.vectorstore))
 

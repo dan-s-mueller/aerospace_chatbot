@@ -99,7 +99,7 @@ if prompt := st.chat_input('Prompt here'):
                 elif sb['query_model']=='Voyage':
                     query_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
                 elif sb['index_type']=='RAGatouille':
-                    query_model=RAGPretrainedModel.from_index(sb['keys']['LOCAL_DB_PATH']+'/.ragatouille/colbert/indexes/'+sb['index_name'])
+                    query_model=RAGPretrainedModel.from_index(sb['keys']['LOCAL_DB_PATH']+'/.ragatouille/colbert/indexes/'+sb['index_selected'])
                 logging.info('Query model set: '+str(query_model))
 
                 # Define LLM
@@ -120,7 +120,7 @@ if prompt := st.chat_input('Prompt here'):
                 else:
                     search_type=None
                 st.session_state.qa_model_obj=queries.QA_Model(sb['index_type'],
-                                                               sb['index_name'],
+                                                               sb['index_selected'],
                                                                query_model,
                                                                llm,
                                                                k=sb['model_options']['k'],
