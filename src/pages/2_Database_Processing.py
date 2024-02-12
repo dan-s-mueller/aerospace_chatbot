@@ -100,6 +100,7 @@ if st.button('Load docs into vector database'):
     start_time = time.time()  # Start the timer
     data_processing.load_docs(sb['index_type'],
                           docs,
+                          rag_type=sb['rag_type'],
                           query_model=query_model,
                           index_name=sb['index_name']+'-'+database_appendix,
                           chunk_size=chunk_size,

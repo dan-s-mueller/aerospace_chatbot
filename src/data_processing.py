@@ -44,6 +44,7 @@ def chunk_docs(docs: List[str],
                file:str=None,
                chunk_size:int=500,
                chunk_overlap:int=0,
+               k_parent:int=5,
                use_json:bool=False,
                show_progress:bool=False):
     """
@@ -65,11 +66,11 @@ def chunk_docs(docs: List[str],
     if show_progress:
         progress_text = "Chunking in progress..."
         my_bar = st.progress(0, text=progress_text)
+    pages=[]
     chunks=[]
     if file:
         logging.info('Jsonl file to be used: '+file)
-    if use_json and os.path.exists(file):
-        # Read from pre-parsed jsonl file
+    if use_json and os.path.exists(file):   # Read from pre-parsed jsonl file
         if rag_type=='Standard':   
             logging.info('Jsonl file found, using this instead of parsing docs.')
             with open(file, "r") as file_in:
@@ -92,11 +93,12 @@ def chunk_docs(docs: List[str],
             logging.info(str(chunks[-1]))
         else:
             raise ValueError("Json import not supported for non-standard RAG types. Please parse the documents (use_json=False).")
-    else:
-        # Parse docs directly
+    else:   # Parse docs directly
         logging.info('No jsonl found. Reading and parsing docs.')
         logging.info('Chunk size (tokens): '+str(chunk_size))
         logging.info('Chunk overlap (tokens): '+str(chunk_overlap))
+
+        # Parse doc pages
         for i, doc in enumerate(docs):
             logging.info('Parsing: '+doc)
             loader = PyPDFLoader(doc)
@@ -109,51 +111,59 @@ def chunk_docs(docs: List[str],
                 page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
                 page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
                 page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
-
-
-            if rag_type=='Standard':
-                if chunk_method=='tiktoken_recursive':
-                    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-                else:
-                    raise NotImplementedError
-                page_chunks = text_splitter.split_documents(page_data)
-
-                # Tidy up text by removing unnecessary characters
-                for chunk in page_chunks:
-                    # Add metadata to the end of the page content, some RAG models don't have metadata.
-                    chunk.page_content += str(chunk.metadata)
-                    # chunk_temp=lancghain_Document(page_content=chunk.page_content,
-                    #                             source=chunk.metadata['source'],
-                    #                             page=chunk.metadata['page'],
-                    #                             metadata=chunk.metadata)
-                    if has_meaningful_content(chunk):
-                        chunks.append(chunk)
-            elif rag_type=='Parent-Child': 
-                if chunk_method=='tiktoken_recursive':
-                    k_parent=5
-                    parent_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
-                    child_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-                else:
-                    raise NotImplementedError
-            else:
-                raise NotImplementedError
+                if has_meaningful_content(page):
+                    pages.append(page)
             if show_progress:
                 progress_percentage = i / len(docs)
                 my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        logging.info('Parsed: '+doc)
-        logging.info('Sample entries:')
-        logging.info(str(chunks[0]))
-        logging.info(str(chunks[-1]))
-        if file:
-            # Write to a jsonl file, save it.
-            logging.info('Writing to jsonl file: '+file)
-            with jsonlines.open(file, mode='w') as writer:
-                for doc in chunks: 
-                    writer.write(doc.dict())
-            logging.info('Written: '+file)
-        if show_progress:
-            my_bar.empty()
-    return chunks
+        
+        # Process pages
+        if rag_type=='Standard':
+            if chunk_method=='tiktoken_recursive':
+                text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            else:
+                raise NotImplementedError
+            page_chunks = text_splitter.split_documents(pages)
+
+            # Tidy up text by removing unnecessary characters
+            for chunk in page_chunks:
+                # Add metadata to the end of the page content, some RAG models don't have metadata.
+                chunk.page_content += str(chunk.metadata)
+                # chunk_temp=lancghain_Document(page_content=chunk.page_content,
+                #                             source=chunk.metadata['source'],
+                #                             page=chunk.metadata['page'],
+                #                             metadata=chunk.metadata)
+                if has_meaningful_content(chunk):
+                    chunks.append(chunk)
+            logging.info('Parsed: '+doc)
+            logging.info('Sample entries:')
+            logging.info(str(chunks[0]))
+            logging.info(str(chunks[-1]))
+            if file:
+                # Write to a jsonl file, save it.
+                logging.info('Writing to jsonl file: '+file)
+                with jsonlines.open(file, mode='w') as writer:
+                    for doc in chunks: 
+                        writer.write(doc.dict())
+                logging.info('Written: '+file)
+            if show_progress:
+                my_bar.empty()
+            return {'rag':'Standard',
+                    'pages':pages,
+                    'chunks':chunks,
+                    'splitters':text_splitter}
+        elif rag_type=='Parent-Child': 
+            if chunk_method=='tiktoken_recursive':
+                parent_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
+                child_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            else:
+                raise NotImplementedError
+            return {'rag':'Parent-Child',
+                    'pages':pages,
+                    'chunks':[],
+                    'splitters':[parent_splitter,child_splitter]}
+        else:
+            raise NotImplementedError
 def load_docs(index_type,
               docs,
               query_model,
@@ -188,115 +198,113 @@ def load_docs(index_type,
 
     Returns:
         vectorstore (object): The vector store containing the loaded documents, if index_name is provided.
-        docs_out (list): The chunked documents, if index_name is not provided.
     """
 
     # Chunk docs
-    if rag_type!='Standard':
+    if rag_type=='Standard':
+        chunker=chunk_docs(docs,
+                           rag_type=rag_type,
+                           chunk_method=chunk_method,
+                           file=file,
+                           chunk_size=chunk_size,
+                           chunk_overlap=chunk_overlap,
+                           use_json=use_json,
+                           show_progress=True)
+        docs_out=chunker['chunks']
+    elif rag_type=='Parent-Child':
         # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
         raise NotImplementedError
     else:
-        docs_out=chunk_docs(docs,
-                            rag_type='Standard',
-                            chunk_method=chunk_method,
-                            file=file,
-                            chunk_size=chunk_size,
-                            chunk_overlap=chunk_overlap,
-                            use_json=use_json)
+        raise NotImplementedError
+        
     # Initialize client
-    if index_name:
-        if index_type=="Pinecone":
-            if clear:
-                delete_index(index_type,index_name,local_db_path=local_db_path)
-            # Upsert docs
-            logging.info(f"Creating new index {index_name}.")
-            pc = pinecone_client(api_key=PINECONE_API_KEY)
-            try:
-                pc.describe_index(index_name)
-            except:
-                logging.info(f"Index {index_name} does not exist. Creating new index.")
-                logging.info('Size of embedding used: '+str(embedding_size(query_model)))  # TODO: set this to be backed out of the embedding size
-                pc.create_index(index_name,
-                                dimension=embedding_size(query_model),
-                                metric="cosine",
-                                spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
-                logging.info(f"Index {index_name} created. Adding {len(docs_out)} entries to index.")
-                pass
-            else:
-                logging.info(f"Index {index_name} exists. Adding {len(docs_out)} entries to index.")
-            index = pc.Index(index_name)
-            vectorstore = Pinecone(index, query_model, "page_content") # Set the vector store to calculate embeddings on page_content
-            if rag_type!='Standard':
-                # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
-                raise NotImplementedError
-            vectorstore = batch_upsert(index_type,
-                                       vectorstore,
-                                       docs_out,
-                                       batch_size=batch_size,
-                                       show_progress=show_progress)
-        elif index_type=="ChromaDB":
-            if clear:
-                delete_index(index_type,index_name,local_db_path=local_db_path)
-            # Upsert docs. Defaults to putting this in the local_db_path directory
-            logging.info(f"Creating new index {index_name}.")
-            logging.info(f"Local database path: {local_db_path+'/chromadb'}")
-            persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
-            vectorstore = Chroma(client=persistent_client,
-                                 collection_name=index_name,
-                                 embedding_function=query_model)
-            
-            if rag_type!='Standard':
-                # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
-                raise NotImplementedError
-            vectorstore = batch_upsert(index_type,
-                                       vectorstore,
-                                       docs_out,
-                                       batch_size=batch_size,
-                                       show_progress=show_progress)
-            logging.info("Documents upserted to f{index_name}.")
-            # Test query
-            test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
-            logging.info('Test query: '+str(test_query))
-            if not test_query:
-                raise ValueError("Chroma vector database is not configured properly. Test query failed.")       
-        elif index_type=="RAGatouille":
-            if clear:
-                delete_index(index_type,index_name,local_db_path=local_db_path)
-            logging.info(f'Setting up RAGatouille model {query_model}')
-            vectorstore = RAGPretrainedModel.from_pretrained(query_model)
-            logging.info('RAGatouille model set: '+str(vectorstore))
+    if index_type=="Pinecone":
+        if clear:
+            delete_index(index_type,index_name,local_db_path=local_db_path)
+        # Upsert docs
+        logging.info(f"Creating new index {index_name}.")
+        pc = pinecone_client(api_key=PINECONE_API_KEY)
+        try:
+            pc.describe_index(index_name)
+        except:
+            logging.info(f"Index {index_name} does not exist. Creating new index.")
+            logging.info('Size of embedding used: '+str(embedding_size(query_model)))  # TODO: set this to be backed out of the embedding size
+            pc.create_index(index_name,
+                            dimension=embedding_size(query_model),
+                            metric="cosine",
+                            spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
+            logging.info(f"Index {index_name} created.")
+            pass
+        else:
+            logging.info(f"Index {index_name} exists.")
+        index = pc.Index(index_name)
+        vectorstore = Pinecone(index, query_model, "page_content") # Set the vector store to calculate embeddings on page_content
+        if rag_type!='Standard':
+            # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
+            raise NotImplementedError
+        vectorstore = batch_upsert(index_type,
+                                    vectorstore,
+                                    docs_out,
+                                    batch_size=batch_size,
+                                    show_progress=show_progress)
+    elif index_type=="ChromaDB":
+        if clear:
+            delete_index(index_type,index_name,local_db_path=local_db_path)
+        # Upsert docs. Defaults to putting this in the local_db_path directory
+        logging.info(f"Creating new index {index_name}.")
+        logging.info(f"Local database path: {local_db_path+'/chromadb'}")
+        persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
+        vectorstore = Chroma(client=persistent_client,
+                                collection_name=index_name,
+                                embedding_function=query_model)
+        
+        if rag_type!='Standard':
+            # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
+            raise NotImplementedError
+        vectorstore = batch_upsert(index_type,
+                                    vectorstore,
+                                    docs_out,
+                                    batch_size=batch_size,
+                                    show_progress=show_progress)
+        logging.info("Documents upserted to f{index_name}.")
+        # Test query
+        test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
+        logging.info('Test query: '+str(test_query))
+        if not test_query:
+            raise ValueError("Chroma vector database is not configured properly. Test query failed.")       
+    elif index_type=="RAGatouille":
+        if clear:
+            delete_index(index_type,index_name,local_db_path=local_db_path)
+        logging.info(f'Setting up RAGatouille model {query_model}')
+        vectorstore = RAGPretrainedModel.from_pretrained(query_model)
+        logging.info('RAGatouille model set: '+str(vectorstore))
+        
+        # Create an index from the vectorstore.
+        if rag_type=='Standard':
+            chunks_colbert = [chunk.page_content for chunk in chunker['chunks']]
+        else:
+            raise ValueError("RAGatouille only supports Standard RAG type.")
+        if chunk_size>500:
+            raise ValueError("RAGatouille cannot handle chunks larger than 500 tokens. Reduce token count.")
+        vectorstore.index(
+            collection=chunks_colbert,
+            index_name=index_name,
+            max_document_length=chunk_size,
+            overwrite_index=True,
+            split_documents=True,
+        )
+        logging.info(f"Index created: {vectorstore}")
 
-            if rag_type!='Standard':
-                # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
-                raise NotImplementedError
-            
-            # Create an index from the vectorstore.
-            docs_out_colbert = [doc.page_content for doc in docs_out]
-            if chunk_size>500:
-                raise ValueError("RAGatouille cannot handle chunks larger than 500 tokens. Reduce token count.")
-            vectorstore.index(
-                collection=docs_out_colbert,
-                index_name=index_name,
-                max_document_length=chunk_size,
-                overwrite_index=True,
-                split_documents=True,
-            )
-            logging.info(f"Index created: {vectorstore}")
+        # Move the directory to the db folder
+        logging.info(f"Moving RAGatouille index to {local_db_path}")
+        ragatouille_path = os.path.join(local_db_path, '.ragatouille')
+        if os.path.exists(ragatouille_path):
+            shutil.rmtree(ragatouille_path)
+            logging.info(f"RAGatouille index deleted from {ragatouille_path}")
+        shutil.move('./.ragatouille', local_db_path)
+        logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
 
-            # Move the directory to the db folder
-            logging.info(f"Moving RAGatouille index to {local_db_path}")
-            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
-            if os.path.exists(ragatouille_path):
-                shutil.rmtree(ragatouille_path)
-                logging.info(f"RAGatouille index deleted from {ragatouille_path}")
-            shutil.move('./.ragatouille', local_db_path)
-            logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
-
-    # Return vectorstore or docs
-    if index_name:
-        return vectorstore
-    else:
-        return docs_out
+    return vectorstore
 def delete_index(index_type: str, index_name: str, local_db_path: str = '../db'):
     """
     Delete an index based on the specified index type and name.
@@ -383,6 +391,8 @@ def has_meaningful_content(page):
     """
     text = page.page_content
     num_words = len(text.split())
+    if len(text)==0:
+        return False
     alphanumeric_pct = sum(c.isalnum() for c in text) / len(text)
     if num_words < 5 or alphanumeric_pct < 0.3:
         return False
