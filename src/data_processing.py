@@ -219,7 +219,7 @@ def load_docs(index_type,
     else:
         raise NotImplementedError
         
-    # Initialize client
+    # Initialize client an upsert docs
     if index_type=="Pinecone":
         if clear:
             delete_index(index_type,index_name,local_db_path=local_db_path)
@@ -244,11 +244,11 @@ def load_docs(index_type,
         if rag_type!='Standard':
             # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
             raise NotImplementedError
-        vectorstore = batch_upsert(index_type,
-                                    vectorstore,
-                                    chunker,
-                                    batch_size=batch_size,
-                                    show_progress=show_progress)
+        vectorstore, retriever = batch_upsert(index_type,
+                                              vectorstore,
+                                              chunker,
+                                              batch_size=batch_size,
+                                              show_progress=show_progress)
     elif index_type=="ChromaDB":
         if clear:
             delete_index(index_type,index_name,local_db_path=local_db_path)
@@ -263,11 +263,11 @@ def load_docs(index_type,
         if rag_type!='Standard':
             # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
             raise NotImplementedError
-        vectorstore = batch_upsert(index_type,
-                                    vectorstore,
-                                    chunker,
-                                    batch_size=batch_size,
-                                    show_progress=show_progress)
+        vectorstore, retriever = batch_upsert(index_type,
+                                              vectorstore,
+                                              chunker,
+                                              batch_size=batch_size,
+                                              show_progress=show_progress)
         logging.info("Documents upserted to f{index_name}.")
         # Test query
         test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
