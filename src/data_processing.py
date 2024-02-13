@@ -191,7 +191,7 @@ def load_docs(index_type,
                         show_progress=True)
         
     # Initialize client an upsert docs
-    vectorstore = initialize_database(index_type, index_name, query_model, rag_type=rag_type, clear=clear, local_db_path=local_db_path))
+    vectorstore = initialize_database(index_type, index_name, query_model, rag_type=rag_type, clear=clear, local_db_path=local_db_path)
     
     if index_type=="RAGatouille":
         # TODO: move this into upsert_docs somehow
