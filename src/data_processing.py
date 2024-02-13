@@ -180,114 +180,26 @@ def load_docs(index_type,
               batch_size=50,
               local_db_path='../db',
               show_progress=False):
-    """
-    Load documents into an index for a given index type.
-
-    Args:
-        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
-        docs (list): The list of documents to load into the index.
-        query_model (str): The query model to use for embedding calculation.
-        index_name (str, optional): The name of the index. Defaults to None.
-        chunk_method (str, optional): The method for chunking the documents. Defaults to 'tiktoken_recursive'.
-        chunk_size (int, optional): The size of each chunk. Defaults to 500.
-        chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
-        clear (bool, optional): Whether to clear the index before loading documents. Defaults to False.
-        use_json (bool, optional): Whether to use JSON format for documents. Defaults to False.
-        file (str, optional): The file to load documents from. Defaults to None.
-        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
-        local_db_path (str, optional): The path to the local database. Defaults to '../db'.
-        show_progress (bool, optional): Whether to show progress during upsert. Defaults to False.
-
-    Returns:
-        vectorstore (object): The vector store containing the loaded documents, if index_name is provided.
-    """
-
     # Chunk docs
-    if rag_type=='Standard':
-        chunker=chunk_docs(docs,
-                           rag_type=rag_type,
-                           chunk_method=chunk_method,
-                           file=file,
-                           chunk_size=chunk_size,
-                           chunk_overlap=chunk_overlap,
-                           use_json=use_json,
-                           show_progress=True)
-        docs_out=chunker['chunks']
-    elif rag_type=='Parent-Child':
-        # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
-        raise NotImplementedError
-    else:
-        raise NotImplementedError
+    chunker=chunk_docs(docs,
+                        rag_type=rag_type,
+                        chunk_method=chunk_method,
+                        file=file,
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                        use_json=use_json,
+                        show_progress=True)
         
     # Initialize client an upsert docs
-    if index_type=="Pinecone":
-        if clear:
-            delete_index(index_type,index_name,local_db_path=local_db_path)
-        # Upsert docs
-        logging.info(f"Creating new index {index_name}.")
-        pc = pinecone_client(api_key=PINECONE_API_KEY)
-        try:
-            pc.describe_index(index_name)
-        except:
-            logging.info(f"Index {index_name} does not exist. Creating new index.")
-            logging.info('Size of embedding used: '+str(embedding_size(query_model)))  # TODO: set this to be backed out of the embedding size
-            pc.create_index(index_name,
-                            dimension=embedding_size(query_model),
-                            metric="cosine",
-                            spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
-            logging.info(f"Index {index_name} created.")
-            pass
-        else:
-            logging.info(f"Index {index_name} exists.")
-        index = pc.Index(index_name)
-        vectorstore = Pinecone(index, query_model, "page_content") # Set the vector store to calculate embeddings on page_content
-        if rag_type!='Standard':
-            # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
-            raise NotImplementedError
-        vectorstore, retriever = batch_upsert(index_type,
-                                              vectorstore,
-                                              chunker,
-                                              batch_size=batch_size,
-                                              show_progress=show_progress)
-    elif index_type=="ChromaDB":
-        if clear:
-            delete_index(index_type,index_name,local_db_path=local_db_path)
-        # Upsert docs. Defaults to putting this in the local_db_path directory
-        logging.info(f"Creating new index {index_name}.")
-        logging.info(f"Local database path: {local_db_path+'/chromadb'}")
-        persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
-        vectorstore = Chroma(client=persistent_client,
-                                collection_name=index_name,
-                                embedding_function=query_model)
-        
-        if rag_type!='Standard':
-            # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
-            raise NotImplementedError
-        vectorstore, retriever = batch_upsert(index_type,
-                                              vectorstore,
-                                              chunker,
-                                              batch_size=batch_size,
-                                              show_progress=show_progress)
-        logging.info("Documents upserted to f{index_name}.")
-        # Test query
-        test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
-        logging.info('Test query: '+str(test_query))
-        if not test_query:
-            raise ValueError("Chroma vector database is not configured properly. Test query failed.")       
-    elif index_type=="RAGatouille":
-        if clear:
-            delete_index(index_type,index_name,local_db_path=local_db_path)
-        logging.info(f'Setting up RAGatouille model {query_model}')
-        vectorstore = RAGPretrainedModel.from_pretrained(query_model)
-        logging.info('RAGatouille model set: '+str(vectorstore))
-        
+    vectorstore = initialize_database(index_type, index_name, query_model, rag_type=rag_type, clear=clear, local_db_path=local_db_path))
+    
+    if index_type=="RAGatouille":
+        # TODO: move this into upsert_docs somehow
         # Create an index from the vectorstore.
         if rag_type=='Standard':
             chunks_colbert = [chunk.page_content for chunk in chunker['chunks']]
         else:
             raise ValueError("RAGatouille only supports Standard RAG type.")
-        if chunk_size>500:
-            raise ValueError("RAGatouille cannot handle chunks larger than 500 tokens. Reduce token count.")
         vectorstore.index(
             collection=chunks_colbert,
             index_name=index_name,
@@ -305,6 +217,19 @@ def load_docs(index_type,
             logging.info(f"RAGatouille index deleted from {ragatouille_path}")
         shutil.move('./.ragatouille', local_db_path)
         logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
+    else:
+        vectorstore, retriever = upsert_docs(index_type,
+                                             vectorstore,
+                                             chunker,
+                                             batch_size=batch_size,
+                                             show_progress=show_progress)
+        logging.info("Documents upserted to f{index_name}.")
+    
+    # Test query
+    test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
+    logging.info('Test query: '+str(test_query))
+    if not test_query:
+        raise ValueError("Vector database is not configured properly. Test query failed.")  
 
     return vectorstore
 def delete_index(index_type: str, index_name: str, local_db_path: str = '../db'):
@@ -350,9 +275,7 @@ def delete_index(index_type: str, index_name: str, local_db_path: str = '../db')
             shutil.rmtree(ragatouille_path)
         except:
             raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-from typing import List
-
-def batch_upsert(index_type:str, 
+def upsert_docs(index_type:str, 
                  vectorstore:any, 
                  chunker:dict, 
                  batch_size:int = 50, 
@@ -389,6 +312,57 @@ def batch_upsert(index_type:str,
     if show_progress:
         my_bar.empty()
     return vectorstore, retriever
+
+def initialize_database(index_type:str, index_name:str, query_model:str, rag_type:str='Standard', local_db_path:str = None, clear:bool=False):
+    if index_type == "Pinecone":
+        if clear:
+            delete_index(index_type, index_name)
+        
+        logging.info(f"Creating new index {index_name}.")
+        pc = pinecone_client(api_key=PINECONE_API_KEY)
+        
+        try:
+            pc.describe_index(index_name)
+        except:
+            logging.info(f"Index {index_name} does not exist. Creating new index.")
+            logging.info('Size of embedding used: ' + str(embedding_size(query_model)))  # TODO: set this to be backed out of the embedding size
+            pc.create_index(index_name,
+                            dimension=embedding_size(query_model),
+                            metric="cosine",
+                            spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
+            logging.info(f"Index {index_name} created.")
+        else:
+            logging.info(f"Index {index_name} exists.")
+        
+        index = pc.Index(index_name)
+        vectorstore = Pinecone(index, query_model, "page_content")  # Set the vector store to calculate embeddings on page_content
+        
+        if rag_type != 'Standard':
+            # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
+            raise NotImplementedError
+    elif index_type == "ChromaDB":
+        if clear:
+            delete_index(index_type,index_name,local_db_path=local_db_path)
+        # Upsert docs. Defaults to putting this in the local_db_path directory
+        logging.info(f"Creating new index {index_name}.")
+        logging.info(f"Local database path: {local_db_path+'/chromadb'}")
+        persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
+        vectorstore = Chroma(client=persistent_client,
+                                collection_name=index_name,
+                                embedding_function=query_model)
+        
+        if rag_type!='Standard':
+            # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
+            raise NotImplementedError
+    elif index_type == "RAGatouille":
+        if clear:
+            delete_index(index_type,index_name,local_db_path=local_db_path)
+        logging.info(f'Setting up RAGatouille model {query_model}')
+        vectorstore = RAGPretrainedModel.from_pretrained(query_model)
+        logging.info('RAGatouille model set: '+str(vectorstore))
+
+    return vectorstore
+
 def has_meaningful_content(page):
     """
     Check if a page has meaningful content.
