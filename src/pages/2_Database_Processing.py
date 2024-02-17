@@ -75,13 +75,13 @@ with st.expander("Options",expanded=True):
     else:
         batch_size=None
     
-    chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
-    if chunk_method=='tiktoken_recursive':
-        chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=500)
-        chunk_overlap=st.number_input('Chunk overlap (tokens)', min_value=0, step=1, value=0)
+    chunk_method= st.selectbox('Chunk method', ['character_recursive'], index=0,help='https://python.langchain.com/docs/modules/data_connection/document_transformers/')
+    if chunk_method=='character_recursive':
+        chunk_size=st.number_input('Chunk size (characters)', min_value=1, step=1, value=400, help='An average paragraph is around 400 characters.')
+        chunk_overlap=st.number_input('Chunk overlap (characters)', min_value=0, step=1, value=0)
         export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
         if export_json:
-            json_file=st.text_input('Jsonl file',data_folder+'ams_data-500-0.jsonl')
+            json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
     else:
         raise NotImplementedError
 

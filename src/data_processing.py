@@ -110,8 +110,8 @@ def chunk_docs(docs: List[str],
     
     # Process pages
     if rag_type=='Standard':
-        if chunk_method=='tiktoken_recursive':
-            text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        if chunk_method=='character_recursive':
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
             raise NotImplementedError
         page_chunks = text_splitter.split_documents(pages)
@@ -138,9 +138,9 @@ def chunk_docs(docs: List[str],
                 'chunks':chunks,
                 'splitters':text_splitter}
     elif rag_type=='Parent-Child': 
-        if chunk_method=='tiktoken_recursive':
-            parent_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
-            child_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        if chunk_method=='character_recursive':
+            parent_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
+            child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
             raise NotImplementedError
         if show_progress:
@@ -156,7 +156,7 @@ def load_docs(index_type,
               query_model,
               rag_type='Standard',
               index_name=None,
-              chunk_method='tiktoken_recursive',
+              chunk_method='character_recursive',
               chunk_size=500,
               chunk_overlap=0,
               clear=False,
