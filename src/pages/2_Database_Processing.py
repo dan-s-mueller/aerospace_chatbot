@@ -67,35 +67,33 @@ logging.info('Docs: '+str(docs))
 database_appendix=st.text_input('Appendix for database name','ams')
 
 # Add an expandable box for options
-with st.expander("Options"):
-    use_json = st.checkbox('Use existing jsonl, if available (will ignore chunk method, size, and overlap)?', value=True)
-    json_file=st.text_input('Jsonl file',data_folder+'ams_data.jsonl')
+with st.expander("Options",expanded=True):
+    use_json = st.checkbox('Use existing jsonl?', value=True,help='If checked, the jsonl file will be used for loading into the database.')
     clear_database = st.checkbox('Clear existing database?')
-    chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
     if sb['query_model']=='Openai' or 'ChromaDB':
         # OpenAI will time out if the batch size is too large
         batch_size=st.number_input('Batch size for upsert', min_value=1, step=1, value=100)
     else:
         batch_size=None
-    if chunk_method=='tiktoken_recursive':
-        chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=500)
-        chunk_overlap=st.number_input('Chunk overlap (tokens)', min_value=0, step=1, value=0)
+    
+    if not use_json:
+        chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
+        if chunk_method=='tiktoken_recursive':
+            chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=500)
+            chunk_overlap=st.number_input('Chunk overlap (tokens)', min_value=0, step=1, value=0)
+            export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
+            if export_json:
+                json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
+        else:
+            raise NotImplementedError
     else:
-        raise NotImplementedError
+        json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
+        chunk_method=None
+        chunk_size=None
+        chunk_overlap=None
+
 
 # Add a button to run the function
-if st.button('Chunk docs to jsonl file'):
-    start_time = time.time()  # Start the timer
-    data_processing.chunk_docs(docs,
-                           file=json_file,
-                           chunk_method=chunk_method,
-                           chunk_size=chunk_size,
-                           chunk_overlap=chunk_overlap,
-                           use_json=False,
-                           show_progress=True)
-    end_time = time.time()  # Stop the timer
-    elapsed_time = end_time - start_time 
-    st.markdown(f":heavy_check_mark: Chunked docs in {elapsed_time:.2f} seconds")
 if st.button('Load docs into vector database'):
     start_time = time.time()  # Start the timer
     data_processing.load_docs(sb['index_type'],
@@ -105,15 +103,16 @@ if st.button('Load docs into vector database'):
                           index_name=sb['index_name']+'-'+database_appendix,
                           chunk_size=chunk_size,
                           chunk_overlap=chunk_overlap,
-                          use_json=use_json,
-                          clear=clear_database,
+                          use_json=use_json,                          
                           file=json_file,
+                          clear=clear_database,
                           batch_size=batch_size,
                           local_db_path=sb['keys']['LOCAL_DB_PATH'],
                           show_progress=True)
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
     st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
+
 # Add a button to delete the index
 if st.button('Delete existing index'):
     start_time = time.time()  # Start the timer

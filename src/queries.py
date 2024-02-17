@@ -9,7 +9,7 @@ import pinecone
 from pinecone import Pinecone as pinecone_client
 import chromadb
 
-from langchain_community.vectorstores import Pinecone
+from langchain_pinecone import Pinecone
 from langchain_community.vectorstores import Chroma
 
 from langchain.memory import ConversationBufferMemory

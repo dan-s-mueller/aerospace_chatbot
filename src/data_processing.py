@@ -14,7 +14,7 @@ import json, jsonlines
 
 import streamlit as st
 
-from langchain_community.vectorstores import Pinecone
+from langchain_pinecone import Pinecone
 from langchain_community.vectorstores import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -49,42 +49,25 @@ def chunk_docs(docs: List[str],
                k_parent:int=5,
                use_json:bool=False,
                show_progress:bool=False):
-    """
-    Chunk the given list of documents into smaller chunks based on the specified method.
-
-    Args:
-        docs (List[str]): List of documents to be chunked.
-        chunk_method (str, optional): Method for chunking the documents. Defaults to 'tiktoken_recursive'.
-        file (str, optional): Path to the jsonl file. Defaults to None.
-        chunk_size (int, optional): Size of each chunk in tokens. Defaults to 500.
-        chunk_overlap (int, optional): Number of overlapping tokens between chunks. Defaults to 0.
-        use_json (bool, optional): Flag indicating whether to use the jsonl file instead of parsing the docs. Defaults to False.
-        show_progress (bool, optional): Flag indicating whether to show progress bar. Defaults to False.
-
-    Returns:
-        List[lancghain_Document]: List of chunked documents.
-    """
-
     if show_progress:
         progress_text = "Chunking in progress..."
         my_bar = st.progress(0, text=progress_text)
     pages=[]
     chunks=[]
-    if file:
-        logging.info('Jsonl file to be used: '+file)
     if use_json and os.path.exists(file):   # Read from pre-parsed jsonl file
+        logging.info('Jsonl file to be used: '+file)
         if rag_type=='Standard':   
             logging.info('Jsonl file found, using this instead of parsing docs.')
             with open(file, "r") as file_in:
                 file_data = [json.loads(line) for line in file_in]
             # Process the file data and put it into the same format as chunks
             for i, line in enumerate(file_data):
-                doc_temp = lancghain_Document(page_content=line['page_content'],
+                chunk = lancghain_Document(page_content=line['page_content'],
                                             source=line['metadata']['source'],
                                             page=line['metadata']['page'],
                                             metadata=line['metadata'])
-                if has_meaningful_content(doc_temp):
-                    chunks.append(doc_temp)
+                if has_meaningful_content(chunk):
+                    chunks.append(chunk)
                 if show_progress:
                     progress_percentage = i / len(file_data)
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -93,6 +76,13 @@ def chunk_docs(docs: List[str],
             logging.info('Sample entries:')
             logging.info(str(chunks[0]))
             logging.info(str(chunks[-1]))
+            
+            if show_progress:
+                my_bar.empty()
+            return {'rag':'Standard',
+                'pages':None,
+                'chunks':chunks,
+                'splitters':None}
         else:
             raise ValueError("Json import not supported for non-standard RAG types. Please parse the documents (use_json=False).")
     else:   # Parse docs directly
@@ -127,14 +117,8 @@ def chunk_docs(docs: List[str],
                 raise NotImplementedError
             page_chunks = text_splitter.split_documents(pages)
 
-            # Tidy up text by removing unnecessary characters
             for chunk in page_chunks:
-                # Add metadata to the end of the page content, some RAG models don't have metadata.
-                chunk.page_content += str(chunk.metadata)
-                # chunk_temp=lancghain_Document(page_content=chunk.page_content,
-                #                             source=chunk.metadata['source'],
-                #                             page=chunk.metadata['page'],
-                #                             metadata=chunk.metadata)
+                chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
                 if has_meaningful_content(chunk):
                     chunks.append(chunk)
             logging.info('Parsed: '+doc)
@@ -162,7 +146,7 @@ def chunk_docs(docs: List[str],
                 raise NotImplementedError
             return {'rag':'Parent-Child',
                     'pages':pages,
-                    'chunks':[],
+                    'chunks':None,
                     'splitters':[parent_splitter,child_splitter]}
         else:
             raise NotImplementedError
@@ -233,26 +217,12 @@ def load_docs(index_type,
 
     return vectorstore
 def delete_index(index_type: str, index_name: str, local_db_path: str = '../db'):
-    """
-    Delete an index based on the specified index type and name.
-
-    Args:
-        index_type (str): The type of index to delete. Valid options are "Pinecone", "ChromaDB", and "RAGatouille".
-        index_name (str): The name of the index to delete.
-        local_db_path (str, optional): The path to the local database. Defaults to '../db'.
-
-    Raises:
-        Exception: If the specified index does not exist.
-
-    Returns:
-        None
-    """
     if index_type == "Pinecone":
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         try:
             pc.describe_index(index_name)
         except:
-            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+            raise Exception(f"Cannot clear index {index_name} because it does not exist. Create the index first.")
         index = pc.Index(index_name)
         index.delete(delete_all=True)  # Clear the index first, then upload
         logging.info('Cleared database ' + index_name)
@@ -312,7 +282,6 @@ def upsert_docs(index_type:str,
     if show_progress:
         my_bar.empty()
     return vectorstore, retriever
-
 def initialize_database(index_type:str, index_name:str, query_model:str, rag_type:str='Standard', local_db_path:str = None, clear:bool=False):
     if index_type == "Pinecone":
         if clear:

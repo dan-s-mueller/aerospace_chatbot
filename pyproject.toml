@@ -30,6 +30,7 @@ langchain-community = "^0.0.19"
 langchain-openai = "^0.0.5"
 pinecone-client = "^3.0.2"
 langchainhub = "^0.1.14"
+langchain-pinecone = "^0.0.2"
 
 
 [build-system]
