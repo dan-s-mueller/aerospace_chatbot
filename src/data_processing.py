@@ -1,3 +1,5 @@
+from prompts import TEST_QUERY_PROMPT
+
 import os
 import re
 import logging
@@ -175,46 +177,20 @@ def load_docs(index_type,
                         show_progress=True)
         
     # Initialize client an upsert docs
-    vectorstore = initialize_database(index_type, index_name, query_model, rag_type=rag_type, clear=clear, local_db_path=local_db_path)
-    
-    if index_type=="RAGatouille":
-        # TODO: move this into upsert_docs somehow
-        # Create an index from the vectorstore.
-        if rag_type=='Standard':
-            chunks_colbert = [chunk.page_content for chunk in chunker['chunks']]
-        else:
-            raise ValueError("RAGatouille only supports Standard RAG type.")
-        vectorstore.index(
-            collection=chunks_colbert,
-            index_name=index_name,
-            max_document_length=chunk_size,
-            overwrite_index=True,
-            split_documents=True,
-        )
-        logging.info(f"Index created: {vectorstore}")
-
-        # Move the directory to the db folder
-        logging.info(f"Moving RAGatouille index to {local_db_path}")
-        ragatouille_path = os.path.join(local_db_path, '.ragatouille')
-        if os.path.exists(ragatouille_path):
-            shutil.rmtree(ragatouille_path)
-            logging.info(f"RAGatouille index deleted from {ragatouille_path}")
-        shutil.move('./.ragatouille', local_db_path)
-        logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
-    else:
-        vectorstore, retriever = upsert_docs(index_type,
-                                             vectorstore,
-                                             chunker,
-                                             batch_size=batch_size,
-                                             show_progress=show_progress)
-        logging.info("Documents upserted to f{index_name}.")
-    
-    # Test query
-    test_query = vectorstore.similarity_search('What are examples of aerosapce adhesives to avoid?')
-    logging.info('Test query: '+str(test_query))
-    if not test_query:
-        raise ValueError("Vector database is not configured properly. Test query failed.")  
-
+    vectorstore = initialize_database(index_type, 
+                                      index_name, 
+                                      query_model, 
+                                      rag_type=rag_type, 
+                                      clear=clear, 
+                                      local_db_path=local_db_path,
+                                      init_ragatouille=True)
+    vectorstore, retriever = upsert_docs(index_type,
+                                        vectorstore,
+                                        chunker,
+                                        batch_size=batch_size,
+                                        show_progress=show_progress,
+                                        local_db_path=local_db_path)
+    logging.info("Documents upserted to f{index_name}.")
     return vectorstore
 def delete_index(index_type: str, index_name: str, local_db_path: str = '../db'):
     if index_type == "Pinecone":
@@ -245,48 +221,16 @@ def delete_index(index_type: str, index_name: str, local_db_path: str = '../db')
             shutil.rmtree(ragatouille_path)
         except:
             raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-def upsert_docs(index_type:str, 
-                 vectorstore:any, 
-                 chunker:dict, 
-                 batch_size:int = 50, 
-                 show_progress:bool = False):
-    if show_progress:
-        progress_text = "Upsert in progress..."
-    my_bar = st.progress(0, text=progress_text)
-
-    if chunker['rag']=='Standard':
-        # Upsert each chunk in batches
-        for i in range(0, len(chunker['chunks']), batch_size):
-            chunk_batch = chunker['chunks'][i:i + batch_size]
-            if index_type == "Pinecone":
-                vectorstore.add_documents(chunk_batch)
-            elif index_type == "ChromaDB":
-                vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone, leaving if statement just in case
-            if show_progress:
-                progress_percentage = i / len(chunker['chunks'])
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        retriever=vectorstore.as_retriever()
-    elif chunker['rag']=='Parent-Child':
-        # Create a parent document retriever, add documents
-        # TODO: untested
-        store=InMemoryStore()
-        retriever = ParentDocumentRetriever(
-            vectorstore=vectorstore,
-            docstore=store,
-            parent_splitter=chunker['splitters'][0], # Parent index 0
-            child_splitter=chunker['splitters'][1], # Child index 1
-        )
-        retriever.add_documents(chunker['pages'])
-    else:
-        raise NotImplementedError
-    if show_progress:
-        my_bar.empty()
-    return vectorstore, retriever
-def initialize_database(index_type:str, index_name:str, query_model:str, rag_type:str='Standard', local_db_path:str = None, clear:bool=False):
+def initialize_database(index_type:str, 
+                        index_name:str, 
+                        query_model:str, 
+                        local_db_path:str = None, 
+                        clear:bool=False,
+                        test_query:bool=False,
+                        init_ragatouille:bool=False):
     if index_type == "Pinecone":
         if clear:
             delete_index(index_type, index_name)
-        
         logging.info(f"Creating new index {index_name}.")
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         
@@ -294,7 +238,6 @@ def initialize_database(index_type:str, index_name:str, query_model:str, rag_typ
             pc.describe_index(index_name)
         except:
             logging.info(f"Index {index_name} does not exist. Creating new index.")
-            logging.info('Size of embedding used: ' + str(embedding_size(query_model)))  # TODO: set this to be backed out of the embedding size
             pc.create_index(index_name,
                             dimension=embedding_size(query_model),
                             metric="cosine",
@@ -305,10 +248,7 @@ def initialize_database(index_type:str, index_name:str, query_model:str, rag_typ
         
         index = pc.Index(index_name)
         vectorstore = Pinecone(index, query_model, "page_content")  # Set the vector store to calculate embeddings on page_content
-        
-        if rag_type != 'Standard':
-            # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
-            raise NotImplementedError
+
     elif index_type == "ChromaDB":
         if clear:
             delete_index(index_type,index_name,local_db_path=local_db_path)
@@ -318,19 +258,92 @@ def initialize_database(index_type:str, index_name:str, query_model:str, rag_typ
         persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
         vectorstore = Chroma(client=persistent_client,
                                 collection_name=index_name,
-                                embedding_function=query_model)
-        
-        if rag_type!='Standard':
-            # TODO: https://colab.research.google.com/github/datastax/ragstack-ai/blob/main/examples/notebooks/advancedRAG.ipynb
-            raise NotImplementedError
+                                embedding_function=query_model)        
+
     elif index_type == "RAGatouille":
         if clear:
             delete_index(index_type,index_name,local_db_path=local_db_path)
         logging.info(f'Setting up RAGatouille model {query_model}')
-        vectorstore = RAGPretrainedModel.from_pretrained(query_model)
+        if init_ragatouille:    # Used if the index is not already set
+            vectorstore = RAGPretrainedModel.from_pretrained(query_model)
+        else:   # Used if the index is already set
+            vectorstore=query_model    # The index is picked up directly.
         logging.info('RAGatouille model set: '+str(vectorstore))
 
+    try:    # Test query
+        test_query = vectorstore.similarity_search(TEST_QUERY_PROMPT)
+    except:
+        raise Exception("Vector database is not configured properly. Test query failed. Likely the index does not exist.")
+    logging.info('Test query: '+str(test_query))
+    if not test_query:
+        raise ValueError("Vector database or llm is not configured properly. Test query failed.")
+    else:
+        logging.info('Test query succeeded!')
+
     return vectorstore
+
+def upsert_docs(index_type:str, 
+                index_name:str,
+                vectorstore:any, 
+                chunker:dict, 
+                batch_size:int = 50, 
+                show_progress:bool = False,
+                local_db_path:str = '../db'):
+    if show_progress:
+        progress_text = "Upsert in progress..."
+    my_bar = st.progress(0, text=progress_text)
+
+    if chunker['rag']=='Standard':
+        # Upsert each chunk in batches
+        if index_type == "Pinecone" or "ChromaDB":
+            for i in range(0, len(chunker['chunks']), batch_size):
+                chunk_batch = chunker['chunks'][i:i + batch_size]
+                if index_type == "Pinecone":
+                    vectorstore.add_documents(chunk_batch)
+                elif index_type == "ChromaDB":
+                    vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone, leaving if statement just in case
+                if show_progress:
+                    progress_percentage = i / len(chunker['chunks'])
+                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        elif index_type == "RAGatouille":
+            # Create an index from the vectorstore.
+            vectorstore.index(
+                collection=[chunk.page_content for chunk in chunker['chunks']],
+                index_name=index_name,
+                max_document_length=chunker['splitters']._chunk_size,
+                overwrite_index=True,
+                split_documents=True,
+            )
+            logging.info(f"Index created: {vectorstore}")
+
+            # Move the directory to the db folder
+            logging.info(f"Moving RAGatouille index to {local_db_path}")
+            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
+            if os.path.exists(ragatouille_path):
+                shutil.rmtree(ragatouille_path)
+                logging.info(f"RAGatouille index deleted from {ragatouille_path}")
+            shutil.move('./.ragatouille', local_db_path)
+            logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
+        retriever=vectorstore.as_retriever()
+    elif chunker['rag']=='Parent-Child':
+        if index_type == "Pinecone" or "ChromaDB":
+            # Create a parent document retriever, add documents
+            # TODO: untested
+            store=InMemoryStore()
+            retriever = ParentDocumentRetriever(
+                vectorstore=vectorstore,
+                docstore=store,
+                parent_splitter=chunker['splitters'][0], # Parent index 0
+                child_splitter=chunker['splitters'][1], # Child index 1
+            )
+            retriever.add_documents(chunker['pages'])
+        elif index_type == "RAGatouille":
+            raise Exception('RAGAtouille only supports standard RAG.')
+    else:
+        raise NotImplementedError
+    if show_progress:
+        my_bar.empty()
+    return vectorstore, retriever
 
 def has_meaningful_content(page):
     """

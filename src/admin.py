@@ -93,8 +93,8 @@ def load_sidebar(config_file,
         if sb_out['index_type']!='RAGatouille': # RAGatouille doesn't have a rag_type
             # RAG Type
             st.sidebar.title('RAG Type')
-
-            sb_out['rag_type']=st.sidebar.selectbox('RAG type', config['rag_types'], index=0)
+            # TODO: add Hypothetical Questions and Summaries
+            sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child'], index=0)
             logging.info('RAG type: '+sb_out['rag_type'])
 
             # TODO: add other advanced RAG types

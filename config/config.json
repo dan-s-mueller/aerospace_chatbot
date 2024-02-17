@@ -40,11 +40,5 @@
                 }
             ]
         }
-    ],
-    "rag_types": [
-        "Standard",
-        "Parent-Child",
-        "Hypothetical Questions",
-        "Summaries"
     ]
 }

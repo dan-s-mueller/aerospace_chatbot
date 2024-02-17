@@ -1,3 +1,5 @@
+import data_processing
+
 import os
 import logging
 import re
@@ -35,6 +37,7 @@ class QA_Model:
                  index_name,
                  query_model,
                  llm,
+                 rag_type='Standard',
                  k=6,
                  search_type='similarity',
                  fetch_k=50,
@@ -47,12 +50,14 @@ class QA_Model:
         self.index_name=index_name
         self.query_model=query_model
         self.llm=llm
+        self.rag_type=rag_type
         self.k=k
         self.search_type=search_type
         self.fetch_k=fetch_k
         self.temperature=temperature
         self.chain_type=chain_type
         self.filter_arg=filter_arg
+        self.local_db_path=local_db_path
         self.sources=[]
 
         load_dotenv(find_dotenv(),override=True)
@@ -65,79 +70,19 @@ class QA_Model:
                                                 self.fetch_k)
 
         # Read in from the vector database
-        if index_type=='Pinecone':
-            pc = pinecone_client(api_key=PINECONE_API_KEY)
-            logging.info('Chat pinecone index name: '+str(index_name))
-            logging.info('Chat query model: '+str(query_model))
-            try:
-                pc.describe_index(index_name)
-            except:
-                raise ValueError(f"Index {index_name} does not exist. Please create it first.")
-            else:
-                logging.info(f"Index {index_name} exists.")
-            index = pc.Index(index_name)
-            self.vectorstore = Pinecone(index,query_model,'page_content')
-            logging.info('Chat vectorstore: '+str(self.vectorstore))
-
-            # Test query
-            try:
-                test_query = self.vectorstore.similarity_search(TEST_QUERY_PROMPT)
-            except:
-                raise Exception("Pinecone vector database is not configured properly. Test query failed. Likely the index does not exist.")
-            logging.info('Test query: '+str(test_query))
-            if not test_query:
-                raise ValueError("Pinecone vector database is not configured properly. Test query failed.")
-            else:
-                logging.info('Test query succeeded!')
-            
+        self.vectorstore=data_processing.initialize_database(self.index_type,
+                                                             self.index_name,
+                                                             self.query_model,
+                                                             rag_type=self.rag_type,
+                                                             local_db_path=self.local_db_path,
+                                                             test_query=True,
+                                                             init_ragatouille=False)  
+        if self.rag_type=='Standard':  
             self.retriever=self.vectorstore.as_retriever(search_type=search_type,
-                                                         search_kwargs=search_kwargs)
-            logging.info('Chat retriever: '+str(self.retriever))
-        elif index_type=='ChromaDB':
-            logging.info('Chat chroma index name: '+str(index_name))
-            logging.info('Chat query model: '+str(query_model))
-            logging.info('Local db path: '+str(local_db_path))
-            try:
-                persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')   
-            except:
-                raise ValueError("Chroma vector database needs to be reset. Clear cache.")
-            self.vectorstore = Chroma(client=persistent_client,
-                                      collection_name=index_name,
-                                      embedding_function=query_model)
-            logging.info('Chat vectorstore: '+str(self.vectorstore))
-
-            # Test query
-            try:
-                test_query = self.vectorstore.similarity_search(TEST_QUERY_PROMPT)
-            except:
-                raise Exception("Chroma vector database is not configured properly. Test query failed. Likely the index does not exist.")
-            logging.info('Test query: '+str(test_query))
-            if not test_query:
-                raise ValueError("Chroma vector database or llm is not configured properly. Test query failed.")
-            else:
-                logging.info('Test query succeeded!')
-            
-            self.retriever=self.vectorstore.as_retriever(search_type=search_type,
-                                                         search_kwargs=search_kwargs)
-            logging.info('Chat retriever: '+str(self.retriever))
-        elif index_type=='RAGatouille':
-            # Easy because the index is picked up directly.
-            self.vectorstore=query_model
-            logging.info('Chat query model:'+str(query_model))
-
-             # Test query
-            try:
-                test_query = self.vectorstore.search(TEST_QUERY_PROMPT)
-            except:
-                raise Exception("RAGatouille vector database is not configured properly.")
-            logging.info('Test query: '+str(test_query))
-            if not test_query:
-                raise ValueError("Chroma vector database is not configured properly. Test query failed.")
-            else:
-                logging.info('Test query succeeded!')
-            
-            self.retriever=self.vectorstore.as_langchain_retriever()
-            logging.info('Chat retriever: '+str(self.retriever))
+                                                        search_kwargs=search_kwargs)
+        elif self.rag_type=='Parent-Child':
+            raise NotImplementedError
+        logging.info('Chat retriever: '+str(self.retriever))
 
         # Intialize memory
         self.memory = ConversationBufferMemory(
