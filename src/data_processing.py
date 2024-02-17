@@ -45,113 +45,80 @@ HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
                chunk_method:str='tiktoken_recursive',
-               file:str=None,
+               file_out:str=None,
                chunk_size:int=500,
                chunk_overlap:int=0,
                k_parent:int=5,
-               use_json:bool=False,
                show_progress:bool=False):
     if show_progress:
         progress_text = "Chunking in progress..."
         my_bar = st.progress(0, text=progress_text)
     pages=[]
     chunks=[]
-    if use_json and os.path.exists(file):   # Read from pre-parsed jsonl file
-        logging.info('Jsonl file to be used: '+file)
-        if rag_type=='Standard':   
-            logging.info('Jsonl file found, using this instead of parsing docs.')
-            with open(file, "r") as file_in:
-                file_data = [json.loads(line) for line in file_in]
-            # Process the file data and put it into the same format as chunks
-            for i, line in enumerate(file_data):
-                chunk = lancghain_Document(page_content=line['page_content'],
-                                            source=line['metadata']['source'],
-                                            page=line['metadata']['page'],
-                                            metadata=line['metadata'])
-                if has_meaningful_content(chunk):
-                    chunks.append(chunk)
-                if show_progress:
-                    progress_percentage = i / len(file_data)
-                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-            logging.info('Parsed: '+file)
-            logging.info('Number of entries: '+str(len(chunks)))
-            logging.info('Sample entries:')
-            logging.info(str(chunks[0]))
-            logging.info(str(chunks[-1]))
-            
-            if show_progress:
-                my_bar.empty()
-            return {'rag':'Standard',
-                'pages':None,
-                'chunks':chunks,
-                'splitters':None}
-        else:
-            raise ValueError("Json import not supported for non-standard RAG types. Please parse the documents (use_json=False).")
-    else:   # Parse docs directly
-        logging.info('No jsonl found. Reading and parsing docs.')
-        logging.info('Chunk size (tokens): '+str(chunk_size))
-        logging.info('Chunk overlap (tokens): '+str(chunk_overlap))
+    logging.info('No jsonl found. Reading and parsing docs.')
+    logging.info('Chunk size (tokens): '+str(chunk_size))
+    logging.info('Chunk overlap (tokens): '+str(chunk_overlap))
 
-        # Parse doc pages
-        for i, doc in enumerate(docs):
-            logging.info('Parsing: '+doc)
-            loader = PyPDFLoader(doc)
-            page_data = loader.load()
+    # Parse doc pages
+    for i, doc in enumerate(docs):
+        logging.info('Parsing: '+doc)
+        loader = PyPDFLoader(doc)
+        page_data = loader.load()
 
-            # Clean up page info, update some metadata
-            for page in page_data:
-                page.metadata['source']=os.path.basename(page.metadata['source'])   # Strip path
-                page.metadata['page']=int(page.metadata['page'])+1   # Pages are 0 based, update
-                page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
-                page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
-                page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
-                if has_meaningful_content(page):
-                    pages.append(page)
-            if show_progress:
-                progress_percentage = i / len(docs)
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        
-        # Process pages
-        if rag_type=='Standard':
-            if chunk_method=='tiktoken_recursive':
-                text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-            else:
-                raise NotImplementedError
-            page_chunks = text_splitter.split_documents(pages)
-
-            for chunk in page_chunks:
-                chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
-                if has_meaningful_content(chunk):
-                    chunks.append(chunk)
-            logging.info('Parsed: '+doc)
-            logging.info('Sample entries:')
-            logging.info(str(chunks[0]))
-            logging.info(str(chunks[-1]))
-            if file:
-                # Write to a jsonl file, save it.
-                logging.info('Writing to jsonl file: '+file)
-                with jsonlines.open(file, mode='w') as writer:
-                    for doc in chunks: 
-                        writer.write(doc.dict())
-                logging.info('Written: '+file)
-            if show_progress:
-                my_bar.empty()
-            return {'rag':'Standard',
-                    'pages':pages,
-                    'chunks':chunks,
-                    'splitters':text_splitter}
-        elif rag_type=='Parent-Child': 
-            if chunk_method=='tiktoken_recursive':
-                parent_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
-                child_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-            else:
-                raise NotImplementedError
-            return {'rag':'Parent-Child',
-                    'pages':pages,
-                    'chunks':None,
-                    'splitters':[parent_splitter,child_splitter]}
+        # Clean up page info, update some metadata
+        for page in page_data:
+            page.metadata['source']=os.path.basename(page.metadata['source'])   # Strip path
+            page.metadata['page']=int(page.metadata['page'])+1   # Pages are 0 based, update
+            page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
+            page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
+            page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
+            if has_meaningful_content(page):
+                pages.append(page)
+        if show_progress:
+            progress_percentage = i / len(docs)
+            my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+    
+    # Process pages
+    if rag_type=='Standard':
+        if chunk_method=='tiktoken_recursive':
+            text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
             raise NotImplementedError
+        page_chunks = text_splitter.split_documents(pages)
+
+        for chunk in page_chunks:
+            chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
+            if has_meaningful_content(chunk):
+                chunks.append(chunk)
+        logging.info('Parsed: '+doc)
+        logging.info('Sample entries:')
+        logging.info(str(chunks[0]))
+        logging.info(str(chunks[-1]))
+        if file_out:
+            # Write to a jsonl file, save it.
+            logging.info('Writing to jsonl file: '+file_out)
+            with jsonlines.open(file_out, mode='w') as writer:
+                for doc in chunks: 
+                    writer.write(doc.dict())
+            logging.info('Written: '+file_out)
+        if show_progress:
+            my_bar.empty()
+        return {'rag':'Standard',
+                'pages':pages,
+                'chunks':chunks,
+                'splitters':text_splitter}
+    elif rag_type=='Parent-Child': 
+        if chunk_method=='tiktoken_recursive':
+            parent_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
+            child_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        else:
+            raise NotImplementedError
+        return {'rag':'Parent-Child',
+                'pages':pages,
+                'chunks':None,
+                'splitters':[parent_splitter,child_splitter]}
+    else:
+        raise NotImplementedError
 def load_docs(index_type,
               docs,
               query_model,
@@ -161,35 +128,33 @@ def load_docs(index_type,
               chunk_size=500,
               chunk_overlap=0,
               clear=False,
-              use_json=False,
-              file=None,
+              file_out=None,
               batch_size=50,
               local_db_path='../db',
               show_progress=False):
     # Chunk docs
     chunker=chunk_docs(docs,
-                        rag_type=rag_type,
-                        chunk_method=chunk_method,
-                        file=file,
-                        chunk_size=chunk_size,
-                        chunk_overlap=chunk_overlap,
-                        use_json=use_json,
-                        show_progress=True)
+                       rag_type=rag_type,
+                       chunk_method=chunk_method,
+                       chunk_size=chunk_size,
+                       chunk_overlap=chunk_overlap,
+                       file_out=file_out,
+                       show_progress=True)
         
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
                                       index_name, 
                                       query_model, 
-                                      rag_type=rag_type, 
                                       clear=clear, 
                                       local_db_path=local_db_path,
                                       init_ragatouille=True)
     vectorstore, retriever = upsert_docs(index_type,
-                                        vectorstore,
-                                        chunker,
-                                        batch_size=batch_size,
-                                        show_progress=show_progress,
-                                        local_db_path=local_db_path)
+                                         index_name,
+                                         vectorstore,
+                                         chunker,
+                                         batch_size=batch_size,
+                                         show_progress=show_progress,
+                                         local_db_path=local_db_path)
     logging.info("Documents upserted to f{index_name}.")
     return vectorstore
 def delete_index(index_type: str, index_name: str, local_db_path: str = '../db'):
@@ -270,15 +235,16 @@ def initialize_database(index_type:str,
             vectorstore=query_model    # The index is picked up directly.
         logging.info('RAGatouille model set: '+str(vectorstore))
 
-    try:    # Test query
-        test_query = vectorstore.similarity_search(TEST_QUERY_PROMPT)
-    except:
-        raise Exception("Vector database is not configured properly. Test query failed. Likely the index does not exist.")
-    logging.info('Test query: '+str(test_query))
-    if not test_query:
-        raise ValueError("Vector database or llm is not configured properly. Test query failed.")
-    else:
-        logging.info('Test query succeeded!')
+    if test_query:
+        try:    # Test query
+            test_query = vectorstore.similarity_search(TEST_QUERY_PROMPT)
+        except:
+            raise Exception("Vector database is not configured properly. Test query failed. Likely the index does not exist.")
+        logging.info('Test query: '+str(test_query))
+        if not test_query:
+            raise ValueError("Vector database or llm is not configured properly. Test query failed.")
+        else:
+            logging.info('Test query succeeded!')
 
     return vectorstore
 
@@ -295,7 +261,7 @@ def upsert_docs(index_type:str,
 
     if chunker['rag']=='Standard':
         # Upsert each chunk in batches
-        if index_type == "Pinecone" or "ChromaDB":
+        if index_type == "Pinecone" or index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 if index_type == "Pinecone":
@@ -306,6 +272,7 @@ def upsert_docs(index_type:str,
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         elif index_type == "RAGatouille":
+            logging.info(f"Creating index {index_name} from RAGatouille.")
             # Create an index from the vectorstore.
             vectorstore.index(
                 collection=[chunk.page_content for chunk in chunker['chunks']],
@@ -326,7 +293,7 @@ def upsert_docs(index_type:str,
             logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
         retriever=vectorstore.as_retriever()
     elif chunker['rag']=='Parent-Child':
-        if index_type == "Pinecone" or "ChromaDB":
+        if index_type == "Pinecone" or index_type == "ChromaDB":
             # Create a parent document retriever, add documents
             # TODO: untested
             store=InMemoryStore()

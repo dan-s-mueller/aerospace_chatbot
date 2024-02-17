@@ -68,7 +68,6 @@ database_appendix=st.text_input('Appendix for database name','ams')
 
 # Add an expandable box for options
 with st.expander("Options",expanded=True):
-    use_json = st.checkbox('Use existing jsonl?', value=True,help='If checked, the jsonl file will be used for loading into the database.')
     clear_database = st.checkbox('Clear existing database?')
     if sb['query_model']=='Openai' or 'ChromaDB':
         # OpenAI will time out if the batch size is too large
@@ -76,21 +75,15 @@ with st.expander("Options",expanded=True):
     else:
         batch_size=None
     
-    if not use_json:
-        chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
-        if chunk_method=='tiktoken_recursive':
-            chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=500)
-            chunk_overlap=st.number_input('Chunk overlap (tokens)', min_value=0, step=1, value=0)
-            export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
-            if export_json:
-                json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
-        else:
-            raise NotImplementedError
+    chunk_method= st.selectbox('Chunk method', ['tiktoken_recursive'], index=0)
+    if chunk_method=='tiktoken_recursive':
+        chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=500)
+        chunk_overlap=st.number_input('Chunk overlap (tokens)', min_value=0, step=1, value=0)
+        export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
+        if export_json:
+            json_file=st.text_input('Jsonl file',data_folder+'ams_data-500-0.jsonl')
     else:
-        json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
-        chunk_method=None
-        chunk_size=None
-        chunk_overlap=None
+        raise NotImplementedError
 
 
 # Add a button to run the function
@@ -102,9 +95,8 @@ if st.button('Load docs into vector database'):
                           query_model=query_model,
                           index_name=sb['index_name']+'-'+database_appendix,
                           chunk_size=chunk_size,
-                          chunk_overlap=chunk_overlap,
-                          use_json=use_json,                          
-                          file=json_file,
+                          chunk_overlap=chunk_overlap,                  
+                          file_out=json_file,
                           clear=clear_database,
                           batch_size=batch_size,
                           local_db_path=sb['keys']['LOCAL_DB_PATH'],

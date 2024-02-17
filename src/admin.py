@@ -90,16 +90,18 @@ def load_sidebar(config_file,
         if 'embedding_name' in locals() or 'embedding_name' in globals():
             logging.info('Embedding name: '+sb_out['embedding_name'])
     if rag_type:
-        if sb_out['index_type']!='RAGatouille': # RAGatouille doesn't have a rag_type
-            # RAG Type
-            st.sidebar.title('RAG Type')
-            # TODO: add Hypothetical Questions and Summaries
+        # RAG Type
+        st.sidebar.title('RAG Type')
+        # TODO: add Hypothetical Questions and Summaries
+        if sb_out['index_type']=='RAGatouille':
+            sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0)
+        else:
             sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child'], index=0)
-            logging.info('RAG type: '+sb_out['rag_type'])
+        logging.info('RAG type: '+sb_out['rag_type'])
 
-            # TODO: add other advanced RAG types
-            # sb_out['smart_agent']=st.sidebar.checkbox('Smart agent?')
-            # logging.info('Smart agent: '+str(sb_out['smart_agent']))
+        # TODO: add other advanced RAG types
+        # sb_out['smart_agent']=st.sidebar.checkbox('Smart agent?')
+        # logging.info('Smart agent: '+str(sb_out['smart_agent']))
     if index_name:
         # Index Name 
         st.sidebar.title('Index Name')  
