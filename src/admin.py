@@ -198,6 +198,18 @@ def load_sidebar(config_file,
     return sb_out
 
 def set_secrets(sb):
+    """
+    Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar.
+
+    Args:
+        sb (dict): The sidebar data containing the API keys.
+
+    Returns:
+        dict: A dictionary containing the set API keys.
+
+    Raises:
+        SecretKeyException: If any of the required API keys are missing.
+    """
     secrets={}
 
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
@@ -242,6 +254,12 @@ def set_secrets(sb):
             raise SecretKeyException('Hugging Face API Key is required.','HUGGINGFACE_API_KEY_MISSING')
     return secrets
 def test_key_status():
+    """
+    Check the status of various API keys based on environment variables.
+
+    Returns:
+        dict: A dictionary containing the status of each API key.
+    """
     key_status = {}
     # OpenAI
     if os.getenv('OPENAI_API_KEY') is None:
@@ -272,6 +290,17 @@ def test_key_status():
     return _format_key_status(key_status)
 
 def show_pinecone_indexes(format=True):
+    """
+    Retrieves the list of Pinecone indexes and their status.
+
+    Args:
+        format (bool, optional): Specifies whether to format the output. Defaults to True.
+
+    Returns:
+        dict or str: If format is True, returns a formatted string representation of the Pinecone status.
+                    If format is False, returns a dictionary containing the Pinecone status.
+
+    """
     if os.getenv('PINECONE_API_KEY') is None:
         pinecone_status = {'status': False, 'message': 'Pinecone API Key is not set.'}
     else:
@@ -288,6 +317,20 @@ def show_pinecone_indexes(format=True):
         return pinecone_status
 
 def show_chroma_collections(format=True):
+    """
+    Retrieves the list of chroma collections from the local database.
+
+    Args:
+        format (bool, optional): Specifies whether to format the output. Defaults to True.
+
+    Returns:
+        dict or str: If format is True, returns a formatted string representation of the chroma status.
+                    If format is False, returns a dictionary containing the chroma status.
+
+    Raises:
+        ValueError: If the chroma vector database needs to be reset.
+
+    """
     if os.getenv('LOCAL_DB_PATH') is None:
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
     else:

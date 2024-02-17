@@ -32,6 +32,41 @@ HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
 
 # Class and functions
 class QA_Model:
+    """A class representing a Question-Answering Model.
+
+    Args:
+        index_type (str): The type of index.
+        index_name (str): The name of the index.
+        query_model (str): The query model.
+        llm (str): The language model.
+        rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
+        k (int, optional): The number of retriever results. Defaults to 6.
+        search_type (str, optional): The type of search. Defaults to 'similarity'.
+        fetch_k (int, optional): The number of documents to fetch. Defaults to 50.
+        temperature (int, optional): The temperature for generation. Defaults to 0.
+        chain_type (str, optional): The type of chain. Defaults to 'stuff'.
+        filter_arg (bool, optional): Whether to filter arguments. Defaults to False.
+        local_db_path (str, optional): The local database path. Defaults to '../db'.
+
+    Attributes:
+        index_type (str): The type of index.
+        index_name (str): The name of the index.
+        query_model (str): The query model.
+        llm (str): The language model.
+        rag_type (str): The type of RAG model.
+        k (int): The number of retriever results.
+        search_type (str): The type of search.
+        fetch_k (int): The number of documents to fetch.
+        temperature (int): The temperature for generation.
+        chain_type (str): The type of chain.
+        filter_arg (bool): Whether to filter arguments.
+        local_db_path (str): The local database path.
+        sources (list): The list of sources.
+        vectorstore (VectorStore): The vector store.
+        retriever (Retriever): The retriever.
+        memory (ConversationBufferMemory): The conversation buffer memory.
+        conversational_qa_chain (ConversationalQAChain): The conversational QA chain.
+    """
     def __init__(self, 
                  index_type,
                  index_name,
@@ -95,7 +130,16 @@ class QA_Model:
                                                       self.memory,
                                                       self.search_type,
                                                       search_kwargs)
-    def query_docs(self,query):        
+    def query_docs(self,query): 
+        """
+        Executes a query and retrieves the relevant documents.
+
+        Args:
+            query (str): The query string.
+
+        Returns:
+            None
+        """       
         self.memory.load_memory_variables({})
         logging.info('Memory content before qa result: '+str(self.memory))
 
@@ -138,6 +182,16 @@ class QA_Model:
                      search_type='similarity',
                      fetch_k=50,
                      filter_arg=False):
+        """
+        Updates the model with new parameters.
+
+        Args:
+            llm (object): The language model to be used for retrieval.
+            k (int, optional): The number of retriever candidates to consider. Defaults to 6.
+            search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
+            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
+            filter_arg (bool, optional): Whether to apply additional filtering during retrieval. Defaults to False.
+        """
 
         self.llm=llm
         self.k=k
@@ -163,9 +217,6 @@ class QA_Model:
 def _combine_documents(docs, 
                         document_prompt=DEFAULT_DOCUMENT_PROMPT, 
                         document_separator='\n\n'):
-    '''
-    Combine a list of documents into a single string.
-    '''
     # TODO: this would be where stuff, map reduce, etc. would go
     doc_strings = [format_document(doc, document_prompt) for doc in docs]
     return document_separator.join(doc_strings)
@@ -174,9 +225,21 @@ def _define_qa_chain(llm,
                      memory,
                      search_type,
                      search_kwargs):
-    '''
-    Define the conversational QA chain.
-    '''
+    """
+    Defines the conversational QA chain for the chatbot. Based on this: https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain
+
+    Args:
+        llm: The language model component.
+        retriever: The document retriever component.
+        memory: The memory component.
+        search_type: The type of search to be performed.
+        search_kwargs: Additional keyword arguments for the search.
+
+    Returns:
+        The conversational QA chain.
+
+    """
+    
     # This adds a 'memory' key to the input object
     loaded_memory = RunnablePassthrough.assign(
                         chat_history=RunnableLambda(memory.load_memory_variables) 
@@ -216,9 +279,20 @@ def _process_retriever_args(filter_arg,
                             search_type,
                             k,
                             fetch_k):
-    '''
-    Process arguments for retriever.
-    '''
+    """
+    Process the arguments for the retriever function.
+
+    Args:
+        filter_arg (bool): Whether to apply filtering or not.
+        sources (list): List of sources.
+        search_type (str): Type of search.
+        k (int): Number of documents to retrieve.
+        fetch_k (int): Number of documents to fetch.
+
+    Returns:
+        dict: Dictionary containing the processed search arguments.
+
+    """
     # Implement filter
     if filter_arg:
         filter_list = list(set(item['source'] for item in sources[-1]))
@@ -230,7 +304,7 @@ def _process_retriever_args(filter_arg,
     else:
         filter=None
 
-    # Impement filtering and number of documents to return
+    # Implement filtering and number of documents to return
     if search_type=='mmr':
         search_kwargs={'k':k,'fetch_k':fetch_k,'filter':filter} # See as_retriever docs for parameters
     else:

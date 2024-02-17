@@ -50,6 +50,36 @@ def chunk_docs(docs: List[str],
                chunk_overlap:int=0,
                k_parent:int=5,
                show_progress:bool=False):
+    """
+    Chunk the given list of documents into smaller chunks.
+
+    Args:
+        docs (List[str]): List of document paths.
+        rag_type (str, optional): Type of RAG model. Defaults to 'Standard'.
+        chunk_method (str, optional): Chunking method. Defaults to 'tiktoken_recursive'.
+        file_out (str, optional): Output file path for the chunked documents. Defaults to None.
+        chunk_size (int, optional): Size of each chunk in tokens. Defaults to 500.
+        chunk_overlap (int, optional): Overlap between chunks in tokens. Defaults to 0.
+        k_parent (int, optional): Number of parent chunks for Parent-Child RAG. Defaults to 5.
+        show_progress (bool, optional): Flag to show progress bar. Defaults to False.
+
+    Returns:
+        dict: Dictionary containing the chunking information based on the rag_type.
+            For 'Standard' rag_type:
+                - 'rag': Type of RAG model.
+                - 'pages': List of parsed pages.
+                - 'chunks': List of chunked pages.
+                - 'splitters': Text splitter used for chunking.
+            For 'Parent-Child' rag_type:
+                - 'rag': Type of RAG model.
+                - 'pages': List of parsed pages.
+                - 'chunks': None.
+                - 'splitters': List of parent and child text splitters.
+    
+    Raises:
+        NotImplementedError: If the chunk_method is not implemented.
+        NotImplementedError: If the rag_type is not implemented.
+    """
     if show_progress:
         progress_text = "Chunking in progress..."
         my_bar = st.progress(0, text=progress_text)
@@ -134,6 +164,27 @@ def load_docs(index_type,
               batch_size=50,
               local_db_path='../db',
               show_progress=False):
+    """
+    Load documents into the specified index.
+
+    Args:
+        index_type (str): The type of index to use.
+        docs (list): The list of documents to load.
+        query_model (str): The query model to use.
+        rag_type (str, optional): The type of RAG to use. Defaults to 'Standard'.
+        index_name (str, optional): The name of the index. Defaults to None.
+        chunk_method (str, optional): The method to chunk the documents. Defaults to 'tiktoken_recursive'.
+        chunk_size (int, optional): The size of each chunk. Defaults to 500.
+        chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
+        clear (bool, optional): Whether to clear the index before loading documents. Defaults to False.
+        file_out (str, optional): The output file path. Defaults to None.
+        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
+        local_db_path (str, optional): The local database path. Defaults to '../db'.
+        show_progress (bool, optional): Whether to show progress during loading. Defaults to False.
+
+    Returns:
+        vectorstore: The updated vectorstore.
+    """
     # Chunk docs
     chunker=chunk_docs(docs,
                        rag_type=rag_type,
@@ -160,9 +211,23 @@ def load_docs(index_type,
                                          batch_size=batch_size,
                                          show_progress=show_progress,
                                          local_db_path=local_db_path)
-    logging.info("Documents upserted to f{index_name}.")
+    logging.info(f"Documents upserted to {index_name}.")
     return vectorstore
 def delete_index(index_type: str, index_name: str, local_db_path: str = '../db'):
+    """
+    Deletes an index based on the specified index type and index name.
+
+    Args:
+        index_type (str): The type of index to delete. Possible values are "Pinecone", "ChromaDB", or "RAGatouille".
+        index_name (str): The name of the index to delete.
+        local_db_path (str, optional): The path to the local database. Defaults to '../db'.
+
+    Raises:
+        Exception: If the index does not exist.
+
+    Returns:
+        None
+    """
     if index_type == "Pinecone":
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         try:
@@ -191,13 +256,32 @@ def delete_index(index_type: str, index_name: str, local_db_path: str = '../db')
             shutil.rmtree(ragatouille_path)
         except:
             raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-def initialize_database(index_type:str, 
-                        index_name:str, 
-                        query_model:str, 
-                        local_db_path:str = None, 
-                        clear:bool=False,
-                        test_query:bool=False,
-                        init_ragatouille:bool=False):
+def initialize_database(index_type: str, 
+                        index_name: str, 
+                        query_model: str, 
+                        local_db_path: str = None, 
+                        clear: bool = False,
+                        test_query: bool = False,
+                        init_ragatouille: bool = False):
+    """
+    Initializes the database based on the specified index type.
+
+    Args:
+        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
+        index_name (str): The name of the index.
+        query_model (str): The query model to use.
+        local_db_path (str, optional): The local database path for ChromaDB. Defaults to None.
+        clear (bool, optional): Whether to clear the index before creating a new one. Defaults to False.
+        test_query (bool, optional): Whether to perform a test query. Defaults to False.
+        init_ragatouille (bool, optional): Whether to initialize the RAGatouille model. Defaults to False.
+
+    Returns:
+        vectorstore: The initialized vector store.
+
+    Raises:
+        Exception: If the vector database is not configured properly.
+        ValueError: If the vector database or llm is not configured properly.
+    """
     if index_type == "Pinecone":
         if clear:
             delete_index(index_type, index_name)
@@ -221,7 +305,7 @@ def initialize_database(index_type:str,
 
     elif index_type == "ChromaDB":
         if clear:
-            delete_index(index_type,index_name,local_db_path=local_db_path)
+            delete_index(index_type, index_name, local_db_path=local_db_path)
         # Upsert docs. Defaults to putting this in the local_db_path directory
         logging.info(f"Creating new index {index_name}.")
         logging.info(f"Local database path: {local_db_path+'/chromadb'}")
@@ -232,20 +316,20 @@ def initialize_database(index_type:str,
 
     elif index_type == "RAGatouille":
         if clear:
-            delete_index(index_type,index_name,local_db_path=local_db_path)
+            delete_index(index_type, index_name, local_db_path=local_db_path)
         logging.info(f'Setting up RAGatouille model {query_model}')
         if init_ragatouille:    # Used if the index is not already set
             vectorstore = RAGPretrainedModel.from_pretrained(query_model)
         else:   # Used if the index is already set
-            vectorstore=query_model    # The index is picked up directly.
-        logging.info('RAGatouille model set: '+str(vectorstore))
+            vectorstore = query_model    # The index is picked up directly.
+        logging.info('RAGatouille model set: ' + str(vectorstore))
 
     if test_query:
         try:    # Test query
             test_query = vectorstore.similarity_search(TEST_QUERY_PROMPT)
         except:
             raise Exception("Vector database is not configured properly. Test query failed. Likely the index does not exist.")
-        logging.info('Test query: '+str(test_query))
+        logging.info('Test query: ' + str(test_query))
         if not test_query:
             raise ValueError("Vector database or llm is not configured properly. Test query failed.")
         else:
@@ -260,6 +344,21 @@ def upsert_docs(index_type:str,
                 batch_size:int = 50, 
                 show_progress:bool = False,
                 local_db_path:str = '../db'):
+    """
+    Upserts documents into the specified index.
+
+    Args:
+        index_type (str): The type of index to upsert the documents into.
+        index_name (str): The name of the index.
+        vectorstore (any): The vectorstore object used for storing vectors.
+        chunker (dict): The chunker object containing the chunks of documents.
+        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
+        show_progress (bool, optional): Whether to show progress during the upsert process. Defaults to False.
+        local_db_path (str, optional): The local path to the database folder. Defaults to '../db'.
+
+    Returns:
+        tuple: A tuple containing the updated vectorstore and retriever objects.
+    """
     if show_progress:
         progress_text = "Upsert in progress..."
     my_bar = st.progress(0, text=progress_text)
@@ -355,25 +454,6 @@ def embedding_size(embedding_model:any):
         return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
     else:
         raise NotImplementedError
-def process_chunk(json_file:str,
-                  llm:any,
-                  clean_data:bool=False,
-                  tag_data:bool=False,
-                  question_data:bool=False):
-    docs_out=[]
-    with open(json_file, "r") as file_in:
-        file_data = [json.loads(line) for line in file_in]
-        # Process the file data and put it into the same format as docs_out
-        for line in file_data:
-            doc_temp = lancghain_Document(page_content=line['page_content'],
-                                            source=line['metadata']['source'],
-                                            page=line['metadata']['page'],
-                                            metadata=line['metadata'])
-            docs_out.append(doc_temp)
-    # TODO: write out this function
-    # clean data: use cheap llm to clean data
-    # tag data: use llm to tag data and add metadata for filtering/grouping later
-    # question data: use llm to generate questions from data
     
 def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_qty:int,verbose:bool=False):
     """Reduce the number of vectors in the RAGxplorer client's vector database.
@@ -431,3 +511,25 @@ def export_data_viz(rx_client:RAGxplorer,df_export_path:str):
     # Save the data to a JSON file
     with open(df_export_path, 'w') as f:
         json.dump(export_data, f, indent=4)
+
+def process_chunk(json_file:str,
+                  llm:any,
+                  clean_data:bool=False,
+                  tag_data:bool=False,
+                  question_data:bool=False):
+    
+    # TODO: write out this function
+    # docs_out=[]
+    # with open(json_file, "r") as file_in:
+    #     file_data = [json.loads(line) for line in file_in]
+    #     # Process the file data and put it into the same format as docs_out
+    #     for line in file_data:
+    #         doc_temp = lancghain_Document(page_content=line['page_content'],
+    #                                         source=line['metadata']['source'],
+    #                                         page=line['metadata']['page'],
+    #                                         metadata=line['metadata'])
+    #         docs_out.append(doc_temp)
+
+    # clean data: use cheap llm to clean data
+    # tag data: use llm to tag data and add metadata for filtering/grouping later
+    # question data: use llm to generate questions from data
