@@ -115,7 +115,12 @@ def load_sidebar(config_file,
             if indices['status']:
                 name=[]
                 for index in indices['message']:
-                    name.append(index.name)
+                    if sb_out['rag_type']=='Parent-Child':
+                        if index.name.endswith('parent-child'):
+                            name.append(index.name)
+                    else:
+                        if not index.name.endswith('parent-child'):
+                            name.append(index.name)
                 sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
             else:
                 st.sidebar.markdown('No collections found.',help='Check the status on Home.')

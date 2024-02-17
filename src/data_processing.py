@@ -113,6 +113,8 @@ def chunk_docs(docs: List[str],
             child_splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
             raise NotImplementedError
+        if show_progress:
+            my_bar.empty()
         return {'rag':'Parent-Child',
                 'pages':pages,
                 'chunks':None,
@@ -141,6 +143,9 @@ def load_docs(index_type,
                        file_out=file_out,
                        show_progress=True)
         
+    if rag_type == 'Parent-Child':
+        index_name = index_name + '-parent-child'
+
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
                                       index_name, 
