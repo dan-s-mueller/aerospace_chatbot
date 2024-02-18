@@ -109,7 +109,7 @@ def chunk_docs(docs: List[str],
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     
     # Process pages
-    if rag_type=='Standard':
+    if rag_type!='Parent-Child': 
         if chunk_method=='character_recursive':
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
@@ -149,8 +149,6 @@ def chunk_docs(docs: List[str],
                 'pages':pages,
                 'chunks':None,
                 'splitters':[parent_splitter,child_splitter]}
-    else:
-        raise NotImplementedError
 def load_docs(index_type,
               docs,
               query_model,
@@ -363,7 +361,7 @@ def upsert_docs(index_type:str,
         progress_text = "Upsert in progress..."
     my_bar = st.progress(0, text=progress_text)
 
-    if chunker['rag']=='Standard':
+    if chunker['rag']=='Standard' or chunker['rag']=='Multi-Query':
         # Upsert each chunk in batches
         if index_type == "Pinecone" or index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):

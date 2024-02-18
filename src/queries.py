@@ -16,6 +16,8 @@ from langchain_community.vectorstores import Chroma
 
 from langchain.memory import ConversationBufferMemory
 
+from langchain.retrievers.multi_query import MultiQueryRetriever
+
 from operator import itemgetter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
@@ -108,13 +110,19 @@ class QA_Model:
         self.vectorstore=data_processing.initialize_database(self.index_type,
                                                              self.index_name,
                                                              self.query_model,
-                                                             rag_type=self.rag_type,
                                                              local_db_path=self.local_db_path,
                                                              test_query=True,
                                                              init_ragatouille=False)  
         if self.rag_type=='Standard':  
             self.retriever=self.vectorstore.as_retriever(search_type=search_type,
                                                         search_kwargs=search_kwargs)
+        elif self.rag_type=='Multi-Query':
+            base_retriever=self.vectorstore.as_retriever(search_type=search_type,
+                                                         search_kwargs=search_kwargs)
+            self.retriever=MultiQueryRetriever.from_llm(retriever=base_retriever,llm=self.llm)
+            logging.basicConfig()
+            logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
+            raise NotImplementedError
         elif self.rag_type=='Parent-Child':
             raise NotImplementedError('Parent-Child RAG not yet implemented for retrieval. Only availale for database creation.')
         logging.info('Chat retriever: '+str(self.retriever))

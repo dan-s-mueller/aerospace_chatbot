@@ -96,7 +96,7 @@ def load_sidebar(config_file,
         if sb_out['index_type']=='RAGatouille':
             sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0)
         else:
-            sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child'], index=0)
+            sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Multi-Query'], index=0)
         logging.info('RAG type: '+sb_out['rag_type'])
 
         # TODO: add other advanced RAG types
