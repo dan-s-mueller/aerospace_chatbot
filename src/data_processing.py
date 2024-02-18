@@ -6,6 +6,7 @@ import logging
 import shutil
 import uuid
 import random
+from pathlib import Path
 from typing import List
 
 from pinecone import Pinecone as pinecone_client
@@ -20,8 +21,9 @@ from langchain_pinecone import Pinecone
 from langchain_community.vectorstores import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.retrievers import ParentDocumentRetriever
-from langchain.storage import InMemoryStore
+
+from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.storage import LocalFileStore
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
@@ -44,42 +46,12 @@ HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
 
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
-               chunk_method:str='tiktoken_recursive',
+               chunk_method:str='character_recursive',
                file_out:str=None,
                chunk_size:int=500,
                chunk_overlap:int=0,
-               k_parent:int=5,
+               k_parent:int=4,
                show_progress:bool=False):
-    """
-    Chunk the given list of documents into smaller chunks.
-
-    Args:
-        docs (List[str]): List of document paths.
-        rag_type (str, optional): Type of RAG model. Defaults to 'Standard'.
-        chunk_method (str, optional): Chunking method. Defaults to 'tiktoken_recursive'.
-        file_out (str, optional): Output file path for the chunked documents. Defaults to None.
-        chunk_size (int, optional): Size of each chunk in tokens. Defaults to 500.
-        chunk_overlap (int, optional): Overlap between chunks in tokens. Defaults to 0.
-        k_parent (int, optional): Number of parent chunks for Parent-Child RAG. Defaults to 5.
-        show_progress (bool, optional): Flag to show progress bar. Defaults to False.
-
-    Returns:
-        dict: Dictionary containing the chunking information based on the rag_type.
-            For 'Standard' rag_type:
-                - 'rag': Type of RAG model.
-                - 'pages': List of parsed pages.
-                - 'chunks': List of chunked pages.
-                - 'splitters': Text splitter used for chunking.
-            For 'Parent-Child' rag_type:
-                - 'rag': Type of RAG model.
-                - 'pages': List of parsed pages.
-                - 'chunks': None.
-                - 'splitters': List of parent and child text splitters.
-    
-    Raises:
-        NotImplementedError: If the chunk_method is not implemented.
-        NotImplementedError: If the rag_type is not implemented.
-    """
     if show_progress:
         progress_text = "Chunking in progress..."
         my_bar = st.progress(0, text=progress_text)
@@ -143,12 +115,28 @@ def chunk_docs(docs: List[str],
             child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
             raise NotImplementedError
+        
+        # Split up parent chunks
+        parent_chunks = parent_splitter.split_documents(pages)
+
+        doc_ids = [str(uuid.uuid4()) for _ in parent_chunks]
+        
+        # Split up child chunks
+        id_key = "doc_id"
+        chunks = []
+        for i, doc in enumerate(parent_chunks):
+            _id = doc_ids[i]
+            _chunks = child_splitter.split_documents([doc])
+            for _doc in _chunks:
+                _doc.metadata[id_key] = _id
+            chunks.extend(_chunks)
+
         if show_progress:
             my_bar.empty()
         return {'rag':'Parent-Child',
-                'pages':pages,
-                'chunks':None,
-                'splitters':[parent_splitter,child_splitter]}
+                'pages':{'doc_ids':doc_ids,'parent_chunks':parent_chunks},
+                'chunks':chunks,
+                'splitters':{'parent_splitter':parent_splitter,'child_splitter':child_splitter}}
 def load_docs(index_type,
               docs,
               query_model,
@@ -361,18 +349,16 @@ def upsert_docs(index_type:str,
         progress_text = "Upsert in progress..."
     my_bar = st.progress(0, text=progress_text)
 
-    if chunker['rag']=='Standard' or chunker['rag']=='Multi-Query':
+    if chunker['rag']=='Standard':
         # Upsert each chunk in batches
-        if index_type == "Pinecone" or index_type == "ChromaDB":
+        if index_type != "RAGatouille":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
-                if index_type == "Pinecone":
-                    vectorstore.add_documents(chunk_batch)
-                elif index_type == "ChromaDB":
-                    vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone, leaving if statement just in case
+                vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone/others
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+            logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             logging.info(f"Creating index {index_name} from RAGatouille.")
             # Create an index from the vectorstore.
@@ -395,17 +381,25 @@ def upsert_docs(index_type:str,
             logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
         retriever=vectorstore.as_retriever()
     elif chunker['rag']=='Parent-Child':
-        if index_type == "Pinecone" or index_type == "ChromaDB":
-            # Create a parent document retriever, add documents
-            # TODO: there is no store available currently which is not in memory. This means unless the store is in memory, the parent-child retriever will not work.
-            store=InMemoryStore()
-            retriever = ParentDocumentRetriever(
-                vectorstore=vectorstore,
-                docstore=store,
-                parent_splitter=chunker['splitters'][0], # Parent index 0
-                child_splitter=chunker['splitters'][1], # Child index 1
-            )
-            retriever.add_documents(chunker['pages'])
+        if index_type != "RAGatouille":
+            # TODO: make sure this is deleted/udpated whenever a parent-child database is udpated.
+            root_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+            store = LocalFileStore(root_path)
+            
+            id_key = "doc_id"
+            retriever = MultiVectorRetriever(vectorstore=vectorstore,byte_store=store,id_key=id_key)
+
+            for i in range(0, len(chunker['chunks']), batch_size):
+                chunk_batch = chunker['chunks'][i:i + batch_size]
+                retriever.vectorstore.add_documents(chunk_batch)
+                if show_progress:
+                    progress_percentage = i / len(chunker['chunks'])
+                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+            
+            # Index parent docs all at once
+            retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], 
+                                             chunker['pages']['parent_chunks'])))
+            logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
     else:
