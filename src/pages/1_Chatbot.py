@@ -123,6 +123,7 @@ if prompt := st.chat_input('Prompt here'):
                                                                sb['index_selected'],
                                                                query_model,
                                                                llm,
+                                                               rag_type=sb['rag_type'],
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
                                                                filter_arg=False,

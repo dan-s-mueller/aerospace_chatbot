@@ -200,6 +200,23 @@ files = [
 tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
 
 [[package]]
+name = "astrapy"
+version = "0.7.6"
+description = "AstraPy is a Pythonic SDK for DataStax Astra"
+optional = false
+python-versions = ">=3.8.0,<4.0.0"
+files = [
+    {file = "astrapy-0.7.6-py3-none-any.whl", hash = "sha256:294a9580ac9c1e61e692a76ad53374def2928c267a362099c67e2a0e32573290"},
+    {file = "astrapy-0.7.6.tar.gz", hash = "sha256:881c335efdcd528bf58caf6a38f98c03998cb56e5b4c7cf744d10bc3dbf7667a"},
+]
+
+[package.dependencies]
+cassio = ">=0.1.4,<0.2.0"
+deprecation = ">=2.1.0,<2.2.0"
+httpx = {version = ">=0.25.2,<1", extras = ["http2"]}
+toml = ">=0.10.2,<0.11.0"
+
+[[package]]
 name = "asttokens"
 version = "2.4.1"
 description = "Annotate AST trees with source code positions"
@@ -216,6 +233,17 @@ six = ">=1.12.0"
 [package.extras]
 astroid = ["astroid (>=1,<2)", "astroid (>=2,<4)"]
 test = ["astroid (>=1,<2)", "astroid (>=2,<4)", "pytest"]
+
+[[package]]
+name = "async-timeout"
+version = "4.0.3"
+description = "Timeout context manager for asyncio programs"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
+    {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
+]
 
 [[package]]
 name = "attrs"
@@ -521,6 +549,74 @@ files = [
     {file = "cachetools-5.3.2-py3-none-any.whl", hash = "sha256:861f35a13a451f94e301ce2bec7cac63e881232ccce7ed67fab9b5df4d3beaa1"},
     {file = "cachetools-5.3.2.tar.gz", hash = "sha256:086ee420196f7b2ab9ca2db2520aca326318b68fe5ba8bc4d49cca91add450f2"},
 ]
+
+[[package]]
+name = "cassandra-driver"
+version = "3.29.0"
+description = "DataStax Driver for Apache Cassandra"
+optional = false
+python-versions = "*"
+files = [
+    {file = "cassandra-driver-3.29.0.tar.gz", hash = "sha256:0a34f9534356e5fd33af8cdda109d5e945b6335cb50399b267c46368c4e93c98"},
+    {file = "cassandra_driver-3.29.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:28d6fe5379d55e4fc96785bd2e2cba029ef171cc43fb38fc507b9ba232917ac2"},
+    {file = "cassandra_driver-3.29.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:05e267412ccc9fe71ee4a81d98f2250df2429390fac4721f41dd17b65e4c41ac"},
+    {file = "cassandra_driver-3.29.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:84eacfc8e6461590eb1c2b9651ea809be298eb8283c2d844a6dad8058ee7928c"},
+    {file = "cassandra_driver-3.29.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8feeda01bb13dce1a74b0a94172b3b06b0d9d8f33d6fb56e1910d495b0e085e5"},
+    {file = "cassandra_driver-3.29.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7bb0ef3297255bbade7b0c2d168c31d36ec904b1a9b42521d1d3d65c3148bbc7"},
+    {file = "cassandra_driver-3.29.0-cp310-cp310-win32.whl", hash = "sha256:39d78971a4e26ef65b77caa09c0e6ccfd7b2c52b0924c328fbfdca91667eb08e"},
+    {file = "cassandra_driver-3.29.0-cp310-cp310-win_amd64.whl", hash = "sha256:9dd713fe6388f3ba141cc2eef4737b5e4a27b0d1c1a6b0372b8ff3d2d35ccf79"},
+    {file = "cassandra_driver-3.29.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:76333d38cb663065d53ca658e15185b23aa0ce434f2876c455624d90d2ee0dbf"},
+    {file = "cassandra_driver-3.29.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:81ce92e0420bf18742b4bc433052c7c2e4aa72fa84898be2b26083e240ace343"},
+    {file = "cassandra_driver-3.29.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:5b90c2f052a102560e4fcf860f6d1ac35d3514ad36b1978cf821998f1e689f38"},
+    {file = "cassandra_driver-3.29.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6fecf584a7f411d247d1925c66d527f7ecc73710b230b68cdacf2044fb57ae4b"},
+    {file = "cassandra_driver-3.29.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a678bc7107cc606ac8ff8cb58fe6abb0bb2a9ff5196016b3bd36926146c4dc62"},
+    {file = "cassandra_driver-3.29.0-cp311-cp311-win32.whl", hash = "sha256:e9badede26005fd993e2344e8a541a4133bc46a76a90969d57a90a028b2b8ca6"},
+    {file = "cassandra_driver-3.29.0-cp311-cp311-win_amd64.whl", hash = "sha256:cac6d2e6ad1a386f1b786de78102f918bcd5caac390c3e446558e5adee9464c6"},
+    {file = "cassandra_driver-3.29.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:01a8b4cdb056c209c5c4aa22e0d7f427b87cb98297a6efff29ea278da9a52698"},
+    {file = "cassandra_driver-3.29.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:73aa7b32dfad1f58fb00167052ab80b1b186b69baac7de4ad5cca785fff569be"},
+    {file = "cassandra_driver-3.29.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:7f7c446edba002b0fdd94f2b92c4752e16738ea7dce27d754103fcd086b4dcc9"},
+    {file = "cassandra_driver-3.29.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6843569360fb4a446d65f6733faed1207c252745a31a1d8dc02feff8f7f86a23"},
+    {file = "cassandra_driver-3.29.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1762d228bdd3f1bc5faa0812e1fcac75a36ab7504f3cfb7e9b5d2bf26a50c552"},
+    {file = "cassandra_driver-3.29.0-cp312-cp312-win32.whl", hash = "sha256:dd245817e0df048b780f45ac78b1840fe12deb5aea8873df4a11e0c44a68c19a"},
+    {file = "cassandra_driver-3.29.0-cp312-cp312-win_amd64.whl", hash = "sha256:002134a4152034ed66d9f9616ea391f44dfdf7c9f97d22bd4d4f64d70020b91b"},
+    {file = "cassandra_driver-3.29.0-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:d9b652db99f69ee62bbd679a29cfbab398ebf2bfc195632d57ecb3f246baf48b"},
+    {file = "cassandra_driver-3.29.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:6ac82ae8240b4f4f1a3d1e6f21a4ecd9948afdfedef6f23235fac85d20d11076"},
+    {file = "cassandra_driver-3.29.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:1590d231503594546dfdbf6119d805e1a0b22de98a1a6ec0de79a1bacc59ecb5"},
+    {file = "cassandra_driver-3.29.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fcf9dee3b120062a8224278da56ab088c2c081a79dc9e017f065dccd421b6477"},
+    {file = "cassandra_driver-3.29.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bb9a123ad86152d2a1ca31f4a3d91d72cbd3ed7a88a4c3cd5f6f72173a1bfbd8"},
+    {file = "cassandra_driver-3.29.0-cp38-cp38-win32.whl", hash = "sha256:cc6794ca9c94e157570e2b7b5a04458259ee29c5a0d0de50a9e0c8e2da8f5455"},
+    {file = "cassandra_driver-3.29.0-cp38-cp38-win_amd64.whl", hash = "sha256:096eef84ab466b090a69a4e9d85e65d57e926ff7d7897443e7b637d40277f373"},
+    {file = "cassandra_driver-3.29.0-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:befb723d62ee650cb3afd9668245ee9ce6ba5394dbd58352866ff2baa0324101"},
+    {file = "cassandra_driver-3.29.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:4108fb2a64a8fd77948003ff0ca4d296364d9ff7381f4abe7a9db202e6378446"},
+    {file = "cassandra_driver-3.29.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:5cd4701cc083e047553888dbd99d2d5119b5b3da54b9e8034a80b8c8d516142c"},
+    {file = "cassandra_driver-3.29.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d7b94c5273bf3c2f252aed8624303c46d9d4e6dc7663f53ed9c9335e5d0dcb88"},
+    {file = "cassandra_driver-3.29.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3609f2eda8ee2a6a9b2c9c84c009bf54a7695b9dfc21700b88dd0a2140c82c95"},
+    {file = "cassandra_driver-3.29.0-cp39-cp39-win32.whl", hash = "sha256:aaeff4c3af3100510e329177c46da89aab6d444070f4fa370df5328b8ad488b4"},
+    {file = "cassandra_driver-3.29.0-cp39-cp39-win_amd64.whl", hash = "sha256:88d9a6abd0e0af199636ff9386d0b9b81b1dd189e22c8498ecaa546256bacf24"},
+]
+
+[package.dependencies]
+geomet = ">=0.1,<0.3"
+
+[package.extras]
+cle = ["cryptography (>=35.0)"]
+graph = ["gremlinpython (==3.4.6)"]
+
+[[package]]
+name = "cassio"
+version = "0.1.5"
+description = "A framework-agnostic Python library to seamlessly integrate Apache Cassandra(R) with ML/LLM/genAI workloads."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "cassio-0.1.5-py3-none-any.whl", hash = "sha256:cf1d11f255c040bc0aede4963ca020840133377aa54f7f15d2f819d6553d52ce"},
+    {file = "cassio-0.1.5.tar.gz", hash = "sha256:88c50c34d46a1bfffca1e0b600318a6efef45e6c18a56ddabe208cbede8dcc27"},
+]
+
+[package.dependencies]
+cassandra-driver = ">=3.28.0"
+numpy = ">=1.0"
+requests = ">=2"
 
 [[package]]
 name = "catalogue"
@@ -1065,6 +1161,20 @@ wrapt = ">=1.10,<2"
 dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "sphinx (<2)", "tox"]
 
 [[package]]
+name = "deprecation"
+version = "2.1.0"
+description = "A library to handle automated deprecations"
+optional = false
+python-versions = "*"
+files = [
+    {file = "deprecation-2.1.0-py2.py3-none-any.whl", hash = "sha256:a10811591210e1fb0e768a8c25517cabeabcba6f0bf96564f8ff45189f90b14a"},
+    {file = "deprecation-2.1.0.tar.gz", hash = "sha256:72b3bde64e5d778694b0cf68178aed03d15e15477116add3fb773e581f9518ff"},
+]
+
+[package.dependencies]
+packaging = "*"
+
+[[package]]
 name = "dill"
 version = "0.3.8"
 description = "serialize all of Python"
@@ -1368,6 +1478,21 @@ ssh = ["paramiko"]
 tqdm = ["tqdm"]
 
 [[package]]
+name = "geomet"
+version = "0.2.1.post1"
+description = "GeoJSON <-> WKT/WKB conversion utilities"
+optional = false
+python-versions = ">2.6, !=3.3.*, <4"
+files = [
+    {file = "geomet-0.2.1.post1-py3-none-any.whl", hash = "sha256:a41a1e336b381416d6cbed7f1745c848e91defaa4d4c1bdc1312732e46ffad2b"},
+    {file = "geomet-0.2.1.post1.tar.gz", hash = "sha256:91d754f7c298cbfcabd3befdb69c641c27fe75e808b27aa55028605761d17e95"},
+]
+
+[package.dependencies]
+click = "*"
+six = "*"
+
+[[package]]
 name = "git-python"
 version = "1.0.3"
 description = "combination and simplification of some useful git commands"
@@ -1601,6 +1726,32 @@ files = [
 ]
 
 [[package]]
+name = "h2"
+version = "4.1.0"
+description = "HTTP/2 State-Machine based protocol implementation"
+optional = false
+python-versions = ">=3.6.1"
+files = [
+    {file = "h2-4.1.0-py3-none-any.whl", hash = "sha256:03a46bcf682256c95b5fd9e9a99c1323584c3eec6440d379b9903d709476bc6d"},
+    {file = "h2-4.1.0.tar.gz", hash = "sha256:a83aca08fbe7aacb79fec788c9c0bac936343560ed9ec18b82a13a12c28d2abb"},
+]
+
+[package.dependencies]
+hpack = ">=4.0,<5"
+hyperframe = ">=6.0,<7"
+
+[[package]]
+name = "hpack"
+version = "4.0.0"
+description = "Pure-Python HPACK header compression"
+optional = false
+python-versions = ">=3.6.1"
+files = [
+    {file = "hpack-4.0.0-py3-none-any.whl", hash = "sha256:84a076fad3dc9a9f8063ccb8041ef100867b1878b25ef0ee63847a5d53818a6c"},
+    {file = "hpack-4.0.0.tar.gz", hash = "sha256:fc41de0c63e687ebffde81187a948221294896f6bdc0ae2312708df339430095"},
+]
+
+[[package]]
 name = "httpcore"
 version = "1.0.2"
 description = "A minimal low-level HTTP client."
@@ -1683,6 +1834,7 @@ files = [
 [package.dependencies]
 anyio = "*"
 certifi = "*"
+h2 = {version = ">=3,<5", optional = true, markers = "extra == \"http2\""}
 httpcore = "==1.*"
 idna = "*"
 sniffio = "*"
@@ -1738,6 +1890,17 @@ files = [
 
 [package.dependencies]
 pyreadline3 = {version = "*", markers = "sys_platform == \"win32\" and python_version >= \"3.8\""}
+
+[[package]]
+name = "hyperframe"
+version = "6.0.1"
+description = "HTTP/2 framing layer for Python"
+optional = false
+python-versions = ">=3.6.1"
+files = [
+    {file = "hyperframe-6.0.1-py3-none-any.whl", hash = "sha256:0ec6bafd80d8ad2195c4f03aacba3a8265e57bc4cff261e802bf39970ed02a15"},
+    {file = "hyperframe-6.0.1.tar.gz", hash = "sha256:ae510046231dc8e9ecb1a6586f63d2347bf4c8905914aa84ba585ae85f28a914"},
+]
 
 [[package]]
 name = "idna"
@@ -4438,6 +4601,24 @@ reference = "functionality_deep_dive"
 resolved_reference = "00668f21dacb7a8faa3e8b3bdc43ab6202da8af4"
 
 [[package]]
+name = "redis"
+version = "5.0.1"
+description = "Python client for Redis database and key-value store"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "redis-5.0.1-py3-none-any.whl", hash = "sha256:ed4802971884ae19d640775ba3b03aa2e7bd5e8fb8dfaed2decce4d0fc48391f"},
+    {file = "redis-5.0.1.tar.gz", hash = "sha256:0dab495cd5753069d3bc650a0dde8a8f9edde16fc5691b689a566eda58100d0f"},
+]
+
+[package.dependencies]
+async-timeout = {version = ">=4.0.2", markers = "python_full_version <= \"3.11.2\""}
+
+[package.extras]
+hiredis = ["hiredis (>=1.0.0)"]
+ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"]
+
+[[package]]
 name = "referencing"
 version = "0.33.0"
 description = "JSON Referencing + Python"
@@ -6345,6 +6526,21 @@ plot = ["bokeh", "colorcet", "datashader", "holoviews", "matplotlib", "pandas", 
 tbb = ["tbb (>=2019.0)"]
 
 [[package]]
+name = "upstash-redis"
+version = "1.0.0"
+description = "Serverless Redis SDK from Upstash"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "upstash_redis-1.0.0-py3-none-any.whl", hash = "sha256:960ac8c1309589fa062243ae3c68555194f5d732c6663d30a2a3cff43494e310"},
+    {file = "upstash_redis-1.0.0.tar.gz", hash = "sha256:4fe84cfa9f63d31b0ebd8cd5102f086068b52cafbf062fd0a9088ebcd7075393"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.8.4,<4.0.0"
+requests = ">=2.31.0,<3.0.0"
+
+[[package]]
 name = "urllib3"
 version = "2.2.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
@@ -7113,4 +7309,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "7b89d7b6be0779343e5cde044f8cb162141d4ee4cbff8c7fca90504f354dc10c"
+content-hash = "7d9a03b45d242743281df54f270d611efc0ea62cbc99fcab064771fd1f3806d9"

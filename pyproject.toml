@@ -31,6 +31,9 @@ langchain-openai = "^0.0.5"
 pinecone-client = "^3.0.2"
 langchainhub = "^0.1.14"
 langchain-pinecone = "^0.0.2"
+astrapy = "^0.7.6"
+redis = "^5.0.1"
+upstash-redis = "^1.0.0"
 
 
 [build-system]

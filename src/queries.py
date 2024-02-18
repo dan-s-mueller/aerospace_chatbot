@@ -116,7 +116,7 @@ class QA_Model:
             self.retriever=self.vectorstore.as_retriever(search_type=search_type,
                                                         search_kwargs=search_kwargs)
         elif self.rag_type=='Parent-Child':
-            raise NotImplementedError
+            raise NotImplementedError('Parent-Child RAG not yet implemented for retrieval. Only availale for database creation.')
         logging.info('Chat retriever: '+str(self.retriever))
 
         # Intialize memory

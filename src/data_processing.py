@@ -399,7 +399,7 @@ def upsert_docs(index_type:str,
     elif chunker['rag']=='Parent-Child':
         if index_type == "Pinecone" or index_type == "ChromaDB":
             # Create a parent document retriever, add documents
-            # TODO: untested
+            # TODO: there is no store available currently which is not in memory. This means unless the store is in memory, the parent-child retriever will not work.
             store=InMemoryStore()
             retriever = ParentDocumentRetriever(
                 vectorstore=vectorstore,
