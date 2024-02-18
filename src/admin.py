@@ -92,11 +92,19 @@ def load_sidebar(config_file,
     if rag_type:
         # RAG Type
         st.sidebar.title('RAG Type')
-        # TODO: add Hypothetical Questions and Summaries
         if sb_out['index_type']=='RAGatouille':
             sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0)
         else:
-            sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Multi-Query'], index=0)
+            sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Summary','Multi-Query'], index=0)
+            if sb_out['rag_type']=='Summary' or sb_out['rag_type']=='Muti-Query':
+                sb_out['rag_llm_source']=st.sidebar.selectbox('RAG LLM model', list(llms.keys()), index=0)
+                if sb_out['rag_llm_source']=='OpenAI':
+                    sb_out['rag_llm_model']=st.sidebar.selectbox('RAG OpenAI model', llms[sb_out['rag_llm_source']]['models'], index=0)
+                if sb_out['rag_llm_source']=='Hugging Face':
+                    sb_out['hf_models']=llms['Hugging Face']['models']
+                    sb_out['rag_llm_model']=st.sidebar.selectbox('RAG Hugging Face model', 
+                                                            [item['model'] for item in llms['Hugging Face']['models']], 
+                                                            index=0)
         logging.info('RAG type: '+sb_out['rag_type'])
 
         # TODO: add other advanced RAG types

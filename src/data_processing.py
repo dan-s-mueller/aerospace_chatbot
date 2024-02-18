@@ -44,6 +44,75 @@ VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
 PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
+def load_docs(index_type,
+              docs,
+              query_model,
+              rag_type='Standard',
+              index_name=None,
+              chunk_method='character_recursive',
+              chunk_size=500,
+              chunk_overlap=0,
+              clear=False,
+              file_out=None,
+              batch_size=50,
+              local_db_path='../db',
+              show_progress=False):
+    """
+    Load documents into the specified index.
+
+    Args:
+        index_type (str): The type of index to use.
+        docs (list): The list of documents to load.
+        query_model (str): The query model to use.
+        rag_type (str, optional): The type of RAG to use. Defaults to 'Standard'.
+        index_name (str, optional): The name of the index. Defaults to None.
+        chunk_method (str, optional): The method to chunk the documents. Defaults to 'tiktoken_recursive'.
+        chunk_size (int, optional): The size of each chunk. Defaults to 500.
+        chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
+        clear (bool, optional): Whether to clear the index before loading documents. Defaults to False.
+        file_out (str, optional): The output file path. Defaults to None.
+        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
+        local_db_path (str, optional): The local database path. Defaults to '../db'.
+        show_progress (bool, optional): Whether to show progress during loading. Defaults to False.
+
+    Returns:
+        vectorstore: The updated vectorstore.
+    """
+    # Check for illegal things
+    if not clear and (rag_type == 'Parent-Child' or rag_type == 'Summary'):
+        raise ValueError('Parent-Child databases must be cleared before loading new documents.')
+
+    # Chunk docs
+    chunker=chunk_docs(docs,
+                       rag_type=rag_type,
+                       chunk_method=chunk_method,
+                       chunk_size=chunk_size,
+                       chunk_overlap=chunk_overlap,
+                       file_out=file_out,
+                       show_progress=True)
+        
+    # Set index names for special databases
+    if rag_type == 'Parent-Child':
+        index_name = index_name + '-parent-child'
+    if rag_type == 'Summary':
+        index_name = index_name + '-summary'
+
+    # Initialize client an upsert docs
+    vectorstore = initialize_database(index_type, 
+                                      index_name, 
+                                      query_model, 
+                                      clear=clear, 
+                                      local_db_path=local_db_path,
+                                      init_ragatouille=True)
+    vectorstore, retriever = upsert_docs(index_type,
+                                         index_name,
+                                         vectorstore,
+                                         chunker,
+                                         batch_size=batch_size,
+                                         show_progress=show_progress,
+                                         local_db_path=local_db_path)
+    logging.info(f"Documents upserted to {index_name}.")
+    return vectorstore
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
                chunk_method:str='character_recursive',
@@ -137,111 +206,8 @@ def chunk_docs(docs: List[str],
                 'pages':{'doc_ids':doc_ids,'parent_chunks':parent_chunks},
                 'chunks':chunks,
                 'splitters':{'parent_splitter':parent_splitter,'child_splitter':child_splitter}}
-def load_docs(index_type,
-              docs,
-              query_model,
-              rag_type='Standard',
-              index_name=None,
-              chunk_method='character_recursive',
-              chunk_size=500,
-              chunk_overlap=0,
-              clear=False,
-              file_out=None,
-              batch_size=50,
-              local_db_path='../db',
-              show_progress=False):
-    """
-    Load documents into the specified index.
-
-    Args:
-        index_type (str): The type of index to use.
-        docs (list): The list of documents to load.
-        query_model (str): The query model to use.
-        rag_type (str, optional): The type of RAG to use. Defaults to 'Standard'.
-        index_name (str, optional): The name of the index. Defaults to None.
-        chunk_method (str, optional): The method to chunk the documents. Defaults to 'tiktoken_recursive'.
-        chunk_size (int, optional): The size of each chunk. Defaults to 500.
-        chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
-        clear (bool, optional): Whether to clear the index before loading documents. Defaults to False.
-        file_out (str, optional): The output file path. Defaults to None.
-        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
-        local_db_path (str, optional): The local database path. Defaults to '../db'.
-        show_progress (bool, optional): Whether to show progress during loading. Defaults to False.
-
-    Returns:
-        vectorstore: The updated vectorstore.
-    """
-    # Chunk docs
-    chunker=chunk_docs(docs,
-                       rag_type=rag_type,
-                       chunk_method=chunk_method,
-                       chunk_size=chunk_size,
-                       chunk_overlap=chunk_overlap,
-                       file_out=file_out,
-                       show_progress=True)
-        
-    if rag_type == 'Parent-Child':
-        index_name = index_name + '-parent-child'
-
-    # Initialize client an upsert docs
-    vectorstore = initialize_database(index_type, 
-                                      index_name, 
-                                      query_model, 
-                                      clear=clear, 
-                                      local_db_path=local_db_path,
-                                      init_ragatouille=True)
-    vectorstore, retriever = upsert_docs(index_type,
-                                         index_name,
-                                         vectorstore,
-                                         chunker,
-                                         batch_size=batch_size,
-                                         show_progress=show_progress,
-                                         local_db_path=local_db_path)
-    logging.info(f"Documents upserted to {index_name}.")
-    return vectorstore
-def delete_index(index_type: str, index_name: str, local_db_path: str = '../db'):
-    """
-    Deletes an index based on the specified index type and index name.
-
-    Args:
-        index_type (str): The type of index to delete. Possible values are "Pinecone", "ChromaDB", or "RAGatouille".
-        index_name (str): The name of the index to delete.
-        local_db_path (str, optional): The path to the local database. Defaults to '../db'.
-
-    Raises:
-        Exception: If the index does not exist.
-
-    Returns:
-        None
-    """
-    if index_type == "Pinecone":
-        pc = pinecone_client(api_key=PINECONE_API_KEY)
-        try:
-            pc.describe_index(index_name)
-        except:
-            raise Exception(f"Cannot clear index {index_name} because it does not exist. Create the index first.")
-        index = pc.Index(index_name)
-        index.delete(delete_all=True)  # Clear the index first, then upload
-        logging.info('Cleared database ' + index_name)
-    elif index_type == "ChromaDB":
-        try:
-            persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
-            indices = persistent_client.list_collections()
-            logging.info('Available databases: ' + str(indices))
-            for idx in indices:
-                if index_name in idx.name:
-                    logging.info(f"Clearing index {idx.name}...")
-                    persistent_client.delete_collection(name=idx.name)
-                    logging.info(f"Index {idx.name} cleared.")
-        except:
-            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-        logging.info('Cleared database and matching databases ' + index_name)
-    elif index_type == "RAGatouille":
-        try:
-            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
-            shutil.rmtree(ragatouille_path)
-        except:
-            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+    elif rag_type=='Summary':
+        raise NotImplementedError
 def initialize_database(index_type: str, 
                         index_name: str, 
                         query_model: str, 
@@ -322,7 +288,6 @@ def initialize_database(index_type: str,
             logging.info('Test query succeeded!')
 
     return vectorstore
-
 def upsert_docs(index_type:str, 
                 index_name:str,
                 vectorstore:any, 
@@ -402,12 +367,60 @@ def upsert_docs(index_type:str,
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
-    else:
+    elif chunker['rag']=='Summary':
         raise NotImplementedError
     if show_progress:
         my_bar.empty()
     return vectorstore, retriever
+def delete_index(index_type: str, 
+                 index_name: str, 
+                 rag_type: str,
+                 local_db_path: str = '../db'):
+    """
+    Deletes an index based on the specified index type and index name.
 
+    Args:
+        index_type (str): The type of index to delete. Possible values are "Pinecone", "ChromaDB", or "RAGatouille".
+        index_name (str): The name of the index to delete.
+        local_db_path (str, optional): The path to the local database. Defaults to '../db'.
+
+    Raises:
+        Exception: If the index does not exist.
+
+    Returns:
+        None
+    """
+    if rag_type != 'Parent-Child':
+        if index_type == "Pinecone":
+            pc = pinecone_client(api_key=PINECONE_API_KEY)
+            try:
+                pc.describe_index(index_name)
+            except:
+                raise Exception(f"Cannot clear index {index_name} because it does not exist. Create the index first.")
+            index = pc.Index(index_name)
+            index.delete(delete_all=True)  # Clear the index first, then upload
+            logging.info('Cleared database ' + index_name)
+        elif index_type == "ChromaDB":
+            try:
+                persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
+                indices = persistent_client.list_collections()
+                logging.info('Available databases: ' + str(indices))
+                for idx in indices:
+                    if index_name in idx.name:
+                        logging.info(f"Clearing index {idx.name}...")
+                        persistent_client.delete_collection(name=idx.name)
+                        logging.info(f"Index {idx.name} cleared.")
+            except:
+                raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+            logging.info('Cleared database and matching databases ' + index_name)
+        elif index_type == "RAGatouille":
+            try:
+                ragatouille_path = os.path.join(local_db_path, '.ragatouille')
+                shutil.rmtree(ragatouille_path)
+            except:
+                raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+    if rag_type == 'Parent-Child' or rag_type == 'Summary':
+        raise NotImplementedError
 def has_meaningful_content(page):
     """
     Check if a page has meaningful content.
