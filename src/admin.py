@@ -156,11 +156,17 @@ def load_sidebar(config_file,
         logging.info('LLM source: '+sb_out['llm_source'])
         if sb_out['llm_source']=='OpenAI':
             sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0)
-        if sb_out['llm_source']=='Hugging Face':
+        elif sb_out['llm_source']=='Hugging Face':
             sb_out['hf_models']=llms['Hugging Face']['models']
             sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', 
                                                      [item['model'] for item in llms['Hugging Face']['models']], 
                                                      index=0)
+        elif sb_out['llm_source']=='LM Studio (local)':
+            sb_out['llm_model']=st.sidebar.text_input('Local host URL',
+                                                      'http://localhost:1234/v1',
+                                                      help='See LM studio configuration for local host URL.')
+            st.sidebar.warning('You must load a model in LM studio first for this to work.')
+
     if model_options:
         # Add input fields in the sidebar
         st.sidebar.title('LLM Options')
@@ -444,3 +450,11 @@ def _format_ragatouille_status(indexes):
         for index in indexes:
             index_description += f"- {index}: :heavy_check_mark:\n"
         return f"**Ragatouille Indexes**\n{index_description}"
+
+def _clear_chroma_databases(name):
+    chromadb.Client
+    try:
+        persistent_client = chromadb.PersistentClient(path=os.getenv('LOCAL_DB_PATH')+'/chromadb')
+    except:
+        raise ValueError("Chroma vector database needs to be reset. Clear cache.")
+    persistent_client.delete_collection(name)

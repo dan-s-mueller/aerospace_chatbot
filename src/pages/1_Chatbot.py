@@ -5,6 +5,8 @@ import time
 import logging
 import json
 
+from dotenv import load_dotenv,find_dotenv
+
 import pinecone
 import openai
 
@@ -21,8 +23,24 @@ from ragatouille import RAGPretrainedModel
 
 import streamlit as st
 
+def _set_llm(sb,secrets):
+    if sb['llm_source']=='OpenAI':
+        llm = ChatOpenAI(model_name=sb['llm_model'],
+                        temperature=sb['model_options']['temperature'],
+                        openai_api_key=secrets['OPENAI_API_KEY'],
+                        max_tokens=sb['model_options']['output_level'])
+    elif sb['llm_source']=='Hugging Face':
+        llm = HuggingFaceHub(repo_id=sb['llm_model'],
+                            model_kwargs={"temperature": sb['model_options']['temperature'], 
+                                            "max_length": sb['model_options']['output_level']})
+    elif sb['llm_source']=='LM Studio (local)':
+        # base_url takes locaol configuration from lm studio, no api key required.
+        llm = ChatOpenAI(base_url=sb['llm_model'],
+                        temperature=sb['model_options']['temperature'],
+                        max_tokens=sb['model_options']['output_level'])
+    return llm
+
 # Set up the page, enable logging, read environment variables
-from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
 logging.basicConfig(filename='app_1_chatbot.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
@@ -103,15 +121,7 @@ if prompt := st.chat_input('Prompt here'):
                 logging.info('Query model set: '+str(query_model))
 
                 # Define LLM
-                if sb['llm_source']=='OpenAI':
-                    llm = ChatOpenAI(model_name=sb['llm_model'],
-                                    temperature=sb['model_options']['temperature'],
-                                    openai_api_key=secrets['OPENAI_API_KEY'],
-                                    max_tokens=sb['model_options']['output_level'])
-                elif sb['llm_source']=='Hugging Face':
-                    llm = HuggingFaceHub(repo_id=sb['llm_model'],
-                                        model_kwargs={"temperature": sb['model_options']['temperature'], 
-                                                      "max_length": sb['model_options']['output_level']})
+                llm=_set_llm(sb,secrets)
                 logging.info('LLM model set: '+str(llm))
 
                 # Initialize QA model object
@@ -132,15 +142,7 @@ if prompt := st.chat_input('Prompt here'):
             if st.session_state.message_id>1:
                 logging.info('Updating model with sidebar settings...')
                 # Update LLM
-                if sb['llm_source']=='OpenAI':
-                    llm = ChatOpenAI(model_name=sb['llm_model'],
-                                    temperature=sb['model_options']['temperature'],
-                                    openai_api_key=secrets['OPENAI_API_KEY'],
-                                    max_tokens=sb['model_options']['output_level'])
-                elif sb['llm_source']=='Hugging Face':
-                    llm = HuggingFaceHub(repo_id=sb['llm_model'],
-                                        model_kwargs={"temperature": sb['model_options']['temperature'], 
-                                                      "max_length": sb['model_options']['output_level']})
+                llm=_set_llm(sb,secrets)
                 logging.info('LLM model set: '+str(llm))
 
                 st.session_state.qa_model_obj.update_model(llm,

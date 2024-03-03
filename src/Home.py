@@ -29,6 +29,9 @@ with st.expander("Connection Status",expanded=True):
     st.markdown(admin.test_key_status())
     st.markdown(admin.show_pinecone_indexes())
     st.markdown(admin.show_chroma_collections())
+    chroma_db_name=st.text_input('Database name')
+    if st.button('Clear chroma database',help='This is permanent!'):
+        admin._clear_chroma_databases(chroma_db_name)
     st.markdown(admin.show_ragatouille_indexes())
 
 st.subheader("Running Locally")

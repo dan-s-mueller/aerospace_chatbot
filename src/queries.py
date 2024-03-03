@@ -112,6 +112,7 @@ class QA_Model:
         self.vectorstore=data_processing.initialize_database(self.index_type,
                                                              self.index_name,
                                                              self.query_model,
+                                                             self.rag_type,
                                                              local_db_path=self.local_db_path,
                                                              test_query=True,
                                                              init_ragatouille=False)  
