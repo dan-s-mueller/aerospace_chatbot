@@ -101,6 +101,7 @@ def load_docs(index_type,
     vectorstore = initialize_database(index_type, 
                                       index_name, 
                                       query_model, 
+                                      rag_type=rag_type,
                                       clear=clear, 
                                       local_db_path=local_db_path,
                                       init_ragatouille=True)
@@ -206,11 +207,12 @@ def chunk_docs(docs: List[str],
                 'pages':{'doc_ids':doc_ids,'parent_chunks':parent_chunks},
                 'chunks':chunks,
                 'splitters':{'parent_splitter':parent_splitter,'child_splitter':child_splitter}}
-    elif rag_type=='Summary':
+    elif rag_type=='Summary' or 'Multi-Query':
         raise NotImplementedError
 def initialize_database(index_type: str, 
                         index_name: str, 
                         query_model: str, 
+                        rag_type: str,
                         local_db_path: str = None, 
                         clear: bool = False,
                         test_query: bool = False,
@@ -235,8 +237,10 @@ def initialize_database(index_type: str,
         ValueError: If the vector database or llm is not configured properly.
     """
     if index_type == "Pinecone":
-        if clear:
-            delete_index(index_type, index_name)
+        try:
+            delete_index(index_type, index_name, rag_type)
+        except:
+            logging.info('No index to delete, ignoring clear')
         logging.info(f"Creating new index {index_name}.")
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         
@@ -257,7 +261,7 @@ def initialize_database(index_type: str,
 
     elif index_type == "ChromaDB":
         if clear:
-            delete_index(index_type, index_name, local_db_path=local_db_path)
+            delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         # Upsert docs. Defaults to putting this in the local_db_path directory
         logging.info(f"Creating new index {index_name}.")
         logging.info(f"Local database path: {local_db_path+'/chromadb'}")
@@ -268,7 +272,7 @@ def initialize_database(index_type: str,
 
     elif index_type == "RAGatouille":
         if clear:
-            delete_index(index_type, index_name, local_db_path=local_db_path)
+            delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         logging.info(f'Setting up RAGatouille model {query_model}')
         if init_ragatouille:    # Used if the index is not already set
             vectorstore = RAGPretrainedModel.from_pretrained(query_model)
@@ -347,9 +351,9 @@ def upsert_docs(index_type:str,
         retriever=vectorstore.as_retriever()
     elif chunker['rag']=='Parent-Child':
         if index_type != "RAGatouille":
-            # TODO: make sure this is deleted/udpated whenever a parent-child database is udpated.
-            root_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-            store = LocalFileStore(root_path)
+            # TODO: make sure this is deleted/udpated whenever a parent-child database is udpated. For now, it's checked in load_docs.
+            lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+            store = LocalFileStore(lfs_path)
             
             id_key = "doc_id"
             retriever = MultiVectorRetriever(vectorstore=vectorstore,byte_store=store,id_key=id_key)
@@ -367,7 +371,7 @@ def upsert_docs(index_type:str,
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
-    elif chunker['rag']=='Summary':
+    elif chunker['rag']=='Summary' or 'Multi-Query':
         raise NotImplementedError
     if show_progress:
         my_bar.empty()
@@ -376,51 +380,49 @@ def delete_index(index_type: str,
                  index_name: str, 
                  rag_type: str,
                  local_db_path: str = '../db'):
-    """
-    Deletes an index based on the specified index type and index name.
-
-    Args:
-        index_type (str): The type of index to delete. Possible values are "Pinecone", "ChromaDB", or "RAGatouille".
-        index_name (str): The name of the index to delete.
-        local_db_path (str, optional): The path to the local database. Defaults to '../db'.
-
-    Raises:
-        Exception: If the index does not exist.
-
-    Returns:
-        None
-    """
-    if rag_type != 'Parent-Child':
-        if index_type == "Pinecone":
-            pc = pinecone_client(api_key=PINECONE_API_KEY)
+    if index_type == "Pinecone":
+        pc = pinecone_client(api_key=PINECONE_API_KEY)
+        try:
+            pc.describe_index(index_name)
+        except:
+            raise Exception(f"Cannot clear index {index_name} because it does not exist. Create the index first.")
+        index = pc.Index(index_name)
+        index.delete(delete_all=True)  # Clear the index first, then upload
+        logging.info('Cleared database ' + index_name)
+        if rag_type == 'Parent-Child':
             try:
-                pc.describe_index(index_name)
+                shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
-                raise Exception(f"Cannot clear index {index_name} because it does not exist. Create the index first.")
-            index = pc.Index(index_name)
-            index.delete(delete_all=True)  # Clear the index first, then upload
-            logging.info('Cleared database ' + index_name)
-        elif index_type == "ChromaDB":
+                logging.info("No local filestore to delete.")
+        elif rag_type == 'Summary' or 'Multi-Query':
+            raise NotImplementedError
+    elif index_type == "ChromaDB":
+        try:
+            persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
+            indices = persistent_client.list_collections()
+            logging.info('Available databases: ' + str(indices))
+            for idx in indices:
+                if index_name in idx.name:
+                    logging.info(f"Clearing index {idx.name}...")
+                    persistent_client.delete_collection(name=idx.name)
+                    logging.info(f"Index {idx.name} cleared.")
+        except:
+            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+        logging.info('Cleared database and matching databases ' + index_name)
+        if rag_type == 'Parent-Child':
             try:
-                persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
-                indices = persistent_client.list_collections()
-                logging.info('Available databases: ' + str(indices))
-                for idx in indices:
-                    if index_name in idx.name:
-                        logging.info(f"Clearing index {idx.name}...")
-                        persistent_client.delete_collection(name=idx.name)
-                        logging.info(f"Index {idx.name} cleared.")
+                shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
-                raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-            logging.info('Cleared database and matching databases ' + index_name)
-        elif index_type == "RAGatouille":
-            try:
-                ragatouille_path = os.path.join(local_db_path, '.ragatouille')
-                shutil.rmtree(ragatouille_path)
-            except:
-                raise Exception(f"Cannot clear index {index_name} because it does not exist.")
-    if rag_type == 'Parent-Child' or rag_type == 'Summary':
-        raise NotImplementedError
+                logging.info("No local filestore to delete.")
+        elif rag_type == 'Summary' or 'Multi-Query':
+            raise NotImplementedError
+    elif index_type == "RAGatouille":
+        try:
+            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
+            shutil.rmtree(ragatouille_path)
+        except:
+            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+    
 def has_meaningful_content(page):
     """
     Check if a page has meaningful content.

@@ -3,6 +3,7 @@ import data_processing
 import os
 import logging
 import re
+from pathlib import Path
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -16,7 +17,8 @@ from langchain_community.vectorstores import Chroma
 
 from langchain.memory import ConversationBufferMemory
 
-from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.storage import LocalFileStore
 
 from operator import itemgetter
 from langchain_core.output_parsers import StrOutputParser
@@ -116,15 +118,15 @@ class QA_Model:
         if self.rag_type=='Standard':  
             self.retriever=self.vectorstore.as_retriever(search_type=search_type,
                                                         search_kwargs=search_kwargs)
-        elif self.rag_type=='Multi-Query':
-            base_retriever=self.vectorstore.as_retriever(search_type=search_type,
-                                                         search_kwargs=search_kwargs)
-            self.retriever=MultiQueryRetriever.from_llm(retriever=base_retriever,llm=self.llm)
-            logging.basicConfig()
-            logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
-            raise NotImplementedError
         elif self.rag_type=='Parent-Child':
-            raise NotImplementedError('Parent-Child RAG not yet implemented for retrieval. Only availale for database creation.')
+            lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / index_name)
+            self.retriever = MultiVectorRetriever(
+                                vectorstore=self.vectorstore,
+                                byte_store=lfs,
+                                id_key="doc_id",
+                            )
+        elif self.rag_type=='Summary' or 'Multi-Query':
+            raise NotImplementedError
         logging.info('Chat retriever: '+str(self.retriever))
 
         # Intialize memory
