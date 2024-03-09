@@ -68,7 +68,7 @@ database_appendix=st.text_input('Appendix for database name','ams')
 
 # Add an expandable box for options
 with st.expander("Options",expanded=True):
-    clear_database = st.checkbox('Clear existing database?')
+    clear_database = st.checkbox('Clear existing database?',value=True)
     if sb['query_model']=='Openai' or 'ChromaDB':
         # OpenAI will time out if the batch size is too large
         batch_size=st.number_input('Batch size for upsert', min_value=1, step=1, value=100)

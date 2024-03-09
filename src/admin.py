@@ -450,11 +450,3 @@ def _format_ragatouille_status(indexes):
         for index in indexes:
             index_description += f"- {index}: :heavy_check_mark:\n"
         return f"**Ragatouille Indexes**\n{index_description}"
-
-def _clear_chroma_databases(name):
-    chromadb.Client
-    try:
-        persistent_client = chromadb.PersistentClient(path=os.getenv('LOCAL_DB_PATH')+'/chromadb')
-    except:
-        raise ValueError("Chroma vector database needs to be reset. Clear cache.")
-    persistent_client.delete_collection(name)

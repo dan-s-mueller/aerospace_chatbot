@@ -104,7 +104,8 @@ def load_docs(index_type,
                                       rag_type=rag_type,
                                       clear=clear, 
                                       local_db_path=local_db_path,
-                                      init_ragatouille=True)
+                                      init_ragatouille=True,
+                                      show_progress=True)
     vectorstore, retriever = upsert_docs(index_type,
                                          index_name,
                                          vectorstore,
@@ -207,7 +208,7 @@ def chunk_docs(docs: List[str],
                 'pages':{'doc_ids':doc_ids,'parent_chunks':parent_chunks},
                 'chunks':chunks,
                 'splitters':{'parent_splitter':parent_splitter,'child_splitter':child_splitter}}
-    elif rag_type=='Summary' or 'Multi-Query':
+    elif rag_type == 'Summary' or rag_type == 'Multi-Query':
         raise NotImplementedError
 def initialize_database(index_type: str, 
                         index_name: str, 
@@ -216,31 +217,16 @@ def initialize_database(index_type: str,
                         local_db_path: str = None, 
                         clear: bool = False,
                         test_query: bool = False,
-                        init_ragatouille: bool = False):
-    """
-    Initializes the database based on the specified index type.
+                        init_ragatouille: bool = False,
+                        show_progress: bool = False):
+    
+    if show_progress:
+        progress_text = "Database initialization..."
+        my_bar = st.progress(0, text=progress_text)
 
-    Args:
-        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
-        index_name (str): The name of the index.
-        query_model (str): The query model to use.
-        local_db_path (str, optional): The local database path for ChromaDB. Defaults to None.
-        clear (bool, optional): Whether to clear the index before creating a new one. Defaults to False.
-        test_query (bool, optional): Whether to perform a test query. Defaults to False.
-        init_ragatouille (bool, optional): Whether to initialize the RAGatouille model. Defaults to False.
-
-    Returns:
-        vectorstore: The initialized vector store.
-
-    Raises:
-        Exception: If the vector database is not configured properly.
-        ValueError: If the vector database or llm is not configured properly.
-    """
     if index_type == "Pinecone":
-        try:
-            delete_index(index_type, index_name, rag_type)
-        except:
-            logging.info('No index to delete, ignoring clear')
+        if clear:
+            delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         logging.info(f"Creating new index {index_name}.")
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         
@@ -258,6 +244,9 @@ def initialize_database(index_type: str,
         
         index = pc.Index(index_name)
         vectorstore = Pinecone(index, query_model, "page_content")  # Set the vector store to calculate embeddings on page_content
+        if show_progress:
+            progress_percentage = 1
+            my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
 
     elif index_type == "ChromaDB":
         if clear:
@@ -268,7 +257,10 @@ def initialize_database(index_type: str,
         persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
         vectorstore = Chroma(client=persistent_client,
                                 collection_name=index_name,
-                                embedding_function=query_model)        
+                                embedding_function=query_model)     
+        if show_progress:
+            progress_percentage = 1
+            my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')   
 
     elif index_type == "RAGatouille":
         if clear:
@@ -279,6 +271,9 @@ def initialize_database(index_type: str,
         else:   # Used if the index is already set
             vectorstore = query_model    # The index is picked up directly.
         logging.info('RAGatouille model set: ' + str(vectorstore))
+        if show_progress:
+            progress_percentage = 1
+            my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
 
     if test_query:
         try:    # Test query
@@ -291,6 +286,8 @@ def initialize_database(index_type: str,
         else:
             logging.info('Test query succeeded!')
 
+    if show_progress:
+        my_bar.empty()
     return vectorstore
 def upsert_docs(index_type:str, 
                 index_name:str,
@@ -371,7 +368,7 @@ def upsert_docs(index_type:str,
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
-    elif chunker['rag']=='Summary' or 'Multi-Query':
+    elif chunker['rag'] == 'Summary' or chunker['rag'] == 'Multi-Query':
         raise NotImplementedError
     if show_progress:
         my_bar.empty()
@@ -386,15 +383,14 @@ def delete_index(index_type: str,
             pc.describe_index(index_name)
         except:
             raise Exception(f"Cannot clear index {index_name} because it does not exist. Create the index first.")
-        index = pc.Index(index_name)
-        index.delete(delete_all=True)  # Clear the index first, then upload
+        pc.delete_index(index_name)
         logging.info('Cleared database ' + index_name)
         if rag_type == 'Parent-Child':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
                 logging.info("No local filestore to delete.")
-        elif rag_type == 'Summary' or 'Multi-Query':
+        elif rag_type == 'Summary' or rag_type == 'Multi-Query':
             raise NotImplementedError
     elif index_type == "ChromaDB":
         try:
@@ -414,7 +410,7 @@ def delete_index(index_type: str,
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
                 logging.info("No local filestore to delete.")
-        elif rag_type == 'Summary' or 'Multi-Query':
+        elif rag_type == 'Summary' or rag_type == 'Multi-Query':
             raise NotImplementedError
     elif index_type == "RAGatouille":
         try:
@@ -422,6 +418,8 @@ def delete_index(index_type: str,
             shutil.rmtree(ragatouille_path)
         except:
             raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+    else:
+        raise NotImplementedError
     
 def has_meaningful_content(page):
     """
