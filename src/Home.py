@@ -76,6 +76,14 @@ with st.expander("Connection Status",expanded=True):
     
     # Ragatouille
     st.markdown(admin.show_ragatouille_indexes())
+    try:
+        ragatouille_indexes = [obj.name for obj in admin.show_ragatouille_indexes(format=False)['message']]
+        ragatouille_name=st.selectbox('Chroma database',ragatouille_indexes)
+        if st.button('Delete Pinecone database',help='This is permanent!'):
+            data_processing.delete_index('Ragatouille',ragatouille_name,"Standard",local_db_path='../db')
+            st.markdown(f"Index {ragatouille_name} has been deleted.")
+    except:
+        pass
 
 st.subheader("Running Locally")
 '''

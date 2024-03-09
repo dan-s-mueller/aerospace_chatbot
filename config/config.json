@@ -30,12 +30,17 @@
             "name": "Hugging Face",
             "models": [
                 {
-                    "model":"mistralai/Mistral-7B-Instruct-v0.2",
-                    "endpoint":""
+                    "model":"mistralai/Mistral-7B-Instruct-v0.2"
                 },
                 {
-                    "model":"meta-llama/Llama-2-70b-chat-hf",
-                    "endpoint":""
+                    "model":"mistralai/Mixtral-8x7B-Instruct-v0.1"
+                },
+                {
+                    "model":"google/gemma-7b-it"
+                
+                },
+                {
+                    "model":"meta-llama/Llama-2-70b-chat-hf"
                 
                 }
             ]

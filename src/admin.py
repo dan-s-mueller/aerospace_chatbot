@@ -8,6 +8,8 @@ import chromadb
 
 import streamlit as st
 
+from langchain_openai import OpenAI, ChatOpenAI
+
 from prompts import TEST_QUERY_PROMPT
 
 # Set up the page, enable logging 
@@ -105,6 +107,12 @@ def load_sidebar(config_file,
                     sb_out['rag_llm_model']=st.sidebar.selectbox('RAG Hugging Face model', 
                                                             [item['model'] for item in llms['Hugging Face']['models']], 
                                                             index=0)
+                    sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
+                elif sb_out['rag_llm_source']=='LM Studio (local)':
+                    sb_out['rag_llm_model']=st.sidebar.text_input('Local host URL',
+                                                            'http://localhost:1234/v1',
+                                                            help='See LM studio configuration for local host URL.')
+                    st.sidebar.warning('You must load a model in LM studio first for this to work.')
         logging.info('RAG type: '+sb_out['rag_type'])
 
         # TODO: add other advanced RAG types
@@ -161,6 +169,7 @@ def load_sidebar(config_file,
             sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', 
                                                      [item['model'] for item in llms['Hugging Face']['models']], 
                                                      index=0)
+            sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
         elif sb_out['llm_source']=='LM Studio (local)':
             sb_out['llm_model']=st.sidebar.text_input('Local host URL',
                                                       'http://localhost:1234/v1',
@@ -267,6 +276,7 @@ def set_secrets(sb):
         if os.environ['HUGGINGFACEHUB_API_TOKEN']=='':
             raise SecretKeyException('Hugging Face API Key is required.','HUGGINGFACE_API_KEY_MISSING')
     return secrets
+
 def test_key_status():
     """
     Check the status of various API keys based on environment variables.
@@ -302,6 +312,40 @@ def test_key_status():
     # Ragatouille local database
         
     return _format_key_status(key_status)
+
+def set_llm(sb,secrets,type='prompt'):
+    if type=='prompt':  # use for prompting in chat applications
+        if sb['llm_source']=='OpenAI':
+            llm = ChatOpenAI(model_name=sb['llm_model'],
+                            temperature=sb['model_options']['temperature'],
+                            openai_api_key=secrets['OPENAI_API_KEY'],
+                            max_tokens=sb['model_options']['output_level'])
+        elif sb['llm_source']=='Hugging Face':
+            llm = ChatOpenAI(base_url=sb['hf_endpoint'],
+                            model=sb['llm_model'],
+                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
+                            temperature=sb['model_options']['temperature'],
+                            max_tokens=sb['model_options']['output_level'])
+        elif sb['llm_source']=='LM Studio (local)':
+            # base_url takes locaol configuration from lm studio, no api key required.
+            llm = ChatOpenAI(base_url=sb['llm_model'],
+                            temperature=sb['model_options']['temperature'],
+                            max_tokens=sb['model_options']['output_level'])
+    elif type=='rag':   # use for RAG application (summary, multi-query)
+        if sb['rag_llm_source']=='OpenAI':
+            llm = ChatOpenAI(model_name=sb['rag_llm_model'],
+                            openai_api_key=secrets['OPENAI_API_KEY'],
+                            max_tokens=100)
+        elif sb['rag_llm_source']=='Hugging Face':
+            llm = ChatOpenAI(base_url=sb['rag_hf_endpoint'],
+                            model=sb['rag_llm_model'],
+                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
+                            max_tokens=100)
+        elif sb['rag_llm_source']=='LM Studio (local)':
+            # base_url takes locaol configuration from lm studio, no api key required.
+            llm = ChatOpenAI(base_url=sb['rag_llm_model'],
+                            max_tokens=100)
+    return llm
 
 def show_pinecone_indexes(format=True):
     """

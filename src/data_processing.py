@@ -29,7 +29,10 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_core.documents import Document as lancghain_Document
+
+from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 
 from ragatouille import RAGPretrainedModel
 
@@ -56,28 +59,8 @@ def load_docs(index_type,
               file_out=None,
               batch_size=50,
               local_db_path='../db',
+              llm=None,
               show_progress=False):
-    """
-    Load documents into the specified index.
-
-    Args:
-        index_type (str): The type of index to use.
-        docs (list): The list of documents to load.
-        query_model (str): The query model to use.
-        rag_type (str, optional): The type of RAG to use. Defaults to 'Standard'.
-        index_name (str, optional): The name of the index. Defaults to None.
-        chunk_method (str, optional): The method to chunk the documents. Defaults to 'tiktoken_recursive'.
-        chunk_size (int, optional): The size of each chunk. Defaults to 500.
-        chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
-        clear (bool, optional): Whether to clear the index before loading documents. Defaults to False.
-        file_out (str, optional): The output file path. Defaults to None.
-        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
-        local_db_path (str, optional): The local database path. Defaults to '../db'.
-        show_progress (bool, optional): Whether to show progress during loading. Defaults to False.
-
-    Returns:
-        vectorstore: The updated vectorstore.
-    """
     # Check for illegal things
     if not clear and (rag_type == 'Parent-Child' or rag_type == 'Summary'):
         raise ValueError('Parent-Child databases must be cleared before loading new documents.')
@@ -89,6 +72,7 @@ def load_docs(index_type,
                        chunk_size=chunk_size,
                        chunk_overlap=chunk_overlap,
                        file_out=file_out,
+                       llm=llm,
                        show_progress=True)
         
     # Set index names for special databases
@@ -122,6 +106,7 @@ def chunk_docs(docs: List[str],
                chunk_size:int=500,
                chunk_overlap:int=0,
                k_parent:int=4,
+               llm=None,
                show_progress:bool=False):
     if show_progress:
         progress_text = "Chunking in progress..."
@@ -152,7 +137,7 @@ def chunk_docs(docs: List[str],
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     
     # Process pages
-    if rag_type!='Parent-Child': 
+    if rag_type=='Standard': 
         if chunk_method=='character_recursive':
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
@@ -188,7 +173,9 @@ def chunk_docs(docs: List[str],
             raise NotImplementedError
         
         # Split up parent chunks
-        parent_chunks = parent_splitter.split_documents(pages)
+        # TODO: foxing this to only a small number to avoit it being extremely expensive
+        fix_limit=5
+        parent_chunks = parent_splitter.split_documents(pages[:fix_limit])
 
         doc_ids = [str(uuid.uuid4()) for _ in parent_chunks]
         
@@ -208,7 +195,31 @@ def chunk_docs(docs: List[str],
                 'pages':{'doc_ids':doc_ids,'parent_chunks':parent_chunks},
                 'chunks':chunks,
                 'splitters':{'parent_splitter':parent_splitter,'child_splitter':child_splitter}}
-    elif rag_type == 'Summary' or rag_type == 'Multi-Query':
+    elif rag_type == 'Summary':
+        if show_progress:
+            my_bar.empty()
+            my_bar = st.progress(0, text='Generating summaries...')
+
+        id_key = "doc_id"
+        doc_ids = [str(uuid.uuid4()) for _ in pages]
+        chain = (
+            {"doc": lambda x: x.page_content}
+            | ChatPromptTemplate.from_template("Summarize the following document:\n\n{doc}")
+            | llm            # | ChatOpenAI(max_retries=0)
+            | StrOutputParser()
+        )
+        summaries = chain.batch(pages, {"max_concurrency": 5})
+        summary_docs = [
+            Document(page_content=s, metadata={id_key: doc_ids[i]})
+            for i, s in enumerate(summaries)
+        ]
+        if show_progress:
+            my_bar.empty()
+        return {'rag':'Summary',
+                'pages':{'doc_ids':doc_ids,'docs':pages},
+                'summaries':summary_docs,
+                'llm':llm}
+    elif rag_type == 'Multi-Query':
         raise NotImplementedError
 def initialize_database(index_type: str, 
                         index_name: str, 
@@ -348,7 +359,6 @@ def upsert_docs(index_type:str,
         retriever=vectorstore.as_retriever()
     elif chunker['rag']=='Parent-Child':
         if index_type != "RAGatouille":
-            # TODO: make sure this is deleted/udpated whenever a parent-child database is udpated. For now, it's checked in load_docs.
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -368,7 +378,28 @@ def upsert_docs(index_type:str,
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
-    elif chunker['rag'] == 'Summary' or chunker['rag'] == 'Multi-Query':
+    elif chunker['rag'] == 'Summary':
+        if index_type != "RAGatouille":
+            lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+            store = LocalFileStore(lfs_path)
+            
+            id_key = "doc_id"
+            retriever = MultiVectorRetriever(vectorstore=vectorstore,byte_store=store,id_key=id_key)
+
+            for i in range(0, len(chunker['summaries']), batch_size):
+                summary_batch = chunker['summaries'][i:i + batch_size]
+                retriever.vectorstore.add_documents(summary_batch)
+                if show_progress:
+                    progress_percentage = i / len(chunker['summaries'])
+                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+            
+            # Index parent docs all at once
+            retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], 
+                                             chunker['pages']['docs'])))
+            logging.info(f"Index created: {vectorstore}")
+        elif index_type == "RAGatouille":
+            raise Exception('RAGAtouille only supports standard RAG.')
+    elif chunker['rag'] == 'Multi-Query':
         raise NotImplementedError
     if show_progress:
         my_bar.empty()
@@ -381,9 +412,9 @@ def delete_index(index_type: str,
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         try:
             pc.describe_index(index_name)
+            pc.delete_index(index_name)
         except:
-            raise Exception(f"Cannot clear index {index_name} because it does not exist. Create the index first.")
-        pc.delete_index(index_name)
+            pass
         logging.info('Cleared database ' + index_name)
         if rag_type == 'Parent-Child':
             try:
@@ -403,7 +434,7 @@ def delete_index(index_type: str,
                     persistent_client.delete_collection(name=idx.name)
                     logging.info(f"Index {idx.name} cleared.")
         except:
-            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+            pass
         logging.info('Cleared database and matching databases ' + index_name)
         if rag_type == 'Parent-Child':
             try:
@@ -417,7 +448,7 @@ def delete_index(index_type: str,
             ragatouille_path = os.path.join(local_db_path, '.ragatouille')
             shutil.rmtree(ragatouille_path)
         except:
-            raise Exception(f"Cannot clear index {index_name} because it does not exist.")
+            pass
     else:
         raise NotImplementedError
     

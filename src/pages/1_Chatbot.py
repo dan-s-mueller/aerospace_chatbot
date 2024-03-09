@@ -23,22 +23,32 @@ from ragatouille import RAGPretrainedModel
 
 import streamlit as st
 
-def _set_llm(sb,secrets):
-    if sb['llm_source']=='OpenAI':
-        llm = ChatOpenAI(model_name=sb['llm_model'],
-                        temperature=sb['model_options']['temperature'],
-                        openai_api_key=secrets['OPENAI_API_KEY'],
-                        max_tokens=sb['model_options']['output_level'])
-    elif sb['llm_source']=='Hugging Face':
-        llm = HuggingFaceHub(repo_id=sb['llm_model'],
-                            model_kwargs={"temperature": sb['model_options']['temperature'], 
-                                            "max_length": sb['model_options']['output_level']})
-    elif sb['llm_source']=='LM Studio (local)':
-        # base_url takes locaol configuration from lm studio, no api key required.
-        llm = ChatOpenAI(base_url=sb['llm_model'],
-                        temperature=sb['model_options']['temperature'],
-                        max_tokens=sb['model_options']['output_level'])
-    return llm
+# def _set_llm(sb,secrets):
+#     if sb['llm_source']=='OpenAI':
+#         llm = ChatOpenAI(model_name=sb['llm_model'],
+#                         temperature=sb['model_options']['temperature'],
+#                         openai_api_key=secrets['OPENAI_API_KEY'],
+#                         max_tokens=sb['model_options']['output_level'])
+#     elif sb['llm_source']=='Hugging Face':
+#         # llm = HuggingFaceHub(repo_id=sb['llm_model'],
+#         #                     model_kwargs={"temperature": sb['model_options']['temperature'], 
+#         #                                     "max_length": sb['model_options']['output_level']})
+#         llm = ChatOpenAI(base_url=sb['hf_endpoint'],
+#                          model=sb['llm_model'],
+#                          api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
+#                          temperature=sb['model_options']['temperature'],
+#                          max_tokens=sb['model_options']['output_level'])
+#     elif sb['llm_source']=='LM Studio (local)':
+#         # base_url takes locaol configuration from lm studio, no api key required.
+#         llm = ChatOpenAI(base_url=sb['llm_model'],
+#                         temperature=sb['model_options']['temperature'],
+#                         max_tokens=sb['model_options']['output_level'])
+#     return llm
+def _reset_conversation():
+    st.session_state.qa_model_obj = []
+    st.session_state.message_id = 0
+    st.session_state.messages = []
+    return None
 
 # Set up the page, enable logging, read environment variables
 load_dotenv(find_dotenv(),override=True)
@@ -73,6 +83,7 @@ with st.expander('''What's under the hood?'''):
     Example questions:
     * What are examples of latch failures which have occurred due to improper fitup?
     * What are examples of lubricants which should be avoided for space mechanism applications?
+    * What can you tell me about the efficacy of lead naphthenate for wear protection in space mechanisms?
     ''')
 
 # TODO: implement this filtering
@@ -121,7 +132,7 @@ if prompt := st.chat_input('Prompt here'):
                 logging.info('Query model set: '+str(query_model))
 
                 # Define LLM
-                llm=_set_llm(sb,secrets)
+                llm=admin.set_llm(sb,secrets,type='prompt')
                 logging.info('LLM model set: '+str(llm))
 
                 # Initialize QA model object
@@ -142,7 +153,7 @@ if prompt := st.chat_input('Prompt here'):
             if st.session_state.message_id>1:
                 logging.info('Updating model with sidebar settings...')
                 # Update LLM
-                llm=_set_llm(sb,secrets)
+                llm=admin.set_llm(sb,secrets,type='prompt')
                 logging.info('LLM model set: '+str(llm))
 
                 st.session_state.qa_model_obj.update_model(llm,
@@ -164,6 +175,4 @@ if prompt := st.chat_input('Prompt here'):
 
 # Add reset button
 if st.button('Restart session'):
-    st.session_state.qa_model_obj = []
-    st.session_state.message_id = 0
-    st.session_state.messages = []
+    _reset_conversation()

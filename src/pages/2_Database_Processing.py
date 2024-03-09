@@ -68,27 +68,37 @@ database_appendix=st.text_input('Appendix for database name','ams')
 
 # Add an expandable box for options
 with st.expander("Options",expanded=True):
-    clear_database = st.checkbox('Clear existing database?',value=True)
+    clear_database = st.checkbox('Delete existing database?',value=True)
     if sb['query_model']=='Openai' or 'ChromaDB':
         # OpenAI will time out if the batch size is too large
         batch_size=st.number_input('Batch size for upsert', min_value=1, step=1, value=100)
     else:
         batch_size=None
     
-    chunk_method= st.selectbox('Chunk method', ['character_recursive'], index=0,help='https://python.langchain.com/docs/modules/data_connection/document_transformers/')
-    if chunk_method=='character_recursive':
-        chunk_size=st.number_input('Chunk size (characters)', min_value=1, step=1, value=400, help='An average paragraph is around 400 characters.')
-        chunk_overlap=st.number_input('Chunk overlap (characters)', min_value=0, step=1, value=0)
-        export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
-        if export_json:
-            json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
+    if sb['rag_type']!='Summary':
+        chunk_method= st.selectbox('Chunk method', ['character_recursive'], index=0,help='https://python.langchain.com/docs/modules/data_connection/document_transformers/')
+        if chunk_method=='character_recursive':
+            chunk_size=st.number_input('Chunk size (characters)', min_value=1, step=1, value=400, help='An average paragraph is around 400 characters.')
+            chunk_overlap=st.number_input('Chunk overlap (characters)', min_value=0, step=1, value=0)
+        else:
+            raise NotImplementedError
     else:
-        raise NotImplementedError
+        chunk_size=None
+        chunk_overlap=None
+    export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
+    if export_json:
+        json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
 
 
 # Add a button to run the function
 if st.button('Load docs into vector database'):
     start_time = time.time()  # Start the timer
+
+    if sb['rag_type']=='Summary' or sb['rag_type']=='Multi-Query':
+        llm=admin.set_llm(sb,secrets,type='rag')
+    else:
+        llm=None
+
     data_processing.load_docs(sb['index_type'],
                           docs,
                           rag_type=sb['rag_type'],
@@ -100,17 +110,8 @@ if st.button('Load docs into vector database'):
                           clear=clear_database,
                           batch_size=batch_size,
                           local_db_path=sb['keys']['LOCAL_DB_PATH'],
+                          llm=llm,
                           show_progress=True)
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
     st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
-
-# Add a button to delete the index
-if st.button('Delete existing index'):
-    start_time = time.time()  # Start the timer
-    data_processing.delete_index(sb['index_type'],
-                             sb['index_name'],
-                             local_db_path=sb['keys']['LOCAL_DB_PATH'])
-    end_time = time.time()  # Stop the timer
-    elapsed_time = end_time - start_time 
-    st.markdown(f":heavy_check_mark: Deleted existing database(s) in {elapsed_time:.2f} seconds")

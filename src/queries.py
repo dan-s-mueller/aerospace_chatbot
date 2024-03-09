@@ -161,9 +161,9 @@ class QA_Model:
         if self.index_type!='RAGatouille':
             self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
             if self.llm.__class__.__name__=='ChatOpenAI':
-                self.ai_response=self.result['answer'].content + '\nSources: \n'+self.sources
-            elif self.llm.__class__.__name__=='HuggingFaceHub':
-                self.ai_response=self.result['answer'] + '\nSources: \n'+self.sources
+                self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
+            else:
+                raise NotImplementedError
             logging.info('Sources: '+str(self.sources))
             logging.info('Response with sources: '+str(self.ai_response))
         else:
@@ -178,9 +178,9 @@ class QA_Model:
             self.sources = '\n'.join(extracted_metadata)
 
             if self.llm.__class__.__name__=='ChatOpenAI':
-                self.ai_response=self.result['answer'].content + '\nSources: \n'+self.sources
-            elif self.llm.__class__.__name__=='HuggingFaceHub':
-                self.ai_response=self.result['answer'] + '\nSources: \n'+self.sources
+                self.ai_response=self.result['answer'].content + '\n\nSources:\n' + self.sources
+            else:
+                raise NotImplementedError
             logging.info('Sources: '+str(self.sources))
             logging.info('Response with sources: '+str(self.ai_response))
 
