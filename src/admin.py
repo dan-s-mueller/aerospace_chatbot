@@ -288,7 +288,6 @@ def test_key_status():
     if os.getenv('OPENAI_API_KEY') is None:
         key_status['OpenAI API Key'] = {'status': False}
     else:
-        print(os.getenv('OPENAI_API_KEY'))
         key_status['OpenAI API Key'] = {'status': True}
 
     # Voyage
