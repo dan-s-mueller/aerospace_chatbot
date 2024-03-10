@@ -63,7 +63,7 @@ with st.expander("Connection Status",expanded=True):
         if st.button('Delete Pinecone database',help='This is permanent!'):
             if chroma_db_name.endswith("parent-child"):
                 rag_type = "Parent-Child"
-            elif chroma_db_name.endswith("summary"):
+            elif "-summary-" in chroma_db_name:
                 rag_type = "Summary"
             elif chroma_db_name.endswith("multi-query"):
                 rag_type = "Multi-Query"

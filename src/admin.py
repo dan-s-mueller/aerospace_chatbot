@@ -334,17 +334,15 @@ def set_llm(sb,secrets,type='prompt'):
     elif type=='rag':   # use for RAG application (summary, multi-query)
         if sb['rag_llm_source']=='OpenAI':
             llm = ChatOpenAI(model_name=sb['rag_llm_model'],
-                            openai_api_key=secrets['OPENAI_API_KEY'],
-                            max_tokens=100)
+                            openai_api_key=secrets['OPENAI_API_KEY'])
         elif sb['rag_llm_source']=='Hugging Face':
             llm = ChatOpenAI(base_url=sb['rag_hf_endpoint'],
                             model=sb['rag_llm_model'],
-                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
-                            max_tokens=100)
+                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
         elif sb['rag_llm_source']=='LM Studio (local)':
-            # base_url takes locaol configuration from lm studio, no api key required.
+            # base_url takes local configuration from lm studio, no api key required.
             llm = ChatOpenAI(base_url=sb['rag_llm_model'],
-                            max_tokens=100)
+                             model_name='lm_studio')
     return llm
 
 def show_pinecone_indexes(format=True):

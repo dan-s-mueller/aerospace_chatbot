@@ -1,4 +1,4 @@
-from prompts import TEST_QUERY_PROMPT
+from prompts import TEST_QUERY_PROMPT, SUMMARIZE_TEXT
 
 import os
 import re
@@ -79,7 +79,7 @@ def load_docs(index_type,
     if rag_type == 'Parent-Child':
         index_name = index_name + '-parent-child'
     if rag_type == 'Summary':
-        index_name = index_name + '-summary'
+        index_name = index_name + '-summary-' + llm.model_name.replace('/', '-')
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -173,10 +173,8 @@ def chunk_docs(docs: List[str],
             raise NotImplementedError
         
         # Split up parent chunks
-        # TODO: foxing this to only a small number to avoit it being extremely expensive
-        fix_limit=5
-        parent_chunks = parent_splitter.split_documents(pages[:fix_limit])
-
+        # TODO: fixing this to only a small number to avoit it being extremely expensive
+        parent_chunks = parent_splitter.split_documents(pages)
         doc_ids = [str(uuid.uuid4()) for _ in parent_chunks]
         
         # Split up child chunks
@@ -200,15 +198,26 @@ def chunk_docs(docs: List[str],
             my_bar.empty()
             my_bar = st.progress(0, text='Generating summaries...')
 
+        # fix_limit=5
+        # pages = pages[:fix_limit]
+
         id_key = "doc_id"
         doc_ids = [str(uuid.uuid4()) for _ in pages]
         chain = (
             {"doc": lambda x: x.page_content}
-            | ChatPromptTemplate.from_template("Summarize the following document:\n\n{doc}")
-            | llm            # | ChatOpenAI(max_retries=0)
+            | SUMMARIZE_TEXT
+            | llm
             | StrOutputParser()
         )
-        summaries = chain.batch(pages, {"max_concurrency": 5})
+
+        summaries = []
+        for i, page in enumerate(pages):
+            summary = chain.invoke(page)
+            summaries.append(summary)
+            if show_progress:
+                progress_percentage = i / len(pages)
+                my_bar.progress(progress_percentage, text=f'Generating summaries...{progress_percentage*100:.2f}%')
+
         summary_docs = [
             Document(page_content=s, metadata={id_key: doc_ids[i]})
             for i, s in enumerate(summaries)
@@ -436,12 +445,12 @@ def delete_index(index_type: str,
         except:
             pass
         logging.info('Cleared database and matching databases ' + index_name)
-        if rag_type == 'Parent-Child':
+        if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
                 logging.info("No local filestore to delete.")
-        elif rag_type == 'Summary' or rag_type == 'Multi-Query':
+        elif rag_type == 'Multi-Query':
             raise NotImplementedError
     elif index_type == "RAGatouille":
         try:
