@@ -29,6 +29,7 @@ sb=admin.load_sidebar(config_file='../config/config.json',
                       index_data_file='../config/index_data.json',
                       vector_databases=True,
                       embeddings=True,
+                      rag_type=True,
                       index_name=True,
                       secret_keys=True)
 try:

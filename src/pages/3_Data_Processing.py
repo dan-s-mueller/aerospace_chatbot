@@ -46,40 +46,40 @@ if 'client' not in st.session_state:
 with st.expander("Under the hood",expanded=True):
     st.warning("Under construction")
 
-chunked_file = st.text_input('Chunked raw text file', f'../data/AMS/ams_data-400-0.jsonl')
+# chunked_file = st.text_input('Chunked raw text file', f'../data/AMS/ams_data-400-0.jsonl')
 
-with st.expander("Process Chunked Data",expanded=True):
-    clean_data = st.checkbox('Clean data?', value=True)
-    tag_data = st.checkbox('Tag data?', value=True)
-    question_data = st.checkbox('Generate questions from data?', value=True)
-    if sb['model_options']['output_level'] == 'Concise':
-        out_token = 50
-    else:
-        out_token = 516
+# with st.expander("Process Chunked Data",expanded=True):
+#     clean_data = st.checkbox('Clean data?', value=True)
+#     tag_data = st.checkbox('Tag data?', value=True)
+#     question_data = st.checkbox('Generate questions from data?', value=True)
+#     if sb['model_options']['output_level'] == 'Concise':
+#         out_token = 50
+#     else:
+#         out_token = 516
 
-    # Define LLM
-    if sb['llm_source']=='OpenAI':
-        llm = ChatOpenAI(model_name=sb['llm_model'],
-                        temperature=sb['model_options']['temperature'],
-                        openai_api_key=secrets['OPENAI_API_KEY'],
-                        max_tokens=out_token)
-    elif sb['llm_source']=='Hugging Face':
-        llm = HuggingFaceHub(repo_id=sb['llm_model'],
-                            model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
+#     # Define LLM
+#     if sb['llm_source']=='OpenAI':
+#         llm = ChatOpenAI(model_name=sb['llm_model'],
+#                         temperature=sb['model_options']['temperature'],
+#                         openai_api_key=secrets['OPENAI_API_KEY'],
+#                         max_tokens=out_token)
+#     elif sb['llm_source']=='Hugging Face':
+#         llm = HuggingFaceHub(repo_id=sb['llm_model'],
+#                             model_kwargs={"temperature": sb['model_options']['temperature'], "max_length": out_token})
     
-    if clean_data or tag_data or question_data:
-        param_cleaning=None
-    if clean_data:
-        n_tags=None
-    if question_data:
-        n_questions=None
+#     if clean_data or tag_data or question_data:
+#         param_cleaning=None
+#     if clean_data:
+#         n_tags=None
+#     if question_data:
+#         n_questions=None
 
-    if st.button('Process chunked data'):
-        start_time = time.time()  # Start the timer
+#     if st.button('Process chunked data'):
+#         start_time = time.time()  # Start the timer
         
-        data_processing.process_chunk(chunked_file,llm,
-                  clean_data=False,tag_data=False,question_data=False)
+#         data_processing.process_chunk(chunked_file,llm,
+#                   clean_data=False,tag_data=False,question_data=False)
 
-        end_time = time.time()  # Stop the timer
-        elapsed_time = end_time - start_time 
-        st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
+#         end_time = time.time()  # Stop the timer
+#         elapsed_time = end_time - start_time 
+#         st.write(f"Elapsed Time: {elapsed_time:.2f} seconds")
