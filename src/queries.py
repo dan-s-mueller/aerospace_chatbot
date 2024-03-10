@@ -12,11 +12,14 @@ import pinecone
 from pinecone import Pinecone as pinecone_client
 import chromadb
 
+from langchain_openai import ChatOpenAI
+
 from langchain_pinecone import Pinecone
 from langchain_community.vectorstores import Chroma
 
 from langchain.memory import ConversationBufferMemory
 
+from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.storage import LocalFileStore
 
@@ -26,7 +29,7 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain.schema import format_document
 from langchain_core.messages import get_buffer_string
 
-from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT, TEST_QUERY_PROMPT
+from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS, GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
 
 # Set secrets from environment file
 OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
@@ -75,7 +78,7 @@ class QA_Model:
                  index_type,
                  index_name,
                  query_model,
-                 llm,
+                 llm:ChatOpenAI,
                  rag_type='Standard',
                  k=6,
                  search_type='similarity',
@@ -119,15 +122,13 @@ class QA_Model:
         if self.rag_type=='Standard':  
             self.retriever=self.vectorstore.as_retriever(search_type=search_type,
                                                         search_kwargs=search_kwargs)
-        elif self.rag_type=='Parent-Child':
+        elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':
             lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / index_name)
             self.retriever = MultiVectorRetriever(
                                 vectorstore=self.vectorstore,
                                 byte_store=lfs,
                                 id_key="doc_id",
                             )
-        elif self.rag_type=='Summary' or 'Multi-Query':
-            raise NotImplementedError
         logging.info('Chat retriever: '+str(self.retriever))
 
         # Intialize memory
@@ -188,7 +189,7 @@ class QA_Model:
         logging.info('Memory content after qa result: '+str(self.memory))
 
     def update_model(self,
-                     llm,
+                     llm:ChatOpenAI,
                      k=6,
                      search_type='similarity',
                      fetch_k=50,
@@ -223,6 +224,24 @@ class QA_Model:
                                                       self.search_type,
                                                       search_kwargs)
         logging.info('Updated qa chain: '+str(self.conversational_qa_chain))
+
+def generate_alternative_questions(prompt:str,
+                                   llm:ChatOpenAI,
+                                   response=None):
+    if response:
+        prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
+        invoke_dict={'question':prompt,'context':response}
+    else:
+        prompt_template=GENERATE_SIMILAR_QUESTIONS
+        invoke_dict={'question':prompt}
+    
+    chain = (
+            prompt_template
+            | llm
+            | StrOutputParser()
+        )
+    
+    return chain.invoke(invoke_dict)
 
 # Internal functions
 def _combine_documents(docs, 

@@ -173,7 +173,6 @@ def chunk_docs(docs: List[str],
             raise NotImplementedError
         
         # Split up parent chunks
-        # TODO: fixing this to only a small number to avoit it being extremely expensive
         parent_chunks = parent_splitter.split_documents(pages)
         doc_ids = [str(uuid.uuid4()) for _ in parent_chunks]
         
@@ -228,7 +227,7 @@ def chunk_docs(docs: List[str],
                 'pages':{'doc_ids':doc_ids,'docs':pages},
                 'summaries':summary_docs,
                 'llm':llm}
-    elif rag_type == 'Multi-Query':
+    else:
         raise NotImplementedError
 def initialize_database(index_type: str, 
                         index_name: str, 
@@ -408,7 +407,7 @@ def upsert_docs(index_type:str,
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
-    elif chunker['rag'] == 'Multi-Query':
+    else:
         raise NotImplementedError
     if show_progress:
         my_bar.empty()
@@ -430,7 +429,7 @@ def delete_index(index_type: str,
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
                 logging.info("No local filestore to delete.")
-        elif rag_type == 'Summary' or rag_type == 'Multi-Query':
+        elif rag_type == 'Summary':
             raise NotImplementedError
     elif index_type == "ChromaDB":
         try:
@@ -450,8 +449,6 @@ def delete_index(index_type: str,
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
                 logging.info("No local filestore to delete.")
-        elif rag_type == 'Multi-Query':
-            raise NotImplementedError
     elif index_type == "RAGatouille":
         try:
             ragatouille_path = os.path.join(local_db_path, '.ragatouille')

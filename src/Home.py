@@ -46,8 +46,6 @@ with st.expander("Connection Status",expanded=True):
                 rag_type = "Parent-Child"
             elif pinecone_index_name.endswith("summary"):
                 rag_type = "Summary"
-            elif pinecone_index_name.endswith("multi-query"):
-                rag_type = "Multi-Query"
             else:
                 rag_type="Standard"
             data_processing.delete_index('Pinecone',pinecone_index_name,rag_type,local_db_path='../db')
@@ -65,8 +63,6 @@ with st.expander("Connection Status",expanded=True):
                 rag_type = "Parent-Child"
             elif "-summary-" in chroma_db_name:
                 rag_type = "Summary"
-            elif chroma_db_name.endswith("multi-query"):
-                rag_type = "Multi-Query"
             else:
                 rag_type="Standard"
             data_processing.delete_index('ChromaDB',chroma_db_name,rag_type,local_db_path='../db')

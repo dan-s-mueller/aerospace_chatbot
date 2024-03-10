@@ -8,7 +8,7 @@ import chromadb
 
 import streamlit as st
 
-from langchain_openai import OpenAI, ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 from prompts import TEST_QUERY_PROMPT
 
@@ -97,7 +97,7 @@ def load_sidebar(config_file,
         if sb_out['index_type']=='RAGatouille':
             sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0)
         else:
-            sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Summary','Multi-Query'], index=0)
+            sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Summary'], index=0)
             if sb_out['rag_type']=='Summary' or sb_out['rag_type']=='Muti-Query':
                 sb_out['rag_llm_source']=st.sidebar.selectbox('RAG LLM model', list(llms.keys()), index=0)
                 if sb_out['rag_llm_source']=='OpenAI':
@@ -331,7 +331,7 @@ def set_llm(sb,secrets,type='prompt'):
             llm = ChatOpenAI(base_url=sb['llm_model'],
                             temperature=sb['model_options']['temperature'],
                             max_tokens=sb['model_options']['output_level'])
-    elif type=='rag':   # use for RAG application (summary, multi-query)
+    elif type=='rag':   # use for RAG application (summary)
         if sb['rag_llm_source']=='OpenAI':
             llm = ChatOpenAI(model_name=sb['rag_llm_model'],
                             openai_api_key=secrets['OPENAI_API_KEY'])

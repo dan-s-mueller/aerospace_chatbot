@@ -16,9 +16,6 @@ from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
-from langchain_openai import OpenAI, ChatOpenAI
-from langchain_community.llms import HuggingFaceHub
-
 from ragatouille import RAGPretrainedModel
 
 import streamlit as st
@@ -119,7 +116,6 @@ if prompt := st.chat_input('Prompt here'):
 
             st.session_state.message_id += 1
             st.write('Starting reponse generation for message: '+str(st.session_state.message_id))
-            logging.info('Starting reponse generation for message: '+str(st.session_state.message_id))
             
             if st.session_state.message_id==1:
                 # Define embeddings
@@ -129,11 +125,9 @@ if prompt := st.chat_input('Prompt here'):
                     query_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
                 elif sb['index_type']=='RAGatouille':
                     query_model=RAGPretrainedModel.from_index(sb['keys']['LOCAL_DB_PATH']+'/.ragatouille/colbert/indexes/'+sb['index_selected'])
-                logging.info('Query model set: '+str(query_model))
 
                 # Define LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
-                logging.info('LLM model set: '+str(llm))
 
                 # Initialize QA model object
                 if 'search_type' in sb['model_options']: 
@@ -149,29 +143,25 @@ if prompt := st.chat_input('Prompt here'):
                                                                search_type=search_type,
                                                                filter_arg=False,
                                                                local_db_path=sb['keys']['LOCAL_DB_PATH'])
-                logging.info('QA model object set: '+str(st.session_state.qa_model_obj))
             if st.session_state.message_id>1:
-                logging.info('Updating model with sidebar settings...')
                 # Update LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
-                logging.info('LLM model set: '+str(llm))
 
                 st.session_state.qa_model_obj.update_model(llm,
                                                            k=sb['model_options']['k'],
                                                            search_type=sb['model_options']['search_type'],
                                                            filter_arg=False)
-                logging.info('QA model object updated: '+str(st.session_state.qa_model_obj))
             
             st.write('Searching vector database, generating prompt...')
-            logging.info('Searching vector database, generating prompt...')
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.ai_response
             message_placeholder.markdown(ai_response)
+            st.write("Alternative questions: \n\n\n"+queries.generate_alternative_questions(prompt,llm,response=ai_response))
+
             t_delta=time.time() - t_start
             status.update(label='Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)
             
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
-        logging.info(f'Messaging complete for {st.session_state.message_id}.')
 
 # Add reset button
 if st.button('Restart session'):

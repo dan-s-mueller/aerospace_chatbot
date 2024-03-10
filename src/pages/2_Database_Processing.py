@@ -94,7 +94,7 @@ with st.expander("Options",expanded=True):
 if st.button('Load docs into vector database'):
     start_time = time.time()  # Start the timer
 
-    if sb['rag_type']=='Summary' or sb['rag_type']=='Multi-Query':
+    if sb['rag_type']=='Summary':
         llm=admin.set_llm(sb,secrets,type='rag')
     else:
         llm=None
