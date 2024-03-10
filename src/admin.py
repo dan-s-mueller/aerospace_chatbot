@@ -405,8 +405,8 @@ def show_chroma_collections(format=True):
         return chroma_status
     
 def show_ragatouille_indexes(format=True):
-    path=os.getenv('LOCAL_DB_PATH')+'/.ragatouille/colbert/indexes'
     try:
+        path=os.getenv('LOCAL_DB_PATH')+'/.ragatouille/colbert/indexes'
         indexes = []
         for item in os.listdir(path):
             item_path = os.path.join(path, item)
