@@ -8,8 +8,6 @@ import glob
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
-from ragatouille import RAGPretrainedModel
-
 import streamlit as st
 
 # Set up the page, enable logging, read environment variables

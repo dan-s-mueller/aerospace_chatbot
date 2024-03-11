@@ -215,7 +215,7 @@ def load_sidebar(config_file,
             os.environ['LOCAL_DB_PATH'] = sb_out['keys']['LOCAL_DB_PATH']
         else:
             sb_out['keys']['LOCAL_DB_PATH'] = os.getenv('LOCAL_DB_PATH')
-            st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='From .env file.')
+            st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='Loaded from environment variable.')
             
     return sb_out
 

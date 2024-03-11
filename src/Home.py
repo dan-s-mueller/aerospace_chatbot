@@ -19,7 +19,7 @@ st.title("Aerospace Chatbot Homepage")
 st.subheader("Aerospace Mechanisms Symposia (AMS)")
 st.markdown("""
 This space contains chatbots and tools for exploring data in the aerospace mechanisms symposia, using all available papers published since 2000.
-Those papers are located here: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbots/tree/main/data/AMS
+Those papers are located here: add link
 """)
 st.subheader("Code Details")
 st.markdown("Code base: https://github.com/dsmueller3760/aerospace_chatbot/tree/rag_study")

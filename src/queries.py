@@ -169,26 +169,26 @@ class QA_Model:
                                                       kwargs=search_kwargs)
         logging.info('Updated qa chain: '+str(self.conversational_qa_chain))
 
-def generate_alternative_questions(prompt:str,
-                                   llm:ChatOpenAI,
-                                   response=None):
-    if response:
-        prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
-        invoke_dict={'question':prompt,'context':response}
-    else:
-        prompt_template=GENERATE_SIMILAR_QUESTIONS
-        invoke_dict={'question':prompt}
-    
-    chain = (
-            prompt_template
-            | llm
-            | StrOutputParser()
-        )
-    
-    alternative_questions=chain.invoke(invoke_dict)
-    logging.info('Generated alternative questions: '+str(alternative_questions))
-    
-    return alternative_questions
+    def generate_alternative_questions(self,
+                                       prompt:str,
+                                       response=None):
+        if response:
+            prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
+            invoke_dict={'question':prompt,'context':response}
+        else:
+            prompt_template=GENERATE_SIMILAR_QUESTIONS
+            invoke_dict={'question':prompt}
+        
+        chain = (
+                prompt_template
+                | self.llm
+                | StrOutputParser()
+            )
+        
+        alternative_questions=chain.invoke(invoke_dict)
+        logging.info('Generated alternative questions: '+str(alternative_questions))
+        
+        return alternative_questions
 
 # Internal functions
 def _combine_documents(docs, 
