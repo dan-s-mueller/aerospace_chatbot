@@ -315,21 +315,6 @@ def upsert_docs(index_type:str,
                 batch_size:int = 50, 
                 show_progress:bool = False,
                 local_db_path:str = '../db'):
-    """
-    Upserts documents into the specified index.
-
-    Args:
-        index_type (str): The type of index to upsert the documents into.
-        index_name (str): The name of the index.
-        vectorstore (any): The vectorstore object used for storing vectors.
-        chunker (dict): The chunker object containing the chunks of documents.
-        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
-        show_progress (bool, optional): Whether to show progress during the upsert process. Defaults to False.
-        local_db_path (str, optional): The local path to the database folder. Defaults to '../db'.
-
-    Returns:
-        tuple: A tuple containing the updated vectorstore and retriever objects.
-    """
     if show_progress:
         progress_text = "Upsert in progress..."
     my_bar = st.progress(0, text=progress_text)
@@ -553,26 +538,3 @@ def export_data_viz(rx_client:RAGxplorer,df_export_path:str):
     # Save the data to a JSON file
     with open(df_export_path, 'w') as f:
         json.dump(export_data, f, indent=4)
-
-def process_chunk(json_file:str,
-                  llm:any,
-                  clean_data:bool=False,
-                  tag_data:bool=False,
-                  question_data:bool=False):
-    
-    # TODO: write out this function
-    # docs_out=[]
-    # with open(json_file, "r") as file_in:
-    #     file_data = [json.loads(line) for line in file_in]
-    #     # Process the file data and put it into the same format as docs_out
-    #     for line in file_data:
-    #         doc_temp = lancghain_Document(page_content=line['page_content'],
-    #                                         source=line['metadata']['source'],
-    #                                         page=line['metadata']['page'],
-    #                                         metadata=line['metadata'])
-    #         docs_out.append(doc_temp)
-
-    # clean data: use cheap llm to clean data
-    # tag data: use llm to tag data and add metadata for filtering/grouping later
-    # question data: use llm to generate questions from data
-    return None

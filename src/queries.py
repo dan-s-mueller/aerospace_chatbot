@@ -39,41 +39,6 @@ HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
 
 # Class and functions
 class QA_Model:
-    """A class representing a Question-Answering Model.
-
-    Args:
-        index_type (str): The type of index.
-        index_name (str): The name of the index.
-        query_model (str): The query model.
-        llm (str): The language model.
-        rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
-        k (int, optional): The number of retriever results. Defaults to 6.
-        search_type (str, optional): The type of search. Defaults to 'similarity'.
-        fetch_k (int, optional): The number of documents to fetch. Defaults to 50.
-        temperature (int, optional): The temperature for generation. Defaults to 0.
-        chain_type (str, optional): The type of chain. Defaults to 'stuff'.
-        filter_arg (bool, optional): Whether to filter arguments. Defaults to False.
-        local_db_path (str, optional): The local database path. Defaults to '../db'.
-
-    Attributes:
-        index_type (str): The type of index.
-        index_name (str): The name of the index.
-        query_model (str): The query model.
-        llm (str): The language model.
-        rag_type (str): The type of RAG model.
-        k (int): The number of retriever results.
-        search_type (str): The type of search.
-        fetch_k (int): The number of documents to fetch.
-        temperature (int): The temperature for generation.
-        chain_type (str): The type of chain.
-        filter_arg (bool): Whether to filter arguments.
-        local_db_path (str): The local database path.
-        sources (list): The list of sources.
-        vectorstore (VectorStore): The vector store.
-        retriever (Retriever): The retriever.
-        memory (ConversationBufferMemory): The conversation buffer memory.
-        conversational_qa_chain (ConversationalQAChain): The conversational QA chain.
-    """
     def __init__(self, 
                  index_type,
                  index_name,
@@ -84,8 +49,6 @@ class QA_Model:
                  search_type='similarity',
                  fetch_k=50,
                  temperature=0,
-                 chain_type='stuff',
-                 filter_arg=False,
                  local_db_path='../db'):
         
         self.index_type=index_type
@@ -97,17 +60,13 @@ class QA_Model:
         self.search_type=search_type
         self.fetch_k=fetch_k
         self.temperature=temperature
-        self.chain_type=chain_type
-        self.filter_arg=filter_arg
         self.local_db_path=local_db_path
         self.sources=[]
 
         load_dotenv(find_dotenv(),override=True)
 
         # Define retriever search parameters
-        search_kwargs = _process_retriever_args(self.filter_arg,
-                                                self.sources,
-                                                self.search_type,
+        search_kwargs = _process_retriever_args(self.search_type,
                                                 self.k,
                                                 self.fetch_k)
 
@@ -120,13 +79,12 @@ class QA_Model:
                                                              test_query=True,
                                                              init_ragatouille=False)  
         if self.rag_type=='Standard':  
-            self.retriever=self.vectorstore.as_retriever(search_type=search_type,
-                                                        search_kwargs=search_kwargs)
+            self.retriever=self.vectorstore.as_retriever(search_type=self.search_type)
         elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':
-            lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / index_name)
+            self.lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name)
             self.retriever = MultiVectorRetriever(
                                 vectorstore=self.vectorstore,
-                                byte_store=lfs,
+                                byte_store=self.lfs,
                                 id_key="doc_id",
                             )
         logging.info('Chat retriever: '+str(self.retriever))
@@ -137,11 +95,11 @@ class QA_Model:
         logging.info('Memory: '+str(self.memory))
 
         # Assemble main chain
+        # TODO: add search_kwargs back in
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.retriever,
                                                       self.memory,
-                                                      self.search_type,
-                                                      search_kwargs)
+                                                      kwargs=search_kwargs)
     def query_docs(self,query): 
         """
         Executes a query and retrieves the relevant documents.
@@ -190,39 +148,25 @@ class QA_Model:
 
     def update_model(self,
                      llm:ChatOpenAI,
-                     k=6,
                      search_type='similarity',
-                     fetch_k=50,
-                     filter_arg=False):
-        """
-        Updates the model with new parameters.
-
-        Args:
-            llm (object): The language model to be used for retrieval.
-            k (int, optional): The number of retriever candidates to consider. Defaults to 6.
-            search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
-            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
-            filter_arg (bool, optional): Whether to apply additional filtering during retrieval. Defaults to False.
-        """
-
+                     k=6,
+                     fetch_k=50):
         self.llm=llm
-        self.k=k
         self.search_type=search_type
+        self.k=k
         self.fetch_k=fetch_k
-        self.filter_arg=filter_arg
-        
+
         # Define retriever search parameters
-        search_kwargs = _process_retriever_args(self.filter_arg,
-                                                self.sources,
-                                                self.search_type,
-                                                self.k,
-                                                self.fetch_k)
+        search_kwargs = _process_retriever_args(search_type=self.search_type,
+                                                k=self.k,
+                                                fetch_k=self.fetch_k)
+        
         # Update conversational retrieval chain
+        # TODO: add search_kwargs back in
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.retriever,
                                                       self.memory,
-                                                      self.search_type,
-                                                      search_kwargs)
+                                                      kwargs=search_kwargs)
         logging.info('Updated qa chain: '+str(self.conversational_qa_chain))
 
 def generate_alternative_questions(prompt:str,
@@ -241,7 +185,10 @@ def generate_alternative_questions(prompt:str,
             | StrOutputParser()
         )
     
-    return chain.invoke(invoke_dict)
+    alternative_questions=chain.invoke(invoke_dict)
+    logging.info('Generated alternative questions: '+str(alternative_questions))
+    
+    return alternative_questions
 
 # Internal functions
 def _combine_documents(docs, 
@@ -253,23 +200,7 @@ def _combine_documents(docs,
 def _define_qa_chain(llm,
                      retriever,
                      memory,
-                     search_type,
-                     search_kwargs):
-    """
-    Defines the conversational QA chain for the chatbot. Based on this: https://python.langchain.com/docs/expression_language/cookbook/retrieval#conversational-retrieval-chain
-
-    Args:
-        llm: The language model component.
-        retriever: The document retriever component.
-        memory: The memory component.
-        search_type: The type of search to be performed.
-        search_kwargs: Additional keyword arguments for the search.
-
-    Returns:
-        The conversational QA chain.
-
-    """
-    
+                     kwargs=None):
     # This adds a 'memory' key to the input object
     loaded_memory = RunnablePassthrough.assign(
                         chat_history=RunnableLambda(memory.load_memory_variables) 
@@ -304,35 +235,20 @@ def _define_qa_chain(llm,
     conversational_qa_chain = loaded_memory | standalone_question | retrieved_documents | answer
     logging.info('Conversational QA chain: '+str(conversational_qa_chain))
     return conversational_qa_chain
-def _process_retriever_args(filter_arg,
-                            sources,
-                            search_type,
-                            k,
-                            fetch_k):
-    """
-    Process the arguments for the retriever function.
-
-    Args:
-        filter_arg (bool): Whether to apply filtering or not.
-        sources (list): List of sources.
-        search_type (str): Type of search.
-        k (int): Number of documents to retrieve.
-        fetch_k (int): Number of documents to fetch.
-
-    Returns:
-        dict: Dictionary containing the processed search arguments.
-
-    """
-    # Implement filter
-    if filter_arg:
-        filter_list = list(set(item['source'] for item in sources[-1]))
-        filter_items=[]
-        for item in filter_list:
-            filter_item={'source': item}
-            filter_items.append(filter_item)
-        filter={'$or':filter_items}
-    else:
-        filter=None
+def _process_retriever_args(search_type='similarity',
+                            k=6,
+                            fetch_k=50):
+    # TODO: add functionality if required
+    # # Implement filter
+    # if filter_arg:
+    #     filter_list = list(set(item['source'] for item in sources[-1]))
+    #     filter_items=[]
+    #     for item in filter_list:
+    #         filter_item={'source': item}
+    #         filter_items.append(filter_item)
+    #     filter={'$or':filter_items}
+    # else:
+    #     filter=None
 
     # Implement filtering and number of documents to return
     if search_type=='mmr':
