@@ -171,7 +171,7 @@ class TestChatbot(unittest.TestCase):
         """
         tests=self.generate_test_cases(export=True)
         # Run the tests as subtests
-        for i, test in enumerate([tests[-1]]):
+        for i, test in enumerate(tests):
             with self.subTest(i=i):
                 print(f'Running test {i+1}...')
                 try:
