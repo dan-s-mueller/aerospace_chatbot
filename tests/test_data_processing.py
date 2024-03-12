@@ -102,19 +102,19 @@ class TestDataProcessing(unittest.TestCase):
         print('Parent-child rag test passed!')
 
         # Test case 3: Summary rag
-        # print('Testing summary rag...')
-        # result = chunk_docs(self.docs, 
-        #                     rag_type=self.rag_type['Summary'], 
-        #                     chunk_method=self.chunk_method, 
-        #                     chunk_size=self.chunk_size, 
-        #                     chunk_overlap=self.chunk_overlap, 
-        #                     llm=self.llm['Hugging Face'])
-        # self.assertEqual(result['rag'], self.rag_type['Summary'])
-        # self.assertIsNotNone(result['pages']['doc_ids'])
-        # self.assertIsNotNone(result['pages']['docs'])
-        # self.assertIsNotNone(result['summaries'])
-        # self.assertEqual(result['llm'], self.llm['Hugging Face'])
-        # print('Summary rag test passed!')
+        print('Testing summary rag...')
+        result = chunk_docs(self.docs, 
+                            rag_type=self.rag_type['Summary'], 
+                            chunk_method=self.chunk_method, 
+                            chunk_size=self.chunk_size, 
+                            chunk_overlap=self.chunk_overlap, 
+                            llm=self.llm['Hugging Face'])
+        self.assertEqual(result['rag'], self.rag_type['Summary'])
+        self.assertIsNotNone(result['pages']['doc_ids'])
+        self.assertIsNotNone(result['pages']['docs'])
+        self.assertIsNotNone(result['summaries'])
+        self.assertEqual(result['llm'], self.llm['Hugging Face'])
+        print('Summary rag test passed!')
     
     def test_process(self):
         """
@@ -163,7 +163,8 @@ class TestDataProcessing(unittest.TestCase):
                                     rag_type=test['rag_type'], 
                                     chunk_method=self.chunk_method, 
                                     chunk_size=self.chunk_size, 
-                                    chunk_overlap=self.chunk_overlap)
+                                    chunk_overlap=self.chunk_overlap,
+                                    llm=test['llm'])
                 self.assertIsNotNone(chunker)
                 print('Docs chunked!')
                 
