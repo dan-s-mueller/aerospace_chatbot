@@ -1,15 +1,23 @@
-
+# Environment variables, logs, junk files
 .env
-*.log
-*.pdf
-*.DS_Store
-.ragatouille/
 .venv/
-db/
+*.log
+*.DS_Store
 *__pycache__*
 
+# Data
+*.pdf
+
+# Databases
+db/
+*.sqlite3
+.ragatouille/
+
 # Tests
-!/tests/*.pdf
+!/tests/*.pdf   # Small files, required to perform standard tests.
+tests/chromadb
+tests/local_file_store
+tests/./ragatouille
 
 # Sphinx documentation
 docs/build/

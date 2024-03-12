@@ -415,15 +415,11 @@ def delete_index(index_type: str,
         except:
             pass
         logging.info('Cleared database ' + index_name)
-        if rag_type == 'Parent-Child':
+        if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
                 logging.info("No local filestore to delete.")
-        elif rag_type == 'Summary':
-            raise NotImplementedError
-        else:
-            raise NotImplementedError
     elif index_type == "ChromaDB":
         try:
             persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
@@ -437,13 +433,12 @@ def delete_index(index_type: str,
         except:
             pass
         logging.info('Cleared database and matching databases ' + index_name)
+        # Delete local file store if they exist
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
                 logging.info("No local filestore to delete.")
-        else:
-            raise NotImplementedError
     elif index_type == "RAGatouille":
         try:
             ragatouille_path = os.path.join(local_db_path, '.ragatouille')
