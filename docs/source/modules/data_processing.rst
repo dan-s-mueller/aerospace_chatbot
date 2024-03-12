@@ -1,7 +1,7 @@
 data\_processing
 =======================
 
-.. automodule:: data_processing
+.. automodule:: src.data_processing
    :members:
    :undoc-members:
    :show-inheritance:

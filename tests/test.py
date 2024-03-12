@@ -34,11 +34,11 @@ def permute_tests(test_data):
         test_data = [{'index_type': ['ChromaDB'], 'rag_type': ['Standard', 'Parent-Child', 'Summary']}, 
                      {'index_type': ['Pinecone'], 'rag_type': ['Standard', 'Parent-Child']}]
         permute_tests(test_data) returns:
-        [{'index_type': 'ChromaDB', 'rag_type': 'Standard'},
-         {'index_type': 'ChromaDB', 'rag_type': 'Parent-Child'},
-         {'index_type': 'ChromaDB', 'rag_type': 'Summary'},
-         {'index_type': 'Pinecone', 'rag_type': 'Standard'},
-         {'index_type': 'Pinecone', 'rag_type': 'Parent-Child'}]
+                    [{'index_type': 'ChromaDB', 'rag_type': 'Standard'},
+                    {'index_type': 'ChromaDB', 'rag_type': 'Parent-Child'},
+                    {'index_type': 'ChromaDB', 'rag_type': 'Summary'},
+                    {'index_type': 'Pinecone', 'rag_type': 'Standard'},
+                    {'index_type': 'Pinecone', 'rag_type': 'Parent-Child'}]
     """
     rows = []
     for row_data in test_data:
@@ -68,33 +68,8 @@ class TestChatbot(unittest.TestCase):
     A class that contains unit tests for the Chatbot functionality.
 
     This class inherits from the `unittest.TestCase` class and provides test cases for various aspects of the Chatbot implementation.
-
-    Attributes:
-        OPENAI_API_KEY (str): The API key for OpenAI.
-        VOYAGE_API_KEY (str): The API key for Voyage.
-        HUGGINGFACEHUB_API_TOKEN (str): The API token for Hugging Face Hub.
-        PINECONE_API_KEY (str): The API key for Pinecone.
-        LOCAL_DB_PATH (str): The local path for the database.
-
-    Methods:
-        setUp(): Sets up the test environment before each test case is executed.
-        test_variables_exist(): Test case to check if the required variables exist.
-        test_chunk_docs(): Test the chunk_docs function.
-        generate_test_cases(export: bool = False): Generates test cases for screening.
-        test_process(): Tests the entire process of initializing a database, upserting documents, and querying the database.
     """
     def setUp(self):
-        """Sets up the test environment before each test case is executed.
-
-        This method is called before each test case is executed to set up the necessary environment
-        and variables for the tests.
-
-        Args:
-            None
-
-        Returns:
-            None
-        """
         # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
         # TODO: Add functionality to input these keys as arguments to the test.
         load_dotenv(find_dotenv(),override=True)

@@ -1,7 +1,7 @@
 prompts
 ==============
 
-.. automodule:: prompts
+.. automodule:: src.prompts
    :members:
    :undoc-members:
    :show-inheritance:
