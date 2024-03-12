@@ -8,5 +8,9 @@
 db/
 *__pycache__*
 
+# Tests
+!/tests/*.pdf
+test_cases.json
+
 # Sphinx documentation
 docs/build/

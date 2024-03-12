@@ -156,7 +156,8 @@ if prompt := st.chat_input('Prompt here'):
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.ai_response
             message_placeholder.markdown(ai_response)
-            st.write("Alternative questions: \n\n\n"+queries.generate_alternative_questions(prompt,llm,response=ai_response))
+            st.write("Alternative questions: \n\n\n"+
+                     st.session_state.qa_model_obj.generate_alternative_questions(prompt,llm,response=ai_response))
 
             t_delta=time.time() - t_start
             status.update(label='Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)

@@ -292,14 +292,16 @@ def initialize_database(index_type: str,
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+    else:
+        raise NotImplementedError
 
     if test_query:
         try:    # Test query
-            test_query = vectorstore.similarity_search(TEST_QUERY_PROMPT)
+            test_query_out = vectorstore.similarity_search(TEST_QUERY_PROMPT)
         except:
             raise Exception("Vector database is not configured properly. Test query failed. Likely the index does not exist.")
-        logging.info('Test query: ' + str(test_query))
-        if not test_query:
+        logging.info('Test query: ' + str(test_query_out))
+        if not test_query_out:
             raise ValueError("Vector database or llm is not configured properly. Test query failed.")
         else:
             logging.info('Test query succeeded!')
@@ -316,7 +318,7 @@ def upsert_docs(index_type:str,
                 local_db_path:str = '../db'):
     if show_progress:
         progress_text = "Upsert in progress..."
-    my_bar = st.progress(0, text=progress_text)
+        my_bar = st.progress(0, text=progress_text)
 
     if chunker['rag']=='Standard':
         # Upsert each chunk in batches
