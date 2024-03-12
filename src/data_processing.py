@@ -265,7 +265,6 @@ def initialize_database(index_type: str,
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-
     elif index_type == "ChromaDB":
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
@@ -322,7 +321,7 @@ def upsert_docs(index_type:str,
 
     if chunker['rag']=='Standard':
         # Upsert each chunk in batches
-        if index_type != "RAGatouille":
+        if index_type == "ChromaDB" or index_type == "Pinecone":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone/others
@@ -330,6 +329,7 @@ def upsert_docs(index_type:str,
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
             logging.info(f"Index created: {vectorstore}")
+            retriever=vectorstore.as_retriever()
         elif index_type == "RAGatouille":
             logging.info(f"Creating index {index_name} from RAGatouille.")
             # Create an index from the vectorstore.
@@ -344,15 +344,16 @@ def upsert_docs(index_type:str,
 
             # Move the directory to the db folder
             logging.info(f"Moving RAGatouille index to {local_db_path}")
-            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
-            if os.path.exists(ragatouille_path):
-                shutil.rmtree(ragatouille_path)
-                logging.info(f"RAGatouille index deleted from {ragatouille_path}")
-            shutil.move('./.ragatouille', local_db_path)
+            try:
+                shutil.move('./.ragatouille', local_db_path)
+            except shutil.Error:
+                pass    # If it already exists, don't do anything
             logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
-        retriever=vectorstore.as_retriever()
+            retriever=vectorstore.as_langchain_retriever()
+        else:
+            raise NotImplementedError
     elif chunker['rag']=='Parent-Child':
-        if index_type != "RAGatouille":
+        if index_type == "ChromaDB" or index_type == "Pinecone":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -372,8 +373,10 @@ def upsert_docs(index_type:str,
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
+        else:
+            raise NotImplementedError
     elif chunker['rag'] == 'Summary':
-        if index_type != "RAGatouille":
+        if index_type == "ChromaDB" or index_type == "Pinecone":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -393,6 +396,8 @@ def upsert_docs(index_type:str,
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
+        else:
+            raise NotImplementedError
     else:
         raise NotImplementedError
     if show_progress:
@@ -417,6 +422,8 @@ def delete_index(index_type: str,
                 logging.info("No local filestore to delete.")
         elif rag_type == 'Summary':
             raise NotImplementedError
+        else:
+            raise NotImplementedError
     elif index_type == "ChromaDB":
         try:
             persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
@@ -435,6 +442,8 @@ def delete_index(index_type: str,
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except:
                 logging.info("No local filestore to delete.")
+        else:
+            raise NotImplementedError
     elif index_type == "RAGatouille":
         try:
             ragatouille_path = os.path.join(local_db_path, '.ragatouille')

@@ -49,6 +49,7 @@ class QA_Model:
                  search_type='similarity',
                  fetch_k=50,
                  temperature=0,
+                 test_query=True,
                  local_db_path='../db'):
         
         self.index_type=index_type
@@ -60,6 +61,7 @@ class QA_Model:
         self.search_type=search_type
         self.fetch_k=fetch_k
         self.temperature=temperature
+        self.test_query=test_query
         self.local_db_path=local_db_path
         self.sources=[]
 
@@ -76,10 +78,13 @@ class QA_Model:
                                                              self.query_model,
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
-                                                             test_query=True,
+                                                             test_query=self.test_query,
                                                              init_ragatouille=False)  
         if self.rag_type=='Standard':  
-            self.retriever=self.vectorstore.as_retriever(search_type=self.search_type)
+            if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
+                self.retriever=self.vectorstore.as_retriever(search_type=self.search_type)
+            elif self.index_type=='RAGatouille':
+                self.retriever=self.vectorstore.as_langchain_retriever()
         elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':
             self.lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name)
             self.retriever = MultiVectorRetriever(
@@ -87,6 +92,8 @@ class QA_Model:
                                 byte_store=self.lfs,
                                 id_key="doc_id",
                             )
+        else:
+            raise NotImplementedError
         logging.info('Chat retriever: '+str(self.retriever))
 
         # Intialize memory
