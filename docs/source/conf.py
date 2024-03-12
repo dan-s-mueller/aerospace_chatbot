@@ -1,7 +1,9 @@
 import os
 import sys
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
-sys.path.insert(0, basedir)
+basedir_src = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
+sys.path.insert(0, basedir_src)
+basedir_test = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'test'))
+sys.path.insert(0, basedir_test)
 
 # Configuration file for the Sphinx documentation builder.
 #
