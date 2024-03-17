@@ -28,7 +28,7 @@ autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-# html_theme = 'sphinx_rtd_theme'   # error when using this on readthedocs build
+html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
     'navigation_depth': 4,
 }
