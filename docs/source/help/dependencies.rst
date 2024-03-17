@@ -65,45 +65,7 @@ After following these steps, the ``/Users/danmueller/.local/bin`` directory will
 Setup Types
 -----------
 
-Set up on existing repository from scratch
-``````````````````````````````````````````
-Do this first so that VS Code knows where your virtual environments will be (`source <https://stackoverflow.com/questions/59882884/vscode-doesnt-show-poetry-virtualenvs-in-select-interpreter-option>`_)
-
-.. code-block:: shell
-
-   poetry config virtualenvs.in-project true
-
-Navigate to local repository
-
-.. code-block:: shell
-
-   cd /aerospace_chatbot
-
-Initialize poetry in the repository for the project. It will ask you for some setup info. 
-
-- This will give you an error: The current project could not be installed: No file/folder found for package aerospace-chatbot
-
-- Ignore this error. Your venv will still be set up properly with all of the files required.
-
-.. code-block:: shell
-
-   poetry init
-
-Install poetry in the directory, creates the venv. ``no-root`` is used to not install the current project as a package.
-
-.. code-block:: shell
-
-   poetry install --no-root
-
-Add all of the packages from the repository to poetry (they get added to the pyproject.toml file).
-
-.. code-block:: shell
-
-   cat requirements.txt | xargs poetry add
-
-Now these files are created: aerospace_chatbot folder, poetry.lock, pyproject.toml
-
-Setting up from an existing repository with poetry files already defined
+Existing Repository Setup with Poetry Files
 ````````````````````````````````````````````````````````````````````````
 Once poetry is installed, run the following to install all dependencies. ``no-root`` is used to not install the current project as a package.
 
@@ -113,7 +75,7 @@ Once poetry is installed, run the following to install all dependencies. ``no-ro
 
 ``poetry.lock`` and ``pyproject.toml`` are committed to this directory and are the working dependencies.
 
-Set up VS Code to run with the venv created
+Set up VS Code after Installing Poetry
 ````````````````````````````````````````````
 To find where the venv path created is run:
 
@@ -125,7 +87,7 @@ It should be in your local directory since you ran the ``virtualenvs.inproject t
 
 Other Things
 ------------
-Adding packages
+Adding package-nameackages
 ```````````````
 Once you have poetry installed and working in the directory, add packages using poetry with the following line. Once the package is added, commit the poetry.lock and pyproject.toml file.
 
@@ -133,7 +95,7 @@ Once you have poetry installed and working in the directory, add packages using 
 
    poetry add <package-name>
 
-Writing requirements.txt
+Writing Requirements.txt
 ````````````````````````
 
 .. code-block:: shell
