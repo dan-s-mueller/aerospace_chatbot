@@ -7,6 +7,8 @@
 
 # Data
 *.pdf
+/data/AMS/noupload/*.pdf
+!/data/AMS/*.pdf
 
 # Databases
 db/
@@ -14,10 +16,11 @@ db/
 .ragatouille/
 
 # Tests
-!/tests/*.pdf   # Small files, required to perform standard tests.
+!tests/*.pdf   # Small files, required to perform standard tests.
 tests/chromadb
 tests/local_file_store
 tests/./ragatouille
+notebooks/playground.ipynb
 
 # Sphinx documentation
 docs/build/
