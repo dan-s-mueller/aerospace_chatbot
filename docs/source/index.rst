@@ -50,6 +50,8 @@ Deployed Configurations
 
 A deployed version of this chatbot can be found in a hugging face container called `Aerospace Chatbot <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbots>`__. This version has a pre-configured database and is ready to use. Refer to the `Streamlit Apps <help/streamlit_apps>`_ section for more information about this deployed chatbot.
 
+The dockerfile used to build that space is located `here <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbots/edit/main/Dockerfile>`_.
+
 .. toctree::
     :maxdepth: 2
     :caption: Functionality
