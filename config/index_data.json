@@ -1,0 +1,13 @@
+{
+    "Pinecone": {
+        "Openai": "pinecone-openai",
+        "Voyage": "pinecone-voyage"
+    },
+    "ChromaDB": {
+        "Openai": "chromadb-openai",
+        "Voyage": "chromadb-voyage"
+    },
+    "RAGatouille": {
+        "colbert-ir/colbertv2.0": "RAGatouille-colbertv2.0"
+    }
+}
