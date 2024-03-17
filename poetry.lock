@@ -235,17 +235,6 @@ astroid = ["astroid (>=1,<2)", "astroid (>=2,<4)"]
 test = ["astroid (>=1,<2)", "astroid (>=2,<4)", "pytest"]
 
 [[package]]
-name = "async-timeout"
-version = "4.0.3"
-description = "Timeout context manager for asyncio programs"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
-    {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
-]
-
-[[package]]
 name = "attrs"
 version = "23.2.0"
 description = "Classes Without Boilerplate"
@@ -4666,24 +4655,6 @@ reference = "functionality_deep_dive"
 resolved_reference = "00668f21dacb7a8faa3e8b3bdc43ab6202da8af4"
 
 [[package]]
-name = "redis"
-version = "5.0.3"
-description = "Python client for Redis database and key-value store"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "redis-5.0.3-py3-none-any.whl", hash = "sha256:5da9b8fe9e1254293756c16c008e8620b3d15fcc6dde6babde9541850e72a32d"},
-    {file = "redis-5.0.3.tar.gz", hash = "sha256:4973bae7444c0fbed64a06b87446f79361cb7e4ec1538c022d696ed7a5015580"},
-]
-
-[package.dependencies]
-async-timeout = {version = ">=4.0.3", markers = "python_full_version < \"3.11.3\""}
-
-[package.extras]
-hiredis = ["hiredis (>=1.0.0)"]
-ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"]
-
-[[package]]
 name = "referencing"
 version = "0.34.0"
 description = "JSON Referencing + Python"
@@ -6494,21 +6465,6 @@ plot = ["bokeh", "colorcet", "datashader", "holoviews", "matplotlib", "pandas", 
 tbb = ["tbb (>=2019.0)"]
 
 [[package]]
-name = "upstash-redis"
-version = "1.0.0"
-description = "Serverless Redis SDK from Upstash"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "upstash_redis-1.0.0-py3-none-any.whl", hash = "sha256:960ac8c1309589fa062243ae3c68555194f5d732c6663d30a2a3cff43494e310"},
-    {file = "upstash_redis-1.0.0.tar.gz", hash = "sha256:4fe84cfa9f63d31b0ebd8cd5102f086068b52cafbf062fd0a9088ebcd7075393"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.8.4,<4.0.0"
-requests = ">=2.31.0,<3.0.0"
-
-[[package]]
 name = "urllib3"
 version = "2.2.1"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
@@ -7255,4 +7211,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "5cb533d8080eb4681bafadae8ce6350200cc1191b38920c1b080a6d0baac6d7a"
+content-hash = "fd2552078ea19eef81f885772c056464df62baf25c6e03da9fe2442103776369"

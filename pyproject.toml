@@ -31,8 +31,6 @@ pinecone-client = "^3.0.2"
 langchainhub = "^0.1.14"
 langchain-pinecone = "^0.0.2"
 astrapy = "^0.7.6"
-redis = "^5.0.1"
-upstash-redis = "^1.0.0"
 
 [tool.poetry.group.docs.dependencies]
 sphinx-rtd-theme = "2.0.0"
