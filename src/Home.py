@@ -19,10 +19,15 @@ st.title("Aerospace Chatbot Homepage")
 st.subheader("Aerospace Mechanisms Symposia (AMS)")
 st.markdown("""
 This space contains chatbots and tools for exploring data in the aerospace mechanisms symposia, using all available papers published since 2000.
-Those papers are located here: add link
+Those papers are located here: https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS
 """)
+st.subheader("Running Locally")
+st.markdown(
+    '''
+    It is recommended to run this streamlit app locally for improved performance. See here for details: https://aerospace-chatbot.readthedocs.io/en/latest/index.html#running-locally
+    ''')
 st.subheader("Code Details")
-st.markdown("Code base: https://github.com/dsmueller3760/aerospace_chatbot/tree/rag_study")
+st.markdown("Code base: https://github.com/dan-s-mueller/aerospace_chatbot")
 st.markdown(
     '''
     API key links:
@@ -80,15 +85,3 @@ with st.expander("Connection Status",expanded=True):
             st.markdown(f"Index {ragatouille_name} has been deleted.")
     except:
         pass
-
-st.subheader("Running Locally")
-'''
-It is recommended to run this streamlit app locally for improved performance. The hosted hugging face version is for proof of concept.
-You must have poetry installed locally to manage depdenencies. To run locally, clone the repository and run the following commands.
-    
-    poetry config virtualenvs.in-project true
-    poetry install
-    source .venv/bin/activate
-    cd ./src
-    streamlit run Home.py
-'''
