@@ -14,7 +14,7 @@ build:
     post_install:
       # Install dependencies with 'docs' dependency group
       # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
-      - poetry install --with docs
+      - poetry install
       # For some reason, the theme is not recognized when building the docs with poetry
       - pip install sphinx_rtd_theme
 
