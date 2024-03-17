@@ -89,11 +89,11 @@ Initialize poetry in the repository for the project. It will ask you for some se
 
    poetry init
 
-Install poetry in the directory, creates the venv
+Install poetry in the directory, creates the venv. ``no-root`` is used to not install the current project as a package.
 
 .. code-block:: shell
 
-   poetry install
+   poetry install --no-root
 
 Add all of the packages from the repository to poetry (they get added to the pyproject.toml file).
 
@@ -105,11 +105,11 @@ Now these files are created: aerospace_chatbot folder, poetry.lock, pyproject.to
 
 Setting up from an existing repository with poetry files already defined
 ````````````````````````````````````````````````````````````````````````
-Once poetry is installed, run the following to install all dependencies: 
+Once poetry is installed, run the following to install all dependencies. ``no-root`` is used to not install the current project as a package.
 
 .. code-block:: shell
 
-   poetry install
+   poetry install --no-root
 
 ``poetry.lock`` and ``pyproject.toml`` are committed to this directory and are the working dependencies.
 

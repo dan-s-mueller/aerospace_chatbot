@@ -21,6 +21,8 @@ st.markdown("""
 This space contains chatbots and tools for exploring data in the aerospace mechanisms symposia, using all available papers published since 2000.
 Those papers are located here: https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS
 """)
+st.subheader("Help Docs")
+st.markdown("https://aerospace-chatbot.readthedocs.io/en/latest/index.html")
 st.subheader("Running Locally")
 st.markdown(
     '''
