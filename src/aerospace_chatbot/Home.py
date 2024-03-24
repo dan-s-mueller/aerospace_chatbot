@@ -55,7 +55,7 @@ with st.expander("Connection Status",expanded=True):
                 rag_type = "Summary"
             else:
                 rag_type="Standard"
-            data_processing.delete_index('Pinecone',pinecone_index_name,rag_type,local_db_path='../db')
+            data_processing.delete_index('Pinecone',pinecone_index_name,rag_type,local_db_path='../../db')
             st.markdown(f"Index {pinecone_index_name} has been deleted.")
     except:
         pass
@@ -72,7 +72,7 @@ with st.expander("Connection Status",expanded=True):
                 rag_type = "Summary"
             else:
                 rag_type="Standard"
-            data_processing.delete_index('ChromaDB',chroma_db_name,rag_type,local_db_path='../db')
+            data_processing.delete_index('ChromaDB',chroma_db_name,rag_type,local_db_path='../../db')
             st.markdown(f"Database {chroma_db_name} has been deleted.")
     except:
         pass
@@ -83,7 +83,7 @@ with st.expander("Connection Status",expanded=True):
         ragatouille_indexes = [obj.name for obj in admin.show_ragatouille_indexes(format=False)['message']]
         ragatouille_name=st.selectbox('Chroma database',ragatouille_indexes)
         if st.button('Delete Pinecone database',help='This is permanent!'):
-            data_processing.delete_index('Ragatouille',ragatouille_name,"Standard",local_db_path='../db')
+            data_processing.delete_index('Ragatouille',ragatouille_name,"Standard",local_db_path='../../db')
             st.markdown(f"Index {ragatouille_name} has been deleted.")
     except:
         pass

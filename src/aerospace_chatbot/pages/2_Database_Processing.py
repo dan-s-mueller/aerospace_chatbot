@@ -21,8 +21,8 @@ st.set_page_config(
 )
 st.title('Database Processing')
 # TODO: add database status icons
-sb=admin.load_sidebar(config_file='../config/config.json',
-                      index_data_file='../config/index_data.json',
+sb=admin.load_sidebar(config_file='../../config/config.json',
+                      index_data_file='../../config/index_data.json',
                       vector_databases=True,
                       embeddings=True,
                       rag_type=True,
@@ -54,7 +54,7 @@ elif sb['query_model']=='Openai' or 'Voyage':
 logging.info('Query model set: '+str(query_model))
 
 # Find docs
-data_folder = st.text_input('Enter a directory','../data/AMS/',help='Enter a directory relative to the current directory, or an absolute path.')
+data_folder = st.text_input('Enter a directory','../../data/AMS/',help='Enter a directory relative to the current directory, or an absolute path.')
 if not os.path.isdir(data_folder):
     st.error('The entered directory does not exist')
 docs = glob.glob(data_folder+'*.pdf')   # Only get the PDFs in the directory

@@ -60,7 +60,7 @@ def load_docs(index_type,
               clear=False,
               file_out=None,
               batch_size=50,
-              local_db_path='../db',
+              local_db_path='../../db',
               llm=None,
               show_progress=False):
     # Check for illegal things
@@ -326,7 +326,7 @@ def upsert_docs(index_type:str,
                 chunker:dict, 
                 batch_size:int = 50, 
                 show_progress:bool = False,
-                local_db_path:str = '../db'):
+                local_db_path:str = '../../db'):
     if show_progress:
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
@@ -427,7 +427,7 @@ def upsert_docs(index_type:str,
 def delete_index(index_type: str, 
                  index_name: str, 
                  rag_type: str,
-                 local_db_path: str = '../db'):
+                 local_db_path: str = '../../db'):
     if index_type == "Pinecone":
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         try:

@@ -25,8 +25,8 @@ st.set_page_config(
 )
 st.title('Visualize Data')
 # TODO: add database status icons
-sb=admin.load_sidebar(config_file='../config/config.json',
-                      index_data_file='../config/index_data.json',
+sb=admin.load_sidebar(config_file='../../config/config.json',
+                      index_data_file='../../config/index_data.json',
                       vector_databases=True,
                       embeddings=True,
                       rag_type=True,
@@ -85,9 +85,9 @@ with st.expander("Create visualization data",expanded=True):
     if export_df:
         current_time = datetime.now().strftime("%Y.%m.%d.%H.%M")
         if limit_size:
-            df_export_path = st.text_input('Export file', f'../data/AMS/ams_data-400-0-{vector_qty}.json')
+            df_export_path = st.text_input('Export file', f'../../data/AMS/ams_data-400-0-{vector_qty}.json')
         else:
-            df_export_path=st.text_input('Export file', f'../data/AMS/ams_data-400-0-all.json')
+            df_export_path=st.text_input('Export file', f'../../data/AMS/ams_data-400-0-all.json')
     if st.button('Create visualization data'):
         start_time = time.time()  # Start the timer
         
@@ -120,7 +120,7 @@ with st.expander("Visualize data",expanded=True):
             import_file_path=st.text_input('Import file',df_export_path)
         else:
             # Use the uploaded file
-            import_file_path=st.text_input('Import file',f'../data/AMS/{import_file.name}')
+            import_file_path=st.text_input('Import file',f'../../data/AMS/{import_file.name}')
     else:
         import_file_path=None
     

@@ -59,8 +59,8 @@ st.set_page_config(
 # TODO: add database status icons
 st.title('Aerospace Chatbot')
 
-sb=admin.load_sidebar(config_file='../config/config.json',
-                      index_data_file='../config/index_data.json',
+sb=admin.load_sidebar(config_file='../../config/config.json',
+                      index_data_file='../../config/index_data.json',
                       vector_databases=True,
                       embeddings=True,
                       rag_type=True,
