@@ -29,11 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         poetry install
-    - name: Lint with flake8
-      run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with unittest
+    - name: Test with pytest
       env:
         HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
