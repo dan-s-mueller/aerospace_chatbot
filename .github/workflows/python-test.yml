@@ -24,11 +24,18 @@ jobs:
         python-version: "3.11.1"
     - name: Install Poetry
       run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        python -m pip install poetry
+    - name: Configure poetry
+      run: |
+        python -m poetry config virtualenvs.in-project true
+    - name: Cache the virtualenv
+      uses: actions/cache@v2
+      with:
+        path: ./.venv
+        key: ${{ runner.os }}-venv-${{ hashFiles('**/poetry.lock') }}
     - name: Install dependencies
       run: |
-        poetry install
+        python -m poetry install
     - name: Test with pytest
       env:
         HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
