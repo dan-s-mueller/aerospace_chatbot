@@ -43,4 +43,5 @@ jobs:
         PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
         VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
       run: |
-        python -m poetry run python -m pytest
+        cd ./tests
+        python -m poetry run pytest -s
