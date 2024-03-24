@@ -318,7 +318,8 @@ def initialize_database(index_type: str,
         my_bar.empty()
     return vectorstore
 
-@retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
+# @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
+@retry(stop=stop_after_attempt(10), wait=wait_exponential(multiplier=1,max=60))
 def upsert_docs(index_type:str, 
                 index_name:str,
                 vectorstore:any, 
