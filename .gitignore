@@ -1,4 +1,5 @@
 # Environment variables, logs, junk files
+.vscode/
 .env
 .venv/
 *.log
