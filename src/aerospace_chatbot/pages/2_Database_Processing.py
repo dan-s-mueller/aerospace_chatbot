@@ -10,6 +10,10 @@ from langchain_community.embeddings import VoyageEmbeddings
 
 import streamlit as st
 
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
+
 # Set up the page, enable logging, read environment variables
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
@@ -34,6 +38,18 @@ except admin.SecretKeyException as e:
     st.warning(f"{e}")
     st.stop()
 
+# Add authenticator
+# TODO: finish here: https://github.com/mkhorasani/Streamlit-Authenticator/tree/main?tab=readme-ov-file#authenticatelogin
+with open('../../config/users.yml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'])
+name, authentication_status, username = authenticator.login()
+
+# Expander
 with st.expander('''What's under the hood?'''):
     st.markdown('''
     This is where you manage databases and process input documents.

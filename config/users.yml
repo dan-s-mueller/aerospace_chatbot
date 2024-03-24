@@ -1,0 +1,14 @@
+credentials:
+  usernames:
+    dmueller:
+      email: dsm@danmueller.pro
+      name: Dan Mueller
+      password: $2b$12$VVjV6Nbcdl536r72V8kWFupUDdtyswAUMm2RaUTnrzHb0EDXfEiNa
+    eroulo:
+      email: eric.roulo@rouloconsulting.com
+      name: Eric Roulo
+      password: $2b$12$xqngSc8Bzigx28clFxQ3xO1DMB8KzDY1xSqxAzxhUk1cCBXLdUh4O
+cookie:
+  expiry_days: 30
+  key: random_signature_key # Must be string
+  name: random_cookie_name
