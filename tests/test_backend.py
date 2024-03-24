@@ -154,27 +154,27 @@ def generate_test_cases(setup, export:bool=False):
     # Determine the set of cases to screen
     # TODO: throw in bad inputs for each of the 4 major types below.
     test_cases = [
-        # {
-        #     # Tests ChromaDB setups, advanced RAG (standard/parent-child)
-        #     'index_type': [setup['index_type']['ChromaDB']],
-        #     'query_model': [setup['query_model']['OpenAI']],
-        #     'rag_type': [setup['rag_type']['Standard'], setup['rag_type']['Parent-Child']],
-        #     'llm': [setup['llm']['Hugging Face']]
-        # },
-        # {
-        #     # Tests advanced RAG (summary) and LLM (openai/hugging face)
-        #     'index_type': [setup['index_type']['ChromaDB']],
-        #     'query_model': [setup['query_model']['OpenAI']],
-        #     'rag_type': [setup['rag_type']['Summary']],
-        #     'llm': [setup['llm']['OpenAI'], setup['llm']['Hugging Face']]
-        # },
-        # {
-        #     # Tests Pinecone setups, embedding types (openai/voyage)
-        #     'index_type': [setup['index_type']['Pinecone']],
-        #     'query_model': [setup['query_model']['OpenAI'], setup['query_model']['Voyage']],
-        #     'rag_type': [setup['rag_type']['Standard']],
-        #     'llm': [setup['llm']['Hugging Face']]
-        # },
+        {
+            # Tests ChromaDB setups, advanced RAG (standard/parent-child)
+            'index_type': [setup['index_type']['ChromaDB']],
+            'query_model': [setup['query_model']['OpenAI']],
+            'rag_type': [setup['rag_type']['Standard'], setup['rag_type']['Parent-Child']],
+            'llm': [setup['llm']['Hugging Face']]
+        },
+        {
+            # Tests advanced RAG (summary) and LLM (openai/hugging face)
+            'index_type': [setup['index_type']['ChromaDB']],
+            'query_model': [setup['query_model']['OpenAI']],
+            'rag_type': [setup['rag_type']['Summary']],
+            'llm': [setup['llm']['OpenAI'], setup['llm']['Hugging Face']]
+        },
+        {
+            # Tests Pinecone setups, embedding types (openai/voyage)
+            'index_type': [setup['index_type']['Pinecone']],
+            'query_model': [setup['query_model']['OpenAI'], setup['query_model']['Voyage']],
+            'rag_type': [setup['rag_type']['Standard']],
+            'llm': [setup['llm']['Hugging Face']]
+        },
         {
             # Tests RAGatouille setup
             'index_type': [setup['index_type']['RAGatouille']],
