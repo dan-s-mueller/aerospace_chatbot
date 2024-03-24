@@ -88,7 +88,7 @@ It should be in your local directory since you ran the ``virtualenvs.inproject t
 Other Things
 ------------
 Adding package-nameackages
-```````````````
+```````````````````````````
 Once you have poetry installed and working in the directory, add packages using poetry with the following line. Once the package is added, commit the poetry.lock and pyproject.toml file.
 
 .. code-block:: shell

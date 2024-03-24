@@ -1,51 +1,9 @@
 [
     {
-        "index_type": "ChromaDB",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
-        "rag_type": "Standard",
-        "llm": "<class 'langchain_openai.chat_models.base.ChatOpenAI'>",
-        "id": 1
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
-        "rag_type": "Parent-Child",
-        "llm": "<class 'langchain_openai.chat_models.base.ChatOpenAI'>",
-        "id": 2
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
-        "rag_type": "Summary",
-        "llm": "<class 'langchain_openai.chat_models.base.ChatOpenAI'>",
-        "id": 3
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
-        "rag_type": "Summary",
-        "llm": "<class 'langchain_openai.chat_models.base.ChatOpenAI'>",
-        "id": 4
-    },
-    {
-        "index_type": "Pinecone",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
-        "rag_type": "Standard",
-        "llm": "<class 'langchain_openai.chat_models.base.ChatOpenAI'>",
-        "id": 5
-    },
-    {
-        "index_type": "Pinecone",
-        "query_model": "<class 'langchain_community.embeddings.voyageai.VoyageEmbeddings'>",
-        "rag_type": "Standard",
-        "llm": "<class 'langchain_openai.chat_models.base.ChatOpenAI'>",
-        "id": 6
-    },
-    {
         "index_type": "RAGatouille",
         "query_model": "colbert-ir/colbertv2.0",
         "rag_type": "Standard",
-        "llm": "<class 'langchain_openai.chat_models.base.ChatOpenAI'>",
-        "id": 7
+        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
+        "id": 1
     }
 ]

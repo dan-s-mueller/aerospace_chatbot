@@ -13,7 +13,6 @@ import streamlit as st
 # Set up the page, enable logging, read environment variables
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
-logging.basicConfig(filename='app_2_database_processing.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Set the page title
 st.set_page_config(
@@ -69,7 +68,7 @@ with st.expander("Options",expanded=True):
     clear_database = st.checkbox('Delete existing database?',value=True)
     if sb['query_model']=='Openai' or 'ChromaDB':
         # OpenAI will time out if the batch size is too large
-        batch_size=st.number_input('Batch size for upsert', min_value=1, step=1, value=100)
+        batch_size=st.number_input('Batch size for upsert', min_value=1, step=1, value=50)
     else:
         batch_size=None
     

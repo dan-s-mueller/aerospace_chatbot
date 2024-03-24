@@ -7,7 +7,6 @@ authors = ["dsmueller <dsm@danmueller.pro>"]
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
 python-dotenv = "^1.0.0"
-ipykernel = "^6.28.0"
 ipywidgets = "^8.1.1"
 tiktoken = "^0.5.2"
 watchdog = "^3.0.0"
@@ -18,7 +17,6 @@ streamlit = "^1.29.0"
 tenacity = "^8.2.3"
 openai = "^1.7.2"
 sentence-transformers = "^2.2.2"
-ragatouille = "^0.0.4b2"
 nbformat = "^5.9.2"
 pydantic = "^2.6.0"
 RAGxplorer = { git = "https://github.com/gabrielchua/RAGxplorer.git", branch = "functionality_deep_dive" }
@@ -27,11 +25,14 @@ huggingface-hub = "^0.20.3"
 langchain = "^0.1.6"
 langchain-community = "^0.0.19"
 langchain-openai = "^0.0.5"
-pinecone-client = "^3.0.2"
 langchainhub = "^0.1.14"
-langchain-pinecone = "^0.0.2"
 astrapy = "^0.7.6"
 sphinx-rtd-theme = "2.0.0"
+pytest = "^8.1.1"
+pinecone-client = "^3.2.0"
+langchain-pinecone = "^0.0.3"
+ipykernel = "^6.29.3"
+ragatouille = "^0.0.8.post2"
 
 [build-system]
 requires = ["poetry-core"]

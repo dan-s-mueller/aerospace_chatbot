@@ -6,8 +6,11 @@ import logging
 import shutil
 import uuid
 import random
+import time
 from pathlib import Path
 from typing import List
+
+from tenacity import retry, stop_after_attempt, wait_fixed, wait_exponential
 
 from pinecone import Pinecone as pinecone_client
 from pinecone import PodSpec
@@ -17,7 +20,7 @@ import json, jsonlines
 
 import streamlit as st
 
-from langchain_pinecone import Pinecone
+from langchain_pinecone import Pinecone, PineconeVectorStore
 from langchain_community.vectorstores import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -254,14 +257,21 @@ def initialize_database(index_type: str,
             logging.info(f"Index {index_name} does not exist. Creating new index.")
             pc.create_index(index_name,
                             dimension=embedding_size(query_model),
-                            metric="cosine",
                             spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
             logging.info(f"Index {index_name} created.")
         else:
             logging.info(f"Index {index_name} exists.")
         
         index = pc.Index(index_name)
-        vectorstore = Pinecone(index, query_model, "page_content")  # Set the vector store to calculate embeddings on page_content
+        vectorstore=PineconeVectorStore(index,
+                                        index_name=index_name, 
+                                        embedding=query_model,
+                                        text_key='page_content',
+                                        pinecone_api_key=PINECONE_API_KEY)
+        
+        # TODO: implement something more legit like this in the future: https://sdk.pinecone.io/python/pinecone/grpc/retry.html
+        # time.sleep(10)  # this is required so that there are not timeout/authentication errors between the index creation and the first query
+        
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -278,7 +288,6 @@ def initialize_database(index_type: str,
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')   
-
     elif index_type == "RAGatouille":
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
@@ -308,6 +317,8 @@ def initialize_database(index_type: str,
     if show_progress:
         my_bar.empty()
     return vectorstore
+
+@retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
 def upsert_docs(index_type:str, 
                 index_name:str,
                 vectorstore:any, 
@@ -321,10 +332,19 @@ def upsert_docs(index_type:str,
 
     if chunker['rag']=='Standard':
         # Upsert each chunk in batches
-        if index_type == "ChromaDB" or index_type == "Pinecone":
+        if index_type == "Pinecone":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
-                vectorstore.add_documents(chunk_batch)  # Happens to be same for chroma/pinecone/others
+                vectorstore.add_documents(chunk_batch)
+                if show_progress:
+                    progress_percentage = i / len(chunker['chunks'])
+                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+            logging.info(f"Index created: {vectorstore}")
+            retriever=vectorstore.as_retriever()
+        elif index_type == "ChromaDB":
+            for i in range(0, len(chunker['chunks']), batch_size):
+                chunk_batch = chunker['chunks'][i:i + batch_size]
+                vectorstore.add_documents(chunk_batch)
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
