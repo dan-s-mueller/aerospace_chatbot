@@ -127,12 +127,8 @@ def chunk_docs(docs: List[str],
 
         # Clean up page info, update some metadata
         for page in page_data:
-            page.metadata['source']=os.path.basename(page.metadata['source'])   # Strip path
-            page.metadata['page']=int(page.metadata['page'])+1   # Pages are 0 based, update
-            page.page_content=re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
-            page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
-            page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
-            if has_meaningful_content(page):
+            page=_sanitize_raw_page_data(page)
+            if _sanitize_raw_page_data(page):
                 pages.append(page)
         if show_progress:
             progress_percentage = i / len(docs)
@@ -148,8 +144,7 @@ def chunk_docs(docs: List[str],
 
         for chunk in page_chunks:
             chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
-            if has_meaningful_content(chunk):
-                chunks.append(chunk)
+            chunks.append(chunk)    # Not sanitized because the page already was
         logging.info('Parsed: '+doc)
         logging.info('Sample entries:')
         logging.info(str(chunks[0]))
@@ -256,7 +251,7 @@ def initialize_database(index_type: str,
         except:
             logging.info(f"Index {index_name} does not exist. Creating new index.")
             pc.create_index(index_name,
-                            dimension=embedding_size(query_model),
+                            dimension=_embedding_size(query_model),
                             spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
             logging.info(f"Index {index_name} created.")
         else:
@@ -280,8 +275,8 @@ def initialize_database(index_type: str,
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         # Upsert docs. Defaults to putting this in the local_db_path directory
         logging.info(f"Creating new index {index_name}.")
-        logging.info(f"Local database path: {local_db_path+'/chromadb'}")
-        persistent_client = chromadb.PersistentClient(path=local_db_path+'/chromadb')            
+        logging.info(f"Local database path: {os.join(local_db_path,'chromadb')}")
+        persistent_client = chromadb.PersistentClient(path=os.join(local_db_path,'chromadb'))            
         vectorstore = Chroma(client=persistent_client,
                                 collection_name=index_name,
                                 embedding_function=query_model)     
@@ -326,7 +321,7 @@ def upsert_docs(index_type:str,
                 chunker:dict, 
                 batch_size:int = 50, 
                 show_progress:bool = False,
-                local_db_path:str = '../../db'):
+                local_db_path:str = 'db'):
     if show_progress:
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
@@ -366,7 +361,7 @@ def upsert_docs(index_type:str,
             # Move the directory to the db folder
             logging.info(f"Moving RAGatouille index to {local_db_path}")
             try:
-                shutil.move('./.ragatouille', local_db_path)
+                shutil.move('.ragatouille', local_db_path)
             except shutil.Error:
                 pass    # If it already exists, don't do anything
             logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
@@ -427,7 +422,7 @@ def upsert_docs(index_type:str,
 def delete_index(index_type: str, 
                  index_name: str, 
                  rag_type: str,
-                 local_db_path: str = '../../db'):
+                 local_db_path: str = 'db'):
     if index_type == "Pinecone":
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         try:
@@ -443,7 +438,7 @@ def delete_index(index_type: str,
                 logging.info("No local filestore to delete.")
     elif index_type == "ChromaDB":
         try:
-            persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
+            persistent_client = chromadb.PersistentClient(path=os.join(local_db_path,'chromadb'))
             indices = persistent_client.list_collections()
             print('Available databases: ' + str(indices))
             logging.info('Available databases: ' + str(indices))
@@ -470,46 +465,6 @@ def delete_index(index_type: str,
             pass
     else:
         raise NotImplementedError
-    
-def has_meaningful_content(page):
-    """
-    Check if a page has meaningful content.
-
-    Args:
-        page (Page): The page object to check.
-
-    Returns:
-        bool: True if the page has meaningful content, False otherwise.
-    """
-    text = page.page_content
-    num_words = len(text.split())
-    if len(text)==0:
-        return False
-    alphanumeric_pct = sum(c.isalnum() for c in text) / len(text)
-    if num_words < 5 or alphanumeric_pct < 0.3:
-        return False
-    else:
-        return True
-def embedding_size(embedding_model:any):
-    """
-    Returns the size of the embedding for a given embedding model.
-
-    Args:
-        embedding_model (object): The embedding model to get the size for.
-
-    Returns:
-        int: The size of the embedding.
-
-    Raises:
-        NotImplementedError: If the embedding model is not supported.
-    """
-    if isinstance(embedding_model,OpenAIEmbeddings):
-        return 1536 # https://platform.openai.com/docs/models/embeddings, test-embedding-ada-002
-    elif isinstance(embedding_model,VoyageEmbeddings):
-        return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
-    else:
-        raise NotImplementedError
-    
 def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_qty:int,verbose:bool=False):
     """Reduce the number of vectors in the RAGxplorer client's vector database.
 
@@ -566,3 +521,51 @@ def export_data_viz(rx_client:RAGxplorer,df_export_path:str):
     # Save the data to a JSON file
     with open(df_export_path, 'w') as f:
         json.dump(export_data, f, indent=4)
+def _sanitize_raw_page_data(page):
+    """
+    Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
+
+    Args:
+        page (Page): The raw page data to be sanitized.
+
+    Returns:
+        Page or None: The sanitized page data if it contains meaningful content, otherwise None.
+    """
+    
+    # Yank out some things you'll never care about
+    page.metadata['source'] = os.path.basename(page.metadata['source'])   # Strip path
+    page.metadata['page'] = int(page.metadata['page']) + 1   # Pages are 0 based, update
+    page.page_content = re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
+    page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
+    page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
+
+    # Test if there is meaningful content
+    text = page.page_content
+    num_words = len(text.split())
+    if len(text) == 0:
+        return None
+    alphanumeric_pct = sum(c.isalnum() for c in text) / len(text)
+    if num_words < 5 or alphanumeric_pct < 0.3:
+        return None
+    else:
+        return page
+    
+def _embedding_size(embedding_model:any):
+    """
+    Returns the size of the embedding for a given embedding model.
+
+    Args:
+        embedding_model (object): The embedding model to get the size for.
+
+    Returns:
+        int: The size of the embedding.
+
+    Raises:
+        NotImplementedError: If the embedding model is not supported.
+    """
+    if isinstance(embedding_model,OpenAIEmbeddings):
+        return 1536 # https://platform.openai.com/docs/models/embeddings, test-embedding-ada-002
+    elif isinstance(embedding_model,VoyageEmbeddings):
+        return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
+    else:
+        raise NotImplementedError
