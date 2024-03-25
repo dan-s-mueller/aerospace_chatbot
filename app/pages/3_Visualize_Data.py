@@ -1,9 +1,4 @@
-import admin, data_processing
-
-import os
-import json
-import time
-import logging
+import os, sys, json, time, logging
 from datetime import datetime
 from dotenv import load_dotenv,find_dotenv
 import streamlit as st
@@ -14,6 +9,8 @@ from langchain_community.embeddings import VoyageEmbeddings
 from ragxplorer import RAGxplorer
 import chromadb
 
+sys.path.append('../../src/aerospace_chatbot')  # Add package to path
+import admin, data_processing
 
 # # Set up the page, enable logging, read environment variables
 # load_dotenv(find_dotenv(),override=True)
@@ -126,7 +123,7 @@ with st.expander("Create visualization data",expanded=True):
         st.session_state.rx_client.run_projector()
         if export_df:
             data_processing.export_data_viz(st.session_state.rx_client,
-                                            os.join(paths['data_folder_path'],df_export_path))
+                                            os.path.join(paths['data_folder_path'],df_export_path))
             
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 
@@ -151,12 +148,12 @@ with st.expander("Visualize data",expanded=True):
         start_time = time.time()  # Start the timer
         logging.info('Starting visualization for query: '+query)
         if import_data:
-            with open(os.join(paths['data_folder_path'],import_file_path), 'r') as f:
+            with open(os.path.join(paths['data_folder_path'],import_file_path), 'r') as f:
                 data = json.load(f)
             index_name=data['visualization_index_name']
             umap_params=data['umap_params']
             viz_data=pd.read_json(data['viz_data'], orient='split')
-            logging.info('Loaded data from file: '+os.join(paths['data_folder_path'],import_file_path))
+            logging.info('Loaded data from file: '+os.path.join(paths['data_folder_path'],import_file_path))
             logging.info(f'embedding_function: {st.session_state.rx_client._chosen_embedding_model}')
             collection=st.session_state.chroma_client.get_collection(name=index_name,
                                                                      embedding_function=st.session_state.rx_client._chosen_embedding_model)

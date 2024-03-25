@@ -1,8 +1,4 @@
-import admin, data_processing
-
-import os
-import time
-import logging
+import os, sys, time, logging
 import glob
 import streamlit as st
 import streamlit_authenticator as stauth
@@ -12,6 +8,9 @@ from dotenv import load_dotenv,find_dotenv
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
+
+sys.path.append('../../src/aerospace_chatbot')  # Add package to path
+import admin, data_processing
 
 # # Read environment variables. set the page title
 # load_dotenv(find_dotenv(),override=True)
@@ -98,9 +97,9 @@ if st.session_state["authentication_status"]:
 
     # Find docs
     data_folder = st.text_input('Enter a directory relative to the base directory','/data/AMS/',help='Enter a directory relative to the base directory, or an absolute path.')
-    if not os.path.isdir(os.join(paths['base_folder_path'],data_folder)):
+    if not os.path.isdir(os.path.join(paths['base_folder_path'],data_folder)):
         st.error('The entered directory does not exist')
-    docs = glob.glob(os.join(paths['base_folder_path'],data_folder,'*.pdf'))   # Only get the PDFs in the directory
+    docs = glob.glob(os.path.join(paths['base_folder_path'],data_folder,'*.pdf'))   # Only get the PDFs in the directory
     st.markdown('PDFs found: '+str(docs))
     st.markdown('Number of PDFs found: ' + str(len(docs)))
     logging.info('Docs: '+str(docs))

@@ -1,15 +1,15 @@
-import admin
-import data_processing
-
 import streamlit as st
-import os
+import sys
 
 import logging
 from dotenv import load_dotenv,find_dotenv
 
+sys.path.append('../src/aerospace_chatbot')   # Add package to path
+import admin
+
 # Set up the page, enable logging, read environment variables
 load_dotenv(find_dotenv(),override=True)
-# logging.basicConfig(filename='app_Home.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='app_Home.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 # Set up page
 st.set_page_config(

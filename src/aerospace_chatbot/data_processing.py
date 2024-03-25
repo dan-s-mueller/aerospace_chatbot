@@ -275,8 +275,8 @@ def initialize_database(index_type: str,
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         # Upsert docs. Defaults to putting this in the local_db_path directory
         logging.info(f"Creating new index {index_name}.")
-        logging.info(f"Local database path: {os.join(local_db_path,'chromadb')}")
-        persistent_client = chromadb.PersistentClient(path=os.join(local_db_path,'chromadb'))            
+        logging.info(f"Local database path: {os.path.join(local_db_path,'chromadb')}")
+        persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
         vectorstore = Chroma(client=persistent_client,
                                 collection_name=index_name,
                                 embedding_function=query_model)     
@@ -438,7 +438,7 @@ def delete_index(index_type: str,
                 logging.info("No local filestore to delete.")
     elif index_type == "ChromaDB":
         try:
-            persistent_client = chromadb.PersistentClient(path=os.join(local_db_path,'chromadb'))
+            persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))
             indices = persistent_client.list_collections()
             print('Available databases: ' + str(indices))
             logging.info('Available databases: ' + str(indices))

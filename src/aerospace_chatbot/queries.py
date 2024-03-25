@@ -50,7 +50,7 @@ class QA_Model:
                  fetch_k=50,
                  temperature=0,
                  test_query=True,
-                 local_db_path='../../db'):
+                 local_db_path='db'):
         
         self.index_type=index_type
         self.index_name=index_name

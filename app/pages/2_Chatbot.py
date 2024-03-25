@@ -1,8 +1,4 @@
-import admin, queries
-
-import os
-import time
-import logging
+import os, sys, time, logging
 from dotenv import load_dotenv,find_dotenv
 import streamlit as st
 
@@ -11,6 +7,9 @@ from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 from ragatouille import RAGPretrainedModel
+
+sys.path.append('../../src/aerospace_chatbot')  # Add package to path
+import admin, queries
 
 
 def _reset_conversation():
@@ -115,7 +114,7 @@ if prompt := st.chat_input('Prompt here'):
                 elif sb['query_model']=='Voyage':
                     query_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
                 elif sb['index_type']=='RAGatouille':
-                    query_model=RAGPretrainedModel.from_index(os.join(paths['db_folder_path'],'.ragatouille/colbert/indexes',sb['index_selected']))
+                    query_model=RAGPretrainedModel.from_index(os.path.join(paths['db_folder_path'],'.ragatouille/colbert/indexes',sb['index_selected']))
 
                 # Define LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
