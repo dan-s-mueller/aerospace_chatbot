@@ -445,11 +445,13 @@ def delete_index(index_type: str,
         try:
             persistent_client = chromadb.PersistentClient(path=local_db_path + '/chromadb')
             indices = persistent_client.list_collections()
+            print('Available databases: ' + str(indices))
             logging.info('Available databases: ' + str(indices))
             for idx in indices:
                 if index_name in idx.name:
                     logging.info(f"Clearing index {idx.name}...")
                     persistent_client.delete_collection(name=idx.name)
+                    print(f"Index {idx.name} cleared.")
                     logging.info(f"Index {idx.name} cleared.")
         except:
             pass

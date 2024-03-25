@@ -1,14 +1,15 @@
 credentials:
-  usernames:
+  usernames:  # log in with username and the string used to generate the hashed password from streamlit_authenticator.Hasher
+    # to be added, contact github repo administrator
     dmueller:
       email: dsm@danmueller.pro
       name: Dan Mueller
-      password: $2b$12$VVjV6Nbcdl536r72V8kWFupUDdtyswAUMm2RaUTnrzHb0EDXfEiNa
+      password: $2b$12$DM5R21QBdIV3goKj3dd.6Oje0dgiiYW2y5dtA3L0jDIuOrvHUVkjG
     eroulo:
       email: eric.roulo@rouloconsulting.com
       name: Eric Roulo
-      password: $2b$12$xqngSc8Bzigx28clFxQ3xO1DMB8KzDY1xSqxAzxhUk1cCBXLdUh4O
-cookie:
+      password: $2b$12$eNas5gUvatJUN0/lFiFXNeL55kjSsy2eiMhkZOaDKzjOvmczD1f1a
+cookie: # Cookie settings which can keep you logged in for the duration of expiry_days
   expiry_days: 30
-  key: random_signature_key # Must be string
-  name: random_cookie_name
+  key: $2b$12$guJgWA/YDZsQfdfSfkZbLOSI4Mkhy5Uk6U3Y6zB2ljk3oymSk7/Ne
+  name: aerospace_chatbot_cookie

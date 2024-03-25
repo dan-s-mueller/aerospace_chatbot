@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 from ragatouille import RAGPretrainedModel
 
 # Import local variables
-sys.path.append('../src')
+sys.path.append('../src/aerospace_chatbot')
 from data_processing import chunk_docs, initialize_database, upsert_docs, delete_index
 from queries import QA_Model
 
@@ -50,7 +50,6 @@ def permute_tests(test_data):
             rows.append(row)
             idx+=1
     return rows
-
 def custom_encoder(obj):
     """
     Converts non-serializable objects to a printable string.
@@ -66,7 +65,6 @@ def custom_encoder(obj):
     elif not isinstance(obj, str):
         return str(type(obj))
     return str(obj)
-
 @pytest.fixture(scope="session", autouse=True)
 def setup():
     """
@@ -133,7 +131,6 @@ def setup():
         'index_type': index_type,
         'rag_type': rag_type
     }
-
 def generate_test_cases(setup, export:bool=False):
     """
     Generates test cases for screening.
@@ -191,7 +188,6 @@ def generate_test_cases(setup, export:bool=False):
             json.dump(tests, json_file, default=custom_encoder, indent=4)
     
     return tests
-
 def test_env_variables_exist(setup):
     """
     Test case to check if the required environment variables exist.
@@ -211,7 +207,6 @@ def test_env_variables_exist(setup):
     assert setup['VOYAGE_API_KEY'] is not None
     assert setup['HUGGINGFACEHUB_API_TOKEN'] is not None
     assert setup['PINECONE_API_KEY'] is not None
-
 def test_chunk_docs(setup):
     """
     Test the chunk_docs function.
@@ -263,7 +258,6 @@ def test_chunk_docs(setup):
     assert result['summaries'] is not None
     assert result['llm'] == setup['llm']['Hugging Face']
     print('Summary rag test passed!')
-
 def test_database_setup_and_query(setup):
     """
     Tests the entire process of initializing a database, upserting documents, and deleting a database
