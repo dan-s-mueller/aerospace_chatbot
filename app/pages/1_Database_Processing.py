@@ -13,15 +13,52 @@ from dotenv import load_dotenv,find_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.embeddings import VoyageEmbeddings
 
-# Set the page title
-st.set_page_config(
-    page_title='Database Processing',
-    layout='wide'
-)
-st.title('Database Processing')
+# # Read environment variables. set the page title
+# load_dotenv(find_dotenv(),override=True)
+
+# # Define root path. All variables in this script are relative to the root path, not the run path.
+# current_script_path = os.path.abspath(__file__) # Get the absolute path of the current script
+# current_dir = os.path.dirname(current_script_path)  # Get the directory containing the current script
+# base_folder_path = os.path.join(current_dir, '..', '..')    # Define the path to the root folder
+# base_folder_path = os.path.normpath(base_folder_path)  # Normalize the path
+# logging.info(f'Base folder path: {base_folder_path}')
+
+# # Set the page title, load sidebar
+# st.set_page_config(
+#     page_title='Database Processing',
+#     layout='wide'
+# )
+# st.title('Database Processing')
+# sb=admin.load_sidebar(config_file='../../config/config.json',
+#                     index_data_file='../../config/index_data.json',
+#                     vector_databases=True,
+#                     embeddings=True,
+#                     rag_type=True,
+#                     index_name=True,
+#                     secret_keys=True)
+# try:
+#     secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+# except admin.SecretKeyException as e:
+#     st.warning(f"{e}")
+#     st.stop()
+
+# # Define use case specific paths
+# config_folder_path=os.path.join(current_dir, 'config')
+# data_folder_path=os.path.join(base_folder_path, 'data')
+# db_folder_path=os.path.join(base_folder_path, sb['keys']['LOCAL_DB_PATH'])
+# logging.info(f'Config folder path: {config_folder_path}')
+# logging.info(f'Data folder path: {data_folder_path}')
+# logging.info(f'Database folder path: {db_folder_path}')
+
+paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
+                                     {'vector_databases':True,
+                                      'embeddings':True,
+                                      'rag_type':True,
+                                      'index_name':True,
+                                      'secret_keys':True})
 
 # Read the user credentials from the config file, and authenticate the user
-with open('../../config/users.yml') as file:
+with open(os.path.join(paths['config_folder_path'],'users.yml')) as file:
     config = yaml.load(file, Loader=SafeLoader)
 authenticator = stauth.Authenticate(
     config['credentials'],
@@ -39,25 +76,12 @@ if st.session_state["authentication_status"]:
 
     # Add section for connection status and vector database cleanup
     st.subheader('Connection status and vector database cleanup')
+    # TODO: somewhere there is a dabase path issue (creates in src folder, delete does not work)
     admin.st_connection_status_expander(delete_buttons=True)
 
     # Add section for creating and loading into a vector database
     st.subheader('Create and load into a vector database')
-    # Set up the page, enable logging, read environment variables
-    load_dotenv(find_dotenv(),override=True)
-    sb=admin.load_sidebar(config_file='../../config/config.json',
-                        index_data_file='../../config/index_data.json',
-                        vector_databases=True,
-                        embeddings=True,
-                        rag_type=True,
-                        index_name=True,
-                        secret_keys=True)
-    try:
-        secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
-    except admin.SecretKeyException as e:
-        st.warning(f"{e}")
-        st.stop()
-
+    
     # Populate the main screen
     logging.info(f'index_type test, {sb["index_type"]}')
 
@@ -73,10 +97,10 @@ if st.session_state["authentication_status"]:
     logging.info('Query model set: '+str(query_model))
 
     # Find docs
-    data_folder = st.text_input('Enter a directory','../../data/AMS/',help='Enter a directory relative to the current directory, or an absolute path.')
-    if not os.path.isdir(data_folder):
+    data_folder = st.text_input('Enter a directory relative to the base directory','/data/AMS/',help='Enter a directory relative to the base directory, or an absolute path.')
+    if not os.path.isdir(os.join(paths['base_folder_path'],data_folder)):
         st.error('The entered directory does not exist')
-    docs = glob.glob(data_folder+'*.pdf')   # Only get the PDFs in the directory
+    docs = glob.glob(os.join(paths['base_folder_path'],data_folder,'*.pdf'))   # Only get the PDFs in the directory
     st.markdown('PDFs found: '+str(docs))
     st.markdown('Number of PDFs found: ' + str(len(docs)))
     logging.info('Docs: '+str(docs))
@@ -104,6 +128,7 @@ if st.session_state["authentication_status"]:
         export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
         if export_json:
             json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
+            json_file=os.path.join(paths['base_folder_path'],json_file)
 
 
     # Add a button to run the function
@@ -125,7 +150,7 @@ if st.session_state["authentication_status"]:
                             file_out=json_file,
                             clear=clear_database,
                             batch_size=batch_size,
-                            local_db_path=sb['keys']['LOCAL_DB_PATH'],
+                            local_db_path=paths['db_folder_path'],
                             llm=llm,
                             show_progress=True)
         end_time = time.time()  # Stop the timer

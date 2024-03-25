@@ -1,42 +1,62 @@
 import admin, data_processing
 
+import os
 import json
 import time
 import logging
 from datetime import datetime
-
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import VoyageEmbeddings
-
-from ragxplorer import RAGxplorer
-import chromadb
+from dotenv import load_dotenv,find_dotenv
 import streamlit as st
 import pandas as pd
 
-# Set up the page, enable logging, read environment variables
-from dotenv import load_dotenv,find_dotenv
-load_dotenv(find_dotenv(),override=True)
-logging.basicConfig(filename='app_3_visualize_data.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import VoyageEmbeddings
+from ragxplorer import RAGxplorer
+import chromadb
 
-# Set the page title
-st.set_page_config(
-    page_title='Visualize Data',
-    layout='wide'
-)
-st.title('Visualize Data')
-# TODO: add database status icons
-sb=admin.load_sidebar(config_file='../../config/config.json',
-                      index_data_file='../../config/index_data.json',
-                      vector_databases=True,
-                      embeddings=True,
-                      rag_type=True,
-                      index_name=True,
-                      secret_keys=True)
-try:
-    secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
-except admin.SecretKeyException as e:
-    st.warning(f"{e}")
-    st.stop()
+
+# # Set up the page, enable logging, read environment variables
+# load_dotenv(find_dotenv(),override=True)
+
+# # Define root path. All variables in this script are relative to the root path, not the run path.
+# current_script_path = os.path.abspath(__file__) # Get the absolute path of the current script
+# current_dir = os.path.dirname(current_script_path)  # Get the directory containing the current script
+# base_folder_path = os.path.join(current_dir, '..', '..')    # Define the path to the root folder
+# base_folder_path = os.path.normpath(base_folder_path)  # Normalize the path
+# logging.info(f'Root folder path: {base_folder_path}')
+
+# # Set the page title, load sidebar
+# st.set_page_config(
+#     page_title='Visualize Data',
+#     layout='wide')
+# st.title('Visualize Data')
+# sb=admin.load_sidebar(config_file=os.path.join(base_folder_path,'config','config.json'),
+#                       index_data_file=os.path.join(base_folder_path,'config','index_data.json'),
+#                       vector_databases=True,
+#                       embeddings=True,
+#                       rag_type=True,
+#                       index_name=True,
+#                       secret_keys=True)
+# try:
+#     secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+# except admin.SecretKeyException as e:
+#     st.warning(f"{e}")
+#     st.stop()
+
+# # Define use case specific paths
+# config_folder_path=os.path.join(current_dir, 'config')
+# data_folder_path=os.path.join(base_folder_path, 'data')
+# db_folder_path=os.path.join(base_folder_path, sb['keys']['LOCAL_DB_PATH'])
+# logging.info(f'Config folder path: {config_folder_path}')
+# logging.info(f'Data folder path: {data_folder_path}')
+# logging.info(f'Database folder path: {db_folder_path}')
+
+paths,sb,secrets=admin.st_setup_page('Visualize Data',
+                                     {'vector_databases':True,
+                                      'embeddings':True,
+                                      'rag_type':True,
+                                      'index_name':True,
+                                      'secret_keys':True})
 
 # Set up session state variables
 if 'rx_client' not in st.session_state:
@@ -63,7 +83,7 @@ st.info('You must have created a database using Document Upload in ChromaDB for 
 
 # Set the ragxplorer and chromadb clients
 st.session_state.rx_client = RAGxplorer(embedding_model=sb['embedding_name'])
-st.session_state.chroma_client = chromadb.PersistentClient(path=sb['keys']['LOCAL_DB_PATH']+'/chromadb/')
+st.session_state.chroma_client = chromadb.PersistentClient(path=os.path.join(paths['db_folder_path'],'chromadb'))
 
 # Add an expandable with description of what's going on.
 with st.expander("Under the hood",expanded=True):
@@ -85,13 +105,13 @@ with st.expander("Create visualization data",expanded=True):
     if export_df:
         current_time = datetime.now().strftime("%Y.%m.%d.%H.%M")
         if limit_size:
-            df_export_path = st.text_input('Export file', f'../../data/AMS/ams_data-400-0-{vector_qty}.json')
+            df_export_path = st.text_input('Export file', f'/data/AMS/ams_data-400-0-{vector_qty}.json')
         else:
-            df_export_path=st.text_input('Export file', f'../../data/AMS/ams_data-400-0-all.json')
+            df_export_path=st.text_input('Export file', f'/data/AMS/ams_data-400-0-all.json')
     if st.button('Create visualization data'):
         start_time = time.time()  # Start the timer
         
-        umap_params={'n_neighbors': 5,'n_components': 2,'random_state':42}  # TODO: expose umap_params as an option
+        umap_params={'n_neighbors': 5,'n_components': 2,'random_state':42}
         logging.info(f'embedding_function: {st.session_state.rx_client._chosen_embedding_model}')
         collection=st.session_state.chroma_client.get_collection(name=sb['index_name'],
                                                                  embedding_function=st.session_state.rx_client._chosen_embedding_model)
@@ -105,7 +125,8 @@ with st.expander("Create visualization data",expanded=True):
                                                                             verbose=True)
         st.session_state.rx_client.run_projector()
         if export_df:
-            data_processing.export_data_viz(st.session_state.rx_client,df_export_path)
+            data_processing.export_data_viz(st.session_state.rx_client,
+                                            os.join(paths['data_folder_path'],df_export_path))
             
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 
@@ -120,7 +141,7 @@ with st.expander("Visualize data",expanded=True):
             import_file_path=st.text_input('Import file',df_export_path)
         else:
             # Use the uploaded file
-            import_file_path=st.text_input('Import file',f'../../data/AMS/{import_file.name}')
+            import_file_path=st.text_input('Import file',f'/data/AMS/{import_file.name}')
     else:
         import_file_path=None
     
@@ -130,12 +151,12 @@ with st.expander("Visualize data",expanded=True):
         start_time = time.time()  # Start the timer
         logging.info('Starting visualization for query: '+query)
         if import_data:
-            with open(import_file_path, 'r') as f:
+            with open(os.join(paths['data_folder_path'],import_file_path), 'r') as f:
                 data = json.load(f)
             index_name=data['visualization_index_name']
             umap_params=data['umap_params']
             viz_data=pd.read_json(data['viz_data'], orient='split')
-            logging.info('Loaded data from file: '+import_file_path)
+            logging.info('Loaded data from file: '+os.join(paths['data_folder_path'],import_file_path))
             logging.info(f'embedding_function: {st.session_state.rx_client._chosen_embedding_model}')
             collection=st.session_state.chroma_client.get_collection(name=index_name,
                                                                      embedding_function=st.session_state.rx_client._chosen_embedding_model)

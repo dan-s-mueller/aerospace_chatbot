@@ -340,3 +340,6 @@ def test_database_setup_and_query(setup):
                             test['rag_type'],
                             local_db_path=setup['LOCAL_DB_PATH'])
             raise e
+        
+# TODO: add parematerized tests for the process function
+# TODO: add tests for path setup and overall structure of code

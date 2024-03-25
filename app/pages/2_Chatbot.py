@@ -1,5 +1,6 @@
 import admin, queries
 
+import os
 import time
 import logging
 from dotenv import load_dotenv,find_dotenv
@@ -18,27 +19,53 @@ def _reset_conversation():
     st.session_state.messages = []
     return None
 
-# Set up the page, enable logging, read environment variables
-load_dotenv(find_dotenv(),override=True)
-st.set_page_config(
-    page_title='Aerospace Chatbot',
-    layout='wide'
-)
-st.title('Aerospace Chatbot')
-sb=admin.load_sidebar(config_file='../../config/config.json',
-                      index_data_file='../../config/index_data.json',
-                      vector_databases=True,
-                      embeddings=True,
-                      rag_type=True,
-                      index_name=True,
-                      llm=True,
-                      model_options=True,
-                      secret_keys=True)
-try:
-    secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
-except admin.SecretKeyException as e:
-    st.warning(f"{e}")
-    st.stop()
+# # Read environment variables
+# load_dotenv(find_dotenv(),override=True)
+
+# # Define root path. All variables in this script are relative to the root path, not the run path.
+# current_script_path = os.path.abspath(__file__) # Get the absolute path of the current script
+# current_dir = os.path.dirname(current_script_path)  # Get the directory containing the current script
+# base_folder_path = os.path.join(current_dir, '..', '..')    # Define the path to the root folder
+# base_folder_path = os.path.normpath(base_folder_path)  # Normalize the path
+# logging.info(f'Root folder path: {base_folder_path}')
+
+# # Set the page title, load sidebar
+# st.set_page_config(
+#     page_title='Aerospace Chatbot',
+#     layout='wide'
+# )
+# st.title('Aerospace Chatbot')
+# sb=admin.load_sidebar(config_file=os.path.join(base_folder_path,'config','config.json'),
+#                       index_data_file=os.path.join(base_folder_path,'config','index_data.json'),
+#                       vector_databases=True,
+#                       embeddings=True,
+#                       rag_type=True,
+#                       index_name=True,
+#                       llm=True,
+#                       model_options=True,
+#                       secret_keys=True)
+# try:
+#     secrets=admin.set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+# except admin.SecretKeyException as e:
+#     st.warning(f"{e}")
+#     st.stop()
+
+# # Define use case specific paths
+# config_folder_path=os.path.join(current_dir, 'config')
+# data_folder_path=os.path.join(base_folder_path, 'data')
+# db_folder_path=os.path.join(base_folder_path, sb['keys']['LOCAL_DB_PATH'])
+# logging.info(f'Config folder path: {config_folder_path}')
+# logging.info(f'Data folder path: {data_folder_path}')
+# logging.info(f'Database folder path: {db_folder_path}')
+
+paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
+                                     {'vector_databases':True,
+                                      'embeddings':True,
+                                      'rag_type':True,
+                                      'index_name':True,
+                                      'llm':True,
+                                      'model_options':True,
+                                      'secret_keys':True})
 
 # Add expander with functionality details.
 with st.expander('''What's under the hood?'''):
@@ -88,7 +115,7 @@ if prompt := st.chat_input('Prompt here'):
                 elif sb['query_model']=='Voyage':
                     query_model=VoyageEmbeddings(model=sb['embedding_name'],voyage_api_key=secrets['VOYAGE_API_KEY'])
                 elif sb['index_type']=='RAGatouille':
-                    query_model=RAGPretrainedModel.from_index(sb['keys']['LOCAL_DB_PATH']+'/.ragatouille/colbert/indexes/'+sb['index_selected'])
+                    query_model=RAGPretrainedModel.from_index(os.join(paths['db_folder_path'],'.ragatouille/colbert/indexes',sb['index_selected']))
 
                 # Define LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
@@ -106,7 +133,7 @@ if prompt := st.chat_input('Prompt here'):
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
                                                                filter_arg=False,
-                                                               local_db_path=sb['keys']['LOCAL_DB_PATH'])
+                                                               local_db_path=paths['db_folder_path'])
             if st.session_state.message_id>1:
                 # Update LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')

@@ -1,6 +1,7 @@
 import data_processing
 from prompts import TEST_QUERY_PROMPT
 
+import inspect
 import os
 import logging
 import json
@@ -385,12 +386,17 @@ def show_chroma_collections(format=True):
         ValueError: If the chroma vector database needs to be reset.
 
     """
+        # Define base path
+    calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
+    base_folder_path = _get_base_path(calling_script_path)
+    db_folder_path=os.path.join(base_folder_path, os.getenv('LOCAL_DB_PATH'))
+
     if os.getenv('LOCAL_DB_PATH') is None:
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
     else:
         chromadb.Client
         try:
-            persistent_client = chromadb.PersistentClient(path=os.getenv('LOCAL_DB_PATH')+'/chromadb')
+            persistent_client = chromadb.PersistentClient(path=os.path.join(db_folder_path,'chromadb'))
         except:
             raise ValueError("Chroma vector database needs to be reset. Clear cache.")
         collections=persistent_client.list_collections()
@@ -404,8 +410,13 @@ def show_chroma_collections(format=True):
         return chroma_status
     
 def show_ragatouille_indexes(format=True):
+    # Define base path
+    calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
+    base_folder_path = _get_base_path(calling_script_path)
+    db_folder_path=os.path.join(base_folder_path, os.getenv('LOCAL_DB_PATH'))
+
     try:
-        path=os.getenv('LOCAL_DB_PATH')+'/.ragatouille/colbert/indexes'
+        path=os.path.join(db_folder_path,'.ragatouille/colbert/indexes')
         indexes = []
         for item in os.listdir(path):
             item_path = os.path.join(path, item)
@@ -427,6 +438,11 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes. Defaults to False.
     """
 
+    # Define base path
+    calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
+    base_folder_path = _get_base_path(calling_script_path)
+    db_folder_path=os.path.join(base_folder_path, os.getenv('LOCAL_DB_PATH'))
+
     with st.expander("Connection Status", expanded=expanded):
         # Show key status
         st.markdown("**API keys** (Indicates status of local variable. It does not guarantee the key itself is correct):")
@@ -445,7 +461,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                         rag_type = "Summary"
                     else:
                         rag_type = "Standard"
-                    data_processing.delete_index('Pinecone', pinecone_index_name, rag_type, local_db_path='../../db')
+                    data_processing.delete_index('Pinecone', pinecone_index_name, rag_type, local_db_path=db_folder_path)
                     st.markdown(f"Index {pinecone_index_name} has been deleted.")
         except:
             pass
@@ -463,7 +479,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                         rag_type = "Summary"
                     else:
                         rag_type = "Standard"
-                    data_processing.delete_index('ChromaDB', chroma_db_name, rag_type, local_db_path='../../db')
+                    data_processing.delete_index('ChromaDB', chroma_db_name, rag_type, local_db_path=db_folder_path)
                     st.markdown(f"Database {chroma_db_name} has been deleted.")
         except:
             pass
@@ -475,10 +491,94 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
             ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
             if delete_buttons:
                 if st.button('Delete RAGatouille database', help='This is permanent!'):
-                    data_processing.delete_index('Ragatouille', ragatouille_name, "Standard", local_db_path='../../db')
+                    data_processing.delete_index('Ragatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
                     st.markdown(f"Index {ragatouille_name} has been deleted.")
         except:
             pass
+
+def st_setup_page(page_title: str, sidebar_config: dict):
+    """
+    Sets up the Streamlit page with the given title and loads the sidebar configuration.
+
+    Args:
+        page_title (str): The title of the Streamlit page.
+        sidebar_config (dict): The configuration for the sidebar.
+
+    Returns:
+        tuple: A tuple containing the following:
+            - paths (dict): A dictionary containing the following directory paths:
+                - base_folder_path (str): The path to the root folder.
+                - config_folder_path (str): The path to the config folder.
+                - data_folder_path (str): The path to the data folder.
+                - db_folder_path (str): The path to the database folder.
+            - sb (dict): The sidebar configuration.
+            - secrets (dict): A dictionary containing the set API keys.
+
+    Raises:
+        SecretKeyException: If there is an issue with the secret keys.
+
+    """
+    
+    # Read environment variables and set the page title
+    # load_dotenv(find_dotenv(),override=True)  # commented out because this is run every time admin runs
+
+    # Define base path
+    calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
+    base_folder_path = _get_base_path(calling_script_path)
+    logging.info(f'Base folder path: {base_folder_path}')
+
+    # Define use case specific paths, assumed structure
+    # TODO: make env variable
+    config_folder_path=os.path.join(base_folder_path, 'config')
+    data_folder_path=os.path.join(base_folder_path, 'data')
+    logging.info(f'Config folder path: {config_folder_path}')
+    logging.info(f'Data folder path: {data_folder_path}')
+
+    # Set the page title
+    st.set_page_config(
+        page_title=page_title,
+        layout='wide'
+    )
+    st.title(page_title)
+
+    # Assumes strucutre and file names as per the following.
+    # TODO: make env variables for this
+    sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
+                    index_data_file=os.path.join(config_folder_path,'index_data.json'),
+                    **sidebar_config)
+    try:
+        secrets=set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
+    except SecretKeyException as e:
+        st.warning(f"{e}")
+        st.stop()
+
+    # Set db folder path based on env variable
+    db_folder_path=os.path.join(base_folder_path, sb['keys']['LOCAL_DB_PATH'])
+    logging.info(f'Database folder path: {db_folder_path}')
+
+    paths={'base_folder_path':base_folder_path,
+           'config_folder_path':config_folder_path,
+           'data_folder_path':data_folder_path,
+           'db_folder_path':db_folder_path}
+
+    return paths,sb,secrets
+
+def _get_base_path(calling_script_path: str):
+    """Define base path, input is the path of the calling script, assumed to be in a subfolder of the base directory
+
+    Args:
+        calling_script_path (str): The path of the calling script.
+
+    Returns:
+        str: The base folder path.
+
+    """
+    # calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
+    current_dir = os.path.dirname(os.path.abspath(calling_script_path))  # Get the directory containing the calling script
+    base_folder_path = os.path.join(current_dir, '..', '..')    # Define the path to the base folder. This is not root but the directory where operations are mainly performed.
+    base_folder_path = os.path.normpath(base_folder_path)  # Normalize the path
+    logging.info(f'Base folder path: {base_folder_path}')
+    return base_folder_path
 
 def _format_key_status(key_status:str):
     formatted_status = ""
