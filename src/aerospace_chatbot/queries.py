@@ -102,7 +102,6 @@ class QA_Model:
         logging.info('Memory: '+str(self.memory))
 
         # Assemble main chain
-        # TODO: add search_kwargs back in
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.retriever,
                                                       self.memory,
@@ -169,7 +168,6 @@ class QA_Model:
                                                 fetch_k=self.fetch_k)
         
         # Update conversational retrieval chain
-        # TODO: add search_kwargs back in
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.retriever,
                                                       self.memory,
@@ -201,7 +199,6 @@ class QA_Model:
 def _combine_documents(docs, 
                         document_prompt=DEFAULT_DOCUMENT_PROMPT, 
                         document_separator='\n\n'):
-    # TODO: this would be where stuff, map reduce, etc. would go
     doc_strings = [format_document(doc, document_prompt) for doc in docs]
     return document_separator.join(doc_strings)
 def _define_qa_chain(llm,
@@ -245,7 +242,7 @@ def _define_qa_chain(llm,
 def _process_retriever_args(search_type='similarity',
                             k=6,
                             fetch_k=50):
-    # TODO: add functionality if required
+    # TODO: add functionality for filter if required
     # # Implement filter
     # if filter_arg:
     #     filter_list = list(set(item['source'] for item in sources[-1]))

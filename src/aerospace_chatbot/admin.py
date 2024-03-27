@@ -114,10 +114,6 @@ def load_sidebar(config_file,
                                                             help='See LM studio configuration for local host URL.')
                     st.sidebar.warning('You must load a model in LM studio first for this to work.')
         logging.info('RAG type: '+sb_out['rag_type'])
-
-        # TODO: add other advanced RAG types
-        # sb_out['smart_agent']=st.sidebar.checkbox('Smart agent?')
-        # logging.info('Smart agent: '+str(sb_out['smart_agent']))
     if index_name:
         # Index Name 
         st.sidebar.title('Index Name')  
@@ -528,7 +524,6 @@ def st_setup_page(page_title: str, sidebar_config: dict):
     logging.info(f'Base folder path: {base_folder_path}')
 
     # Define use case specific paths, assumed structure
-    # TODO: make env variable
     config_folder_path=os.path.join(base_folder_path, 'config')
     data_folder_path=os.path.join(base_folder_path, 'data')
     logging.info(f'Config folder path: {config_folder_path}')
@@ -542,7 +537,6 @@ def st_setup_page(page_title: str, sidebar_config: dict):
     st.title(page_title)
 
     # Assumes strucutre and file names as per the following.
-    # TODO: make env variables for this
     sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
                     index_data_file=os.path.join(config_folder_path,'index_data.json'),
                     **sidebar_config)

@@ -128,7 +128,7 @@ def chunk_docs(docs: List[str],
         # Clean up page info, update some metadata
         for page in page_data:
             page=_sanitize_raw_page_data(page)
-            if _sanitize_raw_page_data(page):
+            if page is not None:
                 pages.append(page)
         if show_progress:
             progress_percentage = i / len(docs)
@@ -263,10 +263,6 @@ def initialize_database(index_type: str,
                                         embedding=query_model,
                                         text_key='page_content',
                                         pinecone_api_key=PINECONE_API_KEY)
-        
-        # TODO: implement something more legit like this in the future: https://sdk.pinecone.io/python/pinecone/grpc/retry.html
-        # time.sleep(10)  # this is required so that there are not timeout/authentication errors between the index creation and the first query
-        
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -429,6 +425,7 @@ def delete_index(index_type: str,
             pc.describe_index(index_name)
             pc.delete_index(index_name)
         except:
+            # TODO: update so that an error is thrown if the index does not exist
             pass
         logging.info('Cleared database ' + index_name)
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
@@ -440,7 +437,6 @@ def delete_index(index_type: str,
         try:
             persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))
             indices = persistent_client.list_collections()
-            print('Available databases: ' + str(indices))
             logging.info('Available databases: ' + str(indices))
             for idx in indices:
                 if index_name in idx.name:
@@ -449,6 +445,7 @@ def delete_index(index_type: str,
                     print(f"Index {idx.name} cleared.")
                     logging.info(f"Index {idx.name} cleared.")
         except:
+            # TODO: update so that an error is thrown if the index does not exist
             pass
         logging.info('Cleared database and matching databases ' + index_name)
         # Delete local file store if they exist
@@ -462,6 +459,7 @@ def delete_index(index_type: str,
             ragatouille_path = os.path.join(local_db_path, '.ragatouille')
             shutil.rmtree(ragatouille_path)
         except:
+            # TODO: update so that an error is thrown if the index does not exist
             pass
     else:
         raise NotImplementedError

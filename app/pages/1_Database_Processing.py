@@ -75,7 +75,6 @@ if st.session_state["authentication_status"]:
 
     # Add section for connection status and vector database cleanup
     st.subheader('Connection status and vector database cleanup')
-    # TODO: somewhere there is a dabase path issue (creates in src folder, delete does not work)
     admin.st_connection_status_expander(delete_buttons=True)
 
     # Add section for creating and loading into a vector database
@@ -96,10 +95,12 @@ if st.session_state["authentication_status"]:
     logging.info('Query model set: '+str(query_model))
 
     # Find docs
-    data_folder = st.text_input('Enter a directory relative to the base directory','/data/AMS/',help='Enter a directory relative to the base directory, or an absolute path.')
-    if not os.path.isdir(os.path.join(paths['base_folder_path'],data_folder)):
+    data_folder = st.text_input('Enter a directory relative to the base directory',
+                                os.path.join(paths['data_folder_path'],'AMS'),
+                                help='Enter a directory, must be an absolute path.')
+    if not os.path.isdir(data_folder):
         st.error('The entered directory does not exist')
-    docs = glob.glob(os.path.join(paths['base_folder_path'],data_folder,'*.pdf'))   # Only get the PDFs in the directory
+    docs = glob.glob(os.path.join(data_folder,'*.pdf'))   # Only get the PDFs in the directory
     st.markdown('PDFs found: '+str(docs))
     st.markdown('Number of PDFs found: ' + str(len(docs)))
     logging.info('Docs: '+str(docs))
@@ -126,7 +127,7 @@ if st.session_state["authentication_status"]:
             chunk_overlap=None
         export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
         if export_json:
-            json_file=st.text_input('Jsonl file',data_folder+'ams_data-400-0.jsonl')
+            json_file=st.text_input('Jsonl file',os.path.join(data_folder,'ams_data-400-0.jsonl'))
             json_file=os.path.join(paths['base_folder_path'],json_file)
 
 

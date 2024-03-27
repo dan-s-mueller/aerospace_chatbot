@@ -76,7 +76,6 @@ def setup():
     logging.basicConfig(filename='test.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
     
     # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
-    # TODO: Add functionality to input these keys as arguments to the test.
     load_dotenv(find_dotenv(),override=True)
     OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
     VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
@@ -341,4 +340,5 @@ def test_database_setup_and_query(setup):
             raise e
         
 # TODO: add parematerized tests for the process function
-# TODO: add tests for path setup and overall structure of code
+# TODO: add tests for path setup. test config, data, db paths
+# TODO: add tests for subfunctions admin and data_processing
