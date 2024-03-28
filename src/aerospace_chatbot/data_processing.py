@@ -425,7 +425,7 @@ def delete_index(index_type: str,
             pc.describe_index(index_name)
             pc.delete_index(index_name)
         except:
-            # TODO: update so that an error is thrown if the index does not exist
+            # TODO update so that an error is thrown if the index does not exist
             pass
         logging.info('Cleared database ' + index_name)
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
@@ -445,7 +445,7 @@ def delete_index(index_type: str,
                     print(f"Index {idx.name} cleared.")
                     logging.info(f"Index {idx.name} cleared.")
         except:
-            # TODO: update so that an error is thrown if the index does not exist
+            # TODO update so that an error is thrown if the index does not exist
             pass
         logging.info('Cleared database and matching databases ' + index_name)
         # Delete local file store if they exist
@@ -459,7 +459,7 @@ def delete_index(index_type: str,
             ragatouille_path = os.path.join(local_db_path, '.ragatouille')
             shutil.rmtree(ragatouille_path)
         except:
-            # TODO: update so that an error is thrown if the index does not exist
+            # TODO update so that an error is thrown if the index does not exist
             pass
     else:
         raise NotImplementedError

@@ -1,9 +1,6 @@
-import pytest
-import os
-import sys
-import logging
-import json
+import os, sys, logging, json
 import itertools
+import pytest
 from dotenv import load_dotenv,find_dotenv
 
 from langchain_openai import OpenAIEmbeddings
@@ -13,7 +10,8 @@ from langchain_openai import ChatOpenAI
 from ragatouille import RAGPretrainedModel
 
 # Import local variables
-sys.path.append('../src/aerospace_chatbot')
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 from data_processing import chunk_docs, initialize_database, upsert_docs, delete_index
 from queries import QA_Model
 
@@ -49,6 +47,7 @@ def permute_tests(test_data):
             rows.append(row)
             idx+=1
     return rows
+
 def custom_encoder(obj):
     """
     Converts non-serializable objects to a printable string.
@@ -64,8 +63,68 @@ def custom_encoder(obj):
     elif not isinstance(obj, str):
         return str(type(obj))
     return str(obj)
+
+def generate_test_cases(setup, export:bool=True):
+    """
+    Generates test cases for screening.
+
+    Args:
+        export (bool, optional): Indicates whether to export the test cases to a JSON file. Defaults to False.
+
+    Returns:
+        list: A list of test cases.
+
+    Raises:
+        None
+
+    Example:
+        test_cases = generate_test_cases(export=True)
+    """
+
+    # Determine the set of cases to screen
+    # TODO throw in bad inputs for each of the 4 major types below.
+    test_cases = [
+        {
+            # Tests ChromaDB setups, advanced RAG (standard/parent-child)
+            'index_type': [setup['index_type']['ChromaDB']],
+            'query_model': [setup['query_model']['OpenAI']],
+            'rag_type': [setup['rag_type']['Standard'], setup['rag_type']['Parent-Child']],
+            'llm': [setup['llm']['Hugging Face']]
+        },
+        {
+            # Tests advanced RAG (summary) and LLM (openai/hugging face)
+            'index_type': [setup['index_type']['ChromaDB']],
+            'query_model': [setup['query_model']['OpenAI']],
+            'rag_type': [setup['rag_type']['Summary']],
+            'llm': [setup['llm']['OpenAI'], setup['llm']['Hugging Face']]
+        },
+        {
+            # Tests Pinecone setups, embedding types (openai/voyage)
+            'index_type': [setup['index_type']['Pinecone']],
+            'query_model': [setup['query_model']['OpenAI'], setup['query_model']['Voyage']],
+            'rag_type': [setup['rag_type']['Standard']],
+            'llm': [setup['llm']['Hugging Face']]
+        },
+        {
+            # Tests RAGatouille setup
+            'index_type': [setup['index_type']['RAGatouille']],
+            'query_model': [setup['query_model']['RAGatouille']],
+            'rag_type': [setup['rag_type']['Standard']],
+            'llm': [setup['llm']['Hugging Face']]
+        }
+    ]
+
+    tests = permute_tests(test_cases)
+    
+    if export:
+        file_path = 'test_cases.json'
+        with open(file_path, 'w') as json_file:
+            json.dump(tests, json_file, default=custom_encoder, indent=4)
+    
+    return tests
+
 @pytest.fixture(scope="session", autouse=True)
-def setup():
+def setup_fixture():
     """
     Sets up the necessary variables and configurations for the test.
 
@@ -112,7 +171,7 @@ def setup():
     index_type = {index: index for index in ['ChromaDB', 'Pinecone', 'RAGatouille']}
     rag_type = {rag: rag for rag in ['Standard','Parent-Child','Summary']}
     
-    return {
+    setup={
         'OPENAI_API_KEY': OPENAI_API_KEY,
         'VOYAGE_API_KEY': VOYAGE_API_KEY,
         'HUGGINGFACEHUB_API_TOKEN': HUGGINGFACEHUB_API_TOKEN,
@@ -129,64 +188,22 @@ def setup():
         'index_type': index_type,
         'rag_type': rag_type
     }
-def generate_test_cases(setup, export:bool=False):
-    """
-    Generates test cases for screening.
 
-    Args:
-        export (bool, optional): Indicates whether to export the test cases to a JSON file. Defaults to False.
+    tests=generate_test_cases(setup)
 
-    Returns:
-        list: A list of test cases.
+    return setup, tests
 
-    Raises:
-        None
+# Define a fixture for each test case
+# @pytest.fixture(params=[0])  # This will be replaced dynamically
+# def test_case(request, setup_fixture):
+#     _, tests = setup_fixture
+#     return tests[request.param]
+@pytest.fixture
+def test_case(request):
+    return request.param
 
-    Example:
-        test_cases = generate_test_cases(export=True)
-    """
 
-    # Determine the set of cases to screen
-    # TODO: throw in bad inputs for each of the 4 major types below.
-    test_cases = [
-        {
-            # Tests ChromaDB setups, advanced RAG (standard/parent-child)
-            'index_type': [setup['index_type']['ChromaDB']],
-            'query_model': [setup['query_model']['OpenAI']],
-            'rag_type': [setup['rag_type']['Standard'], setup['rag_type']['Parent-Child']],
-            'llm': [setup['llm']['Hugging Face']]
-        },
-        {
-            # Tests advanced RAG (summary) and LLM (openai/hugging face)
-            'index_type': [setup['index_type']['ChromaDB']],
-            'query_model': [setup['query_model']['OpenAI']],
-            'rag_type': [setup['rag_type']['Summary']],
-            'llm': [setup['llm']['OpenAI'], setup['llm']['Hugging Face']]
-        },
-        {
-            # Tests Pinecone setups, embedding types (openai/voyage)
-            'index_type': [setup['index_type']['Pinecone']],
-            'query_model': [setup['query_model']['OpenAI'], setup['query_model']['Voyage']],
-            'rag_type': [setup['rag_type']['Standard']],
-            'llm': [setup['llm']['Hugging Face']]
-        },
-        {
-            # Tests RAGatouille setup
-            'index_type': [setup['index_type']['RAGatouille']],
-            'query_model': [setup['query_model']['RAGatouille']],
-            'rag_type': [setup['rag_type']['Standard']],
-            'llm': [setup['llm']['Hugging Face']]
-        }
-    ]
-    tests = permute_tests(test_cases)
-    
-    if export:
-        file_path = 'test_cases.json'
-        with open(file_path, 'w') as json_file:
-            json.dump(tests, json_file, default=custom_encoder, indent=4)
-    
-    return tests
-def test_env_variables_exist(setup):
+def test_env_variables_exist(setup_fixture):
     """
     Test case to check if the required environment variables exist.
 
@@ -201,11 +218,15 @@ def test_env_variables_exist(setup):
     Returns:
         None
     """
+    setup, _ = setup_fixture
+
     assert setup['OPENAI_API_KEY'] is not None
     assert setup['VOYAGE_API_KEY'] is not None
     assert setup['HUGGINGFACEHUB_API_TOKEN'] is not None
     assert setup['PINECONE_API_KEY'] is not None
-def test_chunk_docs(setup):
+    print('Environment variables test passed.')
+
+def test_chunk_docs(setup_fixture):
     """
     Test the chunk_docs function.
 
@@ -214,8 +235,9 @@ def test_chunk_docs(setup):
     Returns:
         None
     """
+    setup, _ = setup_fixture
+
     # Test case 1: Standard rag
-    print('Testing standard rag...')
     result = chunk_docs(setup['docs'], 
                         rag_type=setup['rag_type']['Standard'], 
                         chunk_method=setup['chunk_method'], 
@@ -225,10 +247,9 @@ def test_chunk_docs(setup):
     assert result['pages'] is not None
     assert result['chunks'] is not None
     assert result['splitters'] is not None
-    print('Standard rag test passed!')
+    print('Standard rag test passed.')
 
     # Test case 2: Parent-Child rag
-    print('Testing parent-child rag...')
     result = chunk_docs(setup['docs'], 
                         rag_type=setup['rag_type']['Parent-Child'], 
                         chunk_method=setup['chunk_method'], 
@@ -240,10 +261,9 @@ def test_chunk_docs(setup):
     assert result['chunks'] is not None
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
-    print('Parent-child rag test passed!')
+    print('Parent-child rag test passed.')
 
     # Test case 3: Summary rag
-    print('Testing summary rag...')
     result = chunk_docs(setup['docs'], 
                         rag_type=setup['rag_type']['Summary'], 
                         chunk_method=setup['chunk_method'], 
@@ -255,90 +275,93 @@ def test_chunk_docs(setup):
     assert result['pages']['docs'] is not None
     assert result['summaries'] is not None
     assert result['llm'] == setup['llm']['Hugging Face']
-    print('Summary rag test passed!')
-def test_database_setup_and_query(setup):
-    """
+    print('Summary rag test passed.')
+
+# TODO add parematerized tests for the process function
+@pytest.mark.parametrize('test_case', (i for i in range(len(setup_fixture()[1]))), indirect=True)
+
+def test_database_setup_and_query(setup_fixture,test_case):
+    """  
     Tests the entire process of initializing a database, upserting documents, and deleting a database
     """
-    tests = generate_test_cases(setup,export=True)
-    
-    for i, test in enumerate(tests):
-        print(f'Running test {i+1}...')
-        try:            
-            chunker = chunk_docs(setup['docs'], 
-                                 rag_type=test['rag_type'], 
-                                 chunk_method=setup['chunk_method'], 
-                                 chunk_size=setup['chunk_size'], 
-                                 chunk_overlap=setup['chunk_overlap'],
-                                 llm=test['llm'])
-            assert chunker is not None
-            print('Docs chunked!')
-            
-            vectorstore = initialize_database(test['index_type'], 
-                                              'test'+str(test['id']), 
-                                              test['query_model'],
-                                              test['rag_type'],
-                                              local_db_path=setup['LOCAL_DB_PATH'], 
-                                              clear=False,
-                                              test_query=False,
-                                              init_ragatouille=True)
-            assert vectorstore is not None
-            print('Database initialized!')
-            
-            vectorstore, retriever = upsert_docs(test['index_type'], 
-                                                'test'+str(test['id']), 
-                                                 vectorstore,
-                                                 chunker,
-                                                 batch_size=setup['batch_size'], 
-                                                 local_db_path=setup['LOCAL_DB_PATH'])
-            assert vectorstore is not None
-            assert retriever is not None
-            print('Docs upserted!')
-            
-            if test['index_type'] == 'RAGatouille':
-                print('Creating RAGatouille query model...')
-                query_model_qa = RAGPretrainedModel.from_index(setup['LOCAL_DB_PATH']+'/.ragatouille/colbert/indexes/'+'test'+str(test['id']),
-                                                            n_gpu=0,
-                                                            verbose=1)             
-                print('RAGatouille query model created.')
-            else:
-                print('Creating query model...')
-                query_model_qa = test['query_model']
-                print('Query model created.')
-            assert query_model_qa is not None
-            
-            qa_model_obj = QA_Model(test['index_type'],
-                                'test'+str(test['id']),
-                                query_model_qa,
-                                test['llm'],
-                                rag_type=test['rag_type'],
-                                test_query=False,
-                                local_db_path=setup['LOCAL_DB_PATH']+'/ref_dbs')
-            logging.info('QA model object created.')
+    setup, tests = setup_fixture
+    # test=tests[0]
+    test=test_case
 
-            assert qa_model_obj is not None
-            qa_model_obj.query_docs(setup['test_prompt'])
-            response = qa_model_obj.ai_response
-            assert response is not None
-            alternate_question = qa_model_obj.generate_alternative_questions(setup['test_prompt'], response=response)
-            assert alternate_question is not None
+    print(f"Starting test {test['id']}:")
 
-            print(f'Query response: {response}')
-            print(f'Alternate questions: {alternate_question}')
-            print('Query and alternative question successful!')
-
-            delete_index(test['index_type'],
-                            'test'+str(test['id']), 
-                            test['rag_type'],
-                            local_db_path=setup['LOCAL_DB_PATH'])
-            print('Database deleted!')
-        except Exception as e:
-            delete_index(test['index_type'],
-                            'test'+str(test['id']), 
-                            test['rag_type'],
-                            local_db_path=setup['LOCAL_DB_PATH'])
-            raise e
+    try:            
+        chunker = chunk_docs(setup['docs'], 
+                            rag_type=test['rag_type'], 
+                            chunk_method=setup['chunk_method'], 
+                            chunk_size=setup['chunk_size'], 
+                            chunk_overlap=setup['chunk_overlap'],
+                            llm=test['llm'])
+        assert chunker is not None
+        print('Docs chunked.')
         
-# TODO: add parematerized tests for the process function
-# TODO: add tests for path setup. test config, data, db paths
-# TODO: add tests for subfunctions admin and data_processing
+        vectorstore = initialize_database(test['index_type'], 
+                                        'test'+str(test['id']), 
+                                        test['query_model'],
+                                        test['rag_type'],
+                                        local_db_path=setup['LOCAL_DB_PATH'], 
+                                        clear=False,
+                                        test_query=False,
+                                        init_ragatouille=True)
+        assert vectorstore is not None
+        print('Database initialized.')
+        
+        vectorstore, retriever = upsert_docs(test['index_type'], 
+                                            'test'+str(test['id']), 
+                                            vectorstore,
+                                            chunker,
+                                            batch_size=setup['batch_size'], 
+                                            local_db_path=setup['LOCAL_DB_PATH'])
+        assert vectorstore is not None
+        assert retriever is not None
+        print('Docs upserted.')
+        
+        if test['index_type'] == 'RAGatouille':
+            query_model_qa = RAGPretrainedModel.from_index(setup['LOCAL_DB_PATH']+'/.ragatouille/colbert/indexes/'+'test'+str(test['id']),
+                                                        n_gpu=0,
+                                                        verbose=1)             
+            print('RAGatouille query model created.')
+        else:
+            query_model_qa = test['query_model']
+            print('Query model created.')
+        assert query_model_qa is not None
+        
+        qa_model_obj = QA_Model(test['index_type'],
+                            'test'+str(test['id']),
+                            query_model_qa,
+                            test['llm'],
+                            rag_type=test['rag_type'],
+                            test_query=False,
+                            local_db_path=os.path.join(setup['LOCAL_DB_PATH'],'ref_dbs'))
+        logging.info('QA model object created.')
+
+        assert qa_model_obj is not None
+        qa_model_obj.query_docs(setup['test_prompt'])
+        response = qa_model_obj.ai_response
+        assert response is not None
+        alternate_question = qa_model_obj.generate_alternative_questions(setup['test_prompt'], response=response)
+        assert alternate_question is not None
+
+        # print(f'Query response: {response}')
+        # print(f'Alternate questions: {alternate_question}')
+        print('Query and alternative question successful!')
+
+        delete_index(test['index_type'],
+                        'test'+str(test['id']), 
+                        test['rag_type'],
+                        local_db_path=setup['LOCAL_DB_PATH'])
+        print('Database deleted.')
+    except Exception as e:  # If there is an error, be sure to delete the database
+        delete_index(test['index_type'],
+                        'test'+str(test['id']), 
+                        test['rag_type'],
+                        local_db_path=setup['LOCAL_DB_PATH'])
+        raise e
+        
+# TODO add tests for path setup. test config, data, db paths
+# TODO add tests for subfunctions admin and data_processing

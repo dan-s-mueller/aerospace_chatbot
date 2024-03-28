@@ -242,7 +242,7 @@ def _define_qa_chain(llm,
 def _process_retriever_args(search_type='similarity',
                             k=6,
                             fetch_k=50):
-    # TODO: add functionality for filter if required
+    # TODO add functionality for filter if required
     # # Implement filter
     # if filter_arg:
     #     filter_list = list(set(item['source'] for item in sources[-1]))
