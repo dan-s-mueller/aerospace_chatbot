@@ -198,9 +198,6 @@ def setup_fixture():
 # def test_case(request, setup_fixture):
 #     _, tests = setup_fixture
 #     return tests[request.param]
-@pytest.fixture
-def test_case(request):
-    return request.param
 
 
 def test_env_variables_exist(setup_fixture):
@@ -278,15 +275,13 @@ def test_chunk_docs(setup_fixture):
     print('Summary rag test passed.')
 
 # TODO add parematerized tests for the process function
-@pytest.mark.parametrize('test_case', (i for i in range(len(setup_fixture()[1]))), indirect=True)
-
-def test_database_setup_and_query(setup_fixture,test_case):
+def test_database_setup_and_query(setup_fixture):
     """  
     Tests the entire process of initializing a database, upserting documents, and deleting a database
     """
     setup, tests = setup_fixture
     # test=tests[0]
-    test=test_case
+    test=tests[0]
 
     print(f"Starting test {test['id']}:")
 
