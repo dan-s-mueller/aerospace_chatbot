@@ -309,8 +309,7 @@ def initialize_database(index_type: str,
         my_bar.empty()
     return vectorstore
 
-# @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
-@retry(stop=stop_after_attempt(10), wait=wait_exponential(multiplier=1,max=60))
+@retry(stop=stop_after_attempt(15), wait=wait_exponential(multiplier=1,max=60))
 def upsert_docs(index_type:str, 
                 index_name:str,
                 vectorstore:any, 
@@ -442,7 +441,6 @@ def delete_index(index_type: str,
                 if index_name in idx.name:
                     logging.info(f"Clearing index {idx.name}...")
                     persistent_client.delete_collection(name=idx.name)
-                    print(f"Index {idx.name} cleared.")
                     logging.info(f"Index {idx.name} cleared.")
         except:
             # TODO update so that an error is thrown if the index does not exist
