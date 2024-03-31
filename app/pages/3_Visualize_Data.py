@@ -48,7 +48,7 @@ st.session_state.rx_client = RAGxplorer(embedding_model=sb['embedding_name'])
 st.session_state.chroma_client = chromadb.PersistentClient(path=os.path.join(paths['db_folder_path'],'chromadb'))
 
 # Add an expandable with description of what's going on.
-with st.expander("Under the hood",expanded=True):
+with st.expander("Under the hood",expanded=False):
     st.markdown('''
                 Uses modified version of https://github.com/gabrielchua/RAGxplorer/tree/main?tab=readme-ov-file to connect to existing database created.
                 Modified version here: https://github.com/dsmueller3760/RAGxplorer/tree/load_db
@@ -67,32 +67,24 @@ with st.expander("Create visualization data",expanded=True):
     if export_df:
         current_time = datetime.now().strftime("%Y.%m.%d.%H.%M")
         if limit_size:
-            df_export_path = st.text_input('Export file', os.path.join(paths['config_folder_path'],'AMS',f'ams_data-400-0-{vector_qty}.json'))
+            df_export_path = st.text_input('Export file', os.path.join(paths['data_folder_path'],'AMS',f'ams_data-400-0-{vector_qty}.json'))
         else:
-            df_export_path=st.text_input('Export file', os.path.join(paths['config_folder_path'],'AMS',f'ams_data-400-0-all.json'))
+            df_export_path=st.text_input('Export file', os.path.join(paths['data_folder_path'],'AMS',f'ams_data-400-0-all.json'))
+
+    umap_params={'n_neighbors': 5,'n_components': 2,'random_state':42}
+
     if st.button('Create visualization data'):
         start_time = time.time()  # Start the timer
-        
-        umap_params={'n_neighbors': 5,'n_components': 2,'random_state':42}
-        logging.info(f'embedding_function: {st.session_state.rx_client._chosen_embedding_model}')
-        collection=st.session_state.chroma_client.get_collection(name=sb['index_name'],
-                                                                 embedding_function=st.session_state.rx_client._chosen_embedding_model)
-        st.session_state.rx_client.load_chroma(collection,
-                                               umap_params=umap_params,
-                                               initialize_projector=True)
-        if limit_size:
-            st.session_state.rx_client = data_processing.reduce_vector_query_size(st.session_state.rx_client,
-                                                                            st.session_state.chroma_client,
-                                                                            vector_qty,
-                                                                            verbose=True)
-        st.session_state.rx_client.run_projector()
-        if export_df:
-            data_processing.export_data_viz(st.session_state.rx_client,
-                                            os.path.join(paths['data_folder_path'],df_export_path))
-            
+        st.session_state.rx_client, st.session_state.chroma_client, temp_index_name = data_processing.create_data_viz(sb['index_selected'],
+                            st.session_state.rx_client,
+                            st.session_state.chroma_client,
+                            umap_params=umap_params,
+                            limit_size_qty=vector_qty,
+                            df_export_path=df_export_path,
+                            show_progress=True)
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 
-        st.markdown(f":heavy_check_mark: Created visualization data in {elapsed_time:.2f} seconds")
+        st.markdown(f":heavy_check_mark: Created visualization data in {elapsed_time:.2f} seconds. Visualization database: {temp_index_name}")
 
 with st.expander("Visualize data",expanded=True):
     import_data = st.checkbox('Import visualization data?', value=True)
@@ -105,31 +97,13 @@ with st.expander("Visualize data",expanded=True):
 
     if st.button('Visualize data'):
         start_time = time.time()  # Start the timer
-        logging.info('Starting visualization for query: '+query)
-        if import_data:
-            with open(os.path.join(paths['data_folder_path'],import_file_path), 'r') as f:
-                data = json.load(f)
-            index_name=data['visualization_index_name']
-            umap_params=data['umap_params']
-            viz_data=pd.read_json(data['viz_data'], orient='split')
-            logging.info('Loaded data from file: '+os.path.join(paths['data_folder_path'],import_file_path))
-            logging.info(f'embedding_function: {st.session_state.rx_client._chosen_embedding_model}')
-            collection=st.session_state.chroma_client.get_collection(name=index_name,
-                                                                     embedding_function=st.session_state.rx_client._chosen_embedding_model)
-            logging.info('Loaded collection: '+index_name)
-            st.session_state.rx_client.load_chroma(collection,
-                                                umap_params=umap_params,
-                                                initialize_projector=True)
-            logging.info('Loaded chroma collection: '+index_name)
-            fig = st.session_state.rx_client.visualize_query(query,
-                                                             import_projection_data=viz_data)
-            logging.info('Visualized query: '+query)
-        else:
-            logging.info('No data loaded from file.')
-            fig = st.session_state.rx_client.visualize_query(query)
-            logging.info('Visualized query: '+query)
-        st.plotly_chart(fig,use_container_width=True)
-
+        st.session_state.rx_client, st.session_state.chroma_client = data_processing.visualize_data(
+                            sb['index_selected'],
+                            st.session_state.rx_client,
+                            st.session_state.chroma_client,
+                            query,
+                            umap_params=umap_params,
+                            import_file=import_file_path)
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time
         st.markdown(f":heavy_check_mark: Created visualization in {elapsed_time:.2f} seconds")

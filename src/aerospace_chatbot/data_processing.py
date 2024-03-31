@@ -1,26 +1,23 @@
 from prompts import SUMMARIZE_TEXT
 
-import os
-import re
-import logging
-import shutil
+import os, logging, re, shutil, random
 import uuid
-import random
-import time
 from pathlib import Path
 from typing import List
 
-from tenacity import retry, stop_after_attempt, wait_fixed, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from pinecone import Pinecone as pinecone_client
 from pinecone import PodSpec
+
 import chromadb
+from chromadb import PersistentClient
 
 import json, jsonlines
 
 import streamlit as st
 
-from langchain_pinecone import Pinecone, PineconeVectorStore
+from langchain_pinecone import PineconeVectorStore
 from langchain_community.vectorstores import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -39,6 +36,7 @@ from langchain_core.output_parsers import StrOutputParser
 from ragatouille import RAGPretrainedModel
 
 from ragxplorer import RAGxplorer, rag
+import pandas as pd
 
 from dotenv import load_dotenv,find_dotenv
 load_dotenv(find_dotenv(),override=True)
@@ -453,24 +451,17 @@ def delete_index(index_type: str,
     else:
         raise NotImplementedError
 
-def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_qty:int,verbose:bool=False):
-    """Reduce the number of vectors in the RAGxplorer client's vector database.
+def reduce_vector_query_size(rx_client:RAGxplorer,
+                             chroma_client:chromadb,
+                             vector_qty:int,
+                             verbose:bool=False):
 
-    Args:
-        rx_client (RAGxplorer): The RAGxplorer client object.
-        chroma_client (chromadb): The chromadb client object.
-        vector_qty (int): The desired number of vectors to keep.
-        verbose (bool, optional): Whether to print verbose output. Defaults to False.
-
-    Returns:
-        RAGxplorer: The updated RAGxplorer client object.
-    """
     ids = rx_client._vectordb.get()['ids']
     embeddings = rag.get_doc_embeddings(rx_client._vectordb)
     text = rag.get_docs(rx_client._vectordb)
 
     if verbose:
-        print(' ~ Reducing the number of vectors from '+str(len(embeddings))+' to '+str(vector_qty)+'...')
+        print('Reducing the number of vectors from '+str(len(embeddings))+' to '+str(vector_qty)+'...')
     indices = random.sample(range(len(embeddings)), vector_qty)
     id = str(uuid.uuid4())[:8]
     temp_index_name=rx_client._vectordb.name+'-'+id
@@ -489,19 +480,12 @@ def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_
     rx_client._documents.embeddings = rag.get_doc_embeddings(rx_client._vectordb)
     rx_client._documents.text = rag.get_docs(rx_client._vectordb)
     rx_client._documents.ids = rx_client._vectordb.get()['ids']
+
     if verbose:
         print('Reduced number of vectors to '+str(len(rx_client._documents.embeddings))+' ✓')
-        print('Copy of database saved as '+temp_index_name+' ✓')
     return rx_client
 
 def export_data_viz(rx_client:RAGxplorer,df_export_path:str):
-    """Export visualization data and UMAP parameters of RAGxplorer object to a JSON file.
-
-    Args:
-        rx_client (RAGxplorer): The RAGxplorer object containing the visualization data.
-        df_export_path (str): The file path to export the JSON data.
-
-    """
     export_data = {'visualization_index_name' : rx_client._vectordb.name,
                    'umap_params': rx_client._projector.get_params(),
                    'viz_data': rx_client._VizData.base_df.to_json(orient='split')}
@@ -509,6 +493,62 @@ def export_data_viz(rx_client:RAGxplorer,df_export_path:str):
     # Save the data to a JSON file
     with open(df_export_path, 'w') as f:
         json.dump(export_data, f, indent=4)
+
+
+def create_data_viz(index_selected:str,
+                    rx_client:RAGxplorer,
+                    chroma_client:PersistentClient,
+                    umap_params:dict={'n_neighbors': 5,'n_components': 2,'random_state':42},
+                    limit_size_qty:int=None,
+                    df_export_path:str=None,
+                    show_progress:bool=False):
+    if show_progress:
+        my_bar = st.progress(0, text='Loading collection...')
+    collection=chroma_client.get_collection(name=index_selected,
+                                            embedding_function=rx_client._chosen_embedding_model)
+    rx_client.load_chroma(collection,
+                          umap_params=umap_params,
+                          initialize_projector=True)
+    if limit_size_qty:
+        if show_progress:
+            my_bar.progress(0.25, text='Reducing vector query size...')
+        rx_client = reduce_vector_query_size(
+                        rx_client,
+                        chroma_client,
+                        vector_qty=limit_size_qty,
+                        verbose=True)
+    if show_progress:
+        my_bar.progress(0.5, text='Projecting embeddings for visualization...')
+    rx_client.run_projector()
+    if show_progress:
+        my_bar.progress(1, text='Projecting complete!')
+
+    if df_export_path:
+        export_data_viz(rx_client,df_export_path)
+    if show_progress:
+        my_bar.empty()
+    return rx_client, chroma_client
+
+def visualize_data(index_selected:str,
+                   rx_client:RAGxplorer,
+                   chroma_client:PersistentClient,
+                   query:str,
+                   umap_params:dict={'n_neighbors': 5,'n_components': 2,'random_state':42},
+                   import_file:bool=True,):
+    if import_file:
+        with open(import_file, 'r') as f:
+            data = json.load(f)
+        viz_data=pd.read_json(data['viz_data'], orient='split')
+        collection=chroma_client.get_collection(name=index_selected,embedding_function=rx_client._chosen_embedding_model)
+        rx_client.load_chroma(collection,
+                              umap_params=umap_params,
+                              initialize_projector=True)
+        fig = rx_client.visualize_query(query,import_projection_data=viz_data)
+    else:
+        fig = rx_client.visualize_query(query)
+    st.plotly_chart(fig,use_container_width=True)
+
+    return rx_client, chroma_client
 
 def _sanitize_raw_page_data(page):
     """

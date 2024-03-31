@@ -13,14 +13,20 @@ from langchain_voyageai import VoyageAIEmbeddings
 
 from ragatouille import RAGPretrainedModel
 
+import chromadb
+from chromadb import ClientAPI
+
+from ragxplorer import RAGxplorer
+
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 
-from data_processing import chunk_docs, initialize_database, load_docs, delete_index 
-from admin import _get_base_path, load_sidebar, set_secrets, show_pinecone_indexes, SecretKeyException
+from data_processing import chunk_docs, initialize_database, load_docs, delete_index, reduce_vector_query_size, create_data_viz
+from admin import load_sidebar, set_secrets, SecretKeyException
 from queries import QA_Model
 
+# Functions
 def permute_tests(test_data):
     rows = []
     idx=0
@@ -35,9 +41,9 @@ def permute_tests(test_data):
             idx+=1
     return rows
 def generate_test_cases(export:bool=True,export_dir:str='.'):
-    # This script should be run first to generate a json which is read and dynamically sets test cases when running pytest.
-    # Determine the set of cases to screen
-
+    '''
+    This script should be run first to generate a json which is read and dynamically sets test cases when running pytest.
+    '''
     # Items in test_cases must match labels to select from in setup_fixture
     # TODO throw in bad inputs for each of the 4 major types below.
     test_cases = [
@@ -108,7 +114,30 @@ def parse_test_case(setup,test_case):
     print_str = ', '.join(f"{key}: {value}" for key, value in test_case.items())
 
     return parsed_test, print_str
+def viz_database_setup(index_name:str,setup:dict):
+    rx_client = RAGxplorer(embedding_model='text-embedding-ada-002')
+    chroma_client = chromadb.PersistentClient(path=os.path.join(setup['LOCAL_DB_PATH'],'chromadb'))
 
+    # Initialize a small database
+    index_type = 'ChromaDB'
+    rag_type = 'Standard'
+    try:
+        vectorstore = load_docs(
+            'ChromaDB',
+            setup['docs'],
+            rag_type=rag_type,
+            query_model=setup['query_model']['OpenAI'],
+            index_name=index_name, 
+            chunk_size=setup['chunk_size']*2,   # Double chunk size to reduce quantity
+            chunk_overlap=setup['chunk_overlap'],
+            clear=True,
+            batch_size=setup['batch_size'],
+            local_db_path=setup['LOCAL_DB_PATH'])
+    except Exception as e:
+        delete_index(index_type, index_name, rag_type, local_db_path=setup['LOCAL_DB_PATH'])
+    return rx_client, chroma_client
+
+# Fixtures
 @pytest.fixture(scope="session", autouse=True)
 def setup_fixture():
     """
@@ -336,7 +365,7 @@ def test_database_setup_and_query(setup_fixture,test_input):
                         local_db_path=setup_fixture['LOCAL_DB_PATH'])
         raise e
         
-# TODO add tests for path setup. test config, data, db paths
+# Test sidebar loading and secret keys
 def test_load_sidebar():
     '''
     Test load_sidebar function.
@@ -400,8 +429,6 @@ def test_load_sidebar():
     assert sidebar_config['model_options']['temperature'] == 0.1
     assert 'output_level' in sidebar_config['model_options']
     assert sidebar_config['model_options']['output_level'] == 1000
-
-# Test secret key setup
 def test_env_variables_exist(setup_fixture):
     assert setup_fixture['OPENAI_API_KEY'] is not None
     assert setup_fixture['VOYAGE_API_KEY'] is not None
@@ -456,3 +483,65 @@ def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
     # Call the set_secrets function without setting any environment variables or sidebar data
     with pytest.raises(SecretKeyException):
         set_secrets(sb)
+
+# Test data visualization
+def test_reduce_vector_query_size(setup_fixture):
+    index_name = 'test-index'
+    rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
+    try:
+        collection=chroma_client.get_collection(name=index_name,embedding_function=rx_client._chosen_embedding_model)
+        rx_client.load_chroma(collection,initialize_projector=True)
+        vector_qty = 3  # Do a small quantity for the test
+
+        rx_client = reduce_vector_query_size(rx_client, chroma_client, vector_qty, verbose=True)
+        assert len(rx_client._documents.embeddings) == vector_qty
+        assert len(rx_client._documents.text) == vector_qty
+        assert len(rx_client._documents.ids) == vector_qty
+        chroma_client.delete_collection(name=rx_client._vectordb.name)
+    except Exception as e:
+        chroma_client.delete_collection(name=rx_client._vectordb.name)
+        raise e 
+def test_create_data_viz_no_limit(setup_fixture):
+    '''
+    Test case: Without limit_size_qty and df_export_path
+    '''
+    index_name = 'test-index'
+    rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
+    try:
+        rx_client_out, chroma_client_out = create_data_viz(index_name, rx_client, chroma_client)
+    except Exception as e:
+        try:
+            chroma_client.delete_collection(name=rx_client._vectordb.name)
+        except:
+            pass
+        raise e   
+    assert isinstance(rx_client_out, RAGxplorer)
+    assert isinstance(chroma_client_out, ClientAPI)
+    assert "test-index" in rx_client_out._vectordb.name
+    chroma_client.delete_collection(name=rx_client_out._vectordb.name)
+def test_create_data_viz_limit(setup_fixture):
+    '''
+    Test case: With limit_size_qty and df_export_path
+    '''
+    index_name = 'test-index'
+    export_file='data_viz_test.json'
+    rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
+    try:
+        rx_client_out, chroma_client_out = create_data_viz(
+            index_name, rx_client, chroma_client, limit_size_qty=10, df_export_path=os.path.join(setup_fixture['LOCAL_DB_PATH'],export_file))
+    except Exception as e:
+        try:
+            chroma_client.delete_collection(name=rx_client._vectordb.name)
+        except:
+            pass
+        try:
+            os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
+        except:
+            pass
+        raise e   
+    assert isinstance(rx_client_out, RAGxplorer)
+    assert isinstance(chroma_client_out, ClientAPI)
+    assert "test-index" in rx_client_out._vectordb.name
+    assert os.path.exists(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
+    chroma_client.delete_collection(name=rx_client_out._vectordb.name)
+    os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
