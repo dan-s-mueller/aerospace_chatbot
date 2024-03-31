@@ -44,4 +44,4 @@ jobs:
         VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
       run: |
         cd ./tests
-        python -m poetry run pytest -s
+        python -m poetry run pytest -s -v

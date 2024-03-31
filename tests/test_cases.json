@@ -1,51 +1,51 @@
 [
     {
         "index_type": "ChromaDB",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
+        "query_model": "OpenAI",
         "rag_type": "Standard",
-        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
+        "llm": "Hugging Face",
+        "id": 0
+    },
+    {
+        "index_type": "ChromaDB",
+        "query_model": "OpenAI",
+        "rag_type": "Parent-Child",
+        "llm": "Hugging Face",
         "id": 1
     },
     {
         "index_type": "ChromaDB",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
-        "rag_type": "Parent-Child",
-        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
+        "query_model": "OpenAI",
+        "rag_type": "Summary",
+        "llm": "Hugging Face",
         "id": 2
     },
     {
         "index_type": "ChromaDB",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
+        "query_model": "OpenAI",
         "rag_type": "Summary",
-        "llm": "gpt-3.5-turbo-1106",
+        "llm": "OpenAI",
         "id": 3
     },
     {
-        "index_type": "ChromaDB",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
-        "rag_type": "Summary",
-        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
+        "index_type": "Pinecone",
+        "query_model": "OpenAI",
+        "rag_type": "Standard",
+        "llm": "Hugging Face",
         "id": 4
     },
     {
         "index_type": "Pinecone",
-        "query_model": "<class 'langchain_openai.embeddings.base.OpenAIEmbeddings'>",
+        "query_model": "Voyage",
         "rag_type": "Standard",
-        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
+        "llm": "Hugging Face",
         "id": 5
     },
     {
-        "index_type": "Pinecone",
-        "query_model": "<class 'langchain_community.embeddings.voyageai.VoyageEmbeddings'>",
-        "rag_type": "Standard",
-        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
-        "id": 6
-    },
-    {
         "index_type": "RAGatouille",
-        "query_model": "colbert-ir/colbertv2.0",
+        "query_model": "RAGatouille",
         "rag_type": "Standard",
-        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
-        "id": 7
+        "llm": "Hugging Face",
+        "id": 6
     }
 ]

@@ -1,4 +1,5 @@
 # Environment variables, logs, junk files
+.vscode/
 .env
 .venv/
 *.log
@@ -16,6 +17,7 @@ db/
 .ragatouille/
 
 # Tests
+.pytest_cache/
 !tests/*.pdf   # Small files, required to perform standard tests.
 tests/chromadb
 tests/local_file_store

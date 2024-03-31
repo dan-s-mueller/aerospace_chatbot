@@ -1,7 +1,7 @@
 prompts
 ==============
 
-.. automodule:: src.prompts
+.. automodule:: src.aerospace_chatbot.prompts
    :members:
    :undoc-members:
    :show-inheritance:
