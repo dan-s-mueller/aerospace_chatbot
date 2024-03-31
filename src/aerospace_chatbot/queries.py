@@ -39,6 +39,40 @@ HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
 
 # Class and functions
 class QA_Model:
+    """
+    Represents a Question-Answering Model.
+
+    Args:
+        index_type (str): The type of index.
+        index_name (str): The name of the index.
+        query_model (str): The query model.
+        llm (ChatOpenAI): The language model for generating responses.
+        rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
+        k (int, optional): The number of retriever results to consider. Defaults to 6.
+        search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
+        fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
+        temperature (int, optional): The temperature for response generation. Defaults to 0.
+        local_db_path (str, optional): The path to the local database. Defaults to 'db'.
+
+    Attributes:
+        index_type (str): The type of index.
+        index_name (str): The name of the index.
+        query_model (str): The query model.
+        llm (ChatOpenAI): The language model for generating responses.
+        rag_type (str): The type of RAG model.
+        k (int): The number of retriever results to consider.
+        search_type (str): The type of search to perform.
+        fetch_k (int): The number of documents to fetch from the retriever.
+        temperature (int): The temperature for response generation.
+        local_db_path (str): The path to the local database.
+        sources (list): The list of sources for the retrieved documents.
+        vectorstore (VectorStore): The vector store for document retrieval.
+        retriever (Retriever): The retriever for document retrieval.
+        memory (ConversationBufferMemory): The memory for conversation history.
+        conversational_qa_chain (Chain): The chain for conversational QA.
+
+    """
+
     def __init__(self, 
                  index_type,
                  index_name,
@@ -50,7 +84,22 @@ class QA_Model:
                  fetch_k=50,
                  temperature=0,
                  local_db_path='db'):
-        
+        """
+        Initializes a new instance of the QA_Model class.
+
+        Args:
+            index_type (str): The type of index.
+            index_name (str): The name of the index.
+            query_model (str): The query model.
+            llm (ChatOpenAI): The language model for generating responses.
+            rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
+            k (int, optional): The number of retriever results to consider. Defaults to 6.
+            search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
+            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
+            temperature (int, optional): The temperature for response generation. Defaults to 0.
+            local_db_path (str, optional): The path to the local database. Defaults to 'db'.
+
+        """
         self.index_type=index_type
         self.index_name=index_name
         self.query_model=query_model
@@ -148,12 +197,23 @@ class QA_Model:
 
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
         logging.info('Memory content after qa result: '+str(self.memory))
-
     def update_model(self,
                      llm:ChatOpenAI,
                      search_type='similarity',
                      k=6,
                      fetch_k=50):
+        """
+        Updates the model with new parameters.
+
+        Args:
+            llm (ChatOpenAI): The language model for generating responses.
+            search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
+            k (int, optional): The number of retriever results to consider. Defaults to 6.
+            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
+
+        Returns:
+            None
+        """
         self.llm=llm
         self.search_type=search_type
         self.k=k
@@ -170,10 +230,19 @@ class QA_Model:
                                                       self.memory,
                                                       kwargs=search_kwargs)
         logging.info('Updated qa chain: '+str(self.conversational_qa_chain))
-
     def generate_alternative_questions(self,
                                        prompt:str,
                                        response=None):
+        """
+        Generates alternative questions based on a prompt.
+
+        Args:
+            prompt (str): The prompt for generating alternative questions.
+            response (str, optional): The response context. Defaults to None.
+
+        Returns:
+            str: The generated alternative questions.
+        """
         if response:
             prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
             invoke_dict={'question':prompt,'context':response}
@@ -196,12 +265,36 @@ class QA_Model:
 def _combine_documents(docs, 
                         document_prompt=DEFAULT_DOCUMENT_PROMPT, 
                         document_separator='\n\n'):
+    """Combines a list of documents into a single string.
+
+    Args:
+        docs (list): A list of documents to be combined.
+        document_prompt (str, optional): The prompt to be added before each document. Defaults to DEFAULT_DOCUMENT_PROMPT.
+        document_separator (str, optional): The separator to be added between each document. Defaults to '\n\n'.
+
+    Returns:
+        str: The combined string of all the documents.
+    """
     doc_strings = [format_document(doc, document_prompt) for doc in docs]
     return document_separator.join(doc_strings)
 def _define_qa_chain(llm,
                      retriever,
                      memory,
                      kwargs=None):
+    """Defines the conversational QA chain.
+
+    Args:
+        llm: The language model component.
+        retriever: The document retriever component.
+        memory: The memory component.
+        kwargs: Optional keyword arguments.
+
+    Returns:
+        The conversational QA chain.
+
+    Raises:
+        None.
+    """
     # This adds a 'memory' key to the input object
     loaded_memory = RunnablePassthrough.assign(
                         chat_history=RunnableLambda(memory.load_memory_variables) 
@@ -239,6 +332,17 @@ def _define_qa_chain(llm,
 def _process_retriever_args(search_type='similarity',
                             k=6,
                             fetch_k=50):
+    """
+    Process the retriever arguments.
+
+    Args:
+        search_type (str, optional): The type of search. Defaults to 'similarity'.
+        k (int, optional): The number of documents to retrieve. Defaults to 6.
+        fetch_k (int, optional): The number of documents to fetch. Defaults to 50.
+
+    Returns:
+        dict: The search arguments for the retriever.
+    """
     # TODO add functionality for filter if required
     # # Implement filter
     # if filter_arg:

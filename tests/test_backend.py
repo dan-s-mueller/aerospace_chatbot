@@ -21,13 +21,21 @@ from ragxplorer import RAGxplorer
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
-
 from data_processing import chunk_docs, initialize_database, load_docs, delete_index, reduce_vector_query_size, create_data_viz
 from admin import load_sidebar, set_secrets, SecretKeyException
 from queries import QA_Model
 
 # Functions
 def permute_tests(test_data):
+    """
+    Generate permutations of test cases.
+
+    Args:
+        test_data (list): List of dictionaries containing test case data.
+
+    Returns:
+        list: List of dictionaries representing permuted test cases.
+    """
     rows = []
     idx=0
     for row_data in test_data:
@@ -40,9 +48,17 @@ def permute_tests(test_data):
             rows.append(row)
             idx+=1
     return rows
+
 def generate_test_cases(export:bool=True,export_dir:str='.'):
     '''
-    This script should be run first to generate a json which is read and dynamically sets test cases when running pytest.
+    Generate test cases and export them to a JSON file.
+
+    Args:
+        export (bool, optional): Whether to export the test cases to a JSON file. Defaults to True.
+        export_dir (str, optional): Directory to export the JSON file. Defaults to '.'.
+
+    Returns:
+        list: List of dictionaries representing the generated test cases.
     '''
     # Items in test_cases must match labels to select from in setup_fixture
     # TODO throw in bad inputs for each of the 4 major types below.
@@ -85,24 +101,43 @@ def generate_test_cases(export:bool=True,export_dir:str='.'):
             json.dump(tests, json_file, indent=4)
     
     return tests
+
 def read_test_cases(json_path:str):
     '''
-    Read json data from generate_test_cases
+    Read test cases from a JSON file.
+
+    Args:
+        json_path (str): Path to the JSON file.
+
+    Returns:
+        list: List of dictionaries representing the test cases.
     '''
     with open(json_path, 'r') as json_file:
         test_cases = json.load(json_file)
     return test_cases
+
 def pytest_generate_tests(metafunc):
     '''
-    Use pytest_generate_tests to dynamically generate tests
+    Use pytest_generate_tests to dynamically generate tests.
     Tests generates tests from a static file (test_cases.json). You must run generate_test_cases() first.
+
+    Args:
+        metafunc: The metafunc object provided by pytest.
     '''
     if "test_input" in metafunc.fixturenames:
         tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)),'test_cases.json'))
         metafunc.parametrize("test_input", tests)
+
 def parse_test_case(setup,test_case):
     ''' 
     Parse test case to be used in the test functions.
+
+    Args:
+        setup (dict): The setup variables and configurations.
+        test_case (dict): The test case data.
+
+    Returns:
+        tuple: A tuple containing the parsed test case and a string representation of the test case.
     '''
     parsed_test = {
         'id': test_case['id'],
@@ -114,7 +149,18 @@ def parse_test_case(setup,test_case):
     print_str = ', '.join(f"{key}: {value}" for key, value in test_case.items())
 
     return parsed_test, print_str
+
 def viz_database_setup(index_name:str,setup:dict):
+    '''
+    Set up the RAGxplorer and ChromaDB for database visualization.
+
+    Args:
+        index_name (str): Name of the index.
+        setup (dict): The setup variables and configurations.
+
+    Returns:
+        tuple: A tuple containing the RAGxplorer client and ChromaDB client.
+    '''
     rx_client = RAGxplorer(embedding_model='text-embedding-ada-002')
     chroma_client = chromadb.PersistentClient(path=os.path.join(setup['LOCAL_DB_PATH'],'chromadb'))
 
@@ -160,6 +206,7 @@ def setup_fixture():
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
 
     LOCAL_DB_PATH=os.path.abspath(os.path.dirname(__file__))   # Default to the test path for easy cleanup.
+    os.environ['LOCAL_DB_PATH'] = LOCAL_DB_PATH
     
     # Fixed inputs
     docs = ['test1.pdf', 'test2.pdf']
@@ -209,7 +256,12 @@ def setup_fixture():
 ### Begin tests
 # Test chunk docs
 def test_chunk_docs_standard(setup_fixture):
-    # Test case for chunk docs: Standard rag
+    """
+    Test the chunk_docs function with standard RAG.
+
+    Args:
+        setup_fixture (dict): The setup variables and configurations.
+    """
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -219,8 +271,14 @@ def test_chunk_docs_standard(setup_fixture):
     assert result['pages'] is not None
     assert result['chunks'] is not None
     assert result['splitters'] is not None
+
 def test_chunk_docs_parent_child(setup_fixture):
-    # Test case for chunk docs: Parent-Child rag
+    """
+    Test the chunk_docs function with parent-child RAG.
+
+    Args:
+        setup_fixture (dict): The setup variables and configurations.
+    """
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Parent-Child'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -232,8 +290,23 @@ def test_chunk_docs_parent_child(setup_fixture):
     assert result['chunks'] is not None
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
+
 def test_chunk_docs_summary(setup_fixture):
-    # Test case for chunk docs: Summary rag
+    """
+    Test the chunk_docs function with summary RAG.
+
+    Args:
+        setup_fixture (dict): The setup variables and configurations.
+    """
+    result = chunk_docs(setup_fixture['docs'], 
+                        rag_type=setup_fixture['rag_type']['Summary'], 
+                        chunk_method=setup_fixture['chunk_method'], 
+                        chunk_size=setup_fixture['chunk_size'], 
+                        chunk_overlap=setup_fixture['chunk_overlap'])
+    assert result['rag'] == setup_fixture['rag_type']['Summary']
+    assert result['pages'] is not None
+    assert result['chunks'] is not None
+    assert result['splitters'] is not None
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Summary'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -248,6 +321,18 @@ def test_chunk_docs_summary(setup_fixture):
 
 # Test initialize database with a test query
 def test_initialize_database_pinecone(setup_fixture):
+    """
+    Test the initialization of a Pinecone database.
+
+    Args:
+        setup_fixture (dict): The setup fixture containing the necessary parameters.
+
+    Returns:
+        PineconeVectorStore: The initialized Pinecone vector store.
+
+    Raises:
+        AssertionError: If the initialized vector store is not an instance of PineconeVectorStore.
+    """
     index_type = 'Pinecone'
     index_name = 'test-index'
     query_model = setup_fixture['query_model']['OpenAI']
@@ -261,6 +346,19 @@ def test_initialize_database_pinecone(setup_fixture):
     assert isinstance(vectorstore, PineconeVectorStore)
     delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
 def test_initialize_database_chromadb(setup_fixture):
+    """
+    Test the initialization of a Chroma database.
+
+    Args:
+        setup_fixture (dict): A dictionary containing setup fixtures.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the vectorstore is not an instance of Chroma.
+
+    """
     index_type = 'ChromaDB'
     index_name = 'test-index'
     query_model = setup_fixture['query_model']['OpenAI']
@@ -278,6 +376,19 @@ def test_initialize_database_chromadb(setup_fixture):
     assert isinstance(vectorstore, Chroma)
     delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
 def test_initialize_database_ragatouille(setup_fixture):
+    """
+    Test the initialization of a database for RAGatouille.
+
+    Args:
+        setup_fixture (dict): A dictionary containing the setup fixture.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the vectorstore is not an instance of RAGPretrainedModel.
+
+    """
     index_type = 'RAGatouille'
     index_name = 'test-index'
     query_model = setup_fixture['query_model']['RAGatouille']
@@ -297,11 +408,19 @@ def test_initialize_database_ragatouille(setup_fixture):
 
 # Test end to end process, adding query
 def test_database_setup_and_query(setup_fixture,test_input):
-    """  
-    Tests the entire process of initializing a database, upserting documents, and deleting a database.
-    Test cases combining Pinecone and Voyage will often appear to timeout. Try changing the API key for Voyage, this seems to fix the issue. It's not a problem with Pinecone.
+    """Tests the entire process of initializing a database, upserting documents, and deleting a database.
+
+    Args:
+        setup_fixture (dict): The setup fixture containing the necessary configuration for the test.
+        test_input (str): The test input.
+
+    Raises:
+        Exception: If there is an error during the test.
+
+    Returns:
+        None
     """
-    test, print_str =parse_test_case(setup_fixture,test_input)
+    test, print_str = parse_test_case(setup_fixture,test_input)
 
     print(f"Starting test: {print_str}")
 
@@ -368,7 +487,10 @@ def test_database_setup_and_query(setup_fixture,test_input):
 # Test sidebar loading and secret keys
 def test_load_sidebar():
     '''
-    Test load_sidebar function.
+    This function tests the functionality of the load_sidebar function by passing different combinations of arguments and checking the returned sidebar configuration.
+
+    Returns:
+        None
     '''
     # TODO Add mock changes from streamlit changing: index_type, rag_type
 
@@ -393,8 +515,8 @@ def test_load_sidebar():
     with pytest.raises(ValueError):
         sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, index_name=True)    
 
-    # Test case: Only embeddings and index_name are True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, embeddings=True, index_name=True)
+    # Test case: Only embeddings and index_name and rag_type are True
+    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, embeddings=True, index_name=True, rag_type=True)
     assert 'query_model' in sidebar_config
     assert sidebar_config['query_model'] == 'Openai'
     assert 'index_name' in sidebar_config
@@ -430,12 +552,36 @@ def test_load_sidebar():
     assert 'output_level' in sidebar_config['model_options']
     assert sidebar_config['model_options']['output_level'] == 1000
 def test_env_variables_exist(setup_fixture):
+    """
+    Test if the required environment variables exist.
+
+    Args:
+        setup_fixture (dict): A dictionary containing the setup fixture.
+
+    Raises:
+        AssertionError: If any of the required environment variables are None.
+
+    Returns:
+        None
+    """
     assert setup_fixture['OPENAI_API_KEY'] is not None
     assert setup_fixture['VOYAGE_API_KEY'] is not None
     assert setup_fixture['HUGGINGFACEHUB_API_TOKEN'] is not None
     assert setup_fixture['PINECONE_API_KEY'] is not None
     print('Environment variables test passed.')
 def test_set_secrets_with_environment_variables(monkeypatch):
+    """
+    Test case to verify the behavior of the set_secrets function when environment variables are set.
+
+    Args:
+        monkeypatch: A pytest fixture that allows modifying environment variables during testing.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the secrets are not set correctly.
+    """
     # Set the environment variables
     monkeypatch.setenv('OPENAI_API_KEY', 'openai_key')
     monkeypatch.setenv('VOYAGE_API_KEY', 'voyage_key')
@@ -449,6 +595,18 @@ def test_set_secrets_with_environment_variables(monkeypatch):
     assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
     assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
 def test_set_secrets_with_sidebar_data(monkeypatch):
+    """
+    Test case for the set_secrets function with sidebar data.
+
+    Args:
+        monkeypatch: A pytest fixture that allows modifying environment variables.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: If the secrets are not set correctly.
+    """
     # For this test, delete the environment variables
     monkeypatch.delenv('OPENAI_API_KEY', raising=False)
     monkeypatch.delenv('VOYAGE_API_KEY', raising=False)
@@ -473,6 +631,19 @@ def test_set_secrets_with_sidebar_data(monkeypatch):
 @pytest.mark.parametrize("missing_key",
                          ['OPENAI_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN'])
 def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
+    """
+    Test case for setting secrets with missing API keys.
+
+    Args:
+        monkeypatch: A pytest fixture for patching values during testing.
+        missing_key: The missing API key to be tested.
+
+    Raises:
+        SecretKeyException: If the set_secrets function raises an exception.
+
+    Returns:
+        None
+    """
     print(f"Testing missing required key: {missing_key}")
     # For this test, delete the environment variables
     key_list=['OPENAI_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN']
@@ -486,11 +657,23 @@ def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
 
 # Test data visualization
 def test_reduce_vector_query_size(setup_fixture):
+    """
+    Test function to verify the behavior of the reduce_vector_query_size function.
+
+    Args:
+        setup_fixture: The setup fixture for the test.
+
+    Raises:
+        Exception: If an error occurs during the test.
+
+    Returns:
+        None
+    """
     index_name = 'test-index'
-    rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
+    rx_client, chroma_client = viz_database_setup(index_name, setup_fixture)
     try:
-        collection=chroma_client.get_collection(name=index_name,embedding_function=rx_client._chosen_embedding_model)
-        rx_client.load_chroma(collection,initialize_projector=True)
+        collection = chroma_client.get_collection(name=index_name, embedding_function=rx_client._chosen_embedding_model)
+        rx_client.load_chroma(collection, initialize_projector=True)
         vector_qty = 3  # Do a small quantity for the test
 
         rx_client = reduce_vector_query_size(rx_client, chroma_client, vector_qty, verbose=True)
@@ -500,11 +683,25 @@ def test_reduce_vector_query_size(setup_fixture):
         chroma_client.delete_collection(name=rx_client._vectordb.name)
     except Exception as e:
         chroma_client.delete_collection(name=rx_client._vectordb.name)
-        raise e 
+        raise e
 def test_create_data_viz_no_limit(setup_fixture):
-    '''
+    """
     Test case: Without limit_size_qty and df_export_path
-    '''
+
+    This test case verifies the behavior of the create_data_viz function when called without providing
+    the limit_size_qty and df_export_path parameters. It performs the following steps:
+    1. Sets up the necessary fixtures for the test.
+    2. Sets up the RX and Chroma clients for visualization database.
+    3. Calls the create_data_viz function with the index_name, rx_client, and chroma_client.
+    4. Verifies that the returned rx_client_out is an instance of RAGxplorer.
+    5. Verifies that the returned chroma_client_out is an instance of ClientAPI.
+    6. Verifies that the name of the RX client's vector database contains the index_name.
+    7. Deletes the collection associated with the RX client's vector database.
+
+    Raises:
+        Any exception raised during the test.
+
+    """
     index_name = 'test-index'
     rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
     try:
@@ -522,6 +719,20 @@ def test_create_data_viz_no_limit(setup_fixture):
 def test_create_data_viz_limit(setup_fixture):
     '''
     Test case: With limit_size_qty and df_export_path
+
+    This test case verifies the behavior of the create_data_viz function when called without providing
+    the limit_size_qty and df_export_path parameters. It performs the following steps:
+    1. Sets up the necessary fixtures for the test.
+    2. Sets up the RX and Chroma clients for visualization database.
+    3. Calls the create_data_viz function with the index_name, rx_client, and chroma_client.
+    4. Verifies that the returned rx_client_out is an instance of RAGxplorer.
+    5. Verifies that the returned chroma_client_out is an instance of ClientAPI.
+    6. Verifies that the name of the RX client's vector database contains the index_name.
+    7. Deletes the collection associated with the RX client's vector database.
+
+    Raises:
+        Any exception raised during the test.
+
     '''
     index_name = 'test-index'
     export_file='data_viz_test.json'

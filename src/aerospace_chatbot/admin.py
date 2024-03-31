@@ -112,7 +112,7 @@ def load_sidebar(config_file,
                     st.sidebar.warning('You must load a model in LM studio first for this to work.')
         logging.info('RAG type: '+sb_out['rag_type'])
     if index_name:
-        if embeddings:
+        if embeddings and rag_type:
             # Index Name 
             st.sidebar.title('Index Name')  
             sb_out['index_name']=index_data[sb_out['index_type']][sb_out['query_model']]

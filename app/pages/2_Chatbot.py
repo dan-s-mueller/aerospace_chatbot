@@ -13,6 +13,12 @@ import admin, queries
 
 
 def _reset_conversation():
+    """
+    Resets the conversation by clearing the session state variables related to the chatbot.
+
+    Returns:
+        None
+    """
     st.session_state.qa_model_obj = []
     st.session_state.message_id = 0
     st.session_state.messages = []
