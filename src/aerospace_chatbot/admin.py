@@ -27,7 +27,6 @@ class SecretKeyException(Exception):
     def __init__(self, message, id):
         super().__init__(message)
         self.id = id
-
 def load_sidebar(config_file,
                  index_data_file,
                  embeddings=False,
@@ -214,7 +213,6 @@ def load_sidebar(config_file,
             st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='Loaded from environment variable.')
             
     return sb_out
-
 def set_secrets(sb):
     """
     Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar.
@@ -271,7 +269,6 @@ def set_secrets(sb):
         if os.environ['HUGGINGFACEHUB_API_TOKEN']=='':
             raise SecretKeyException('Hugging Face API Key is required.','HUGGINGFACE_API_KEY_MISSING')
     return secrets
-
 def test_key_status():
     """
     Check the status of various API keys based on environment variables.
@@ -307,39 +304,56 @@ def test_key_status():
     # Ragatouille local database
         
     return _format_key_status(key_status)
+def set_llm(sb, secrets, type='prompt'):
+    """
+    Sets up and returns a language model (LLM) based on the provided parameters.
 
-def set_llm(sb,secrets,type='prompt'):
-    if type=='prompt':  # use for prompting in chat applications
-        if sb['llm_source']=='OpenAI':
+    Args:
+        sb (dict): The configuration settings for the chatbot.
+        secrets (dict): The secret keys and tokens required for authentication.
+        type (str, optional): The type of LLM to set up. Defaults to 'prompt'.
+
+    Returns:
+        ChatOpenAI: The configured language model.
+
+    Raises:
+        ValueError: If an invalid LLM source is specified.
+
+    """
+    if type == 'prompt':  # use for prompting in chat applications
+        if sb['llm_source'] == 'OpenAI':
             llm = ChatOpenAI(model_name=sb['llm_model'],
-                            temperature=sb['model_options']['temperature'],
-                            openai_api_key=secrets['OPENAI_API_KEY'],
-                            max_tokens=sb['model_options']['output_level'])
-        elif sb['llm_source']=='Hugging Face':
+                             temperature=sb['model_options']['temperature'],
+                             openai_api_key=secrets['OPENAI_API_KEY'],
+                             max_tokens=sb['model_options']['output_level'])
+        elif sb['llm_source'] == 'Hugging Face':
             llm = ChatOpenAI(base_url=sb['hf_endpoint'],
-                            model=sb['llm_model'],
-                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
-                            temperature=sb['model_options']['temperature'],
-                            max_tokens=sb['model_options']['output_level'])
-        elif sb['llm_source']=='LM Studio (local)':
-            # base_url takes locaol configuration from lm studio, no api key required.
+                             model=sb['llm_model'],
+                             api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
+                             temperature=sb['model_options']['temperature'],
+                             max_tokens=sb['model_options']['output_level'])
+        elif sb['llm_source'] == 'LM Studio (local)':
+            # base_url takes local configuration from lm studio, no api key required.
             llm = ChatOpenAI(base_url=sb['llm_model'],
-                            temperature=sb['model_options']['temperature'],
-                            max_tokens=sb['model_options']['output_level'])
-    elif type=='rag':   # use for RAG application (summary)
-        if sb['rag_llm_source']=='OpenAI':
+                             temperature=sb['model_options']['temperature'],
+                             max_tokens=sb['model_options']['output_level'])
+        else:
+            raise ValueError("Invalid LLM source specified.")
+    elif type == 'rag':   # use for RAG application (summary)
+        if sb['rag_llm_source'] == 'OpenAI':
             llm = ChatOpenAI(model_name=sb['rag_llm_model'],
-                            openai_api_key=secrets['OPENAI_API_KEY'])
-        elif sb['rag_llm_source']=='Hugging Face':
+                             openai_api_key=secrets['OPENAI_API_KEY'])
+        elif sb['rag_llm_source'] == 'Hugging Face':
             llm = ChatOpenAI(base_url=sb['rag_hf_endpoint'],
-                            model=sb['rag_llm_model'],
-                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
-        elif sb['rag_llm_source']=='LM Studio (local)':
+                             model=sb['rag_llm_model'],
+                             api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+        elif sb['rag_llm_source'] == 'LM Studio (local)':
             # base_url takes local configuration from lm studio, no api key required.
             llm = ChatOpenAI(base_url=sb['rag_llm_model'],
                              model_name='lm_studio')
+        else:
+            raise ValueError("Invalid LLM source specified.")
     return llm
-
 def show_pinecone_indexes(format=True):
     """
     Retrieves the list of Pinecone indexes and their status.
@@ -366,7 +380,6 @@ def show_pinecone_indexes(format=True):
         return _format_pinecone_status(pinecone_status)
     else:
         return pinecone_status
-
 def show_chroma_collections(format=True):
     """
     Retrieves the list of chroma collections from the local database.
@@ -404,8 +417,23 @@ def show_chroma_collections(format=True):
         return _format_chroma_status(chroma_status)
     else:
         return chroma_status
-    
 def show_ragatouille_indexes(format=True):
+    """
+    Retrieves the list of ragatouille indexes.
+
+    Args:
+        format (bool, optional): Specifies whether to format the indexes. Defaults to True.
+
+    Returns:
+        list or str: The list of indexes if format is True, otherwise the raw list.
+
+    Raises:
+        None
+
+    Example:
+        >>> show_ragatouille_indexes()
+        ['index1', 'index2', 'index3']
+    """
     # Define base path
     calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
     base_folder_path = _get_base_path(calling_script_path)
@@ -424,7 +452,6 @@ def show_ragatouille_indexes(format=True):
         return _format_ragatouille_status(indexes)
     else:
         return indexes
-
 def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = False):
     """
     Expands a Streamlit expander widget to display connection status information.
@@ -491,7 +518,6 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                     st.markdown(f"Index {ragatouille_name} has been deleted.")
         except:
             pass
-
 def st_setup_page(page_title: str, sidebar_config: dict):
     """
     Sets up the Streamlit page with the given title and loads the sidebar configuration.
@@ -556,7 +582,6 @@ def st_setup_page(page_title: str, sidebar_config: dict):
            'db_folder_path':db_folder_path}
 
     return paths,sb,secrets
-
 def _get_base_path(calling_script_path: str):
     """Define base path, input is the path of the calling script, assumed to be in a subfolder of the base directory. This script will only work properly when called from src/aerospace_chatbot.
 
@@ -573,8 +598,29 @@ def _get_base_path(calling_script_path: str):
     base_folder_path = os.path.normpath(base_folder_path)  # Normalize the path
     logging.info(f'Base folder path: {base_folder_path}')
     return base_folder_path
+def _format_key_status(key_status: str):
+    """
+    Formats the key status dictionary into a formatted string.
 
-def _format_key_status(key_status:str):
+    Args:
+        key_status (str): The dictionary containing the key status information.
+
+    Returns:
+        str: The formatted string representing the key status.
+
+    Example:
+        key_status = {
+            'key1': {'status': True},
+            'key2': {'status': False},
+            'key3': {'status': True}
+        }
+        formatted_status = _format_key_status(key_status)
+        print(formatted_status)
+        # Output:
+        # - key1: :heavy_check_mark:
+        # - key2: :x:
+        # - key3: :heavy_check_mark:
+    """
     formatted_status = ""
     for key, value in key_status.items():
         status = value['status']
@@ -583,7 +629,6 @@ def _format_key_status(key_status:str):
         else:
             formatted_status += f"- {key}: :x:\n"
     return formatted_status
-
 def _format_pinecone_status(pinecone_status):
     """
     Formats the Pinecone status into a markdown string.
@@ -606,7 +651,6 @@ def _format_pinecone_status(pinecone_status):
         message = pinecone_status['message']
         markdown_string = f"**Pinecone Indexes**\n- {message}: :x:"
     return markdown_string
-
 def _format_chroma_status(chroma_status):
     """
     Formats the chroma status dictionary into a markdown string.
@@ -628,7 +672,6 @@ def _format_chroma_status(chroma_status):
         message = chroma_status['message']
         markdown_string = f"**ChromaDB Collections**\n- {message}: :x:"
     return markdown_string
-
 def _format_ragatouille_status(indexes):
     """
     Formats the status of Ragatouille indexes.

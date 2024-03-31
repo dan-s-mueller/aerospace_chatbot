@@ -48,7 +48,6 @@ def permute_tests(test_data):
             rows.append(row)
             idx+=1
     return rows
-
 def generate_test_cases(export:bool=True,export_dir:str='.'):
     '''
     Generate test cases and export them to a JSON file.
@@ -101,7 +100,6 @@ def generate_test_cases(export:bool=True,export_dir:str='.'):
             json.dump(tests, json_file, indent=4)
     
     return tests
-
 def read_test_cases(json_path:str):
     '''
     Read test cases from a JSON file.
@@ -115,7 +113,6 @@ def read_test_cases(json_path:str):
     with open(json_path, 'r') as json_file:
         test_cases = json.load(json_file)
     return test_cases
-
 def pytest_generate_tests(metafunc):
     '''
     Use pytest_generate_tests to dynamically generate tests.
@@ -127,7 +124,6 @@ def pytest_generate_tests(metafunc):
     if "test_input" in metafunc.fixturenames:
         tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)),'test_cases.json'))
         metafunc.parametrize("test_input", tests)
-
 def parse_test_case(setup,test_case):
     ''' 
     Parse test case to be used in the test functions.
@@ -149,7 +145,6 @@ def parse_test_case(setup,test_case):
     print_str = ', '.join(f"{key}: {value}" for key, value in test_case.items())
 
     return parsed_test, print_str
-
 def viz_database_setup(index_name:str,setup:dict):
     '''
     Set up the RAGxplorer and ChromaDB for database visualization.
@@ -271,7 +266,6 @@ def test_chunk_docs_standard(setup_fixture):
     assert result['pages'] is not None
     assert result['chunks'] is not None
     assert result['splitters'] is not None
-
 def test_chunk_docs_parent_child(setup_fixture):
     """
     Test the chunk_docs function with parent-child RAG.
@@ -290,7 +284,6 @@ def test_chunk_docs_parent_child(setup_fixture):
     assert result['chunks'] is not None
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
-
 def test_chunk_docs_summary(setup_fixture):
     """
     Test the chunk_docs function with summary RAG.

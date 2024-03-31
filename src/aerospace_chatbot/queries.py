@@ -72,7 +72,6 @@ class QA_Model:
         conversational_qa_chain (Chain): The chain for conversational QA.
 
     """
-
     def __init__(self, 
                  index_type,
                  index_name,

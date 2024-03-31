@@ -121,7 +121,6 @@ def load_docs(index_type:str,
                                          local_db_path=local_db_path)
     logging.info(f"Documents upserted to {index_name}.")
     return vectorstore
-
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
                chunk_method:str='character_recursive',
@@ -261,7 +260,6 @@ def chunk_docs(docs: List[str],
                 'llm':llm}
     else:
         raise NotImplementedError
-
 def initialize_database(index_type: str, 
                         index_name: str, 
                         query_model: str, 
@@ -270,6 +268,24 @@ def initialize_database(index_type: str,
                         clear: bool = False,
                         init_ragatouille: bool = False,
                         show_progress: bool = False):
+    """Initializes the database based on the specified parameters.
+
+    Args:
+        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
+        index_name (str): The name of the index.
+        query_model (str): The query model to use.
+        rag_type (str): The type of RAG model to use.
+        local_db_path (str, optional): The path to the local database. Defaults to None.
+        clear (bool, optional): Whether to clear the index. Defaults to False.
+        init_ragatouille (bool, optional): Whether to initialize the RAGatouille model. Defaults to False.
+        show_progress (bool, optional): Whether to show the progress bar. Defaults to False.
+
+    Returns:
+        vectorstore: The initialized vector store.
+
+    Raises:
+        NotImplementedError: If the specified index type is not implemented.
+    """
     
     if show_progress:
         progress_text = "Database initialization..."
@@ -332,20 +348,34 @@ def initialize_database(index_type: str,
     if show_progress:
         my_bar.empty()
     return vectorstore
-
 @retry(stop=stop_after_attempt(15), wait=wait_exponential(multiplier=1,max=60))
-def upsert_docs(index_type:str, 
-                index_name:str,
-                vectorstore:any, 
-                chunker:dict, 
-                batch_size:int = 50, 
-                show_progress:bool = False,
-                local_db_path:str = 'db'):
+def upsert_docs(index_type: str, 
+                index_name: str,
+                vectorstore: any, 
+                chunker: dict, 
+                batch_size: int = 50, 
+                show_progress: bool = False,
+                local_db_path: str = 'db'):
+    """
+    Upserts documents into the specified index. Uses tenacity with exponential backoff to retry upserting documents.
+
+    Args:
+        index_type (str): The type of index to upsert the documents into.
+        index_name (str): The name of the index.
+        vectorstore (any): The vectorstore object to add documents to.
+        chunker (dict): The chunker dictionary containing the documents to upsert.
+        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
+        show_progress (bool, optional): Whether to show progress during the upsert process. Defaults to False.
+        local_db_path (str, optional): The local path to the database folder. Defaults to 'db'.
+
+    Returns:
+        tuple: A tuple containing the updated vectorstore and retriever objects.
+    """
     if show_progress:
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
 
-    if chunker['rag']=='Standard':
+    if chunker['rag'] == 'Standard':
         # Upsert each chunk in batches
         if index_type == "Pinecone":
             for i in range(0, len(chunker['chunks']), batch_size):
@@ -355,7 +385,7 @@ def upsert_docs(index_type:str,
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
             logging.info(f"Index created: {vectorstore}")
-            retriever=vectorstore.as_retriever()
+            retriever = vectorstore.as_retriever()
         elif index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
@@ -364,7 +394,7 @@ def upsert_docs(index_type:str,
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
             logging.info(f"Index created: {vectorstore}")
-            retriever=vectorstore.as_retriever()
+            retriever = vectorstore.as_retriever()
         elif index_type == "RAGatouille":
             logging.info(f"Creating index {index_name} from RAGatouille.")
             # Create an index from the vectorstore.
@@ -383,17 +413,17 @@ def upsert_docs(index_type:str,
                 shutil.move('.ragatouille', local_db_path)
             except shutil.Error:
                 pass    # If it already exists, don't do anything
-            logging.info(f"RAGatouille index created in {local_db_path}:"+str(vectorstore))
-            retriever=vectorstore.as_langchain_retriever()
+            logging.info(f"RAGatouille index created in {local_db_path}:" + str(vectorstore))
+            retriever = vectorstore.as_langchain_retriever()
         else:
             raise NotImplementedError
-    elif chunker['rag']=='Parent-Child':
+    elif chunker['rag'] == 'Parent-Child':
         if index_type == "ChromaDB" or index_type == "Pinecone":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
             id_key = "doc_id"
-            retriever = MultiVectorRetriever(vectorstore=vectorstore,byte_store=store,id_key=id_key)
+            retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
 
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
@@ -403,8 +433,7 @@ def upsert_docs(index_type:str,
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
             
             # Index parent docs all at once
-            retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], 
-                                             chunker['pages']['parent_chunks'])))
+            retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['parent_chunks'])))
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
@@ -416,7 +445,7 @@ def upsert_docs(index_type:str,
             store = LocalFileStore(lfs_path)
             
             id_key = "doc_id"
-            retriever = MultiVectorRetriever(vectorstore=vectorstore,byte_store=store,id_key=id_key)
+            retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
 
             for i in range(0, len(chunker['summaries']), batch_size):
                 summary_batch = chunker['summaries'][i:i + batch_size]
@@ -426,8 +455,7 @@ def upsert_docs(index_type:str,
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
             
             # Index parent docs all at once
-            retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], 
-                                             chunker['pages']['docs'])))
+            retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['docs'])))
             logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
@@ -438,11 +466,23 @@ def upsert_docs(index_type:str,
     if show_progress:
         my_bar.empty()
     return vectorstore, retriever
-
 def delete_index(index_type: str, 
                  index_name: str, 
                  rag_type: str,
                  local_db_path: str = 'db'):
+    """
+    Deletes an index based on the specified index type.
+
+    Args:
+        index_type (str): The type of index to delete. Valid values are "Pinecone", "ChromaDB", or "RAGatouille".
+        index_name (str): The name of the index to delete.
+        rag_type (str): The type of RAG (RAGatouille) to delete. Valid values are "Parent-Child" or "Summary".
+        local_db_path (str, optional): The path to the local database. Defaults to 'db'.
+
+    Raises:
+        NotImplementedError: If the index_type is not supported.
+
+    """
     if index_type == "Pinecone":
         pc = pinecone_client(api_key=PINECONE_API_KEY)
         try:
@@ -486,11 +526,22 @@ def delete_index(index_type: str,
             pass
     else:
         raise NotImplementedError
-
 def reduce_vector_query_size(rx_client:RAGxplorer,
                              chroma_client:chromadb,
                              vector_qty:int,
                              verbose:bool=False):
+    """
+    Reduces the number of vectors in the RAGxplorer client to a specified quantity.
+
+    Args:
+        rx_client (RAGxplorer): The RAGxplorer client.
+        chroma_client (chromadb): The chromadb client.
+        vector_qty (int): The desired number of vectors.
+        verbose (bool, optional): Whether to print verbose output. Defaults to False.
+
+    Returns:
+        RAGxplorer: The updated RAGxplorer client with the reduced number of vectors.
+    """
 
     ids = rx_client._vectordb.get()['ids']
     embeddings = rag.get_doc_embeddings(rx_client._vectordb)
@@ -520,72 +571,117 @@ def reduce_vector_query_size(rx_client:RAGxplorer,
     if verbose:
         print('Reduced number of vectors to '+str(len(rx_client._documents.embeddings))+' ✓')
     return rx_client
+def export_data_viz(rx_client: RAGxplorer, df_export_path: str):
+    """
+    Exports the visualization data to a JSON file.
 
-def export_data_viz(rx_client:RAGxplorer,df_export_path:str):
-    export_data = {'visualization_index_name' : rx_client._vectordb.name,
-                   'umap_params': rx_client._projector.get_params(),
-                   'viz_data': rx_client._VizData.base_df.to_json(orient='split')}
+    Args:
+        rx_client (RAGxplorer): The RAGxplorer object containing the visualization data.
+        df_export_path (str): The file path to export the JSON data.
+
+    Returns:
+        None
+    """
+    export_data = {
+        'visualization_index_name': rx_client._vectordb.name,
+        'umap_params': rx_client._projector.get_params(),
+        'viz_data': rx_client._VizData.base_df.to_json(orient='split')
+    }
 
     # Save the data to a JSON file
     with open(df_export_path, 'w') as f:
         json.dump(export_data, f, indent=4)
+def create_data_viz(index_selected: str,
+                    rx_client: RAGxplorer,
+                    chroma_client: PersistentClient,
+                    umap_params: dict = {'n_neighbors': 5, 'n_components': 2, 'random_state': 42},
+                    limit_size_qty: int = None,
+                    df_export_path: str = None,
+                    show_progress: bool = False):
+    """
+    Creates data visualization using RAGxplorer and PersistentClient.
 
+    Args:
+        index_selected (str): The name of the collection to load from chroma_client.
+        rx_client (RAGxplorer): An instance of RAGxplorer class.
+        chroma_client (PersistentClient): An instance of PersistentClient class.
+        umap_params (dict, optional): UMAP parameters for embedding. Defaults to {'n_neighbors': 5, 'n_components': 2, 'random_state': 42}.
+        limit_size_qty (int, optional): The maximum number of vectors to include in the visualization. Defaults to None.
+        df_export_path (str, optional): The file path to export the visualization data. Defaults to None.
+        show_progress (bool, optional): Whether to show progress bar. Defaults to False.
 
-def create_data_viz(index_selected:str,
-                    rx_client:RAGxplorer,
-                    chroma_client:PersistentClient,
-                    umap_params:dict={'n_neighbors': 5,'n_components': 2,'random_state':42},
-                    limit_size_qty:int=None,
-                    df_export_path:str=None,
-                    show_progress:bool=False):
+    Returns:
+        tuple: A tuple containing the updated rx_client and chroma_client instances.
+    """
     if show_progress:
         my_bar = st.progress(0, text='Loading collection...')
-    collection=chroma_client.get_collection(name=index_selected,
-                                            embedding_function=rx_client._chosen_embedding_model)
+    
+    # Load collection from chroma_client
+    collection = chroma_client.get_collection(name=index_selected,
+                                              embedding_function=rx_client._chosen_embedding_model)
     rx_client.load_chroma(collection,
                           umap_params=umap_params,
                           initialize_projector=True)
+    
     if limit_size_qty:
         if show_progress:
             my_bar.progress(0.25, text='Reducing vector query size...')
-        rx_client = reduce_vector_query_size(
-                        rx_client,
-                        chroma_client,
-                        vector_qty=limit_size_qty,
-                        verbose=True)
+        
+        # Reduce vector query size
+        rx_client = reduce_vector_query_size(rx_client,
+                                             chroma_client,
+                                             vector_qty=limit_size_qty,
+                                             verbose=True)
+    
     if show_progress:
         my_bar.progress(0.5, text='Projecting embeddings for visualization...')
+    
+    # Run projector
     rx_client.run_projector()
+    
     if show_progress:
         my_bar.progress(1, text='Projecting complete!')
-
+    
     if df_export_path:
-        export_data_viz(rx_client,df_export_path)
+        # Export data visualization
+        export_data_viz(rx_client, df_export_path)
+    
     if show_progress:
         my_bar.empty()
+    
     return rx_client, chroma_client
+def visualize_data(index_selected: str,
+                   rx_client: RAGxplorer,
+                   chroma_client: PersistentClient,
+                   query: str,
+                   umap_params: dict = {'n_neighbors': 5, 'n_components': 2, 'random_state': 42},
+                   import_file: bool = True):
+    """
+    Visualizes data using RAGxplorer and PersistentClient.
 
-def visualize_data(index_selected:str,
-                   rx_client:RAGxplorer,
-                   chroma_client:PersistentClient,
-                   query:str,
-                   umap_params:dict={'n_neighbors': 5,'n_components': 2,'random_state':42},
-                   import_file:bool=True,):
+    Args:
+        index_selected (str): The name of the selected index.
+        rx_client (RAGxplorer): An instance of the RAGxplorer class.
+        chroma_client (PersistentClient): An instance of the PersistentClient class.
+        query (str): The query to visualize.
+        umap_params (dict, optional): UMAP parameters for data visualization. Defaults to {'n_neighbors': 5, 'n_components': 2, 'random_state': 42}.
+        import_file (bool, optional): Whether to import data from a file. Defaults to True.
+
+    Returns:
+        Tuple[RAGxplorer, PersistentClient]: A tuple containing the updated instances of RAGxplorer and PersistentClient.
+    """
     if import_file:
         with open(import_file, 'r') as f:
             data = json.load(f)
-        viz_data=pd.read_json(data['viz_data'], orient='split')
-        collection=chroma_client.get_collection(name=index_selected,embedding_function=rx_client._chosen_embedding_model)
-        rx_client.load_chroma(collection,
-                              umap_params=umap_params,
-                              initialize_projector=True)
-        fig = rx_client.visualize_query(query,import_projection_data=viz_data)
+        viz_data = pd.read_json(data['viz_data'], orient='split')
+        collection = chroma_client.get_collection(name=index_selected, embedding_function=rx_client._chosen_embedding_model)
+        rx_client.load_chroma(collection, umap_params=umap_params, initialize_projector=True)
+        fig = rx_client.visualize_query(query, import_projection_data=viz_data)
     else:
         fig = rx_client.visualize_query(query)
-    st.plotly_chart(fig,use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
     return rx_client, chroma_client
-
 def _sanitize_raw_page_data(page):
     """
     Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
@@ -614,7 +710,6 @@ def _sanitize_raw_page_data(page):
         return None
     else:
         return page
-    
 def _embedding_size(embedding_model:any):
     """
     Returns the size of the embedding for a given embedding model.
