@@ -66,12 +66,13 @@ def load_sidebar(config_file,
     # Set local db path
     sb_out['keys']={}
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
-        # Set to fixed value, update on home if required.
-        sb_out['keys']['LOCAL_DB_PATH'] = '/data'
-        os.environ['LOCAL_DB_PATH'] = sb_out['keys']['LOCAL_DB_PATH']
-    else:
-        sb_out['keys']['LOCAL_DB_PATH'] = os.getenv('LOCAL_DB_PATH')
-        st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='Loaded from environment. Update on Home if required.')
+        raise SecretKeyException('Local Database Path is required.','LOCAL_DB_PATH_MISSING')
+    #     # Set to fixed value, update on home if required.
+    #     sb_out['keys']['LOCAL_DB_PATH'] = '/data'
+    #     os.environ['LOCAL_DB_PATH'] = sb_out['keys']['LOCAL_DB_PATH']
+    # else:
+    #     sb_out['keys']['LOCAL_DB_PATH'] = os.getenv('LOCAL_DB_PATH')
+    #     st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='Loaded from environment. Update on Home if required.')
 
     # Vector databases
     if vector_database:
@@ -607,13 +608,21 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     st.title(page_title)
 
     # Assumes strucutre and file names as per the following.
-    if sidebar_config is None:
-        sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
-                        index_data_file=os.path.join(config_folder_path,'index_data.json'))
-    else:
-        sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
-                        index_data_file=os.path.join(config_folder_path,'index_data.json'),
-                        **sidebar_config)
+    try:
+        if sidebar_config is None:
+            sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
+                            index_data_file=os.path.join(config_folder_path,'index_data.json'))
+        else:
+            sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
+                            index_data_file=os.path.join(config_folder_path,'index_data.json'),
+                            **sidebar_config)
+    except SecretKeyException as e:
+        # If no .env file is found, set the local db path when the warning is raised.
+        st.warning(f"{e}")
+        local_db_path_input = st.text_input('Update Local Database Path','/data',help='Path to local database (e.g. chroma)')
+        if local_db_path_input!='':
+            os.environ['LOCAL_DB_PATH'] = local_db_path_input
+        st.stop()
     try:
         secrets=set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
     except SecretKeyException as e:
@@ -621,7 +630,8 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
         st.stop()
 
     # Set db folder path based on env variable
-    db_folder_path=os.path.join(base_folder_path, sb['keys']['LOCAL_DB_PATH'])
+    # TODO: work through if it makes sense to set the db path as absolute and not relative.
+    db_folder_path=os.path.join(base_folder_path, os.environ['LOCAL_DB_PATH'])
     logging.info(f'Database folder path: {db_folder_path}')
 
     paths={'base_folder_path':base_folder_path,
