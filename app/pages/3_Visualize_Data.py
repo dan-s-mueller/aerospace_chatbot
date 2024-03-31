@@ -13,8 +13,12 @@ sys.path.append('../../src/aerospace_chatbot')  # Add package to path
 import admin, data_processing
 
 # Page setup
+current_directory = os.path.dirname(os.path.abspath(__file__))
+home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 paths,sb,secrets=admin.st_setup_page('Visualize Data',
-                                     {'embeddings':True,
+                                     home_dir,
+                                     {'vector_database':True,
+                                      'embeddings':True,
                                       'rag_type':True,
                                       'index_name':True,
                                       'secret_keys':True})

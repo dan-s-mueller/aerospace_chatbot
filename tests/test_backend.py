@@ -477,6 +477,7 @@ def test_load_sidebar():
         None
     '''
     # TODO Add mock changes from streamlit changing: index_type, rag_type
+    # TODO add test for vectordatabase flag
 
     # Use the existing config files, to check they are set up correctly.
     base_folder_path = os.path.abspath(os.path.dirname(__file__))
