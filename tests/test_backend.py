@@ -302,15 +302,6 @@ def test_chunk_docs_summary(setup_fixture):
                         rag_type=setup_fixture['rag_type']['Summary'], 
                         chunk_method=setup_fixture['chunk_method'], 
                         chunk_size=setup_fixture['chunk_size'], 
-                        chunk_overlap=setup_fixture['chunk_overlap'])
-    assert result['rag'] == setup_fixture['rag_type']['Summary']
-    assert result['pages'] is not None
-    assert result['chunks'] is not None
-    assert result['splitters'] is not None
-    result = chunk_docs(setup_fixture['docs'], 
-                        rag_type=setup_fixture['rag_type']['Summary'], 
-                        chunk_method=setup_fixture['chunk_method'], 
-                        chunk_size=setup_fixture['chunk_size'], 
                         chunk_overlap=setup_fixture['chunk_overlap'], 
                         llm=setup_fixture['llm']['Hugging Face'])
     assert result['rag'] == setup_fixture['rag_type']['Summary']

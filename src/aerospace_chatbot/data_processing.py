@@ -61,6 +61,28 @@ def load_docs(index_type:str,
               local_db_path:str='../../db',
               llm=None,
               show_progress:bool=False):
+    """
+    Loads documents into the specified index.
+
+    Args:
+        index_type (str): The type of index to use.
+        docs: The documents to load.
+        query_model: The query model to use.
+        rag_type (str, optional): The type of RAG (Retrieval-Augmented Generation) to use. Defaults to 'Standard'.
+        index_name (str, optional): The name of the index. Defaults to None.
+        chunk_method (str, optional): The method to chunk the documents. Defaults to 'character_recursive'.
+        chunk_size (int, optional): The size of each chunk. Defaults to 500.
+        chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
+        clear (bool, optional): Whether to clear the index before loading new documents. Defaults to False.
+        file_out (str, optional): The output file path. Defaults to None.
+        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
+        local_db_path (str, optional): The local database path. Defaults to '../../db'.
+        llm (optional): The language model to use. Defaults to None.
+        show_progress (bool, optional): Whether to show progress during the loading process. Defaults to False.
+
+    Returns:
+        vectorstore: The updated vectorstore.
+    """
     # Check for illegal things
     if not clear and (rag_type == 'Parent-Child' or rag_type == 'Summary'):
         raise ValueError('Parent-Child databases must be cleared before loading new documents.')
@@ -109,6 +131,23 @@ def chunk_docs(docs: List[str],
                k_parent:int=4,
                llm=None,
                show_progress:bool=False):
+    """
+    Chunk the given list of documents into smaller chunks based on the specified parameters.
+
+    Args:
+        docs (List[str]): The list of document paths to be chunked.
+        rag_type (str, optional): The type of chunking method to be used. Defaults to 'Standard'.
+        chunk_method (str, optional): The method of chunking to be used. Defaults to 'character_recursive'.
+        file_out (str, optional): The output file path to save the chunked documents. Defaults to None.
+        chunk_size (int, optional): The size of each chunk in tokens. Defaults to 500.
+        chunk_overlap (int, optional): The overlap between chunks in tokens. Defaults to 0.
+        k_parent (int, optional): The number of parent chunks to split into child chunks for 'Parent-Child' rag_type. Defaults to 4.
+        llm (None, optional): The language model to be used for generating summaries. Defaults to None.
+        show_progress (bool, optional): Whether to show the progress bar during chunking. Defaults to False.
+
+    Returns:
+        dict: A dictionary containing the chunking results based on the specified rag_type.
+    """
     if show_progress:
         progress_text = "Chunking in progress..."
         my_bar = st.progress(0, text=progress_text)
@@ -192,9 +231,6 @@ def chunk_docs(docs: List[str],
         if show_progress:
             my_bar.empty()
             my_bar = st.progress(0, text='Generating summaries...')
-
-        # fix_limit=5
-        # pages = pages[:fix_limit]
 
         id_key = "doc_id"
         doc_ids = [str(uuid.uuid4()) for _ in pages]
