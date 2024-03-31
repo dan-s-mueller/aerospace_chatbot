@@ -518,6 +518,9 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                     st.markdown(f"Index {ragatouille_name} has been deleted.")
         except:
             pass
+
+        # Local database path
+        st.markdown(f"Local database path: {os.environ['LOCAL_DB_PATH']}")
 def st_setup_page(page_title: str, sidebar_config: dict):
     """
     Sets up the Streamlit page with the given title and loads the sidebar configuration.

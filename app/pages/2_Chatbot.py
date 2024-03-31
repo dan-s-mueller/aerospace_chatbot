@@ -36,7 +36,7 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
 # Add expander with functionality details.
 with st.expander('''What's under the hood?'''):
     st.markdown('''
-    This chatbot will look up from all Aerospace Mechanism Symposia in the following location: https://github.com/dsmueller3760/aerospace_chatbot/tree/main/data/AMS
+    This chatbot will look up from all Aerospace Mechanism Symposia in the following location: https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS
     Example questions:
     * What are examples of latch failures which have occurred due to improper fitup?
     * What are examples of lubricants which should be avoided for space mechanism applications?
