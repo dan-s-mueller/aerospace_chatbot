@@ -1,4 +1,4 @@
-from prompts import TEST_QUERY_PROMPT, SUMMARIZE_TEXT
+from prompts import SUMMARIZE_TEXT
 
 import os
 import re
@@ -29,7 +29,7 @@ from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.storage import LocalFileStore
 
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import VoyageEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
 
 from langchain_community.document_loaders import PyPDFLoader
 
@@ -49,20 +49,20 @@ VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
 PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
-def load_docs(index_type,
+def load_docs(index_type:str,
               docs,
               query_model,
-              rag_type='Standard',
-              index_name=None,
-              chunk_method='character_recursive',
-              chunk_size=500,
-              chunk_overlap=0,
-              clear=False,
-              file_out=None,
-              batch_size=50,
-              local_db_path='../../db',
+              rag_type:str='Standard',
+              index_name:str=None,
+              chunk_method:str='character_recursive',
+              chunk_size:int=500,
+              chunk_overlap:int=0,
+              clear:bool=False,
+              file_out:str=None,
+              batch_size:int=50,
+              local_db_path:str='../../db',
               llm=None,
-              show_progress=False):
+              show_progress:bool=False):
     # Check for illegal things
     if not clear and (rag_type == 'Parent-Child' or rag_type == 'Summary'):
         raise ValueError('Parent-Child databases must be cleared before loading new documents.')
@@ -75,7 +75,7 @@ def load_docs(index_type,
                        chunk_overlap=chunk_overlap,
                        file_out=file_out,
                        llm=llm,
-                       show_progress=True)
+                       show_progress=show_progress)
         
     # Set index names for special databases
     if rag_type == 'Parent-Child':
@@ -91,7 +91,7 @@ def load_docs(index_type,
                                       clear=clear, 
                                       local_db_path=local_db_path,
                                       init_ragatouille=True,
-                                      show_progress=True)
+                                      show_progress=show_progress)
     vectorstore, retriever = upsert_docs(index_type,
                                          index_name,
                                          vectorstore,
@@ -101,6 +101,7 @@ def load_docs(index_type,
                                          local_db_path=local_db_path)
     logging.info(f"Documents upserted to {index_name}.")
     return vectorstore
+
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
                chunk_method:str='character_recursive',
@@ -226,13 +227,13 @@ def chunk_docs(docs: List[str],
                 'llm':llm}
     else:
         raise NotImplementedError
+
 def initialize_database(index_type: str, 
                         index_name: str, 
                         query_model: str, 
                         rag_type: str,
                         local_db_path: str = None, 
                         clear: bool = False,
-                        test_query: bool = False,
                         init_ragatouille: bool = False,
                         show_progress: bool = False):
     
@@ -284,7 +285,7 @@ def initialize_database(index_type: str,
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         logging.info(f'Setting up RAGatouille model {query_model}')
         if init_ragatouille:    # Used if the index is not already set
-            vectorstore = RAGPretrainedModel.from_pretrained(query_model)
+            vectorstore = RAGPretrainedModel.from_pretrained(query_model,verbose=0)
         else:   # Used if the index is already set
             vectorstore = query_model    # The index is picked up directly.
         logging.info('RAGatouille model set: ' + str(vectorstore))
@@ -293,17 +294,6 @@ def initialize_database(index_type: str,
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     else:
         raise NotImplementedError
-
-    if test_query:
-        try:    # Test query
-            test_query_out = vectorstore.similarity_search(TEST_QUERY_PROMPT)
-        except:
-            raise Exception("Vector database is not configured properly. Test query failed. Likely the index does not exist.")
-        logging.info('Test query: ' + str(test_query_out))
-        if not test_query_out:
-            raise ValueError("Vector database or llm is not configured properly. Test query failed.")
-        else:
-            logging.info('Test query succeeded!')
 
     if show_progress:
         my_bar.empty()
@@ -414,6 +404,7 @@ def upsert_docs(index_type:str,
     if show_progress:
         my_bar.empty()
     return vectorstore, retriever
+
 def delete_index(index_type: str, 
                  index_name: str, 
                  rag_type: str,
@@ -461,6 +452,7 @@ def delete_index(index_type: str,
             pass
     else:
         raise NotImplementedError
+
 def reduce_vector_query_size(rx_client:RAGxplorer,chroma_client:chromadb,vector_qty:int,verbose:bool=False):
     """Reduce the number of vectors in the RAGxplorer client's vector database.
 
@@ -517,6 +509,7 @@ def export_data_viz(rx_client:RAGxplorer,df_export_path:str):
     # Save the data to a JSON file
     with open(df_export_path, 'w') as f:
         json.dump(export_data, f, indent=4)
+
 def _sanitize_raw_page_data(page):
     """
     Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
@@ -561,7 +554,7 @@ def _embedding_size(embedding_model:any):
     """
     if isinstance(embedding_model,OpenAIEmbeddings):
         return 1536 # https://platform.openai.com/docs/models/embeddings, test-embedding-ada-002
-    elif isinstance(embedding_model,VoyageEmbeddings):
+    elif isinstance(embedding_model,VoyageAIEmbeddings):
         return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
     else:
         raise NotImplementedError

@@ -4,12 +4,19 @@
         "query_model": "OpenAI",
         "rag_type": "Standard",
         "llm": "Hugging Face",
-        "id": 1
+        "id": 0
     },
     {
         "index_type": "ChromaDB",
         "query_model": "OpenAI",
         "rag_type": "Parent-Child",
+        "llm": "Hugging Face",
+        "id": 1
+    },
+    {
+        "index_type": "ChromaDB",
+        "query_model": "OpenAI",
+        "rag_type": "Summary",
         "llm": "Hugging Face",
         "id": 2
     },
@@ -17,35 +24,28 @@
         "index_type": "ChromaDB",
         "query_model": "OpenAI",
         "rag_type": "Summary",
-        "llm": "Hugging Face",
-        "id": 3
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
-        "rag_type": "Summary",
         "llm": "OpenAI",
-        "id": 4
+        "id": 3
     },
     {
         "index_type": "Pinecone",
         "query_model": "OpenAI",
         "rag_type": "Standard",
         "llm": "Hugging Face",
-        "id": 5
+        "id": 4
     },
     {
         "index_type": "Pinecone",
         "query_model": "Voyage",
         "rag_type": "Standard",
         "llm": "Hugging Face",
-        "id": 6
+        "id": 5
     },
     {
         "index_type": "RAGatouille",
         "query_model": "RAGatouille",
         "rag_type": "Standard",
         "llm": "Hugging Face",
-        "id": 7
+        "id": 6
     }
 ]

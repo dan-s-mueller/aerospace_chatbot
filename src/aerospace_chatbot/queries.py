@@ -49,7 +49,6 @@ class QA_Model:
                  search_type='similarity',
                  fetch_k=50,
                  temperature=0,
-                 test_query=True,
                  local_db_path='db'):
         
         self.index_type=index_type
@@ -61,7 +60,6 @@ class QA_Model:
         self.search_type=search_type
         self.fetch_k=fetch_k
         self.temperature=temperature
-        self.test_query=test_query
         self.local_db_path=local_db_path
         self.sources=[]
 
@@ -78,7 +76,6 @@ class QA_Model:
                                                              self.query_model,
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
-                                                             test_query=self.test_query,
                                                              init_ragatouille=False)  
         if self.rag_type=='Standard':  
             if self.index_type=='ChromaDB' or self.index_type=='Pinecone':

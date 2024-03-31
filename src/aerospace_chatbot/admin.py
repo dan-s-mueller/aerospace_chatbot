@@ -30,7 +30,6 @@ class SecretKeyException(Exception):
 
 def load_sidebar(config_file,
                  index_data_file,
-                 vector_databases=False,
                  embeddings=False,
                  rag_type=False,
                  index_name=False,
@@ -43,7 +42,6 @@ def load_sidebar(config_file,
     Args:
         config_file (str): The path to the configuration file.
         index_data_file (str): The path to the index data file.
-        vector_databases (bool, optional): Whether to include vector databases in the sidebar. Defaults to False.
         embeddings (bool, optional): Whether to include embeddings in the sidebar. Defaults to False.
         rag_type (bool, optional): Whether to include RAG type in the sidebar. Defaults to False.
         index_name (bool, optional): Whether to include index name in the sidebar. Defaults to False.
@@ -64,11 +62,10 @@ def load_sidebar(config_file,
         index_data = json.load(f)
         logging.info('Loaded: '+index_data_file)
 
-    if vector_databases:
-        # Vector databases
-        st.sidebar.title('Vector database')
-        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=1)
-        logging.info('Index type: '+sb_out['index_type'])
+    # Vector databases
+    st.sidebar.title('Vector database')
+    sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=1)
+    logging.info('Index type: '+sb_out['index_type'])
 
     if embeddings:
         # Embeddings
@@ -115,44 +112,47 @@ def load_sidebar(config_file,
                     st.sidebar.warning('You must load a model in LM studio first for this to work.')
         logging.info('RAG type: '+sb_out['rag_type'])
     if index_name:
-        # Index Name 
-        st.sidebar.title('Index Name')  
-        sb_out['index_name']=index_data[sb_out['index_type']][sb_out['query_model']]
-        st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='config/index_data.json contains index base names. An index appendix is added on creation under Database Processing.')
-        logging.info('Index name: '+sb_out['index_name'])
-        
-        # For each index type, list indices available for the base name
-        if sb_out['index_type']=='ChromaDB':
-            indices=show_chroma_collections(format=False)
-            if indices['status']:
-                name=[]
-                for index in indices['message']:
-                    if sb_out['rag_type']=='Parent-Child':
-                        if index.name.endswith('parent-child'):
-                            name.append(index.name)
-                    else:
-                        if not index.name.endswith('parent-child'):
-                            name.append(index.name)
-                sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
-            else:
-                st.sidebar.markdown('No collections found.',help='Check the status on Home.')
-        elif sb_out['index_type']=='Pinecone':
-            indices=show_pinecone_indexes(format=False)
-            if indices['status']:
-                name=[]
-                for index in indices['message']:
-                    if index['status']['state']=='Ready':
-                        name.append(index['name'])
-                sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
-        elif sb_out['index_type']=='RAGatouille':
-            indices=show_ragatouille_indexes(format=False)
-            if len(indices)>0:
-                name=[]
-                for index in indices:
-                    name.append(index)
-                sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
-            else:
-                st.sidebar.markdown('No collections found.',help='Check the status on Home.')
+        if embeddings:
+            # Index Name 
+            st.sidebar.title('Index Name')  
+            sb_out['index_name']=index_data[sb_out['index_type']][sb_out['query_model']]
+            st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='config/index_data.json contains index base names. An index appendix is added on creation under Database Processing.')
+            logging.info('Index name: '+sb_out['index_name'])
+            
+            # For each index type, list indices available for the base name
+            if sb_out['index_type']=='ChromaDB':
+                indices=show_chroma_collections(format=False)
+                if indices['status']:
+                    name=[]
+                    for index in indices['message']:
+                        if sb_out['rag_type']=='Parent-Child':
+                            if index.name.endswith('parent-child'):
+                                name.append(index.name)
+                        else:
+                            if not index.name.endswith('parent-child'):
+                                name.append(index.name)
+                    sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+                else:
+                    st.sidebar.markdown('No collections found.',help='Check the status on Home.')
+            elif sb_out['index_type']=='Pinecone':
+                indices=show_pinecone_indexes(format=False)
+                if indices['status']:
+                    name=[]
+                    for index in indices['message']:
+                        if index['status']['state']=='Ready':
+                            name.append(index['name'])
+                    sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+            elif sb_out['index_type']=='RAGatouille':
+                indices=show_ragatouille_indexes(format=False)
+                if len(indices)>0:
+                    name=[]
+                    for index in indices:
+                        name.append(index)
+                    sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+                else:
+                    st.sidebar.markdown('No collections found.',help='Check the status on Home.')
+        else:
+            raise ValueError('Embeddings must be enabled to select an index name.')
     if llm:
         # LLM
         st.sidebar.title('LLM')
@@ -558,7 +558,7 @@ def st_setup_page(page_title: str, sidebar_config: dict):
     return paths,sb,secrets
 
 def _get_base_path(calling_script_path: str):
-    """Define base path, input is the path of the calling script, assumed to be in a subfolder of the base directory
+    """Define base path, input is the path of the calling script, assumed to be in a subfolder of the base directory. This script will only work properly when called from src/aerospace_chatbot.
 
     Args:
         calling_script_path (str): The path of the calling script.

@@ -5,7 +5,7 @@ import streamlit as st
 import pandas as pd
 
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import VoyageEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
 from ragxplorer import RAGxplorer
 import chromadb
 
@@ -14,8 +14,7 @@ import admin, data_processing
 
 # Page setup
 paths,sb,secrets=admin.st_setup_page('Visualize Data',
-                                     {'vector_databases':True,
-                                      'embeddings':True,
+                                     {'embeddings':True,
                                       'rag_type':True,
                                       'index_name':True,
                                       'secret_keys':True})
@@ -39,7 +38,7 @@ elif sb['query_model']=='Openai' or 'Voyage':
     if sb['query_model']=='Openai':
         query_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
     elif sb['query_model']=='Voyage':
-        query_model=VoyageEmbeddings(voyage_api_key=secrets['VOYAGE_API_KEY'])
+        query_model=VoyageAIEmbeddings(model='voyage-2', voyage_api_key=secrets['VOYAGE_API_KEY'])
 logging.info('Query model set: '+str(query_model))
 
 st.info('You must have created a database using Document Upload in ChromaDB for this to work.')
