@@ -12,6 +12,7 @@ import openai
 from pinecone import Pinecone
 import chromadb
 from langchain_openai import ChatOpenAI
+import pytest
 
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors.
@@ -61,7 +62,6 @@ def load_sidebar(config_file,
         logging.info('Loaded: '+index_data_file)
 
     # Set local db path
-    sb_out['keys']={}
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         # This is the case where the .env file is not in the directory
         raise SecretKeyException('Local Database Path is required. Use an absolute path.','LOCAL_DB_PATH_MISSING')
@@ -202,6 +202,7 @@ def load_sidebar(config_file,
 
     # Secret keys, which does not rely on vector_database
     if secret_keys:
+        sb_out['keys']={}
         # Add a section for secret keys
         st.sidebar.title('Secret keys',help='See Home page under Connection Status for status of keys.')
         st.sidebar.markdown('If .env file is in directory, will use that first.')
@@ -445,8 +446,8 @@ def show_ragatouille_indexes(format=True):
             if os.path.isdir(item_path):
                 indexes.append(item)
         ragatouille_status = {'status': True, 'indexes': indexes}
-    except:
-        ragatouille_status = {'status': False, 'message': 'Error retrieving ragatouille indexes.'}
+    except Exception as e:
+        ragatouille_status = {'status': False, 'message': 'No indexes found.'}
     if format:
         return _format_ragatouille_status(ragatouille_status)
     else:
@@ -574,16 +575,11 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
         SecretKeyException: If there is an issue with the secret keys.
 
     """
-    load_dotenv(find_dotenv(),override=True)
+    load_dotenv(find_dotenv(), override=True)
 
     base_folder_path = home_dir
-    logging.info(f'Base folder path: {base_folder_path}')
-
-    # Define use case specific paths, assumed structure
     config_folder_path=os.path.join(base_folder_path, 'config')
     data_folder_path=os.path.join(base_folder_path, 'data')
-    logging.info(f'Config folder path: {config_folder_path}')
-    logging.info(f'Data folder path: {data_folder_path}')
 
     # Set the page title
     st.set_page_config(
@@ -688,7 +684,7 @@ def _format_pinecone_status(pinecone_status):
         markdown_string = f"**Pinecone Indexes**\n{index_description}"
     else:
         message = pinecone_status['message']
-        markdown_string = f"**Pinecone Indexes**\n- {message}: :x:"
+        markdown_string = f"**Pinecone Indexes**\n- {message} :x:"
     return markdown_string
 def _format_chroma_status(chroma_status):
     """
@@ -709,7 +705,7 @@ def _format_chroma_status(chroma_status):
         markdown_string = f"**ChromaDB Collections**\n{collection_description}"
     else:
         message = chroma_status['message']
-        markdown_string = f"**ChromaDB Collections**\n- {message}: :x:"
+        markdown_string = f"**ChromaDB Collections**\n- {message} :x:"
     return markdown_string
 def _format_ragatouille_status(ragatouille_status):
     """
@@ -722,14 +718,14 @@ def _format_ragatouille_status(ragatouille_status):
         str: A formatted string representation of the ragatouille status.
 
     """
+    index_description=''
     if ragatouille_status['status']:
-        indexes = ragatouille_status['indexes']
-        if len(indexes) > 0:
-            formatted_status = "Ragatouille Indexes:\n"
-            for index in indexes:
-                formatted_status += f"- {index}\n"
-        else:
-            formatted_status = "No Ragatouille indexes found."
+        for index in ragatouille_status['indexes']:
+            name = index
+            status = ":heavy_check_mark:"
+            index_description += f"- {name}: ({status})\n"
+        markdown_string = f"**Ragatouille Indexes**\n{index_description}"
     else:
-        formatted_status = f"Ragatouille status: {ragatouille_status['message']}"
-    return formatted_status
+        message = ragatouille_status['message']
+        markdown_string = f"**Ragatouille Indexes**\n- {message} :x:"
+    return markdown_string

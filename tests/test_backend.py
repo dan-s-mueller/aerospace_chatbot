@@ -196,12 +196,6 @@ def setup_fixture():
     HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
     PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 
-    # print(f"OPENAI_API_KEY: {OPENAI_API_KEY}")
-    # print(f"VOYAGE_API_KEY: {VOYAGE_API_KEY}")
-    # print(f"HUGGINGFACEHUB_API_TOKEN: {HUGGINGFACEHUB_API_TOKEN}")
-    # print(f"PINECONE_API_KEY: {PINECONE_API_KEY}")
-    
-
     # Set environment variables from .env file. They are required for items tested here. This is done in the GUI setup.
     os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
     os.environ['VOYAGE_API_KEY'] = VOYAGE_API_KEY
@@ -450,7 +444,7 @@ def test_database_setup_and_query(setup_fixture,test_input):
         None
     """
     test, print_str = parse_test_case(setup_fixture,test_input)
-
+    index_name='test'+str(test['id'])
     print(f"Starting test: {print_str}")
 
     try:            
@@ -459,7 +453,7 @@ def test_database_setup_and_query(setup_fixture,test_input):
             setup_fixture['docs'],
             rag_type=test['rag_type'],
             query_model=test['query_model'],
-            index_name='test'+str(test['id']), 
+            index_name=index_name, 
             chunk_size=setup_fixture['chunk_size'],
             chunk_overlap=setup_fixture['chunk_overlap'],
             clear=True,
@@ -474,6 +468,12 @@ def test_database_setup_and_query(setup_fixture,test_input):
             assert isinstance(vectorstore, RAGPretrainedModel)
         print('Vectorstore created.')
 
+        # Set index names for special databases
+        if test['rag_type'] == 'Parent-Child':
+            index_name = index_name + '-parent-child'
+        if test['rag_type'] == 'Summary':
+            index_name = index_name + '-summary-' + test['llm'].model_name.replace('/', '-')
+
         if test['index_type'] == 'RAGatouille':
             query_model_qa = RAGPretrainedModel.from_index(
                 os.path.join(setup_fixture['LOCAL_DB_PATH'],'.ragatouille/colbert/indexes','test'+str(test['id'])),
@@ -484,7 +484,7 @@ def test_database_setup_and_query(setup_fixture,test_input):
         assert query_model_qa is not None
         
         qa_model_obj = QA_Model(test['index_type'],
-                            'test'+str(test['id']),
+                            index_name,
                             query_model_qa,
                             test['llm'],
                             rag_type=test['rag_type'],
@@ -501,7 +501,7 @@ def test_database_setup_and_query(setup_fixture,test_input):
         print('Query and alternative question successful!')
 
         delete_index(test['index_type'],
-                'test'+str(test['id']), 
+                index_name, 
                 test['rag_type'],
                 local_db_path=setup_fixture['LOCAL_DB_PATH'])
         print('Database deleted.')
@@ -668,49 +668,156 @@ def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
 
 # TODO finish this
 # Test streamlit setup
-def test_st_setup_page_local_db_path_defined():
-    # Arrange
+def test_st_setup_page_local_db_path_only_defined(monkeypatch):
+    """
+    Test case for the `st_setup_page` function when only the local db path is defined.
+
+    Args:
+        monkeypatch: A pytest fixture that allows modifying environment variables during testing.
+
+    Returns:
+        None
+    """
     page_title = "Test Page"
-    home_dir = "/path/to/home"
-    sidebar_config = {"key": "value"}
-    os.environ['LOCAL_DB_PATH'] = "/path/to/local/db"
+
+    # Clear all environment variables
+    for var in list(os.environ.keys()):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
+    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
+    monkeypatch.setenv('LOCAL_DB_PATH', os.path.abspath(os.path.dirname(__file__))) # Set the local db path to this directory
+
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
+
+    # Act
+    paths, sb, secrets = st_setup_page(page_title, home_dir)
+
+    # Assert
+    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
+    assert sb == {}
+    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': None,
+                       'OPENAI_API_KEY': None,
+                       'PINECONE_API_KEY': None,
+                       'VOYAGE_API_KEY': None}
+def test_st_setup_page_local_db_path_not_defined(monkeypatch):
+    """
+    Test case to verify the behavior of st_setup_page function when LOCAL_DB_PATH is not defined.
+
+    Args:
+        monkeypatch: Monkeypatch object for modifying environment variables.
+
+    Returns:
+        None
+    """
+
+    page_title = "Test Page"
+
+    # Clear all environment variables
+    for var in list(os.environ.keys()):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
+    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
+    monkeypatch.setenv('LOCAL_DB_PATH', None) # Set to none
+
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
+
+    # Act
+    paths, sb, secrets = st_setup_page(page_title, home_dir)
+
+    # Assert
+    assert paths['db_folder_path'] == 'None'
+    assert sb == {}
+    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': None,
+                       'OPENAI_API_KEY': None,
+                       'PINECONE_API_KEY': None,
+                       'VOYAGE_API_KEY': None}
+def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
+    """
+    Test case for the st_setup_page function with all inputs in sidebar and manual input for environment variables.
+
+    Args:
+        monkeypatch: A pytest fixture that allows modifying environment variables and other attributes during testing.
+
+    Returns:
+        None
+    """
+
+    page_title = "Test Page"
+    sidebar_config = {
+        'vector_database': True,
+        'embeddings': True,
+        'rag_type': True,
+        'index_name': True,
+        'llm': True,
+        'model_options': True
+    }
+
+    # Set all environment variables, simulate manual input no .env
+    monkeypatch.setenv('OPENAI_API_KEY', os.getenv('OPENAI_API_KEY'))
+    monkeypatch.setenv('VOYAGE_API_KEY', os.getenv('VOYAGE_API_KEY'))
+    monkeypatch.setenv('PINECONE_API_KEY', os.getenv('PINECONE_API_KEY'))
+    monkeypatch.setenv('HUGGINGFACEHUB_API_TOKEN', os.getenv('HUGGINGFACEHUB_API_TOKEN'))
+    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
+    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
+    monkeypatch.setenv('LOCAL_DB_PATH', os.path.abspath(os.path.dirname(__file__))) # Set the local db path to this directory
+
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
 
     # Act
     paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
 
     # Assert
-    assert paths['db_folder_path'] == "/path/to/local/db"
-    assert sb == {"key": "value"}
-    assert secrets == {}  # Assuming set_secrets returns an empty dictionary when no secrets are found
-def test_st_setup_page_local_db_path_not_defined():
-    # Arrange
+    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
+    assert isinstance(sb, dict) and sb != {}    # Test that it's not an empty dictionary
+    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
+                       'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
+                       'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
+                       'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
+def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch):
+    """
+    Test case for the `st_setup_page` function with all inputs in sidebar and all environment variables set using .env file.
+
+    Args:
+        monkeypatch: Monkeypatch object for modifying environment variables.
+
+    Returns:
+        None
+    """
+
     page_title = "Test Page"
-    home_dir = "/path/to/home"
-    sidebar_config = {"key": "value"}
-    os.environ.pop('LOCAL_DB_PATH', None)
+    sidebar_config = {
+        'vector_database': True,
+        'embeddings': True,
+        'rag_type': True,
+        'index_name': True,
+        'llm': True,
+        'model_options': True
+    }
+
+    # Clear all environment variables, simulate .env load in st_setup_page and pre-set local_db_path
+    for var in list(os.environ.keys()):
+        monkeypatch.delenv(var, raising=False)
+
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
 
     # Act
-    with pytest.raises(SystemExit):
-        st_setup_page(page_title, home_dir, sidebar_config)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
 
     # Assert
-    # Verify that the program exits when LOCAL_DB_PATH is not defined
-
-def test_st_setup_page_local_db_path_input():
-    # Arrange
-    page_title = "Test Page"
-    home_dir = "/path/to/home"
-    sidebar_config = {"key": "value"}
-    os.environ.pop('LOCAL_DB_PATH', None)
-
-    # Act
-    with patch('builtins.input', return_value='/path/to/local/db'):
-        paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
-
-    # Assert
-    assert paths['db_folder_path'] == "/path/to/local/db"
-    assert sb == {"key": "value"}
-    assert secrets == {}  # Assuming set_secrets returns an empty dictionary when no secrets are found
+    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
+    assert isinstance(sb, dict) and sb != {}    # Test that it's not an empty dictionary
+    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
+                       'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
+                       'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
+                       'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
 
 # Test data visualization
 def test_reduce_vector_query_size(setup_fixture):

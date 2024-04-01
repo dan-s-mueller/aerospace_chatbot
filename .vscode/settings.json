@@ -4,7 +4,9 @@
     ],
     "python.testing.cwd": "${workspaceFolder}",
     "python.testing.pytestArgs": [
-        "tests"
+        "tests",
+        "-v",
+        "-s"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true

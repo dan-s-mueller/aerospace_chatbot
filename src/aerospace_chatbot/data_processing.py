@@ -468,11 +468,13 @@ def delete_index(index_type: str,
             pc.describe_index(index_name)
             pc.delete_index(index_name)
         except Exception as e:
+            # print(f"Error occurred while deleting Pinecone index: {e}")
             pass
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
-            except:
+            except Exception as e:
+                # print(f"Error occurred while deleting ChromaDB local_file_store collection: {e}")
                 pass    # No need to do anything if it doesn't exist
     elif index_type == "ChromaDB":  
         try:
@@ -482,18 +484,21 @@ def delete_index(index_type: str,
                 if index_name in idx.name:
                     persistent_client.delete_collection(name=idx.name)
         except Exception as e:
+            # print(f"Error occurred while deleting ChromaDB collection: {e}")
             pass
         # Delete local file store if they exist
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
-            except:
+            except Exception as e:
+                # print(f"Error occurred while deleting ChromaDB local_file_store collection: {e}")
                 pass    # No need to do anything if it doesn't exist
     elif index_type == "RAGatouille":
         try:
             ragatouille_path = os.path.join(local_db_path, '.ragatouille')
             shutil.rmtree(ragatouille_path)
         except Exception as e:
+            # print(f"Error occurred while deleting RAGatouille index: {e}")
             pass
     else:
         raise NotImplementedError
