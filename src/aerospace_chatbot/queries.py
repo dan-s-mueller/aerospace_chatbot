@@ -5,8 +5,6 @@ import logging
 import re
 from pathlib import Path
 
-from dotenv import load_dotenv, find_dotenv
-
 import openai
 import pinecone
 from pinecone import Pinecone as pinecone_client
@@ -52,7 +50,7 @@ class QA_Model:
         search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
         fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
         temperature (int, optional): The temperature for response generation. Defaults to 0.
-        local_db_path (str, optional): The path to the local database. Defaults to 'db'.
+        local_db_path (str, optional): The path to the local database. Defaults to '.'.
 
     Attributes:
         index_type (str): The type of index.
@@ -82,7 +80,7 @@ class QA_Model:
                  search_type='similarity',
                  fetch_k=50,
                  temperature=0,
-                 local_db_path='db'):
+                 local_db_path='.'):
         """
         Initializes a new instance of the QA_Model class.
 
@@ -96,7 +94,7 @@ class QA_Model:
             search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
             fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
             temperature (int, optional): The temperature for response generation. Defaults to 0.
-            local_db_path (str, optional): The path to the local database. Defaults to 'db'.
+            local_db_path (str, optional): The path to the local database. Defaults to '.'.
 
         """
         self.index_type=index_type
@@ -110,8 +108,6 @@ class QA_Model:
         self.temperature=temperature
         self.local_db_path=local_db_path
         self.sources=[]
-
-        load_dotenv(find_dotenv(),override=True)
 
         # Define retriever search parameters
         search_kwargs = _process_retriever_args(self.search_type,

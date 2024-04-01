@@ -38,14 +38,6 @@ from ragatouille import RAGPretrainedModel
 from ragxplorer import RAGxplorer, rag
 import pandas as pd
 
-from dotenv import load_dotenv,find_dotenv
-load_dotenv(find_dotenv(),override=True)
-
-# Set secrets from environment file
-OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
-VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
-PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
-HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
 def load_docs(index_type:str,
               docs,
@@ -58,7 +50,7 @@ def load_docs(index_type:str,
               clear:bool=False,
               file_out:str=None,
               batch_size:int=50,
-              local_db_path:str='../../db',
+              local_db_path:str='.',
               llm=None,
               show_progress:bool=False):
     """
@@ -292,37 +284,30 @@ def initialize_database(index_type: str,
         my_bar = st.progress(0, text=progress_text)
 
     if index_type == "Pinecone":
+
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-        logging.info(f"Creating new index {index_name}.")
-        pc = pinecone_client(api_key=PINECONE_API_KEY)
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         
         try:
             pc.describe_index(index_name)
         except:
-            logging.info(f"Index {index_name} does not exist. Creating new index.")
             pc.create_index(index_name,
                             dimension=_embedding_size(query_model),
                             spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
-            logging.info(f"Index {index_name} created.")
-        else:
-            logging.info(f"Index {index_name} exists.")
         
         index = pc.Index(index_name)
         vectorstore=PineconeVectorStore(index,
                                         index_name=index_name, 
                                         embedding=query_model,
                                         text_key='page_content',
-                                        pinecone_api_key=PINECONE_API_KEY)
+                                        pinecone_api_key=os.getenv('PINECONE_API_KEY'))
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-        # Upsert docs. Defaults to putting this in the local_db_path directory
-        logging.info(f"Creating new index {index_name}.")
-        logging.info(f"Local database path: {os.path.join(local_db_path,'chromadb')}")
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
         vectorstore = Chroma(client=persistent_client,
                                 collection_name=index_name,
@@ -333,12 +318,10 @@ def initialize_database(index_type: str,
     elif index_type == "RAGatouille":
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-        logging.info(f'Setting up RAGatouille model {query_model}')
         if init_ragatouille:    # Used if the index is not already set
             vectorstore = RAGPretrainedModel.from_pretrained(query_model,verbose=0)
         else:   # Used if the index is already set
             vectorstore = query_model    # The index is picked up directly.
-        logging.info('RAGatouille model set: ' + str(vectorstore))
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -355,7 +338,7 @@ def upsert_docs(index_type: str,
                 chunker: dict, 
                 batch_size: int = 50, 
                 show_progress: bool = False,
-                local_db_path: str = 'db'):
+                local_db_path: str = '.'):
     """
     Upserts documents into the specified index. Uses tenacity with exponential backoff to retry upserting documents.
 
@@ -366,7 +349,7 @@ def upsert_docs(index_type: str,
         chunker (dict): The chunker dictionary containing the documents to upsert.
         batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
         show_progress (bool, optional): Whether to show progress during the upsert process. Defaults to False.
-        local_db_path (str, optional): The local path to the database folder. Defaults to 'db'.
+        local_db_path (str, optional): The local path to the database folder. Defaults to '.'.
 
     Returns:
         tuple: A tuple containing the updated vectorstore and retriever objects.
@@ -408,12 +391,10 @@ def upsert_docs(index_type: str,
             logging.info(f"Index created: {vectorstore}")
 
             # Move the directory to the db folder
-            logging.info(f"Moving RAGatouille index to {local_db_path}")
             try:
                 shutil.move('.ragatouille', local_db_path)
             except shutil.Error:
                 pass    # If it already exists, don't do anything
-            logging.info(f"RAGatouille index created in {local_db_path}:" + str(vectorstore))
             retriever = vectorstore.as_langchain_retriever()
         else:
             raise NotImplementedError
@@ -434,7 +415,6 @@ def upsert_docs(index_type: str,
             
             # Index parent docs all at once
             retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['parent_chunks'])))
-            logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
         else:
@@ -456,7 +436,6 @@ def upsert_docs(index_type: str,
             
             # Index parent docs all at once
             retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['docs'])))
-            logging.info(f"Index created: {vectorstore}")
         elif index_type == "RAGatouille":
             raise Exception('RAGAtouille only supports standard RAG.')
         else:
@@ -469,7 +448,7 @@ def upsert_docs(index_type: str,
 def delete_index(index_type: str, 
                  index_name: str, 
                  rag_type: str,
-                 local_db_path: str = 'db'):
+                 local_db_path: str = '.'):
     """
     Deletes an index based on the specified index type.
 
@@ -477,52 +456,49 @@ def delete_index(index_type: str,
         index_type (str): The type of index to delete. Valid values are "Pinecone", "ChromaDB", or "RAGatouille".
         index_name (str): The name of the index to delete.
         rag_type (str): The type of RAG (RAGatouille) to delete. Valid values are "Parent-Child" or "Summary".
-        local_db_path (str, optional): The path to the local database. Defaults to 'db'.
+        local_db_path (str, optional): The path to the local database. Defaults to '.'.
 
     Raises:
         NotImplementedError: If the index_type is not supported.
 
     """
     if index_type == "Pinecone":
-        pc = pinecone_client(api_key=PINECONE_API_KEY)
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         try:
             pc.describe_index(index_name)
             pc.delete_index(index_name)
-        except:
-            # TODO update so that an error is thrown if the index does not exist
+        except Exception as e:
+            # print(f"Error occurred while deleting Pinecone index: {e}")
             pass
-        logging.info('Cleared database ' + index_name)
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
-            except:
-                logging.info("No local filestore to delete.")
-    elif index_type == "ChromaDB":
+            except Exception as e:
+                # print(f"Error occurred while deleting ChromaDB local_file_store collection: {e}")
+                pass    # No need to do anything if it doesn't exist
+    elif index_type == "ChromaDB":  
         try:
             persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))
             indices = persistent_client.list_collections()
-            logging.info('Available databases: ' + str(indices))
             for idx in indices:
                 if index_name in idx.name:
-                    logging.info(f"Clearing index {idx.name}...")
                     persistent_client.delete_collection(name=idx.name)
-                    logging.info(f"Index {idx.name} cleared.")
-        except:
-            # TODO update so that an error is thrown if the index does not exist
+        except Exception as e:
+            # print(f"Error occurred while deleting ChromaDB collection: {e}")
             pass
-        logging.info('Cleared database and matching databases ' + index_name)
         # Delete local file store if they exist
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
-            except:
-                logging.info("No local filestore to delete.")
+            except Exception as e:
+                # print(f"Error occurred while deleting ChromaDB local_file_store collection: {e}")
+                pass    # No need to do anything if it doesn't exist
     elif index_type == "RAGatouille":
         try:
             ragatouille_path = os.path.join(local_db_path, '.ragatouille')
             shutil.rmtree(ragatouille_path)
-        except:
-            # TODO update so that an error is thrown if the index does not exist
+        except Exception as e:
+            # print(f"Error occurred while deleting RAGatouille index: {e}")
             pass
     else:
         raise NotImplementedError

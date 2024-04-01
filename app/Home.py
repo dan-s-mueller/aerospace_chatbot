@@ -1,21 +1,19 @@
 import streamlit as st
-import sys
+import sys, os
 
 import logging
-from dotenv import load_dotenv,find_dotenv
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin
 
-# Set up the page, enable logging, read environment variables
-load_dotenv(find_dotenv(),override=True)
+# Set up page, enable logging
 logging.basicConfig(filename='app_Home.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
-# Set up page
-st.set_page_config(
-    page_title="Aerospace Chatbot",
-)
-st.title("Aerospace Chatbot Homepage")
+current_directory = os.path.dirname(os.path.abspath(__file__))
+home_dir = os.path.abspath(os.path.join(current_directory, "../"))
+paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot Homepage',
+                                     home_dir)
+
 st.subheader("Aerospace Mechanisms Symposia (AMS)")
 st.markdown("""
 This space contains chatbots and tools for exploring data in the aerospace mechanisms symposia, using all available papers published since 2000.
@@ -41,4 +39,4 @@ st.markdown(
 
 st.subheader('Connection Status')
 st.markdown('Vector database deletion possible through Database Processing page with account.')
-admin.st_connection_status_expander(delete_buttons=False)
+admin.st_connection_status_expander(delete_buttons=False,set_secrets=True)

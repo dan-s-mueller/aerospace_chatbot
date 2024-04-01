@@ -22,7 +22,7 @@ from ragxplorer import RAGxplorer
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 from data_processing import chunk_docs, initialize_database, load_docs, delete_index, reduce_vector_query_size, create_data_viz
-from admin import load_sidebar, set_secrets, SecretKeyException
+from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
 from queries import QA_Model
 
 # Functions
@@ -183,6 +183,8 @@ def viz_database_setup(index_name:str,setup:dict):
 def setup_fixture():
     """
     Sets up the necessary variables and configurations for the test.
+    The tests in this script will only work if there exists environment variables for API keys: 
+    OPENAI_API_KEY, VOYAGE_API_KEY, HUGGINGFACEHUB_API_TOKEN, and PINECONE_API_KEY.
 
     Returns:
         dict: A dictionary containing the setup variables and configurations.
@@ -201,6 +203,7 @@ def setup_fixture():
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
 
     LOCAL_DB_PATH=os.path.abspath(os.path.dirname(__file__))   # Default to the test path for easy cleanup.
+    # Set default to environment variable
     os.environ['LOCAL_DB_PATH'] = LOCAL_DB_PATH
     
     # Fixed inputs
@@ -247,6 +250,20 @@ def setup_fixture():
     }
 
     return setup
+@pytest.fixture()
+def temp_dotenv(setup_fixture):
+    dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','.env')
+    if not os.path.exists(dotenv_path):
+        with open(dotenv_path, 'w') as f:
+            print('Creating .env file for testing.')
+            f.write(f'OPENAI_API_KEY = {setup_fixture["OPENAI_API_KEY"]}\n')
+            f.write(f'PINECONE_API_KEY = {setup_fixture["PINECONE_API_KEY"]}\n')
+            f.write(f'HUGGINGFACEHUB_API_TOKEN = {setup_fixture["HUGGINGFACEHUB_API_TOKEN"]}\n')
+            f.write(f'LOCAL_DB_PATH = {setup_fixture["LOCAL_DB_PATH"]}\n')
+        yield dotenv_path
+        os.remove(dotenv_path)
+    else:
+        yield dotenv_path
 
 ### Begin tests
 # Test chunk docs
@@ -304,11 +321,12 @@ def test_chunk_docs_summary(setup_fixture):
     assert result['llm'] == setup_fixture['llm']['Hugging Face']
 
 # Test initialize database with a test query
-def test_initialize_database_pinecone(setup_fixture):
+def test_initialize_database_pinecone(monkeypatch,setup_fixture):
     """
     Test the initialization of a Pinecone database.
 
     Args:
+        monkeypatch: The monkeypatch fixture.
         setup_fixture (dict): The setup fixture containing the necessary parameters.
 
     Returns:
@@ -321,19 +339,33 @@ def test_initialize_database_pinecone(setup_fixture):
     index_name = 'test-index'
     query_model = setup_fixture['query_model']['OpenAI']
     rag_type = 'Standard'
-    local_db_path = setup_fixture['LOCAL_DB_PATH']
     clear = True
     init_ragatouille = False
     show_progress = False
 
-    vectorstore = initialize_database(index_type, index_name, query_model, rag_type, local_db_path, clear, init_ragatouille, show_progress)
+    # Test with environment variable local_db_path
+    try:
+        vectorstore = initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+    except Exception as e:  # If there is an error, be sure to delete the database
+        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+
     assert isinstance(vectorstore, PineconeVectorStore)
-    delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-def test_initialize_database_chromadb(setup_fixture):
+    delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+
+    # Test with local_db_path set manually, show it doesn't work if not set
+    monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
+    with pytest.raises(Exception):
+        initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+    try:    # Probably redudnant but to avoid cleanup
+        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+    except:
+        pass
+def test_initialize_database_chromadb(monkeypatch,setup_fixture):
     """
     Test the initialization of a Chroma database.
 
     Args:
+        monkeypatch: The monkeypatch fixture.
         setup_fixture (dict): A dictionary containing setup fixtures.
 
     Returns:
@@ -347,23 +379,33 @@ def test_initialize_database_chromadb(setup_fixture):
     index_name = 'test-index'
     query_model = setup_fixture['query_model']['OpenAI']
     rag_type = 'Standard'
-    local_db_path = setup_fixture['LOCAL_DB_PATH']
     clear = True
     init_ragatouille = False
     show_progress = False
 
+    # Test with environment variable local_db_path
     try:
-        vectorstore = initialize_database(index_type, index_name, query_model, rag_type, local_db_path, clear, init_ragatouille, show_progress)
+        vectorstore = initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
     except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
+        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
 
     assert isinstance(vectorstore, Chroma)
-    delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-def test_initialize_database_ragatouille(setup_fixture):
+    delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+
+    # Test with local_db_path set manually, show it doesn't work if not set
+    monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
+    with pytest.raises(Exception):
+        initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+    try:    # Probably redudnant but to avoid cleanup
+        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+    except:
+        pass
+def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
     """
     Test the initialization of a database for RAGatouille.
 
     Args:
+        monkeypatch: The monkeypatch fixture.
         setup_fixture (dict): A dictionary containing the setup fixture.
 
     Returns:
@@ -382,16 +424,26 @@ def test_initialize_database_ragatouille(setup_fixture):
     init_ragatouille = True
     show_progress = False
 
+    # Test with environment variable local_db_path
     try:
-        vectorstore = initialize_database(index_type, index_name, query_model, rag_type, local_db_path, clear, init_ragatouille, show_progress)
+        vectorstore = initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
     except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
+        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
     
     assert isinstance(vectorstore, RAGPretrainedModel)
-    delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
+    delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+
+    # Test with local_db_path set manually, show it doesn't work if not set
+    monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
+    with pytest.raises(Exception):
+        initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+    try:    # Probably redudnant but to avoid cleanup
+        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+    except:
+        pass
 
 # Test end to end process, adding query
-def test_database_setup_and_query(setup_fixture,test_input):
+def test_database_setup_and_query(test_input,setup_fixture):
     """Tests the entire process of initializing a database, upserting documents, and deleting a database.
 
     Args:
@@ -405,7 +457,7 @@ def test_database_setup_and_query(setup_fixture,test_input):
         None
     """
     test, print_str = parse_test_case(setup_fixture,test_input)
-
+    index_name='test'+str(test['id'])
     print(f"Starting test: {print_str}")
 
     try:            
@@ -414,7 +466,7 @@ def test_database_setup_and_query(setup_fixture,test_input):
             setup_fixture['docs'],
             rag_type=test['rag_type'],
             query_model=test['query_model'],
-            index_name='test'+str(test['id']), 
+            index_name=index_name, 
             chunk_size=setup_fixture['chunk_size'],
             chunk_overlap=setup_fixture['chunk_overlap'],
             clear=True,
@@ -429,6 +481,12 @@ def test_database_setup_and_query(setup_fixture,test_input):
             assert isinstance(vectorstore, RAGPretrainedModel)
         print('Vectorstore created.')
 
+        # Set index names for special databases
+        if test['rag_type'] == 'Parent-Child':
+            index_name = index_name + '-parent-child'
+        if test['rag_type'] == 'Summary':
+            index_name = index_name + '-summary-' + test['llm'].model_name.replace('/', '-')
+
         if test['index_type'] == 'RAGatouille':
             query_model_qa = RAGPretrainedModel.from_index(
                 os.path.join(setup_fixture['LOCAL_DB_PATH'],'.ragatouille/colbert/indexes','test'+str(test['id'])),
@@ -439,7 +497,7 @@ def test_database_setup_and_query(setup_fixture,test_input):
         assert query_model_qa is not None
         
         qa_model_obj = QA_Model(test['index_type'],
-                            'test'+str(test['id']),
+                            index_name,
                             query_model_qa,
                             test['llm'],
                             rag_type=test['rag_type'],
@@ -456,9 +514,12 @@ def test_database_setup_and_query(setup_fixture,test_input):
         print('Query and alternative question successful!')
 
         delete_index(test['index_type'],
-                'test'+str(test['id']), 
+                index_name, 
                 test['rag_type'],
                 local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        if test['rag_type'] == 'Parent-Child' or test['rag_type'] == 'Summary':
+            lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_Store', index_name)
+            assert not os.path.exists(lfs_path) # Check that the local file store was deleted
         print('Database deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
@@ -486,40 +547,40 @@ def test_load_sidebar():
     index_data_file=os.path.join(base_folder_path, 'config', 'index_data.json')
 
     # Test case: Only embeddings is True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, embeddings=True)
+    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, embeddings=True)
     assert 'query_model' in sidebar_config
     assert sidebar_config['query_model'] == 'Openai'
 
     # Test case: Only rag_type is True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, rag_type=True)
+    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, rag_type=True)
     assert 'rag_type' in sidebar_config
     assert sidebar_config['rag_type'] == 'Standard'
 
     # Test case: Only index_name is True (should give valuerror)
     with pytest.raises(ValueError):
-        sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, index_name=True)    
+        sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, index_name=True)    
 
-    # Test case: Only embeddings and index_name and rag_type are True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, embeddings=True, index_name=True, rag_type=True)
+    # Test case: Only embeddings, index_name and rag_type are True
+    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, embeddings=True, index_name=True, rag_type=True)
     assert 'query_model' in sidebar_config
     assert sidebar_config['query_model'] == 'Openai'
     assert 'index_name' in sidebar_config
     assert sidebar_config['index_name'] == 'chromadb-openai'
 
     # Test case: Only llm is True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, llm=True)
+    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, llm=True)
     assert 'llm_source' in sidebar_config
     assert sidebar_config['llm_source'] == 'OpenAI'
 
     # Test case: Only model_options is True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, model_options=True)
+    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, model_options=True)
     assert 'temperature' in sidebar_config['model_options']
     assert sidebar_config['model_options']['temperature'] == 0.1
     assert 'output_level' in sidebar_config['model_options']
     assert sidebar_config['model_options']['output_level'] == 1000
 
     # Test case: All options are True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file,
+    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True,
                                   embeddings=True, rag_type=True, index_name=True, llm=True, model_options=True)
     assert 'index_type' in sidebar_config
     assert sidebar_config['index_type'] == 'ChromaDB'
@@ -535,24 +596,6 @@ def test_load_sidebar():
     assert sidebar_config['model_options']['temperature'] == 0.1
     assert 'output_level' in sidebar_config['model_options']
     assert sidebar_config['model_options']['output_level'] == 1000
-def test_env_variables_exist(setup_fixture):
-    """
-    Test if the required environment variables exist.
-
-    Args:
-        setup_fixture (dict): A dictionary containing the setup fixture.
-
-    Raises:
-        AssertionError: If any of the required environment variables are None.
-
-    Returns:
-        None
-    """
-    assert setup_fixture['OPENAI_API_KEY'] is not None
-    assert setup_fixture['VOYAGE_API_KEY'] is not None
-    assert setup_fixture['HUGGINGFACEHUB_API_TOKEN'] is not None
-    assert setup_fixture['PINECONE_API_KEY'] is not None
-    print('Environment variables test passed.')
 def test_set_secrets_with_environment_variables(monkeypatch):
     """
     Test case to verify the behavior of the set_secrets function when environment variables are set.
@@ -578,7 +621,7 @@ def test_set_secrets_with_environment_variables(monkeypatch):
     assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
     assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
     assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
-def test_set_secrets_with_sidebar_data(monkeypatch):
+def test_set_secrets_with_inputs(monkeypatch):
     """
     Test case for the set_secrets function with sidebar data.
 
@@ -639,6 +682,160 @@ def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
     with pytest.raises(SecretKeyException):
         set_secrets(sb)
 
+# Test streamlit setup
+def test_st_setup_page_local_db_path_only_defined(monkeypatch):
+    """
+    Test case for the `st_setup_page` function when only the local db path is defined.
+
+    Args:
+        monkeypatch: A pytest fixture that allows modifying environment variables during testing.
+
+    Returns:
+        None
+    """
+    page_title = "Test Page"
+
+    # Clear all environment variables
+    for var in list(os.environ.keys()):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
+    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
+    monkeypatch.setenv('LOCAL_DB_PATH', os.path.abspath(os.path.dirname(__file__))) # Set the local db path to this directory
+
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
+
+    # Act
+    paths, sb, secrets = st_setup_page(page_title, home_dir)
+
+    # Assert
+    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
+    assert sb == {}
+    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': None,
+                       'OPENAI_API_KEY': None,
+                       'PINECONE_API_KEY': None,
+                       'VOYAGE_API_KEY': None}
+def test_st_setup_page_local_db_path_not_defined(monkeypatch):
+    """
+    Test case to verify the behavior of st_setup_page function when LOCAL_DB_PATH is not defined.
+
+    Args:
+        monkeypatch: Monkeypatch object for modifying environment variables.
+
+    Returns:
+        None
+    """
+
+    page_title = "Test Page"
+
+    # Clear all environment variables
+    for var in list(os.environ.keys()):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
+    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
+    monkeypatch.setenv('LOCAL_DB_PATH', None) # Set to none
+
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
+
+    # Act
+    paths, sb, secrets = st_setup_page(page_title, home_dir)
+
+    # Assert
+    assert paths['db_folder_path'] == 'None'
+    assert sb == {}
+    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': None,
+                       'OPENAI_API_KEY': None,
+                       'PINECONE_API_KEY': None,
+                       'VOYAGE_API_KEY': None}
+def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
+    """
+    Test case for the st_setup_page function with all inputs in sidebar and manual input for environment variables.
+
+    Args:
+        monkeypatch: A pytest fixture that allows modifying environment variables and other attributes during testing.
+
+    Returns:
+        None
+    """
+
+    page_title = "Test Page"
+    sidebar_config = {
+        'vector_database': True,
+        'embeddings': True,
+        'rag_type': True,
+        'index_name': True,
+        'llm': True,
+        'model_options': True
+    }
+
+    # Set all environment variables, simulate manual input no .env
+    monkeypatch.setenv('OPENAI_API_KEY', os.getenv('OPENAI_API_KEY'))
+    monkeypatch.setenv('VOYAGE_API_KEY', os.getenv('VOYAGE_API_KEY'))
+    monkeypatch.setenv('PINECONE_API_KEY', os.getenv('PINECONE_API_KEY'))
+    monkeypatch.setenv('HUGGINGFACEHUB_API_TOKEN', os.getenv('HUGGINGFACEHUB_API_TOKEN'))
+    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
+    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
+    monkeypatch.setenv('LOCAL_DB_PATH', os.path.abspath(os.path.dirname(__file__))) # Set the local db path to this directory
+
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
+
+    # Act
+    paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
+
+    # Assert
+    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
+    assert isinstance(sb, dict) and sb != {}    # Test that it's not an empty dictionary
+    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
+                       'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
+                       'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
+                       'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
+def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
+    """
+    Test case for the `st_setup_page` function with all inputs in sidebar and all environment variables set using .env file.
+
+    Args:
+        monkeypatch: Monkeypatch object for modifying environment variables.
+
+    Returns:
+        None
+    """
+
+    page_title = "Test Page"
+    sidebar_config = {
+        'vector_database': True,
+        'embeddings': True,
+        'rag_type': True,
+        'index_name': True,
+        'llm': True,
+        'model_options': True
+    }
+
+    # Clear all environment variables, simulate .env load in st_setup_page and pre-set local_db_path
+    for var in list(os.environ.keys()):
+        monkeypatch.delenv(var, raising=False)
+    dotenv_path = temp_dotenv
+    print(dotenv_path)
+
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
+
+    # Act
+    paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
+
+    # Assert
+    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
+    assert isinstance(sb, dict) and sb != {}    # Test that it's not an empty dictionary
+    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
+                       'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
+                       'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
+                       'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
+
 # Test data visualization
 def test_reduce_vector_query_size(setup_fixture):
     """
@@ -682,8 +879,14 @@ def test_create_data_viz_no_limit(setup_fixture):
     6. Verifies that the name of the RX client's vector database contains the index_name.
     7. Deletes the collection associated with the RX client's vector database.
 
+    Args:
+        setup_fixture: The setup fixture for the test.
+
     Raises:
-        Any exception raised during the test.
+        Exception: If an error occurs during the test.
+
+    Returns:
+        None
 
     """
     index_name = 'test-index'
@@ -714,8 +917,14 @@ def test_create_data_viz_limit(setup_fixture):
     6. Verifies that the name of the RX client's vector database contains the index_name.
     7. Deletes the collection associated with the RX client's vector database.
 
+    Args:
+        setup_fixture: The setup fixture for the test.
+
     Raises:
-        Any exception raised during the test.
+        Exception: If an error occurs during the test.
+
+    Returns:
+        None
 
     '''
     index_name = 'test-index'

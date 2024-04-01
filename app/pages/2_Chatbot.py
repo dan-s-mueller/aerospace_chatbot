@@ -1,5 +1,4 @@
 import os, sys, time, logging
-from dotenv import load_dotenv,find_dotenv
 import streamlit as st
 
 from langchain_community.vectorstores import Pinecone
@@ -25,8 +24,12 @@ def _reset_conversation():
     return None
 
 # Page setup
+current_directory = os.path.dirname(os.path.abspath(__file__))
+home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
-                                     {'embeddings':True,
+                                     home_dir,
+                                     {'vector_database':True,
+                                      'embeddings':True,
                                       'rag_type':True,
                                       'index_name':True,
                                       'llm':True,
@@ -98,7 +101,6 @@ if prompt := st.chat_input('Prompt here'):
                                                                rag_type=sb['rag_type'],
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
-                                                               filter_arg=False,
                                                                local_db_path=paths['db_folder_path'])
             if st.session_state.message_id>1:
                 # Update LLM
