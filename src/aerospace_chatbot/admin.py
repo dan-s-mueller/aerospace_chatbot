@@ -236,41 +236,30 @@ def set_secrets(sb):
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
     logging.info('OpenAI API Key: '+str(secrets['OPENAI_API_KEY']))
     if not secrets['OPENAI_API_KEY'] and 'keys' in sb and 'OPENAI_API_KEY' in sb['keys']:
-        logging.info('Setting OpenAI API Key from sidebar...')
         secrets['OPENAI_API_KEY'] = sb['keys']['OPENAI_API_KEY']
         os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
-        logging.info('OpenAI API Key: '+str(os.environ['OPENAI_API_KEY']))
         if os.environ['OPENAI_API_KEY']=='':
             raise SecretKeyException('OpenAI API Key is required.','OPENAI_API_KEY_MISSING')
     openai.api_key = secrets['OPENAI_API_KEY']
 
     secrets['VOYAGE_API_KEY'] = os.getenv('VOYAGE_API_KEY')
-    logging.info('Voyage API Key: '+str(secrets['VOYAGE_API_KEY']))
     if not secrets['VOYAGE_API_KEY'] and 'keys' in sb and 'VOYAGE_API_KEY' in sb['keys']:
-        logging.info('Setting Voyage API Key from sidebar...')
         secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
         os.environ['VOYAGE_API_KEY'] = secrets['VOYAGE_API_KEY']
-        logging.info('Voyage API Key: '+str(os.environ['VOYAGE_API_KEY']))
         if os.environ['VOYAGE_API_KEY']=='':
             raise SecretKeyException('Voyage API Key is required.','VOYAGE_API_KEY_MISSING')
 
     secrets['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
-    logging.info('Pinecone API Key: '+str(secrets['PINECONE_API_KEY']))
     if not secrets['PINECONE_API_KEY'] and 'keys' in sb and 'PINECONE_API_KEY' in sb['keys']:
-        logging.info('Setting Pinecone API Key from sidebar...')
         secrets['PINECONE_API_KEY'] = sb['keys']['PINECONE_API_KEY']
         os.environ['PINECONE_API_KEY'] = secrets['PINECONE_API_KEY']
-        logging.info('Pinecone API Key: '+str(os.environ['PINECONE_API_KEY']))
         if os.environ['PINECONE_API_KEY']=='':
             raise SecretKeyException('Pinecone API Key is required.','PINECONE_API_KEY_MISSING')
 
     secrets['HUGGINGFACEHUB_API_TOKEN'] = os.getenv('HUGGINGFACEHUB_API_TOKEN')
-    logging.info('Hugging Face API Key: '+str(secrets['HUGGINGFACEHUB_API_TOKEN']))
     if not secrets['HUGGINGFACEHUB_API_TOKEN'] and 'keys' in sb and 'HUGGINGFACEHUB_API_TOKEN' in sb['keys']:
-        logging.info('Setting Hugging Face API Key from sidebar...')
         secrets['HUGGINGFACEHUB_API_TOKEN'] = sb['keys']['HUGGINGFACEHUB_API_TOKEN']
         os.environ['HUGGINGFACEHUB_API_TOKEN'] = secrets['HUGGINGFACEHUB_API_TOKEN']
-        logging.info('Hugging Face API Key: '+str(os.environ['HUGGINGFACEHUB_API_TOKEN']))
         if os.environ['HUGGINGFACEHUB_API_TOKEN']=='':
             raise SecretKeyException('Hugging Face API Key is required.','HUGGINGFACE_API_KEY_MISSING')
     return secrets
