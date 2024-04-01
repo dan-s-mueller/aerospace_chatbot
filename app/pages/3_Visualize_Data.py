@@ -79,7 +79,7 @@ with st.expander("Create visualization data",expanded=True):
 
     if st.button('Create visualization data'):
         start_time = time.time()  # Start the timer
-        st.session_state.rx_client, st.session_state.chroma_client, temp_index_name = data_processing.create_data_viz(sb['index_selected'],
+        st.session_state.rx_client, st.session_state.chroma_client = data_processing.create_data_viz(sb['index_selected'],
                             st.session_state.rx_client,
                             st.session_state.chroma_client,
                             umap_params=umap_params,
@@ -88,7 +88,7 @@ with st.expander("Create visualization data",expanded=True):
                             show_progress=True)
         end_time = time.time()  # Stop the timer
         elapsed_time = end_time - start_time 
-        st.markdown(f":heavy_check_mark: Created visualization data in {elapsed_time:.2f} seconds. Visualization database: {temp_index_name}")
+        st.markdown(f":heavy_check_mark: Created visualization data in {elapsed_time:.2f} seconds. Visualization database: { st.session_state.rx_client._vectordb.name}")
 
 with st.expander("Visualize data",expanded=True):
     import_data = st.checkbox('Import visualization data?', value=True)

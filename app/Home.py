@@ -43,4 +43,4 @@ st.markdown(
 
 st.subheader('Connection Status')
 st.markdown('Vector database deletion possible through Database Processing page with account.')
-admin.st_connection_status_expander(paths['data_folder_path'],delete_buttons=False,set_secrets=True)
+admin.st_connection_status_expander(delete_buttons=False,set_secrets=True)

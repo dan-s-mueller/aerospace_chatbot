@@ -42,7 +42,7 @@ if st.session_state["authentication_status"]:
 
     # Add section for connection status and vector database cleanup
     st.subheader('Connection status and vector database cleanup')
-    admin.st_connection_status_expander(paths['data_folder_path'],delete_buttons=True)
+    admin.st_connection_status_expander(delete_buttons=True)
 
     # Add section for creating and loading into a vector database
     st.subheader('Create and load into a vector database')

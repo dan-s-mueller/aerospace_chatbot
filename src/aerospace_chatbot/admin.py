@@ -12,10 +12,6 @@ from pinecone import Pinecone
 import chromadb
 from langchain_openai import ChatOpenAI
 
-# Set up the page, enable logging 
-from dotenv import load_dotenv,find_dotenv
-load_dotenv(find_dotenv(),override=True)
-
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors.
 
@@ -66,13 +62,8 @@ def load_sidebar(config_file,
     # Set local db path
     sb_out['keys']={}
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
-        raise SecretKeyException('Local Database Path is required.','LOCAL_DB_PATH_MISSING')
-    #     # Set to fixed value, update on home if required.
-    #     sb_out['keys']['LOCAL_DB_PATH'] = '/data'
-    #     os.environ['LOCAL_DB_PATH'] = sb_out['keys']['LOCAL_DB_PATH']
-    # else:
-    #     sb_out['keys']['LOCAL_DB_PATH'] = os.getenv('LOCAL_DB_PATH')
-    #     st.sidebar.markdown('Local Database Path: '+sb_out['keys']['LOCAL_DB_PATH'],help='Loaded from environment. Update on Home if required.')
+        # This is the case where the .env file is not in the directory
+        raise SecretKeyException('Local Database Path is required. Use an absolute path.','LOCAL_DB_PATH_MISSING')
 
     # Vector databases
     if vector_database:
@@ -369,6 +360,7 @@ def set_llm(sb, secrets, type='prompt'):
 def show_pinecone_indexes(format=True):
     """
     Retrieves the list of Pinecone indexes and their status.
+    LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
         format (bool, optional): Specifies whether to format the output. Defaults to True.
@@ -392,12 +384,12 @@ def show_pinecone_indexes(format=True):
         return _format_pinecone_status(pinecone_status)
     else:
         return pinecone_status
-def show_chroma_collections(db_folder_path:str = None,format=True):
+def show_chroma_collections(format=True):
     """
     Retrieves the list of chroma collections from the local database.
+    LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        db_folder_path (str): The path to the database folder.
         format (bool, optional): Specifies whether to format the output. Defaults to True.
 
     Returns:
@@ -408,20 +400,14 @@ def show_chroma_collections(db_folder_path:str = None,format=True):
         ValueError: If the chroma vector database needs to be reset.
 
     """
-        # Define base path
-    # calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
-    # base_folder_path = home_dir
-    # db_folder_path=os.path.join(base_folder_path, os.getenv('LOCAL_DB_PATH'))
-
     if os.getenv('LOCAL_DB_PATH') is None:
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
     else:
-        chromadb.Client
+        db_folder_path=os.getenv('LOCAL_DB_PATH')
         try:
-            print(db_folder_path)
             persistent_client = chromadb.PersistentClient(path=os.path.join(db_folder_path,'chromadb'))
         except:
-            raise ValueError("Chroma vector database needs to be reset, or the database path is incorrect. Clear cache, or reset path.")
+            raise ValueError("Chroma vector database needs to be reset, or the database path is incorrect. Clear cache, or reset path. You may have specified a path which is read only or has no collections.")
         collections=persistent_client.list_collections()
         if len(collections)==0:
             chroma_status = {'status': False, 'message': 'No collections found'}
@@ -431,53 +417,49 @@ def show_chroma_collections(db_folder_path:str = None,format=True):
         return _format_chroma_status(chroma_status)
     else:
         return chroma_status
-def show_ragatouille_indexes(db_folder_path:str, format=True):
+def show_ragatouille_indexes(format=True):
     """
     Retrieves the list of ragatouille indexes.
+    LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        db_folder_path (str): The path to the database folder.
         format (bool, optional): Specifies whether to format the indexes. Defaults to True.
 
     Returns:
-        list or str: The list of indexes if format is True, otherwise the raw list.
+        dict or str: If format is True, returns a formatted string representation of the ragatouille status.
+                    If format is False, returns a dictionary containing the ragatouille status.
 
     Raises:
-        None
+        ValueError: If the ragatouille vector database needs to be reset.
 
-    Example:
-        >>> show_ragatouille_indexes()
-        ['index1', 'index2', 'index3']
     """
-    # Define base path
-    # calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
-    # base_folder_path = _get_base_path(calling_script_path)
-    # db_folder_path=os.path.join(base_folder_path, os.getenv('LOCAL_DB_PATH'))
-
+    if os.getenv('LOCAL_DB_PATH') is None:
+        ragatouille_status = {'status': False, 'message': 'Local database path is not set.'}
     try:
+        db_folder_path=os.getenv('LOCAL_DB_PATH')
         path=os.path.join(db_folder_path,'.ragatouille/colbert/indexes')
         indexes = []
         for item in os.listdir(path):
             item_path = os.path.join(path, item)
             if os.path.isdir(item_path):
                 indexes.append(item)
+        ragatouille_status = {'status': True, 'indexes': indexes}
     except:
-        indexes = []
+        ragatouille_status = {'status': False, 'message': 'Error retrieving ragatouille indexes.'}
     if format:
-        return _format_ragatouille_status(indexes)
+        return _format_ragatouille_status(ragatouille_status)
     else:
-        return indexes
-def st_connection_status_expander(db_folder_path:str, expanded: bool = True, delete_buttons: bool = False, set_secrets: bool = False):
+        return ragatouille_status
+def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = False, set_secrets: bool = False):
     """
     Expands a Streamlit expander widget to display connection status information.
+    LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        db_folder_path (str): The path to the database folder.
         expanded (bool, optional): Whether the expander is initially expanded or collapsed. Only intended with account access. Defaults to True.
         delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes. Defaults to False.
         set_secrets (bool, optional): Whether to set the secrets. Defaults to False.
     """
-
     with st.expander("Connection Status", expanded=expanded):
         # Set secrets and assign to environment variables
         if set_secrets:
@@ -504,9 +486,14 @@ def st_connection_status_expander(db_folder_path:str, expanded: bool = True, del
                 os.environ['HUGGINGFACEHUB_API_TOKEN'] = keys['HUGGINGFACEHUB_API_TOKEN']
             
             # LOCAL_DB_PATH
-            keys['LOCAL_DB_PATH'] = st.text_input('Update Local Database Path','/data',help='Path to local database (e.g. chroma)')
+            keys['LOCAL_DB_PATH'] = st.text_input('Update Local Database Path',os.getenv('LOCAL_DB_PATH'),help='Path to local database (e.g. chroma)')
             if keys['LOCAL_DB_PATH']!='':
                 os.environ['LOCAL_DB_PATH'] = keys['LOCAL_DB_PATH']
+
+        if os.getenv('LOCAL_DB_PATH') is None:
+            raise SecretKeyException('Local Database Path is required. Use an absolute path.','LOCAL_DB_PATH_MISSING')
+        else:
+            db_folder_path=os.getenv('LOCAL_DB_PATH')
 
         # Show key status
         st.markdown("**API key status** (Indicates status of local variable. It does not guarantee the key itself is correct):")
@@ -531,7 +518,7 @@ def st_connection_status_expander(db_folder_path:str, expanded: bool = True, del
             pass
 
         # Chroma DB
-        st.markdown(show_chroma_collections(db_folder_path))
+        st.markdown(show_chroma_collections())
         try:
             chroma_db_collections = [obj.name for obj in show_chroma_collections(format=False)['message']]
             if delete_buttons:
@@ -543,17 +530,18 @@ def st_connection_status_expander(db_folder_path:str, expanded: bool = True, del
                         rag_type = "Summary"
                     else:
                         rag_type = "Standard"
+                    print(chroma_db_name)
                     data_processing.delete_index('ChromaDB', chroma_db_name, rag_type, local_db_path=db_folder_path)
                     st.markdown(f"Database {chroma_db_name} has been deleted.")
         except:
             pass
         
         # Ragatouille
-        st.markdown(show_ragatouille_indexes(db_folder_path))
+        st.markdown(show_ragatouille_indexes())
         try:
-            ragatouille_indexes = [obj.name for obj in show_ragatouille_indexes(db_folder_path,format=False)['message']]
-            ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
+            ragatouille_indexes = [obj.name for obj in show_ragatouille_indexes(format=False)['message']]
             if delete_buttons:
+                ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
                 if st.button('Delete RAGatouille database', help='This is permanent!'):
                     data_processing.delete_index('Ragatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
                     st.markdown(f"Index {ragatouille_name} has been deleted.")
@@ -585,12 +573,6 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
         SecretKeyException: If there is an issue with the secret keys.
 
     """
-    
-    # Read environment variables and set the page title
-    # load_dotenv(find_dotenv(),override=True)  # commented out because this is run every time admin runs
-
-    # Define base path
-    # calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
     base_folder_path = home_dir
     logging.info(f'Base folder path: {base_folder_path}')
 
@@ -607,7 +589,24 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     )
     st.title(page_title)
 
-    # Assumes strucutre and file names as per the following.
+    # Set local database
+    # Only show the text input if no value has been entered yet
+    if not os.environ.get('LOCAL_DB_PATH'):
+        local_db_path_input = st.empty()  # Create a placeholder for the text input
+        warn_db_path=st.warning('Local Database Path is required to initialize. Use an absolute path.')
+        local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. chroma).')
+        if local_db_path:
+            os.environ['LOCAL_DB_PATH'] = local_db_path
+        else:
+            st.stop()
+    if os.environ.get('LOCAL_DB_PATH'): # If a value has been entered, update the environment variable and clear the text input
+        try:
+            local_db_path_input.empty()  # This will remove the text input from the page if it exists
+            warn_db_path.empty()
+        except:
+            pass    # If the text input has already been removed, do nothing
+
+    # Load sidebar
     try:
         if sidebar_config is None:
             sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
@@ -619,9 +618,6 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     except SecretKeyException as e:
         # If no .env file is found, set the local db path when the warning is raised.
         st.warning(f"{e}")
-        local_db_path_input = st.text_input('Update Local Database Path','/data',help='Path to local database (e.g. chroma)')
-        if local_db_path_input!='':
-            os.environ['LOCAL_DB_PATH'] = local_db_path_input
         st.stop()
     try:
         secrets=set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
@@ -630,9 +626,7 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
         st.stop()
 
     # Set db folder path based on env variable
-    # TODO: work through if it makes sense to set the db path as absolute and not relative.
-    db_folder_path=os.path.join(base_folder_path, os.environ['LOCAL_DB_PATH'])
-    logging.info(f'Database folder path: {db_folder_path}')
+    db_folder_path=os.environ['LOCAL_DB_PATH']
 
     paths={'base_folder_path':base_folder_path,
            'config_folder_path':config_folder_path,
@@ -730,20 +724,25 @@ def _format_chroma_status(chroma_status):
         message = chroma_status['message']
         markdown_string = f"**ChromaDB Collections**\n- {message}: :x:"
     return markdown_string
-def _format_ragatouille_status(indexes):
+def _format_ragatouille_status(ragatouille_status):
     """
-    Formats the status of Ragatouille indexes.
+    Formats the ragatouille status for display.
 
     Args:
-        indexes (list): List of Ragatouille indexes.
+        ragatouille_status (dict): The ragatouille status dictionary.
 
     Returns:
-        str: Formatted status of Ragatouille indexes.
+        str: A formatted string representation of the ragatouille status.
+
     """
-    if len(indexes) == 0:
-        return "**Ragatouille Indexes**\n- :x: No Ragatouille indexes initialized."
+    if ragatouille_status['status']:
+        indexes = ragatouille_status['indexes']
+        if len(indexes) > 0:
+            formatted_status = "Ragatouille Indexes:\n"
+            for index in indexes:
+                formatted_status += f"- {index}\n"
+        else:
+            formatted_status = "No Ragatouille indexes found."
     else:
-        index_description = ""
-        for index in indexes:
-            index_description += f"- {index}: :heavy_check_mark:\n"
-        return f"**Ragatouille Indexes**\n{index_description}"
+        formatted_status = f"Ragatouille status: {ragatouille_status['message']}"
+    return formatted_status
