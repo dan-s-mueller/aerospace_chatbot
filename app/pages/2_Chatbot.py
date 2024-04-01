@@ -75,7 +75,7 @@ if prompt := st.chat_input('Prompt here'):
             t_start=time.time()
 
             st.session_state.message_id += 1
-            st.write('Starting reponse generation for message: '+str(st.session_state.message_id))
+            st.write(f'*Starting response generation for message: {str(st.session_state.message_id)}*')
             
             if st.session_state.message_id==1:
                 # Define embeddings
@@ -108,15 +108,16 @@ if prompt := st.chat_input('Prompt here'):
 
                 st.session_state.qa_model_obj.update_model(llm,
                                                            k=sb['model_options']['k'],
-                                                           search_type=sb['model_options']['search_type'],
-                                                           filter_arg=False)
+                                                           search_type=sb['model_options']['search_type'])
             
-            st.write('Searching vector database, generating prompt...')
+            st.write('*Searching vector database, generating prompt...*')
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.ai_response
             message_placeholder.markdown(ai_response)
-            st.write("Alternative questions: \n\n\n"+
-                     st.session_state.qa_model_obj.generate_alternative_questions(prompt,llm,response=ai_response))
+            print(ai_response)
+            st.write("**Alternative questions:** \n\n\n"+
+                     st.session_state.qa_model_obj.generate_alternative_questions(
+                         prompt,response=ai_response))
 
             t_delta=time.time() - t_start
             status.update(label='Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)
