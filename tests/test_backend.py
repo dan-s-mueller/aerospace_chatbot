@@ -251,7 +251,7 @@ def setup_fixture():
 
     return setup
 @pytest.fixture()
-def temp_dotenv():
+def temp_dotenv(setup_fixture):
     dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','.env')
     if not os.path.exists(dotenv_path):
         with open(dotenv_path, 'w') as f:
@@ -267,7 +267,7 @@ def temp_dotenv():
 
 ### Begin tests
 # Test chunk docs
-def test_chunk_docs_standard():
+def test_chunk_docs_standard(setup_fixture):
     """
     Test the chunk_docs function with standard RAG.
 
@@ -283,7 +283,7 @@ def test_chunk_docs_standard():
     assert result['pages'] is not None
     assert result['chunks'] is not None
     assert result['splitters'] is not None
-def test_chunk_docs_parent_child():
+def test_chunk_docs_parent_child(setup_fixture):
     """
     Test the chunk_docs function with parent-child RAG.
 
@@ -301,7 +301,7 @@ def test_chunk_docs_parent_child():
     assert result['chunks'] is not None
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
-def test_chunk_docs_summary():
+def test_chunk_docs_summary(setup_fixture):
     """
     Test the chunk_docs function with summary RAG.
 
@@ -321,7 +321,7 @@ def test_chunk_docs_summary():
     assert result['llm'] == setup_fixture['llm']['Hugging Face']
 
 # Test initialize database with a test query
-def test_initialize_database_pinecone(monkeypatch):
+def test_initialize_database_pinecone(monkeypatch,setup_fixture):
     """
     Test the initialization of a Pinecone database.
 
@@ -360,7 +360,7 @@ def test_initialize_database_pinecone(monkeypatch):
         delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
     except:
         pass
-def test_initialize_database_chromadb(monkeypatch):
+def test_initialize_database_chromadb(monkeypatch,setup_fixture):
     """
     Test the initialization of a Chroma database.
 
@@ -400,7 +400,7 @@ def test_initialize_database_chromadb(monkeypatch):
         delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
     except:
         pass
-def test_initialize_database_ragatouille(monkeypatch):
+def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
     """
     Test the initialization of a database for RAGatouille.
 
@@ -443,7 +443,7 @@ def test_initialize_database_ragatouille(monkeypatch):
         pass
 
 # Test end to end process, adding query
-def test_database_setup_and_query(test_input):
+def test_database_setup_and_query(test_input,setup_fixture):
     """Tests the entire process of initializing a database, upserting documents, and deleting a database.
 
     Args:
@@ -837,7 +837,7 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
                        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
 
 # Test data visualization
-def test_reduce_vector_query_size():
+def test_reduce_vector_query_size(setup_fixture):
     """
     Test function to verify the behavior of the reduce_vector_query_size function.
 
@@ -865,7 +865,7 @@ def test_reduce_vector_query_size():
     except Exception as e:
         chroma_client.delete_collection(name=rx_client._vectordb.name)
         raise e
-def test_create_data_viz_no_limit():
+def test_create_data_viz_no_limit(setup_fixture):
     """
     Test case: Without limit_size_qty and df_export_path
 
@@ -879,8 +879,14 @@ def test_create_data_viz_no_limit():
     6. Verifies that the name of the RX client's vector database contains the index_name.
     7. Deletes the collection associated with the RX client's vector database.
 
+    Args:
+        setup_fixture: The setup fixture for the test.
+
     Raises:
-        Any exception raised during the test.
+        Exception: If an error occurs during the test.
+
+    Returns:
+        None
 
     """
     index_name = 'test-index'
@@ -897,7 +903,7 @@ def test_create_data_viz_no_limit():
     assert isinstance(chroma_client_out, ClientAPI)
     assert "test-index" in rx_client_out._vectordb.name
     chroma_client.delete_collection(name=rx_client_out._vectordb.name)
-def test_create_data_viz_limit():
+def test_create_data_viz_limit(setup_fixture):
     '''
     Test case: With limit_size_qty and df_export_path
 
@@ -911,8 +917,14 @@ def test_create_data_viz_limit():
     6. Verifies that the name of the RX client's vector database contains the index_name.
     7. Deletes the collection associated with the RX client's vector database.
 
+    Args:
+        setup_fixture: The setup fixture for the test.
+
     Raises:
-        Any exception raised during the test.
+        Exception: If an error occurs during the test.
+
+    Returns:
+        None
 
     '''
     index_name = 'test-index'
