@@ -64,7 +64,7 @@ def load_sidebar(config_file,
     # Set local db path
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         # This is the case where the .env file is not in the directory
-        raise SecretKeyException('Local Database Path is required. Use an absolute path.','LOCAL_DB_PATH_MISSING')
+        raise SecretKeyException('Local Database Path is required. Use an absolute path for local, or /data for hugging face spaces.','LOCAL_DB_PATH_MISSING')
 
     # Vector databases
     if vector_database:
