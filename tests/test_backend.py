@@ -504,6 +504,9 @@ def test_database_setup_and_query(setup_fixture,test_input):
                 index_name, 
                 test['rag_type'],
                 local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        if test['rag_type'] == 'Parent-Child' or test['rag_type'] == 'Summary':
+            lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_Store', index_name)
+            assert not os.path.exists(lfs_path) # Check that the local file store was deleted
         print('Database deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
