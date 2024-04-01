@@ -234,7 +234,6 @@ def set_secrets(sb):
     secrets={}
 
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
-    logging.info('OpenAI API Key: '+str(secrets['OPENAI_API_KEY']))
     if not secrets['OPENAI_API_KEY'] and 'keys' in sb and 'OPENAI_API_KEY' in sb['keys']:
         secrets['OPENAI_API_KEY'] = sb['keys']['OPENAI_API_KEY']
         os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
