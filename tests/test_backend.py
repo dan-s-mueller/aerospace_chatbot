@@ -250,11 +250,24 @@ def setup_fixture():
     }
 
     return setup
+@pytest.fixture()
+def temp_dotenv():
+    dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','.env')
+    if not os.path.exists(dotenv_path):
+        with open(dotenv_path, 'w') as f:
+            print('Creating .env file for testing.')
+            f.write(f'OPENAI_API_KEY = {setup_fixture["OPENAI_API_KEY"]}\n')
+            f.write(f'PINECONE_API_KEY = {setup_fixture["PINECONE_API_KEY"]}\n')
+            f.write(f'HUGGINGFACEHUB_API_TOKEN = {setup_fixture["HUGGINGFACEHUB_API_TOKEN"]}\n')
+            f.write(f'LOCAL_DB_PATH = {setup_fixture["LOCAL_DB_PATH"]}\n')
+        yield dotenv_path
+        os.remove(dotenv_path)
+    else:
+        yield dotenv_path
 
 ### Begin tests
-# TODO add tests to check when local_db_path is not in the .env file
 # Test chunk docs
-def test_chunk_docs_standard(setup_fixture):
+def test_chunk_docs_standard():
     """
     Test the chunk_docs function with standard RAG.
 
@@ -270,7 +283,7 @@ def test_chunk_docs_standard(setup_fixture):
     assert result['pages'] is not None
     assert result['chunks'] is not None
     assert result['splitters'] is not None
-def test_chunk_docs_parent_child(setup_fixture):
+def test_chunk_docs_parent_child():
     """
     Test the chunk_docs function with parent-child RAG.
 
@@ -288,7 +301,7 @@ def test_chunk_docs_parent_child(setup_fixture):
     assert result['chunks'] is not None
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
-def test_chunk_docs_summary(setup_fixture):
+def test_chunk_docs_summary():
     """
     Test the chunk_docs function with summary RAG.
 
@@ -308,7 +321,7 @@ def test_chunk_docs_summary(setup_fixture):
     assert result['llm'] == setup_fixture['llm']['Hugging Face']
 
 # Test initialize database with a test query
-def test_initialize_database_pinecone(monkeypatch,setup_fixture):
+def test_initialize_database_pinecone(monkeypatch):
     """
     Test the initialization of a Pinecone database.
 
@@ -347,7 +360,7 @@ def test_initialize_database_pinecone(monkeypatch,setup_fixture):
         delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
     except:
         pass
-def test_initialize_database_chromadb(monkeypatch,setup_fixture):
+def test_initialize_database_chromadb(monkeypatch):
     """
     Test the initialization of a Chroma database.
 
@@ -387,7 +400,7 @@ def test_initialize_database_chromadb(monkeypatch,setup_fixture):
         delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
     except:
         pass
-def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
+def test_initialize_database_ragatouille(monkeypatch):
     """
     Test the initialization of a database for RAGatouille.
 
@@ -430,7 +443,7 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
         pass
 
 # Test end to end process, adding query
-def test_database_setup_and_query(setup_fixture,test_input):
+def test_database_setup_and_query(test_input):
     """Tests the entire process of initializing a database, upserting documents, and deleting a database.
 
     Args:
@@ -669,7 +682,6 @@ def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
     with pytest.raises(SecretKeyException):
         set_secrets(sb)
 
-# TODO finish this
 # Test streamlit setup
 def test_st_setup_page_local_db_path_only_defined(monkeypatch):
     """
@@ -782,7 +794,7 @@ def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
                        'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
                        'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
                        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
-def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch):
+def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
     """
     Test case for the `st_setup_page` function with all inputs in sidebar and all environment variables set using .env file.
 
@@ -806,6 +818,8 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch):
     # Clear all environment variables, simulate .env load in st_setup_page and pre-set local_db_path
     for var in list(os.environ.keys()):
         monkeypatch.delenv(var, raising=False)
+    dotenv_path = temp_dotenv
+    print(dotenv_path)
 
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
@@ -823,7 +837,7 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch):
                        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
 
 # Test data visualization
-def test_reduce_vector_query_size(setup_fixture):
+def test_reduce_vector_query_size():
     """
     Test function to verify the behavior of the reduce_vector_query_size function.
 
@@ -851,7 +865,7 @@ def test_reduce_vector_query_size(setup_fixture):
     except Exception as e:
         chroma_client.delete_collection(name=rx_client._vectordb.name)
         raise e
-def test_create_data_viz_no_limit(setup_fixture):
+def test_create_data_viz_no_limit():
     """
     Test case: Without limit_size_qty and df_export_path
 
@@ -883,7 +897,7 @@ def test_create_data_viz_no_limit(setup_fixture):
     assert isinstance(chroma_client_out, ClientAPI)
     assert "test-index" in rx_client_out._vectordb.name
     chroma_client.delete_collection(name=rx_client_out._vectordb.name)
-def test_create_data_viz_limit(setup_fixture):
+def test_create_data_viz_limit():
     '''
     Test case: With limit_size_qty and df_export_path
 
