@@ -109,8 +109,6 @@ class QA_Model:
         self.local_db_path=local_db_path
         self.sources=[]
 
-        load_dotenv(find_dotenv(),override=True)
-
         # Define retriever search parameters
         search_kwargs = _process_retriever_args(self.search_type,
                                                 self.k,

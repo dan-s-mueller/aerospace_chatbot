@@ -1,5 +1,4 @@
 import os, sys, time, logging
-from dotenv import load_dotenv,find_dotenv
 import streamlit as st
 
 from langchain_community.vectorstores import Pinecone
@@ -102,7 +101,6 @@ if prompt := st.chat_input('Prompt here'):
                                                                rag_type=sb['rag_type'],
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
-                                                               filter_arg=False,
                                                                local_db_path=paths['db_folder_path'])
             if st.session_state.message_id>1:
                 # Update LLM

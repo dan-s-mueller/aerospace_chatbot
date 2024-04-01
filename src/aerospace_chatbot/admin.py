@@ -6,6 +6,7 @@ import os
 import logging
 import json
 import streamlit as st
+from dotenv import load_dotenv,find_dotenv
 
 import openai
 from pinecone import Pinecone
@@ -573,6 +574,8 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
         SecretKeyException: If there is an issue with the secret keys.
 
     """
+    load_dotenv(find_dotenv(),override=True)
+
     base_folder_path = home_dir
     logging.info(f'Base folder path: {base_folder_path}')
 
@@ -634,22 +637,6 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
            'db_folder_path':db_folder_path}
 
     return paths,sb,secrets
-# def _get_base_path(calling_script_path: str):
-#     """Define base path, input is the path of the calling script, assumed to be in a subfolder of the base directory. This script will only work properly when called from src/aerospace_chatbot.
-
-#     Args:
-#         calling_script_path (str): The path of the calling script.
-
-#     Returns:
-#         str: The base folder path.
-
-#     """
-#     # calling_script_path = inspect.getfile(inspect.stack()[1][0])  # Get the path of the script that called this function)
-#     current_dir = os.path.dirname(os.path.abspath(calling_script_path))  # Get the directory containing the calling script
-#     base_folder_path = os.path.join(current_dir, '..', '..')    # Define the path to the base folder. This is not root but the directory where operations are mainly performed.
-#     base_folder_path = os.path.normpath(base_folder_path)  # Normalize the path
-#     logging.info(f'Base folder path: {base_folder_path}')
-#     return base_folder_path
 def _format_key_status(key_status: str):
     """
     Formats the key status dictionary into a formatted string.

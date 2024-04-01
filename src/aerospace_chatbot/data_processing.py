@@ -38,11 +38,6 @@ from ragatouille import RAGPretrainedModel
 from ragxplorer import RAGxplorer, rag
 import pandas as pd
 
-# Set secrets from environment file
-OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
-VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
-PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
-HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
 
 def load_docs(index_type:str,
               docs,
@@ -289,9 +284,10 @@ def initialize_database(index_type: str,
         my_bar = st.progress(0, text=progress_text)
 
     if index_type == "Pinecone":
+
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-        pc = pinecone_client(api_key=PINECONE_API_KEY)
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         
         try:
             pc.describe_index(index_name)
@@ -305,14 +301,13 @@ def initialize_database(index_type: str,
                                         index_name=index_name, 
                                         embedding=query_model,
                                         text_key='page_content',
-                                        pinecone_api_key=PINECONE_API_KEY)
+                                        pinecone_api_key=os.getenv('PINECONE_API_KEY'))
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-        # Upsert docs. Defaults to putting this in the local_db_path directory
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
         vectorstore = Chroma(client=persistent_client,
                                 collection_name=index_name,
@@ -468,7 +463,7 @@ def delete_index(index_type: str,
 
     """
     if index_type == "Pinecone":
-        pc = pinecone_client(api_key=PINECONE_API_KEY)
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         try:
             pc.describe_index(index_name)
             pc.delete_index(index_name)
