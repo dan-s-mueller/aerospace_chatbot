@@ -24,7 +24,7 @@ Helpful Links
 -------------
 - `Hugging Face <https://huggingface.co/>`_, this is where open source models are hosted, also is a great place to deploy applications and perform fine tuning.
 - `Langchain <https://python.langchain.com/docs/get_started/introduction>`_, this is a framework for building AI applications.
-- `Langsmith <smith.langchain.com>`_, this is a platform for debugging and data analysis for inputs/outputs/runtime of AI models.
+- `Langsmith <https://smith.langchain.com/>`_, this is a platform for debugging and data analysis for inputs/outputs/runtime of AI models.
 - API key links:
     - `OpenAI <https://platform.openai.com/api-keys>`_
     - `Pinecone <https://www.pinecone.io>`_
