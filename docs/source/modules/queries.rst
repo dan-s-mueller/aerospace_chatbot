@@ -1,5 +1,5 @@
 queries
-==============
+=======
 
 .. automodule:: src.aerospace_chatbot.queries
    :members:
