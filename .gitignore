@@ -9,6 +9,7 @@
 *.pdf
 /data/AMS/noupload/*.pdf
 !/data/AMS/*.pdf
+!/tests/*.pdf
 
 # Databases
 db/
