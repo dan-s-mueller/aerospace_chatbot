@@ -77,11 +77,27 @@ if st.session_state["authentication_status"]:
         clear_database = st.checkbox('Delete existing database?',value=True)
         if sb['query_model']=='Openai' or 'ChromaDB':
             # OpenAI will time out if the batch size is too large
-            batch_size=st.number_input('Batch size for upsert', min_value=1, step=1, value=50)
+            batch_size=st.number_input('Batch size for upsert', 
+                            min_value=1, step=1, value=50,
+                            help='''The number of documents to upsert at a time. 
+                                    Useful for hosted databases (e.g. Pinecone), or those that require long processing times.''')
         else:
             batch_size=None
         
-        if sb['rag_type']!='Summary':
+        if sb['rag_type']=='Standard':
+            chunk_method= st.selectbox('Chunk method', ['character_recursive','None'], 
+                                       index=0,
+                                       help='''https://python.langchain.com/docs/modules/data_connection/document_transformers/. 
+                                               None will take whole PDF pages as documents in the database.''')
+            if chunk_method=='character_recursive':
+                chunk_size=st.number_input('Chunk size (characters)', min_value=1, step=1, value=400, help='An average paragraph is around 400 characters.')
+                chunk_overlap=st.number_input('Chunk overlap (characters)', min_value=0, step=1, value=0)
+            elif chunk_method=='None':
+                chunk_size=None
+                chunk_overlap=None
+            else:
+                raise NotImplementedError
+        if sb['rag_type']=='Parent-Child':
             chunk_method= st.selectbox('Chunk method', ['character_recursive'], index=0,help='https://python.langchain.com/docs/modules/data_connection/document_transformers/')
             if chunk_method=='character_recursive':
                 chunk_size=st.number_input('Chunk size (characters)', min_value=1, step=1, value=400, help='An average paragraph is around 400 characters.')
@@ -93,7 +109,7 @@ if st.session_state["authentication_status"]:
             chunk_overlap=None
         export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
         if export_json:
-            json_file=st.text_input('Jsonl file',os.path.join(data_folder,'ams_data-400-0.jsonl'))
+            json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{database_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
             json_file=os.path.join(paths['base_folder_path'],json_file)
 
 
@@ -111,6 +127,7 @@ if st.session_state["authentication_status"]:
                             rag_type=sb['rag_type'],
                             query_model=query_model,
                             index_name=sb['index_name']+'-'+database_appendix,
+                            chunk_method=chunk_method,
                             chunk_size=chunk_size,
                             chunk_overlap=chunk_overlap,                  
                             file_out=json_file,

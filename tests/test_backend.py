@@ -268,6 +268,7 @@ def temp_dotenv(setup_fixture):
 ### Begin tests
 # Test chunk docs
 def test_chunk_docs_standard(setup_fixture):
+
     """
     Test the chunk_docs function with standard RAG.
 
@@ -283,6 +284,22 @@ def test_chunk_docs_standard(setup_fixture):
     assert result['pages'] is not None
     assert result['chunks'] is not None
     assert result['splitters'] is not None
+def test_chunk_docs_nochunk(setup_fixture):
+    """
+    Test the chunk_docs function with no chunking.
+
+    Args:
+        setup_fixture (dict): The setup variables and configurations.
+    """
+    result = chunk_docs(setup_fixture['docs'], 
+                        rag_type=setup_fixture['rag_type']['Standard'], 
+                        chunk_method=None, 
+                        chunk_size=setup_fixture['chunk_size'], 
+                        chunk_overlap=setup_fixture['chunk_overlap'])
+    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['pages'] is not None
+    assert result['chunks'] is result['pages']
+    assert result['splitters'] is None
 def test_chunk_docs_parent_child(setup_fixture):
     """
     Test the chunk_docs function with parent-child RAG.

@@ -522,7 +522,6 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                         rag_type = "Summary"
                     else:
                         rag_type = "Standard"
-                    print(chroma_db_name)
                     data_processing.delete_index('ChromaDB', chroma_db_name, rag_type, local_db_path=db_folder_path)
                     st.markdown(f"Database {chroma_db_name} has been deleted.")
         except:

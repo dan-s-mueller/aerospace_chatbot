@@ -128,10 +128,10 @@ def chunk_docs(docs: List[str],
     Args:
         docs (List[str]): The list of document paths to be chunked.
         rag_type (str, optional): The type of chunking method to be used. Defaults to 'Standard'.
-        chunk_method (str, optional): The method of chunking to be used. Defaults to 'character_recursive'.
+        chunk_method (str, optional): The method of chunking to be used. Defaults to 'character_recursive'. None will take whole PDF pages as documents.
         file_out (str, optional): The output file path to save the chunked documents. Defaults to None.
-        chunk_size (int, optional): The size of each chunk in tokens. Defaults to 500.
-        chunk_overlap (int, optional): The overlap between chunks in tokens. Defaults to 0.
+        chunk_size (int, optional): The size of each chunk in tokens. Defaults to 500. Only used if chunk_method is not None.
+        chunk_overlap (int, optional): The overlap between chunks in tokens. Defaults to 0. Only used if chunk_method is not None.
         k_parent (int, optional): The number of parent chunks to split into child chunks for 'Parent-Child' rag_type. Defaults to 4.
         llm (None, optional): The language model to be used for generating summaries. Defaults to None.
         show_progress (bool, optional): Whether to show the progress bar during chunking. Defaults to False.
@@ -161,40 +161,42 @@ def chunk_docs(docs: List[str],
                 pages.append(page)
         if show_progress:
             progress_percentage = i / len(docs)
-            my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+            my_bar.progress(progress_percentage, text=f'Reading documents...{progress_percentage*100:.2f}%')
     
     # Process pages
     if rag_type=='Standard': 
         if chunk_method=='character_recursive':
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            page_chunks = text_splitter.split_documents(pages)
+            for i, chunk in enumerate(page_chunks):
+                if show_progress:
+                    progress_percentage = i / len(page_chunks)
+                    my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
+                chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
+                chunks.append(chunk)    # Not sanitized because the page already was
+        elif chunk_method is 'None':
+            text_splitter = None
+            chunks = pages  # No chunking, take whole pages as documents
         else:
             raise NotImplementedError
-        page_chunks = text_splitter.split_documents(pages)
 
-        for chunk in page_chunks:
-            chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
-            chunks.append(chunk)    # Not sanitized because the page already was
-        logging.info('Parsed: '+doc)
-        logging.info('Sample entries:')
-        logging.info(str(chunks[0]))
-        logging.info(str(chunks[-1]))
         if file_out:
             # Write to a jsonl file, save it.
-            logging.info('Writing to jsonl file: '+file_out)
             with jsonlines.open(file_out, mode='w') as writer:
                 for doc in chunks: 
                     writer.write(doc.dict())
-            logging.info('Written: '+file_out)
         if show_progress:
             my_bar.empty()
         return {'rag':'Standard',
                 'pages':pages,
-                'chunks':chunks,
+                'chunks':chunks, 
                 'splitters':text_splitter}
     elif rag_type=='Parent-Child': 
         if chunk_method=='character_recursive':
             parent_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
             child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        elif chunk_method is 'None':
+            raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
         else:
             raise NotImplementedError
         
