@@ -69,7 +69,7 @@ def load_sidebar(config_file,
     # Vector databases
     if vector_database:
         st.sidebar.title('Vector database')
-        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=1)
+        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=1,help='Select the type of index to use.')
         logging.info('Index type: '+sb_out['index_type'])
 
         if embeddings:
@@ -97,18 +97,19 @@ def load_sidebar(config_file,
             # RAG Type
             st.sidebar.title('RAG Type')
             if sb_out['index_type']=='RAGatouille':
-                sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0)
+                sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0,help='Only Standard is available for RAGatouille.')
             else:
-                sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Summary'], index=0)
+                sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Summary'], index=0,help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.')
                 if sb_out['rag_type']=='Summary' or sb_out['rag_type']=='Muti-Query':
-                    sb_out['rag_llm_source']=st.sidebar.selectbox('RAG LLM model', list(llms.keys()), index=0)
+                    sb_out['rag_llm_source']=st.sidebar.selectbox('RAG LLM model', list(llms.keys()), index=0,help='Select the LLM model for RAG.')
                     if sb_out['rag_llm_source']=='OpenAI':
-                        sb_out['rag_llm_model']=st.sidebar.selectbox('RAG OpenAI model', llms[sb_out['rag_llm_source']]['models'], index=0)
+                        sb_out['rag_llm_model']=st.sidebar.selectbox('RAG OpenAI model', llms[sb_out['rag_llm_source']]['models'], index=0,help='Select the OpenAI model for RAG.')
                     if sb_out['rag_llm_source']=='Hugging Face':
                         sb_out['hf_models']=llms['Hugging Face']['models']
                         sb_out['rag_llm_model']=st.sidebar.selectbox('RAG Hugging Face model', 
                                                                 [item['model'] for item in llms['Hugging Face']['models']], 
-                                                                index=0)
+                                                                index=0,
+                                                                help='Select the Hugging Face model for RAG.')
                         sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
                     elif sb_out['rag_llm_source']=='LM Studio (local)':
                         sb_out['rag_llm_model']=st.sidebar.text_input('Local host URL',
@@ -136,7 +137,7 @@ def load_sidebar(config_file,
                             else:
                                 if not index.name.endswith('parent-child'):
                                     name.append(index.name)
-                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
                 elif sb_out['index_type']=='Pinecone':
@@ -146,14 +147,14 @@ def load_sidebar(config_file,
                         for index in indices['message']:
                             if index['status']['state']=='Ready':
                                 name.append(index['name'])
-                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                 elif sb_out['index_type']=='RAGatouille':
                     indices=show_ragatouille_indexes(format=False)
                     if len(indices)>0:
                         name=[]
                         for index in indices:
                             name.append(index)
-                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0)
+                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
             else:
@@ -161,15 +162,16 @@ def load_sidebar(config_file,
         if llm:
             # LLM
             st.sidebar.title('LLM')
-            sb_out['llm_source']=st.sidebar.selectbox('LLM model', list(llms.keys()), index=0)
+            sb_out['llm_source']=st.sidebar.selectbox('LLM model', list(llms.keys()), index=0,help='Select the LLM model for the application.')
             logging.info('LLM source: '+sb_out['llm_source'])
             if sb_out['llm_source']=='OpenAI':
-                sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0)
+                sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0,help='Select the OpenAI model for the application.')
             elif sb_out['llm_source']=='Hugging Face':
                 sb_out['hf_models']=llms['Hugging Face']['models']
                 sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', 
                                                         [item['model'] for item in llms['Hugging Face']['models']], 
-                                                        index=0)
+                                                        index=0,
+                                                        help='Select the Hugging Face model for the application.')
                 sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
             elif sb_out['llm_source']=='LM Studio (local)':
                 sb_out['llm_model']=st.sidebar.text_input('Local host URL',
@@ -179,15 +181,15 @@ def load_sidebar(config_file,
         if model_options:
             # Add input fields in the sidebar
             st.sidebar.title('LLM Options')
-            temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1)
+            temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
             output_level = st.sidebar.number_input('Max output tokens', min_value=50, step=10, value=1000,
                                                 help='Max output tokens for LLM. Concise: 50, Verbose: 1000. Limit depends on model.')
             # Set different options for if ragatouille is used, since it has fewer parameters to select
             if 'index_type' in sb_out:
                 st.sidebar.title('Retrieval Options')
-                k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4)
+                k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4,help='Number of items to retrieve per query.')
                 if sb_out['index_type']!='RAGatouille':
-                    search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=0)
+                    search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=0,help='Select the search type for the application.')
                     sb_out['model_options']={'output_level':output_level,
                                             'k':k,
                                             'search_type':search_type,
