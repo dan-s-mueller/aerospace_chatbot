@@ -18,7 +18,7 @@ build:
       # See https://github.com/readthedocs/readthedocs.org/pull/11152/
       - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --no-root
       # For some reason, the theme is not recognized when building the docs with poetry
-      - pip install sphinx_rtd_theme
+      - pip install sphinxawesome-theme
 
 formats: 
   - pdf

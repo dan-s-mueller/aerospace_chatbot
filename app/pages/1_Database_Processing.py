@@ -91,7 +91,7 @@ if st.session_state["authentication_status"]:
         else:
             chunk_size=None
             chunk_overlap=None
-        export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database.')
+        export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
         if export_json:
             json_file=st.text_input('Jsonl file',os.path.join(data_folder,'ams_data-400-0.jsonl'))
             json_file=os.path.join(paths['base_folder_path'],json_file)
