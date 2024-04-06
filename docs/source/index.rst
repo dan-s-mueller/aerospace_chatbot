@@ -11,10 +11,18 @@ Aerospace discipline-specific chatbots and AI tools.
 - `Github Repository <https://github.com/dan-s-mueller/aerospace_chatbot>`_
 - `Langsmith Project <https://smith.langchain.com/>`_ > Aerospace AI
 - `Langsmith Prompts <https://smith.langchain.com/hub/my-prompts?organizationId=45eb8917-7353-4296-978d-bb461fc45c65>`_
+
+Deployed apps:
+
 - `Hugging Face Organization AI-Aerospace <https://huggingface.co/ai-aerospace>`_
+- `Aerospace Chatbot: Aerospace Mechanisms Symposia <https://huggingface.co/llm/rag-chatbot>`_.
 
+Refer to the following for support and contributing:
 
-For updates you wish to make and contribute, please reach out to the github repository owner to ensure compatibility: `aerospace_chatbot <https://github.com/dan-s-mueller/aerospace_chatbot>`__ or directly at `dsm@danmueller.pro <mailto:dsm@danmueller.pro>`__.
+- Bugs or improvements: `create an issue <https://github.com/dan-s-mueller/aerospace_chatbot/issues/new/choose>`__
+- Pull requests: `create a pull request <https://github.com/dan-s-mueller/aerospace_chatbot/compare>`__
+- Reach out to the github repository owner at `dsm@danmueller.pro <mailto:dsm@danmueller.pro>`__
+
 
 What does aerospace_chatbot do?
 -------------------------------
@@ -73,6 +81,7 @@ Contents
     :caption: Functionality
 
     help/overview
+    help/example
     help/dependencies
     help/streamlit_apps
     help/configs

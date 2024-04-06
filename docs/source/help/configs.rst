@@ -21,4 +21,4 @@ A file listing available database types and their corresponding database files. 
 
 This lists available users who can access database processing. When run locally, you can add your own user to this file using instructions `here <https://github.com/mkhorasani/Streamlit-Authenticator>`__.
 
-If you wish to be added as a user to the main repository, reach out to the github repository owner.
+If you wish to be added as a user to the main repository, reach out to the github repository owner or at `dsm@danmueller.pro <mailto:dsm@danmueller.pro>`__.

@@ -6,11 +6,13 @@ Dependencies
 
 ----
 
-Follow instructions below, tailoring to your setup. Main files in repository are:
+The main files in the repository required for dependencies are:
 
 - ``poetry.lock`` and ``pyproject.toml`` to define all dependencies
 
 - ``poetry install`` to install all dependencies
+
+The instructions are tailored to unix-based systems, modify as needed for Windows.
 
 Install
 -------
@@ -20,7 +22,7 @@ Add to path
 ```````````
 To add the ``export PATH="/Users/danmueller/.local/bin:$PATH"`` command to your shell configuration file on a macOS system, you can follow these steps:
 
-1. Open Terminal on your Mac. You can find it in the Applications/Utilities folder or use Spotlight to search for "Terminal".
+1. Open Terminal. You can find it in the Applications/Utilities folder or use Spotlight to search for "Terminal".
 
 2. In the Terminal window, type the following command to open your shell configuration file in a text editor:
 
@@ -75,19 +77,9 @@ Once poetry is installed, run the following to install all dependencies. ``no-ro
 
 ``poetry.lock`` and ``pyproject.toml`` are committed to this directory and are the working dependencies.
 
-Set up VS Code after Installing Poetry
-````````````````````````````````````````````
-To find where the venv path created is run:
-
-.. code-block:: shell
-
-   poetry env info --path
-
-It should be in your local directory since you ran the ``virtualenvs.inproject true`` command.
-
 Other Things
 ------------
-Adding package-nameackages
+Adding packages
 ```````````````````````````
 Once you have poetry installed and working in the directory, add packages using poetry with the following line. Once the package is added, commit the poetry.lock and pyproject.toml file.
 
@@ -101,3 +93,13 @@ Writing Requirements.txt
 .. code-block:: shell
 
    poetry export --output requirements.txt
+
+Set up VS Code after Installing Poetry
+````````````````````````````````````````````
+To find where the venv path created is run:
+
+.. code-block:: shell
+
+   poetry env info --path
+
+It should be in your local directory since you ran the ``virtualenvs.inproject true`` command.

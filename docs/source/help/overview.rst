@@ -16,10 +16,12 @@ aerospace_chatbot intents to provide a practical better way of accessing this ty
 
 How it works (backend)
 ----------------------
+The backend refers to the modules which are used to process and return data. They generally are not user facing.
+
 A visual overview of how this code works is below. The parts of this which are utilized in this code are highlighted.
 
-.. image:: ../images/rag_overview.jpeg
-  :alt: alternate text
+.. image:: ../images/rag_overview.png
+  :alt: RAG Overview
   :align: center
 
 Of note, there are many areas of this workflow which have not been explored practically but have a lot of potential. The areas which are implemented, which are of interest and highlighted are:
@@ -66,6 +68,8 @@ Identical to step 3, except for the user input.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The user query is compared to the database of embeddings and a relevancy search is performed to return the most relevant information.
 
+When this information is returned, the source information from the PDF is also returned so the user can access the original document.
+
 Advanced functionality
 """"""""""""""""""""""
 If Parent-Child or Summary RAG types are used, the Parent Chunk, or Summary of the most relevant chunk found in the database.
@@ -80,4 +84,6 @@ The response is then returned to the user.
 
 How it works (frontend)
 -----------------------
+The frontend is what the user interfaces with. `Streamlit <https://streamlit.io/>`__ is used to create the frontend.
+
 Refer to `Streamlit Apps <help/streamlit_apps>`__.
