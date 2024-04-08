@@ -21,7 +21,8 @@ from ragxplorer import RAGxplorer
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
-from data_processing import chunk_docs, initialize_database, load_docs, delete_index, reduce_vector_query_size, create_data_viz
+from data_processing import chunk_docs, initialize_database, load_docs, \
+      delete_index, reduce_vector_query_size, create_data_viz, _stable_hash_meta
 from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
 from queries import QA_Model
 
@@ -270,7 +271,6 @@ def temp_dotenv(setup_fixture):
 ### Begin tests
 # Test chunk docs
 def test_chunk_docs_standard(setup_fixture):
-
     """
     Test the chunk_docs function with standard RAG.
 
@@ -338,6 +338,29 @@ def test_chunk_docs_summary(setup_fixture):
     assert result['pages']['docs'] is not None
     assert result['summaries'] is not None
     assert result['llm'] == setup_fixture['llm']['Hugging Face']
+def test_chunk_id_lookup(setup_fixture):
+    """
+    Test case for chunk_id_lookup function.
+
+    Args:
+        setup_fixture (dict): A dictionary containing setup fixtures.
+
+    Returns:
+        None
+    """
+    result = chunk_docs(setup_fixture['docs'], 
+                        rag_type=setup_fixture['rag_type']['Standard'], 
+                        chunk_method=setup_fixture['chunk_method'], 
+                        chunk_size=setup_fixture['chunk_size'], 
+                        chunk_overlap=setup_fixture['chunk_overlap'])
+    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['pages'] is not None
+    assert result['chunks'] is not None
+    metadata_test={'source': 'test1.pdf', 'page': 1, 'start_index': 0}
+    test_hash='e006e6fbafe375d1faff4783878c302a70c90ad9'
+    assert _stable_hash_meta(result['chunks'][0].metadata) == _stable_hash_meta(metadata_test)  # Tests that the metadata is correct
+    assert _stable_hash_meta(result['chunks'][0].metadata) == test_hash # Tests that the has is correct
+    assert result['splitters'] is not None
 
 # Test initialize database with a test query
 def test_initialize_database_pinecone(monkeypatch,setup_fixture):
