@@ -183,8 +183,9 @@ def chunk_docs(docs: List[str],
             chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunks]   # add ID which is the hash of metadata
             with jsonlines.open(file_out, mode='w') as writer:
                 for doc, chunk_id in zip(chunks, chunk_ids): 
-                    doc['chunk_id'] = chunk_id  # Add chunk_id to the jsonl file
-                    writer.write(doc.dict())
+                    doc_out=doc.dict()
+                    doc_out['chunk_id'] = chunk_id  # Add chunk_id to the jsonl file
+                    writer.write(doc_out)
         if show_progress:
             my_bar.empty()
         return {'rag':'Standard',
@@ -284,7 +285,7 @@ def initialize_database(index_type: str,
     Raises:
         NotImplementedError: If the specified index type is not implemented.
     """
-    
+
     if show_progress:
         progress_text = "Database initialization..."
         my_bar = st.progress(0, text=progress_text)

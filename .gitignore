@@ -10,6 +10,9 @@
 /data/AMS/noupload/*.pdf
 !/data/AMS/*.pdf
 !/tests/*.pdf
+*.pickle
+/notebooks/*.json
+/notebooks/*.csv
 
 # Databases
 db/
