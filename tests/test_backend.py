@@ -214,7 +214,7 @@ def setup_fixture():
     chunk_method='character_recursive'
     chunk_size=400
     chunk_overlap=0
-    batch_size=50   # Reduced batch size drastically to not have it be a variable in the test process.
+    batch_size=50
     test_prompt='What are some nuances associated with the analysis and design of hinged booms?'   # Info on test2.pdf
 
     # Variable inputs
@@ -225,9 +225,11 @@ def setup_fixture():
                                     model='mistralai/Mistral-7B-Instruct-v0.2',
                                     api_key=HUGGINGFACEHUB_API_TOKEN,
                                     max_tokens=500)}
+    
+    # For voyage, see here for truncation: https://docs.voyageai.com/docs/embeddings#python-api
     query_model={'OpenAI':OpenAIEmbeddings(model='text-embedding-ada-002',openai_api_key=OPENAI_API_KEY),
-                    'Voyage':VoyageAIEmbeddings(model='voyage-2',voyage_api_key=VOYAGE_API_KEY),
-                    'RAGatouille':'colbert-ir/colbertv2.0'}
+                 'Voyage':VoyageAIEmbeddings(model='voyage-2',voyage_api_key=VOYAGE_API_KEY,truncation=False),
+                 'RAGatouille':'colbert-ir/colbertv2.0'}
     index_type = {index: index for index in ['ChromaDB', 'Pinecone', 'RAGatouille']}
     rag_type = {rag: rag for rag in ['Standard','Parent-Child','Summary']}
     
@@ -293,7 +295,7 @@ def test_chunk_docs_nochunk(setup_fixture):
     """
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
-                        chunk_method=None, 
+                        chunk_method='None', 
                         chunk_size=setup_fixture['chunk_size'], 
                         chunk_overlap=setup_fixture['chunk_overlap'])
     assert result['rag'] == setup_fixture['rag_type']['Standard']
@@ -477,7 +479,7 @@ def test_database_setup_and_query(test_input,setup_fixture):
     index_name='test'+str(test['id'])
     print(f"Starting test: {print_str}")
 
-    try:            
+    try: 
         vectorstore = load_docs(
             test['index_type'],
             setup_fixture['docs'],

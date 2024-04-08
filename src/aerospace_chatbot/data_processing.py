@@ -1,6 +1,7 @@
 from prompts import SUMMARIZE_TEXT
 
 import os, logging, re, shutil, random
+import hashlib
 import uuid
 from pathlib import Path
 from typing import List
@@ -111,7 +112,6 @@ def load_docs(index_type:str,
                                          batch_size=batch_size,
                                          show_progress=show_progress,
                                          local_db_path=local_db_path)
-    logging.info(f"Documents upserted to {index_name}.")
     return vectorstore
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
@@ -144,13 +144,9 @@ def chunk_docs(docs: List[str],
         my_bar = st.progress(0, text=progress_text)
     pages=[]
     chunks=[]
-    logging.info('No jsonl found. Reading and parsing docs.')
-    logging.info('Chunk size (tokens): '+str(chunk_size))
-    logging.info('Chunk overlap (tokens): '+str(chunk_overlap))
 
     # Parse doc pages
     for i, doc in enumerate(docs):
-        logging.info('Parsing: '+doc)
         loader = PyPDFLoader(doc)
         page_data = loader.load()
 
@@ -166,7 +162,9 @@ def chunk_docs(docs: List[str],
     # Process pages
     if rag_type=='Standard': 
         if chunk_method=='character_recursive':
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
+                                                           chunk_overlap=chunk_overlap,
+                                                           add_start_index=True)
             page_chunks = text_splitter.split_documents(pages)
             for i, chunk in enumerate(page_chunks):
                 if show_progress:
@@ -179,11 +177,13 @@ def chunk_docs(docs: List[str],
             chunks = pages  # No chunking, take whole pages as documents
         else:
             raise NotImplementedError
-
+        
         if file_out:
             # Write to a jsonl file, save it.
+            chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunks]   # add ID which is the hash of metadata
             with jsonlines.open(file_out, mode='w') as writer:
-                for doc in chunks: 
+                for doc, chunk_id in zip(chunks, chunk_ids): 
+                    doc['chunk_id'] = chunk_id  # Add chunk_id to the jsonl file
                     writer.write(doc.dict())
         if show_progress:
             my_bar.empty()
@@ -193,8 +193,12 @@ def chunk_docs(docs: List[str],
                 'splitters':text_splitter}
     elif rag_type=='Parent-Child': 
         if chunk_method=='character_recursive':
-            parent_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size*k_parent, chunk_overlap=chunk_overlap)
-            child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            parent_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size*k_parent, 
+                                                           chunk_overlap=chunk_overlap,
+                                                           add_start_index=True)    # Without add_start_index, will not be a unique id
+            child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
+                                                          chunk_overlap=chunk_overlap,
+                                                          add_start_index=True)
         elif chunk_method is 'None':
             raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
         else:
@@ -202,7 +206,7 @@ def chunk_docs(docs: List[str],
         
         # Split up parent chunks
         parent_chunks = parent_splitter.split_documents(pages)
-        doc_ids = [str(uuid.uuid4()) for _ in parent_chunks]
+        doc_ids = [str(_stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
         
         # Split up child chunks
         id_key = "doc_id"
@@ -226,7 +230,7 @@ def chunk_docs(docs: List[str],
             my_bar = st.progress(0, text='Generating summaries...')
 
         id_key = "doc_id"
-        doc_ids = [str(uuid.uuid4()) for _ in pages]
+        doc_ids = [str(_stable_hash_meta(page.metadata)) for page in pages]
         chain = (
             {"doc": lambda x: x.page_content}
             | SUMMARIZE_TEXT
@@ -333,6 +337,7 @@ def initialize_database(index_type: str,
     if show_progress:
         my_bar.empty()
     return vectorstore
+
 @retry(stop=stop_after_attempt(15), wait=wait_exponential(multiplier=1,max=60))
 def upsert_docs(index_type: str, 
                 index_name: str,
@@ -365,32 +370,33 @@ def upsert_docs(index_type: str,
         if index_type == "Pinecone":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
-                vectorstore.add_documents(chunk_batch)
+                chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+                vectorstore.add_documents(documents=chunk_batch,
+                                          ids=chunk_batch_ids)
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-            logging.info(f"Index created: {vectorstore}")
             retriever = vectorstore.as_retriever()
         elif index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
-                vectorstore.add_documents(chunk_batch)
+                chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+                vectorstore.add_documents(documents=chunk_batch,
+                                          ids=chunk_batch_ids)
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-            logging.info(f"Index created: {vectorstore}")
             retriever = vectorstore.as_retriever()
         elif index_type == "RAGatouille":
-            logging.info(f"Creating index {index_name} from RAGatouille.")
             # Create an index from the vectorstore.
             vectorstore.index(
                 collection=[chunk.page_content for chunk in chunker['chunks']],
+                document_ids=[_stable_hash_meta(chunk.metadata) for chunk in chunker['chunks']],
                 index_name=index_name,
                 max_document_length=chunker['splitters']._chunk_size,
                 overwrite_index=True,
                 split_documents=True,
             )
-            logging.info(f"Index created: {vectorstore}")
 
             # Move the directory to the db folder
             try:
@@ -410,7 +416,9 @@ def upsert_docs(index_type: str,
 
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
-                retriever.vectorstore.add_documents(chunk_batch)
+                chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+                retriever.vectorstore.add_documents(documents=chunk_batch,
+                                                    ids=chunk_batch_ids)
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -430,8 +438,10 @@ def upsert_docs(index_type: str,
             retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
 
             for i in range(0, len(chunker['summaries']), batch_size):
-                summary_batch = chunker['summaries'][i:i + batch_size]
-                retriever.vectorstore.add_documents(summary_batch)
+                chunk_batch = chunker['summaries'][i:i + batch_size]
+                chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+                retriever.vectorstore.add_documents(documents=chunk_batch,
+                                                    ids=chunk_batch_ids)
                 if show_progress:
                     progress_percentage = i / len(chunker['summaries'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -447,6 +457,7 @@ def upsert_docs(index_type: str,
     if show_progress:
         my_bar.empty()
     return vectorstore, retriever
+
 def delete_index(index_type: str, 
                  index_name: str, 
                  rag_type: str,
@@ -707,3 +718,15 @@ def _embedding_size(embedding_model:any):
         return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
     else:
         raise NotImplementedError
+
+def _stable_hash_meta(metadata: dict) -> str:
+    """
+    Stable hash of metadata from Langchain Document.
+
+    Args:
+        metadata (dict): The metadata dictionary to be hashed.
+
+    Returns:
+        str: The hexadecimal representation of the hashed metadata.
+    """
+    return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()

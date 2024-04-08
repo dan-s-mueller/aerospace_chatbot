@@ -57,7 +57,9 @@ if st.session_state["authentication_status"]:
         if sb['query_model']=='Openai':
             query_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
         elif sb['query_model']=='Voyage':
-            query_model=VoyageAIEmbeddings(model='voyage-2',voyage_api_key=secrets['VOYAGE_API_KEY'])
+            # For voyage embedding truncation see here: https://docs.voyageai.com/docs/embeddings#python-api.
+            # Leaving out trunction gives an error.
+            query_model=VoyageAIEmbeddings(model='voyage-2',voyage_api_key=secrets['VOYAGE_API_KEY'],truncation=False)
     logging.info('Query model set: '+str(query_model))
 
     # Find docs
@@ -97,7 +99,7 @@ if st.session_state["authentication_status"]:
                 chunk_overlap=None
             else:
                 raise NotImplementedError
-        if sb['rag_type']=='Parent-Child':
+        elif sb['rag_type']=='Parent-Child':
             chunk_method= st.selectbox('Chunk method', ['character_recursive'], index=0,help='https://python.langchain.com/docs/modules/data_connection/document_transformers/')
             if chunk_method=='character_recursive':
                 chunk_size=st.number_input('Chunk size (characters)', min_value=1, step=1, value=400, help='An average paragraph is around 400 characters.')
