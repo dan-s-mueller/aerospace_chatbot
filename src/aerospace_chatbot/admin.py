@@ -495,8 +495,8 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         st.markdown(show_pinecone_indexes())
         try:
             pinecone_indexes = [obj.name for obj in show_pinecone_indexes(format=False)['message']]
-            pinecone_index_name = st.selectbox('Pinecone index to delete', pinecone_indexes)
             if delete_buttons:
+                pinecone_index_name = st.selectbox('Pinecone index to delete', pinecone_indexes)
                 if st.button('Delete Pinecone index', help='This is permanent!'):
                     if pinecone_index_name.endswith("parent-child"):
                         rag_type = "Parent-Child"
@@ -522,7 +522,6 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                         rag_type = "Summary"
                     else:
                         rag_type = "Standard"
-                    print(chroma_db_name)
                     data_processing.delete_index('ChromaDB', chroma_db_name, rag_type, local_db_path=db_folder_path)
                     st.markdown(f"Database {chroma_db_name} has been deleted.")
         except:

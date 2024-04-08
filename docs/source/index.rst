@@ -1,12 +1,11 @@
 Aerospace Chatbot
 =================
-.. contents::
-   :local:
-   :depth: 2
+
+.. rst-class:: lead
+
+   Aerospace discipline-specific chatbots and AI tools.
 
 ----
-
-Aerospace discipline-specific chatbots and AI tools.
 
 - `Github Repository <https://github.com/dan-s-mueller/aerospace_chatbot>`_
 - `Langsmith Project <https://smith.langchain.com/>`_ > Aerospace AI
@@ -73,22 +72,30 @@ Using the Backend
 ^^^^^^^^^^^^^^^^^
 You can use the backend code to run the chatbot in a python environment. The backend code is located in the `src/aerospace_chatbot` directory.
 
-Contents
+Explore
 --------
 
-.. toctree::
-    :maxdepth: 2
-    :caption: Functionality
+.. tab-set::
+    
+    .. tab-item:: Functionality
 
-    help/overview
-    help/example
-    help/dependencies
-    help/streamlit_apps
-    help/configs
+        .. toctree::
+            :maxdepth: 2
+            :caption: Functionality
+            :titlesonly:
 
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
+            help/overview
+            help/example
+            help/streamlit_apps
+            help/dependencies
+            help/configs
 
-   modules/api
-   indices_and_tables
+    .. tab-item:: API Reference
+
+        .. toctree::
+            :caption: API Reference
+            :glob:
+            :titlesonly:
+
+            modules/api
+            indices_and_tables

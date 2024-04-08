@@ -135,12 +135,10 @@ class QA_Model:
                             )
         else:
             raise NotImplementedError
-        logging.info('Chat retriever: '+str(self.retriever))
 
         # Intialize memory
         self.memory = ConversationBufferMemory(
                         return_messages=True, output_key='answer', input_key='question')
-        logging.info('Memory: '+str(self.memory))
 
         # Assemble main chain
         self.conversational_qa_chain=_define_qa_chain(self.llm,
@@ -158,11 +156,7 @@ class QA_Model:
             None
         """       
         self.memory.load_memory_variables({})
-        logging.info('Memory content before qa result: '+str(self.memory))
-
-        logging.info('Query: '+str(query))
         self.result = self.conversational_qa_chain.invoke({'question': query})
-        logging.info('QA result: '+str(self.result))
 
         if self.index_type!='RAGatouille':
             self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
@@ -170,8 +164,6 @@ class QA_Model:
                 self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
             else:
                 raise NotImplementedError
-            logging.info('Sources: '+str(self.sources))
-            logging.info('Response with sources: '+str(self.ai_response))
         else:
             # RAGatouille doesn't have metadata, need to extract from context first.
             extracted_metadata = []
@@ -187,11 +179,8 @@ class QA_Model:
                 self.ai_response=self.result['answer'].content + '\n\nSources:\n' + self.sources
             else:
                 raise NotImplementedError
-            logging.info('Sources: '+str(self.sources))
-            logging.info('Response with sources: '+str(self.ai_response))
 
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
-        logging.info('Memory content after qa result: '+str(self.memory))
     def update_model(self,
                      llm:ChatOpenAI,
                      search_type='similarity',

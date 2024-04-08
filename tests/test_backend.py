@@ -21,7 +21,8 @@ from ragxplorer import RAGxplorer
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
-from data_processing import chunk_docs, initialize_database, load_docs, delete_index, reduce_vector_query_size, create_data_viz
+from data_processing import chunk_docs, initialize_database, load_docs, \
+      delete_index, reduce_vector_query_size, create_data_viz, _stable_hash_meta
 from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
 from queries import QA_Model
 
@@ -214,7 +215,7 @@ def setup_fixture():
     chunk_method='character_recursive'
     chunk_size=400
     chunk_overlap=0
-    batch_size=50   # Reduced batch size drastically to not have it be a variable in the test process.
+    batch_size=50
     test_prompt='What are some nuances associated with the analysis and design of hinged booms?'   # Info on test2.pdf
 
     # Variable inputs
@@ -225,9 +226,11 @@ def setup_fixture():
                                     model='mistralai/Mistral-7B-Instruct-v0.2',
                                     api_key=HUGGINGFACEHUB_API_TOKEN,
                                     max_tokens=500)}
+    
+    # For voyage, see here for truncation: https://docs.voyageai.com/docs/embeddings#python-api
     query_model={'OpenAI':OpenAIEmbeddings(model='text-embedding-ada-002',openai_api_key=OPENAI_API_KEY),
-                    'Voyage':VoyageAIEmbeddings(model='voyage-2',voyage_api_key=VOYAGE_API_KEY),
-                    'RAGatouille':'colbert-ir/colbertv2.0'}
+                 'Voyage':VoyageAIEmbeddings(model='voyage-2',voyage_api_key=VOYAGE_API_KEY,truncation=False),
+                 'RAGatouille':'colbert-ir/colbertv2.0'}
     index_type = {index: index for index in ['ChromaDB', 'Pinecone', 'RAGatouille']}
     rag_type = {rag: rag for rag in ['Standard','Parent-Child','Summary']}
     
@@ -283,6 +286,22 @@ def test_chunk_docs_standard(setup_fixture):
     assert result['pages'] is not None
     assert result['chunks'] is not None
     assert result['splitters'] is not None
+def test_chunk_docs_nochunk(setup_fixture):
+    """
+    Test the chunk_docs function with no chunking.
+
+    Args:
+        setup_fixture (dict): The setup variables and configurations.
+    """
+    result = chunk_docs(setup_fixture['docs'], 
+                        rag_type=setup_fixture['rag_type']['Standard'], 
+                        chunk_method='None', 
+                        chunk_size=setup_fixture['chunk_size'], 
+                        chunk_overlap=setup_fixture['chunk_overlap'])
+    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['pages'] is not None
+    assert result['chunks'] is result['pages']
+    assert result['splitters'] is None
 def test_chunk_docs_parent_child(setup_fixture):
     """
     Test the chunk_docs function with parent-child RAG.
@@ -319,6 +338,29 @@ def test_chunk_docs_summary(setup_fixture):
     assert result['pages']['docs'] is not None
     assert result['summaries'] is not None
     assert result['llm'] == setup_fixture['llm']['Hugging Face']
+def test_chunk_id_lookup(setup_fixture):
+    """
+    Test case for chunk_id_lookup function.
+
+    Args:
+        setup_fixture (dict): A dictionary containing setup fixtures.
+
+    Returns:
+        None
+    """
+    result = chunk_docs(setup_fixture['docs'], 
+                        rag_type=setup_fixture['rag_type']['Standard'], 
+                        chunk_method=setup_fixture['chunk_method'], 
+                        chunk_size=setup_fixture['chunk_size'], 
+                        chunk_overlap=setup_fixture['chunk_overlap'])
+    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['pages'] is not None
+    assert result['chunks'] is not None
+    metadata_test={'source': 'test1.pdf', 'page': 1, 'start_index': 0}
+    test_hash='e006e6fbafe375d1faff4783878c302a70c90ad9'
+    assert _stable_hash_meta(result['chunks'][0].metadata) == _stable_hash_meta(metadata_test)  # Tests that the metadata is correct
+    assert _stable_hash_meta(result['chunks'][0].metadata) == test_hash # Tests that the has is correct
+    assert result['splitters'] is not None
 
 # Test initialize database with a test query
 def test_initialize_database_pinecone(monkeypatch,setup_fixture):
@@ -460,7 +502,7 @@ def test_database_setup_and_query(test_input,setup_fixture):
     index_name='test'+str(test['id'])
     print(f"Starting test: {print_str}")
 
-    try:            
+    try: 
         vectorstore = load_docs(
             test['index_type'],
             setup_fixture['docs'],
