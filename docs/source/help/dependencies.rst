@@ -1,10 +1,5 @@
 Dependencies
 ============
-.. contents::
-   :local:
-   :depth: 2
-
-----
 
 The main files in the repository required for dependencies are:
 
@@ -68,7 +63,7 @@ Setup Types
 -----------
 
 Existing Repository Setup with Poetry Files
-````````````````````````````````````````````````````````````````````````
+```````````````````````````````````````````
 Once poetry is installed, run the following to install all dependencies. ``no-root`` is used to not install the current project as a package.
 
 .. code-block:: shell
@@ -80,7 +75,7 @@ Once poetry is installed, run the following to install all dependencies. ``no-ro
 Other Things
 ------------
 Adding packages
-```````````````````````````
+```````````````
 Once you have poetry installed and working in the directory, add packages using poetry with the following line. Once the package is added, commit the poetry.lock and pyproject.toml file.
 
 .. code-block:: shell
