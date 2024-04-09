@@ -88,6 +88,7 @@ if prompt := st.chat_input('Prompt here'):
 
                 # Define LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
+                print(llm)
 
                 # Initialize QA model object
                 if 'search_type' in sb['model_options']: 

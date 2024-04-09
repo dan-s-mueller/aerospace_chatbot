@@ -320,13 +320,15 @@ def set_llm(sb, secrets, type='prompt'):
             llm = ChatOpenAI(model_name=sb['llm_model'],
                              temperature=sb['model_options']['temperature'],
                              openai_api_key=secrets['OPENAI_API_KEY'],
-                             max_tokens=sb['model_options']['output_level'])
+                             max_tokens=sb['model_options']['output_level'],
+                             tags=[sb['llm_model']])
         elif sb['llm_source'] == 'Hugging Face':
             llm = ChatOpenAI(base_url=sb['hf_endpoint'],
                              model=sb['llm_model'],
                              api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
                              temperature=sb['model_options']['temperature'],
-                             max_tokens=sb['model_options']['output_level'])
+                             max_tokens=sb['model_options']['output_level'],
+                             tags=[sb['llm_model']])
         elif sb['llm_source'] == 'LM Studio (local)':
             # base_url takes local configuration from lm studio, no api key required.
             llm = ChatOpenAI(base_url=sb['llm_model'],
@@ -337,11 +339,13 @@ def set_llm(sb, secrets, type='prompt'):
     elif type == 'rag':   # use for RAG application (summary)
         if sb['rag_llm_source'] == 'OpenAI':
             llm = ChatOpenAI(model_name=sb['rag_llm_model'],
-                             openai_api_key=secrets['OPENAI_API_KEY'])
+                             openai_api_key=secrets['OPENAI_API_KEY'],
+                             tags=[sb['rag_llm_model']])
         elif sb['rag_llm_source'] == 'Hugging Face':
             llm = ChatOpenAI(base_url=sb['rag_hf_endpoint'],
                              model=sb['rag_llm_model'],
-                             api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+                             api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
+                             tags=[sb['rag_llm_model']])
         elif sb['rag_llm_source'] == 'LM Studio (local)':
             # base_url takes local configuration from lm studio, no api key required.
             llm = ChatOpenAI(base_url=sb['rag_llm_model'],
