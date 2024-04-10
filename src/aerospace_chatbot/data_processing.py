@@ -45,6 +45,7 @@ def load_docs(index_type:str,
               query_model,
               rag_type:str='Standard',
               index_name:str=None,
+              n_merge_pages:int=0,
               chunk_method:str='character_recursive',
               chunk_size:int=500,
               chunk_overlap:int=0,
@@ -63,6 +64,7 @@ def load_docs(index_type:str,
         query_model: The query model to use.
         rag_type (str, optional): The type of RAG (Retrieval-Augmented Generation) to use. Defaults to 'Standard'.
         index_name (str, optional): The name of the index. Defaults to None.
+        n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to 0.
         chunk_method (str, optional): The method to chunk the documents. Defaults to 'character_recursive'.
         chunk_size (int, optional): The size of each chunk. Defaults to 500.
         chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
@@ -83,6 +85,7 @@ def load_docs(index_type:str,
     # Chunk docs
     chunker=chunk_docs(docs,
                        rag_type=rag_type,
+                       n_merge_pages=n_merge_pages,
                        chunk_method=chunk_method,
                        chunk_size=chunk_size,
                        chunk_overlap=chunk_overlap,
@@ -117,6 +120,7 @@ def chunk_docs(docs: List[str],
                rag_type:str='Standard',
                chunk_method:str='character_recursive',
                file_out:str=None,
+               n_merge_pages:int=0,
                chunk_size:int=500,
                chunk_overlap:int=0,
                k_parent:int=4,
@@ -130,6 +134,7 @@ def chunk_docs(docs: List[str],
         rag_type (str, optional): The type of chunking method to be used. Defaults to 'Standard'.
         chunk_method (str, optional): The method of chunking to be used. Defaults to 'character_recursive'. None will take whole PDF pages as documents.
         file_out (str, optional): The output file path to save the chunked documents. Defaults to None.
+        n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to 0.
         chunk_size (int, optional): The size of each chunk in tokens. Defaults to 500. Only used if chunk_method is not None.
         chunk_overlap (int, optional): The overlap between chunks in tokens. Defaults to 0. Only used if chunk_method is not None.
         k_parent (int, optional): The number of parent chunks to split into child chunks for 'Parent-Child' rag_type. Defaults to 4.
@@ -145,6 +150,7 @@ def chunk_docs(docs: List[str],
     pages=[]
     chunks=[]
 
+    merged_docs = []
     # Parse doc pages
     for i, doc in enumerate(docs):
         loader = PyPDFLoader(doc)
@@ -158,6 +164,16 @@ def chunk_docs(docs: List[str],
         if show_progress:
             progress_percentage = i / len(docs)
             my_bar.progress(progress_percentage, text=f'Reading documents...{progress_percentage*100:.2f}%')
+        
+        # Merge pages if option is selected
+        if n_merge_pages:
+            for i in range(0, len(pages), n_merge_pages):
+                group = pages[i:i+n_merge_pages]
+                group_page_content=' '.join([doc.page_content for doc in group])
+                group_metadata = {'page': [doc.metadata['page'] for doc in group], 'source': [doc.metadata['source'] for doc in group]}
+                merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
+                merged_docs.append(merged_doc)
+    pages = merged_docs
     
     # Process pages
     if rag_type=='Standard': 
@@ -340,6 +356,85 @@ def initialize_database(index_type: str,
     return vectorstore
 
 @retry(stop=stop_after_attempt(15), wait=wait_exponential(multiplier=1,max=60))
+def upsert_docs_pinecone(index_name: str,
+                         vectorstore: any, 
+                         chunker: dict, 
+                         batch_size: int = 50, 
+                         show_progress: bool = False,
+                         local_db_path: str = '.'):
+    """
+    Upserts documents into Pinecone index. Refactored spearately from upsert_docs to allow for tenacity retries.
+
+    Args:
+        index_name (str): The name of the Pinecone index.
+        vectorstore (any): The vectorstore object for storing the document vectors.
+        chunker (dict): The chunker object containing the documents to upsert.
+        batch_size (int, optional): The number of documents to upsert in each batch. Defaults to 50.
+        show_progress (bool, optional): Whether to show progress bar during upsert. Defaults to False.
+        local_db_path (str, optional): The path to the local database. Defaults to '.'.
+
+    Returns:
+        tuple: A tuple containing the updated vectorstore and retriever objects.
+    """
+    
+    if show_progress:
+        progress_text = "Upsert in progress..."
+        my_bar = st.progress(0, text=progress_text)
+    
+    if chunker['rag'] == 'Standard':
+        for i in range(0, len(chunker['chunks']), batch_size):
+            chunk_batch = chunker['chunks'][i:i + batch_size]
+            chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+            vectorstore.add_documents(documents=chunk_batch,
+                                        ids=chunk_batch_ids)
+            if show_progress:
+                progress_percentage = i / len(chunker['chunks'])
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        retriever = vectorstore.as_retriever()
+    elif chunker['rag'] == 'Parent-Child':
+        lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+        store = LocalFileStore(lfs_path)
+        
+        id_key = "doc_id"
+        retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
+
+        for i in range(0, len(chunker['chunks']), batch_size):
+            chunk_batch = chunker['chunks'][i:i + batch_size]
+            chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+            retriever.vectorstore.add_documents(documents=chunk_batch,
+                                                ids=chunk_batch_ids)
+            if show_progress:
+                progress_percentage = i / len(chunker['chunks'])
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        
+        # Index parent docs all at once
+        retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['parent_chunks'])))
+    elif chunker['rag'] == 'Summary':
+        lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+        store = LocalFileStore(lfs_path)
+        
+        id_key = "doc_id"
+        retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
+
+        for i in range(0, len(chunker['summaries']), batch_size):
+            chunk_batch = chunker['summaries'][i:i + batch_size]
+            chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+            retriever.vectorstore.add_documents(documents=chunk_batch,
+                                                ids=chunk_batch_ids)
+            if show_progress:
+                progress_percentage = i / len(chunker['summaries'])
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        
+        # Index parent docs all at once
+        retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['docs'])))
+    else:
+        raise NotImplementedError
+    
+    if show_progress:
+        my_bar.empty()
+
+    return vectorstore, retriever
+        
 def upsert_docs(index_type: str, 
                 index_name: str,
                 vectorstore: any, 
@@ -369,15 +464,12 @@ def upsert_docs(index_type: str,
     if chunker['rag'] == 'Standard':
         # Upsert each chunk in batches
         if index_type == "Pinecone":
-            for i in range(0, len(chunker['chunks']), batch_size):
-                chunk_batch = chunker['chunks'][i:i + batch_size]
-                chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-                vectorstore.add_documents(documents=chunk_batch,
-                                          ids=chunk_batch_ids)
-                if show_progress:
-                    progress_percentage = i / len(chunker['chunks'])
-                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-            retriever = vectorstore.as_retriever()
+            vectorstore, retriever=upsert_docs_pinecone(index_name,
+                                                        vectorstore, 
+                                                        chunker, 
+                                                        batch_size, 
+                                                        show_progress,
+                                                        local_db_path)
         elif index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
@@ -408,7 +500,14 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Parent-Child':
-        if index_type == "ChromaDB" or index_type == "Pinecone":
+        if index_type == 'Pincone':
+            vectorstore, retriever=upsert_docs_pinecone(index_name,
+                                                        vectorstore, 
+                                                        chunker, 
+                                                        batch_size, 
+                                                        show_progress,
+                                                        local_db_path)
+        elif index_type == 'ChromaDB':
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -431,7 +530,14 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Summary':
-        if index_type == "ChromaDB" or index_type == "Pinecone":
+        if index_type == 'Pincone':
+            vectorstore, retriever=upsert_docs_pinecone(index_name,
+                                                        vectorstore, 
+                                                        chunker, 
+                                                        batch_size, 
+                                                        show_progress,
+                                                        local_db_path)
+        elif index_type == 'ChromaDB':
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -675,6 +781,7 @@ def visualize_data(index_selected: str,
 def _sanitize_raw_page_data(page):
     """
     Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
+    If pages are merged, this must happen before the merging occurs.
 
     Args:
         page (Page): The raw page data to be sanitized.
