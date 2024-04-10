@@ -94,6 +94,8 @@ if st.session_state["authentication_status"]:
                                             help='''Number of pages to merge into a single document. 
                                             This is done before chunking occurs. 
                                             If zero, each page is processed independently before chunking.''')
+        else:
+            n_merge_pages=None
         
         # For each rag_type, set chunk parameters
         if sb['rag_type']=='Standard':

@@ -170,7 +170,8 @@ def chunk_docs(docs: List[str],
             for i in range(0, len(pages), n_merge_pages):
                 group = pages[i:i+n_merge_pages]
                 group_page_content=' '.join([doc.page_content for doc in group])
-                group_metadata = {'page': [doc.metadata['page'] for doc in group], 'source': [doc.metadata['source'] for doc in group]}
+                group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
+                                  'source': str([doc.metadata['source'] for doc in group])}
                 merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
                 merged_docs.append(merged_doc)
     pages = merged_docs
