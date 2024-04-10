@@ -149,26 +149,27 @@ def chunk_docs(docs: List[str],
         my_bar = st.progress(0, text=progress_text)
     pages=[]
     chunks=[]
-
     merged_docs = []
+
     # Parse doc pages
     for i, doc in enumerate(docs):
+        doc_pages=[]
         loader = PyPDFLoader(doc)
-        page_data = loader.load()
+        doc_page_data = loader.load()
 
         # Clean up page info, update some metadata
-        for page in page_data:
-            page=_sanitize_raw_page_data(page)
-            if page is not None:
-                pages.append(page)
+        for doc_page in doc_page_data:
+            doc_page=_sanitize_raw_page_data(doc_page)
+            if doc_page is not None:
+                doc_pages.append(doc_page)
         if show_progress:
             progress_percentage = i / len(docs)
             my_bar.progress(progress_percentage, text=f'Reading documents...{progress_percentage*100:.2f}%')
         
         # Merge pages if option is selected
         if n_merge_pages:
-            for i in range(0, len(pages), n_merge_pages):
-                group = pages[i:i+n_merge_pages]
+            for i in range(0, len(doc_pages), n_merge_pages):
+                group = doc_pages[i:i+n_merge_pages]
                 group_page_content=' '.join([doc.page_content for doc in group])
                 group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
                                   'source': str([doc.metadata['source'] for doc in group])}
