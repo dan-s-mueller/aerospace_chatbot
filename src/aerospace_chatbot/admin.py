@@ -296,9 +296,6 @@ def test_key_status():
     else:
         key_status['Hugging Face API Key'] = {'status': True}
 
-    print(os.getenv('OPENAI_API_KEY'))
-    print(key_status)
-        
     return _format_key_status(key_status)
 def set_llm(sb, secrets, type='prompt'):
     """
