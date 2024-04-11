@@ -120,7 +120,7 @@ def chunk_docs(docs: List[str],
                rag_type:str='Standard',
                chunk_method:str='character_recursive',
                file_out:str=None,
-               n_merge_pages:int=0,
+               n_merge_pages:int=None,
                chunk_size:int=500,
                chunk_overlap:int=0,
                k_parent:int=4,
@@ -134,7 +134,7 @@ def chunk_docs(docs: List[str],
         rag_type (str, optional): The type of chunking method to be used. Defaults to 'Standard'.
         chunk_method (str, optional): The method of chunking to be used. Defaults to 'character_recursive'. None will take whole PDF pages as documents.
         file_out (str, optional): The output file path to save the chunked documents. Defaults to None.
-        n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to 0.
+        n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to None.
         chunk_size (int, optional): The size of each chunk in tokens. Defaults to 500. Only used if chunk_method is not None.
         chunk_overlap (int, optional): The overlap between chunks in tokens. Defaults to 0. Only used if chunk_method is not None.
         k_parent (int, optional): The number of parent chunks to split into child chunks for 'Parent-Child' rag_type. Defaults to 4.
@@ -149,11 +149,12 @@ def chunk_docs(docs: List[str],
         my_bar = st.progress(0, text=progress_text)
     pages=[]
     chunks=[]
+    doc_pages=[]
     merged_docs = []
-
+    
     # Parse doc pages
     for i, doc in enumerate(docs):
-        doc_pages=[]
+        
         loader = PyPDFLoader(doc)
         doc_page_data = loader.load()
 
@@ -175,7 +176,9 @@ def chunk_docs(docs: List[str],
                                   'source': str([doc.metadata['source'] for doc in group])}
                 merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
                 merged_docs.append(merged_doc)
-    pages = merged_docs
+            pages = merged_docs
+        else:
+            pages = doc_pages
     
     # Process pages
     if rag_type=='Standard': 
