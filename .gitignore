@@ -1,9 +1,10 @@
-# Environment variables, logs, junk files
+# Environment variables, logs, junk files, don't commit these
 *.env
 .venv/
 *.log
 *.DS_Store
 *__pycache__*
+dist/
 
 # Data
 *.pdf

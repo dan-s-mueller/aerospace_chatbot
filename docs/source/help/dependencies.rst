@@ -64,11 +64,11 @@ Setup Types
 
 Existing Repository Setup with Poetry Files
 ```````````````````````````````````````````
-Once poetry is installed, run the following to install all dependencies. ``no-root`` is used to not install the current project as a package.
+Once poetry is installed, run the following to install all dependencies.
 
 .. code-block:: shell
 
-   poetry install --no-root
+   poetry install
 
 ``poetry.lock`` and ``pyproject.toml`` are committed to this directory and are the working dependencies.
 
