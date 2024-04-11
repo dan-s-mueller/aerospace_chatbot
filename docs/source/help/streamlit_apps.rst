@@ -1,8 +1,5 @@
 Streamlit Apps
 ==============
-.. contents::
-   :local:
-   :depth: 2
 
 Structure
 ---------
@@ -31,7 +28,7 @@ The home page has reference information as well as an overview of the keys and d
 
 Database Processing
 ^^^^^^^^^^^^^^^^^^^
-This app is restricted to users who have access. Access is controlled and described in the `Configs <help/configs>`_ section.
+This app is restricted to users who have access. Access is controlled and described in the :doc:`configs` section.
 
 This app is used to manage databases. You can add, delete, and update databases. There are options available to export intermediate files for debugging or further processing.
 

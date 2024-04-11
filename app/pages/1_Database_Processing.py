@@ -86,6 +86,18 @@ if st.session_state["authentication_status"]:
         else:
             batch_size=None
         
+        # Merge pages before processing
+        merge_pages=st.checkbox('Merge pages before processing?',value=False,
+                                help='If checked, pages will be merged before processing.')
+        if merge_pages:
+            n_merge_pages=st.number_input('Number of pages to merge', min_value=2, step=1, value=2, 
+                                            help='''Number of pages to merge into a single document. 
+                                            This is done before chunking occurs. 
+                                            If zero, each page is processed independently before chunking.''')
+        else:
+            n_merge_pages=None
+        
+        # For each rag_type, set chunk parameters
         if sb['rag_type']=='Standard':
             chunk_method= st.selectbox('Chunk method', ['character_recursive','None'], 
                                        index=0,
@@ -106,9 +118,11 @@ if st.session_state["authentication_status"]:
                 chunk_overlap=st.number_input('Chunk overlap (characters)', min_value=0, step=1, value=0)
             else:
                 raise NotImplementedError
-        else:
+        elif sb['rag_type']=='Summary':
             chunk_size=None
             chunk_overlap=None
+        else:  
+            raise NotImplementedError
         export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
         if export_json:
             json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{database_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
@@ -129,6 +143,7 @@ if st.session_state["authentication_status"]:
                             rag_type=sb['rag_type'],
                             query_model=query_model,
                             index_name=sb['index_name']+'-'+database_appendix,
+                            n_merge_pages=n_merge_pages,
                             chunk_method=chunk_method,
                             chunk_size=chunk_size,
                             chunk_overlap=chunk_overlap,                  

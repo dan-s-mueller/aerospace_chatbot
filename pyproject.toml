@@ -1,11 +1,15 @@
 [tool.poetry]
 name = "aerospace-chatbot"
-version = "0.1.0"
-description = ""
+version = "0.0.1"
+description = "Aerospace engineering chatbot and AI tools."
 authors = ["dsmueller <dsm@danmueller.pro>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/dan-s-mueller/aerospace_chatbot/tree/main"
+repository = "https://github.com/dan-s-mueller/aerospace_chatbot/tree/main"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.12"
+python = ">=3.9,<3.9.7 || >3.9.7,<3.12"
 python-dotenv = "^1.0.0"
 ipywidgets = "^8.1.1"
 tiktoken = "^0.5.2"
@@ -19,7 +23,6 @@ openai = "^1.7.2"
 sentence-transformers = "^2.2.2"
 nbformat = "^5.9.2"
 pydantic = "^2.6.0"
-RAGxplorer = { git = "https://github.com/gabrielchua/RAGxplorer.git", branch = "functionality_deep_dive" }
 sphinx = "7.2.6"
 huggingface-hub = "^0.20.3"
 sphinx-rtd-theme = "2.0.0"
@@ -39,6 +42,7 @@ ragas = "^0.1.6"
 sphinxawesome-theme = "^5.1.1"
 sphinx-design = "^0.5.0"
 langchain-voyageai = "^0.1.0"
+ragxplorer = "^0.1.10"
 
 [build-system]
 requires = ["poetry-core"]

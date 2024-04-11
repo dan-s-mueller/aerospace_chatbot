@@ -1,10 +1,5 @@
 Overview
 ========
-.. contents::
-  :local:
-  :depth: 2
-
-----
 
 Purpose
 -------
@@ -27,12 +22,12 @@ A visual overview of how this code works is below. The parts of this which are u
 Of note, there are many areas of this workflow which have not been explored practically but have a lot of potential. The areas which are implemented, which are of interest and highlighted are:
 
 - **Chunk optimization**: currently this is in the form of a fixed number of words per chunk. 
-- Refer to `data_procesing <modules/data_processing>`_ for more information.
-- **Multi-representation indexing**: it is possible to index with the document chunks and generate summaries for each chunk which are used when providing answers. Refer to `data_procesing <modules/data_processing>`_ for more information.
-- **Specialized embeddings**: Instead of using a vector database, it is possible to create a context optimized retrieval model with ColBERT. This is performed using `RAGatouille <https://github.com/hwchase17/RAGatouille/tree/main>`__. Refer to `data_procesing <modules/data_processing>`_ for more information.
-- **Heirarchical indexing**: It is possible to upload small document chunks, which are compared to user queries, then return the parent document chunk when providing the response to the use. Refer to `data_procesing <modules/data_processing>`_ for more information.
+- Refer to :doc:`../modules/data_processing` for more information.
+- **Multi-representation indexing**: it is possible to index with the document chunks and generate summaries for each chunk which are used when providing answers. Refer to :doc:`../modules/data_processing` for more information.
+- **Specialized embeddings**: Instead of using a vector database, it is possible to create a context optimized retrieval model with ColBERT. This is performed using `RAGatouille <https://github.com/hwchase17/RAGatouille/tree/main>`__. Refer to :doc:`../modules/data_processing` for more information.
+- **Heirarchical indexing**: It is possible to upload small document chunks, which are compared to user queries, then return the parent document chunk when providing the response to the use. Refer to :doc:`../modules/data_processing` for more information.
 
-A very practical overview of how this works is also here: `<https://towardsdatascience.com/retrieval-augmented-generation-rag-from-theory-to-langchain-implementation-4e9bd5f6a4f2>`__
+A very practical overview of how this works is also `here <https://towardsdatascience.com/retrieval-augmented-generation-rag-from-theory-to-langchain-implementation-4e9bd5f6a4f2>`__.
 
 1. PDF files uploaded to repository
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -44,9 +39,9 @@ PDf files are read page-by-page and the text is extracted. Currently, no table o
 
 3. Chunks are converted to embeddings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Embeddings are multi-dimensional vectors which capture the meaning of the text. These are generated using a pre-trained model. Models which are used are captured in the config file. Refer to `configs <help/configs>`_ for more information.
+Embeddings are multi-dimensional vectors which capture the meaning of the text. These are generated using a pre-trained model. Models which are used are captured in the config file. Refer to :doc:`configs` for more information.
 
-4. Chunks are uploaded to a database
+1. Chunks are uploaded to a database
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Document chunks are uploaded to a database as embeddings.
 
@@ -76,7 +71,7 @@ If Parent-Child or Summary RAG types are used, the Parent Chunk, or Summary of t
 
 7. Response is generated using an LLM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The response is generated using an LLM. The response is generated using the context retrieved and the LLM you specify. There are prompts used to generate the response, which are discussed in the `prompts <modules/prompts>`_ section. The choice of prompt is important because it will minimize hallucination of the LLM and also only return the most relevant information.
+The response is generated using an LLM. The response is generated using the context retrieved and the LLM you specify. There are prompts used to generate the response, which are discussed in the :doc:`../modules/prompts` section. The choice of prompt is important because it will minimize hallucination of the LLM and also only return the most relevant information.
 
 The prompt which is used to return the response at the end of this process is located here in LangSmith `dmueller/ams-chatbot-qa-retrieval <https://smith.langchain.com/hub/dmueller/ams-chatbot-qa-retrieval?organizationId=45eb8917-7353-4296-978d-bb461fc45c65>`__.
 
@@ -86,4 +81,4 @@ How it works (frontend)
 -----------------------
 The frontend is what the user interfaces with. `Streamlit <https://streamlit.io/>`__ is used to create the frontend.
 
-Refer to `Streamlit Apps <help/streamlit_apps>`__.
+Refer to :doc:`streamlit_apps`.
