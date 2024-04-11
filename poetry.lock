@@ -5731,12 +5731,13 @@ voyager = ">=2.0.2,<3.0.0"
 
 [[package]]
 name = "ragxplorer"
-version = "0.1.9"
+version = "0.1.10"
 description = "A open-source tool to to visualise your RAG documents 🔮."
 optional = false
 python-versions = ">=3.8"
-files = []
-develop = false
+files = [
+    {file = "ragxplorer-0.1.10-py3-none-any.whl", hash = "sha256:467ea49d10c60e7b9821ee2dd674691850b27dd28ea3d61d752cba4b55e3764d"},
+]
 
 [package.dependencies]
 chromadb = "*"
@@ -5750,12 +5751,6 @@ PyPDF2 = "*"
 sentence-transformers = "*"
 tqdm = "*"
 umap-learn = "*"
-
-[package.source]
-type = "git"
-url = "https://github.com/gabrielchua/RAGxplorer.git"
-reference = "functionality_deep_dive"
-resolved_reference = "00668f21dacb7a8faa3e8b3bdc43ab6202da8af4"
 
 [[package]]
 name = "referencing"
@@ -8445,4 +8440,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.9.7 || >3.9.7,<3.12"
-content-hash = "17a57875e4a7be9c5f2f77295e00d2c8828e725ee511d26bdc38bf390a09329a"
+content-hash = "7943b43bedab7b14e0efa831deafa3db4d4f3d5d5503cf89040b9a40f1fbfcef"
