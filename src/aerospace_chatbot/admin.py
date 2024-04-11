@@ -273,30 +273,31 @@ def test_key_status():
     """
     key_status = {}
     # OpenAI
-    if os.getenv('OPENAI_API_KEY') is None:
+    if os.getenv('OPENAI_API_KEY') is None or os.getenv('OPENAI_API_KEY') == '':
         key_status['OpenAI API Key'] = {'status': False}
     else:
         key_status['OpenAI API Key'] = {'status': True}
 
     # Voyage
-    if os.getenv('VOYAGE_API_KEY') is None:
+    if os.getenv('VOYAGE_API_KEY') is None or os.getenv('VOYAGE_API_KEY') == '':
         key_status['Voyage API Key'] = {'status': False}
     else:
         key_status['Voyage API Key'] = {'status': True}
 
     # Pinecone
-    if os.getenv('PINECONE_API_KEY') is None:
+    if os.getenv('PINECONE_API_KEY') is None or os.getenv('PINECONE_API_KEY') == '':
         key_status['Pinecone API Key'] = {'status': False}
     else:
         key_status['PINECONE_API_KEY'] = {'status': True}
     
     # Hugging Face
-    if os.getenv('HUGGINGFACEHUB_API_TOKEN') is None:
+    if os.getenv('HUGGINGFACEHUB_API_TOKEN') is None or os.getenv('HUGGINGFACEHUB_API_TOKEN') == '':
         key_status['Hugging Face API Key'] = {'status': False}
     else:
         key_status['Hugging Face API Key'] = {'status': True}
 
-    # Ragatouille local database
+    print(os.getenv('OPENAI_API_KEY'))
+    print(key_status)
         
     return _format_key_status(key_status)
 def set_llm(sb, secrets, type='prompt'):
