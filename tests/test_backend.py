@@ -282,10 +282,41 @@ def test_chunk_docs_standard(setup_fixture):
                         chunk_method=setup_fixture['chunk_method'], 
                         chunk_size=setup_fixture['chunk_size'], 
                         chunk_overlap=setup_fixture['chunk_overlap'])
+    
+    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
+    chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+    
     assert result['rag'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
+    assert len(page_ids) == len(set(page_ids))
     assert result['chunks'] is not None
+    assert len(chunk_ids) == len(set(chunk_ids))
     assert result['splitters'] is not None
+def test_chunk_docs_merge_nochunk(setup_fixture):
+    """
+    Test case for the `chunk_docs` function with no chunking and merging.
+
+    Args:
+        setup_fixture (dict): A dictionary containing the setup fixture data.
+
+    Returns:
+        None
+    """
+
+    result = chunk_docs(setup_fixture['docs'], 
+                        rag_type=setup_fixture['rag_type']['Standard'], 
+                        chunk_method='None',
+                        n_merge_pages=2)
+    
+    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
+    chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+
+    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['pages'] is not None
+    assert len(page_ids) == len(set(page_ids))
+    assert result['chunks'] is not None
+    assert chunk_ids==page_ids
+    assert result['splitters'] is None
 def test_chunk_docs_nochunk(setup_fixture):
     """
     Test the chunk_docs function with no chunking.
@@ -298,9 +329,15 @@ def test_chunk_docs_nochunk(setup_fixture):
                         chunk_method='None', 
                         chunk_size=setup_fixture['chunk_size'], 
                         chunk_overlap=setup_fixture['chunk_overlap'])
+    
+    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
+    chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+
     assert result['rag'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
+    assert len(page_ids) == len(set(page_ids))
     assert result['chunks'] is result['pages']
+    assert len(chunk_ids) == len(set(chunk_ids))
     assert result['splitters'] is None
 def test_chunk_docs_parent_child(setup_fixture):
     """
@@ -314,10 +351,16 @@ def test_chunk_docs_parent_child(setup_fixture):
                         chunk_method=setup_fixture['chunk_method'], 
                         chunk_size=setup_fixture['chunk_size'], 
                         chunk_overlap=setup_fixture['chunk_overlap'])
+        
+    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']['parent_chunks']]
+    chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+
     assert result['rag'] == setup_fixture['rag_type']['Parent-Child']
     assert result['pages']['doc_ids'] is not None
     assert result['pages']['parent_chunks'] is not None
+    assert len(page_ids) == len(set(page_ids))
     assert result['chunks'] is not None
+    assert len(chunk_ids) == len(set(chunk_ids))
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
 def test_chunk_docs_summary(setup_fixture):
@@ -333,10 +376,16 @@ def test_chunk_docs_summary(setup_fixture):
                         chunk_size=setup_fixture['chunk_size'], 
                         chunk_overlap=setup_fixture['chunk_overlap'], 
                         llm=setup_fixture['llm']['Hugging Face'])
+    
+    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']['docs']]
+    summary_ids = [_stable_hash_meta(summary.metadata) for summary in result['summaries']]
+
     assert result['rag'] == setup_fixture['rag_type']['Summary']
     assert result['pages']['doc_ids'] is not None
     assert result['pages']['docs'] is not None
+    assert len(page_ids) == len(set(page_ids))
     assert result['summaries'] is not None
+    assert len(summary_ids) == len(set(summary_ids))
     assert result['llm'] == setup_fixture['llm']['Hugging Face']
 def test_chunk_id_lookup(setup_fixture):
     """
