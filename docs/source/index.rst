@@ -60,6 +60,9 @@ Contribute
 References
 -------------
 
+Models
+^^^^^^^
+
 - `Hugging Face <https://huggingface.co/>`_, this is where open source models are hosted, also is a great place to deploy applications and perform fine tuning.
     - `LLM leaderboard <https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard>`__
     - `Embedding leaderboard <https://huggingface.co/spaces/mteb/leaderboard>`__
@@ -67,10 +70,17 @@ References
 - `OpenAI <https://openai.com/>`_, this is where OpenAI LLMs and embeddings are hostes
     - `LLM models <https://platform.openai.com/docs/models/gpt-4-turbo-and-gpt-4>`__
     - `Embedding models <https://platform.openai.com/docs/models/embeddings>`__
+
+Frameworks
+^^^^^^^^^^
+
 - `Langchain <https://python.langchain.com/docs/get_started/introduction>`_, this is a framework for building AI applications.
 - `Langsmith <https://smith.langchain.com/>`_, this is a platform for debugging and data analysis for inputs/outputs/runtime of AI models.
-- API key links:
-    - `OpenAI <https://platform.openai.com/api-keys>`_
-    - `Pinecone <https://www.pinecone.io>`_
-    - `Hugging Face Hub <https://huggingface.co/settings/tokens>`_
-    - `Voyage <https://dash.voyageai.com/api-keys>`_
+
+API key links
+^^^^^^^^^^^^^
+
+- `OpenAI <https://platform.openai.com/api-keys>`_
+- `Pinecone <https://www.pinecone.io>`_
+- `Hugging Face Hub <https://huggingface.co/settings/tokens>`_
+- `Voyage <https://dash.voyageai.com/api-keys>`_
