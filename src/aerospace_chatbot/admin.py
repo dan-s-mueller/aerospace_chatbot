@@ -53,6 +53,7 @@ def load_sidebar(config_file,
     with open(config_file, 'r') as f:
         config = json.load(f)
         databases = {db['name']: db for db in config['databases']}
+        embeddings_list = {e['name']: e for e in config['embeddings']}
         llms  = {m['name']: m for m in config['llms']}
         logging.info('Loaded: '+config_file)
 
@@ -82,15 +83,9 @@ def load_sidebar(config_file,
                                                         index=0,
                                                         help="Model provider.")
                 sb_out['embedding_name']=st.sidebar.selectbox('Embedding model', 
-                                                        config[sb_out['query_model']], 
+                                                        embeddings_list[sb_out['query_model']]['embedding_models'], 
                                                         index=0,
                                                         help="Models listed are compatible with the selected index type.")
-            # if sb_out['query_model']=='Openai':
-            #     sb_out['embedding_name']='text-embedding-ada-002'
-            # elif sb_out['query_model']=='Voyage':
-            #     sb_out['embedding_name']='voyage-02'
-            # elif sb_out['query_model']=='Hugging Face':
-
             
         if rag_type:
             # RAG Type
@@ -598,11 +593,9 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     # Load sidebar
     try:
         if sidebar_config is None:
-            sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
-                            index_data_file=os.path.join(config_folder_path,'index_data.json'))
+            sb=load_sidebar(os.path.join(config_folder_path,'config.json'))
         else:
-            sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
-                            index_data_file=os.path.join(config_folder_path,'index_data.json'),
+            sb=load_sidebar(os.path.join(config_folder_path,'config.json'),
                             **sidebar_config)
     except SecretKeyException as e:
         # If no .env file is found, set the local db path when the warning is raised.

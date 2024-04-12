@@ -26,9 +26,7 @@
         },
         {
             "name": "Hugging Face",
-            "embedding_models": [
-                "Salesforce/SFR-Embedding-Mistral,intfloat/e5-mistral-7b-instruct"
-            ]
+            "embedding_models": ["Salesforce/SFR-Embedding-Mistral","intfloat/e5-mistral-7b-instruct"]
         }
     ],
     "llms": [

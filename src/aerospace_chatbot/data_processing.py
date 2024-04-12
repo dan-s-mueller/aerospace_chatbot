@@ -28,6 +28,7 @@ from langchain.storage import LocalFileStore
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 from langchain_community.document_loaders import PyPDFLoader
 
@@ -812,12 +813,13 @@ def _sanitize_raw_page_data(page):
         return None
     else:
         return page
-def _embedding_size(embedding_model:any):
+def _embedding_size(embedding_family:any,embedding_name:str):
     """
     Returns the size of the embedding for a given embedding model.
 
     Args:
-        embedding_model (object): The embedding model to get the size for.
+        embedding_family (object): The embedding model to get the size for.
+        embedding_name (str): The name of the embedding model.
 
     Returns:
         int: The size of the embedding.
@@ -825,10 +827,26 @@ def _embedding_size(embedding_model:any):
     Raises:
         NotImplementedError: If the embedding model is not supported.
     """
-    if isinstance(embedding_model,OpenAIEmbeddings):
-        return 1536 # https://platform.openai.com/docs/models/embeddings, test-embedding-ada-002
-    elif isinstance(embedding_model,VoyageAIEmbeddings):
-        return 1024 # https://docs.voyageai.com/embeddings/, voyage-02
+    # https://platform.openai.com/docs/models/embeddings
+    if isinstance(embedding_family,OpenAIEmbeddings):
+        if embedding_name=="text-embedding-ada-002":
+            return 1536
+        elif embedding_name=="text-embedding-3-small":
+            return 1536
+        elif embedding_name=="text-embedding-3-large":
+            return 3072
+    # https://docs.voyageai.com/embeddings/
+    elif isinstance(embedding_family,VoyageAIEmbeddings):
+        if embedding_name=="voyage-02":
+            return 1024 
+        elif embedding_name=="voyage-large-2":
+            return 1536
+    # See model pages for embedding sizes
+    elif isinstance(embedding_family,HuggingFaceInferenceAPIEmbeddings):
+        if embedding_name=="Salesforce/SFR-Embedding-Mistral":
+            return 4096
+        elif embedding_name=="intfloat/e5-mistral-7b-instruct":
+            return 4096
     else:
         raise NotImplementedError
 

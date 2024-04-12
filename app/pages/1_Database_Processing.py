@@ -7,6 +7,7 @@ from yaml.loader import SafeLoader
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 sys.path.append('../../src/aerospace_chatbot')  # Add package to path
 import admin, data_processing
@@ -47,19 +48,21 @@ if st.session_state["authentication_status"]:
     st.subheader('Create and load into a vector database')
     
     # Populate the main screen
-    logging.info(f'index_type test, {sb["index_type"]}')
-
     if sb["index_type"]=='RAGatouille':
-        logging.info('Set hugging face model for queries.')
         query_model=sb['query_model']
     elif sb['query_model']=='Openai' or 'Voyage':
-        logging.info('Set embeddings model for queries.')
         if sb['query_model']=='Openai':
-            query_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
+            query_model=OpenAIEmbeddings(model=sb['embedding_name'],
+                                         openai_api_key=secrets['OPENAI_API_KEY'])
         elif sb['query_model']=='Voyage':
             # For voyage embedding truncation see here: https://docs.voyageai.com/docs/embeddings#python-api.
             # Leaving out trunction gives an error.
-            query_model=VoyageAIEmbeddings(model='voyage-2',voyage_api_key=secrets['VOYAGE_API_KEY'],truncation=False)
+            query_model=VoyageAIEmbeddings(model=sb['embedding_name'],
+                                           oyage_api_key=secrets['VOYAGE_API_KEY'],
+                                           truncation=False)
+        elif sb['query_model']=='Hugging Face':
+            query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'],
+                                                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
     logging.info('Query model set: '+str(query_model))
 
     # Find docs
@@ -77,14 +80,10 @@ if st.session_state["authentication_status"]:
     # Add an expandable box for options
     with st.expander("Options",expanded=True):
         clear_database = st.checkbox('Delete existing database?',value=True)
-        if sb['query_model']=='Openai' or 'ChromaDB':
-            # OpenAI will time out if the batch size is too large
-            batch_size=st.number_input('Batch size for upsert', 
-                            min_value=1, step=1, value=50,
-                            help='''The number of documents to upsert at a time. 
-                                    Useful for hosted databases (e.g. Pinecone), or those that require long processing times.''')
-        else:
-            batch_size=None
+        batch_size=st.number_input('Batch size for upsert', 
+                        min_value=1, step=1, value=50,
+                        help='''The number of documents to upsert at a time. 
+                                Useful for hosted databases (e.g. Pinecone), or those that require long processing times.''')
         
         # Merge pages before processing
         merge_pages=st.checkbox('Merge pages before processing?',value=False,
