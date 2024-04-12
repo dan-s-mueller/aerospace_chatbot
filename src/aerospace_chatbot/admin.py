@@ -55,7 +55,6 @@ def load_sidebar(config_file,
         databases = {db['name']: db for db in config['databases']}
         embeddings_list = {e['name']: e for e in config['embeddings']}
         llms  = {m['name']: m for m in config['llms']}
-        logging.info('Loaded: '+config_file)
 
     # Set local db path
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':

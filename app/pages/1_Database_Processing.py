@@ -1,4 +1,4 @@
-import os, sys, time, logging
+import os, sys, time
 import glob
 import streamlit as st
 import streamlit_authenticator as stauth
@@ -58,12 +58,11 @@ if st.session_state["authentication_status"]:
             # For voyage embedding truncation see here: https://docs.voyageai.com/docs/embeddings#python-api.
             # Leaving out trunction gives an error.
             query_model=VoyageAIEmbeddings(model=sb['embedding_name'],
-                                           oyage_api_key=secrets['VOYAGE_API_KEY'],
+                                           voyage_api_key=secrets['VOYAGE_API_KEY'],
                                            truncation=False)
         elif sb['query_model']=='Hugging Face':
             query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'],
                                                             api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
-    logging.info('Query model set: '+str(query_model))
 
     # Find docs
     data_folder = st.text_input('Enter a directory relative to the base directory',
@@ -74,7 +73,6 @@ if st.session_state["authentication_status"]:
     docs = glob.glob(os.path.join(data_folder,'*.pdf'))   # Only get the PDFs in the directory
     st.markdown('PDFs found: '+str(docs))
     st.markdown('Number of PDFs found: ' + str(len(docs)))
-    logging.info('Docs: '+str(docs))
     database_appendix=st.text_input('Appendix for database name','ams')
 
     # Add an expandable box for options

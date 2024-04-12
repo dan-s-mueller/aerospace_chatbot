@@ -46,7 +46,7 @@ def load_docs(index_type:str,
               query_model,
               rag_type:str='Standard',
               index_name:str=None,
-              n_merge_pages:int=0,
+              n_merge_pages:int=None,
               chunk_method:str='character_recursive',
               chunk_size:int=500,
               chunk_overlap:int=0,
@@ -827,6 +827,8 @@ def _embedding_size(embedding_family:any,embedding_name:str):
     Raises:
         NotImplementedError: If the embedding model is not supported.
     """
+    exception_embedding_name=NotImplementedError(f"The embedding name '{embedding_name}' is not available in config.json")
+
     # https://platform.openai.com/docs/models/embeddings
     if isinstance(embedding_family,OpenAIEmbeddings):
         if embedding_name=="text-embedding-ada-002":
@@ -835,20 +837,26 @@ def _embedding_size(embedding_family:any,embedding_name:str):
             return 1536
         elif embedding_name=="text-embedding-3-large":
             return 3072
+        else:
+            raise exception_embedding_name
     # https://docs.voyageai.com/embeddings/
     elif isinstance(embedding_family,VoyageAIEmbeddings):
         if embedding_name=="voyage-02":
             return 1024 
         elif embedding_name=="voyage-large-2":
             return 1536
+        else:
+            raise exception_embedding_name
     # See model pages for embedding sizes
     elif isinstance(embedding_family,HuggingFaceInferenceAPIEmbeddings):
-        if embedding_name=="Salesforce/SFR-Embedding-Mistral":
-            return 4096
-        elif embedding_name=="intfloat/e5-mistral-7b-instruct":
-            return 4096
+        if embedding_name=="sentence-transformers/all-MiniLM-L6-v2":
+            return 384
+        elif embedding_name=="mixedbread-ai/mxbai-embed-large-v1":
+            return 1024
+        else:
+            raise exception_embedding_name
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"The embedding family '{embedding_family}' is not available in config.json")
 
 def _stable_hash_meta(metadata: dict) -> str:
     """
