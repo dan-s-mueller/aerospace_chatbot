@@ -61,6 +61,12 @@ References
 -------------
 
 - `Hugging Face <https://huggingface.co/>`_, this is where open source models are hosted, also is a great place to deploy applications and perform fine tuning.
+    - `LLM leaderboard <https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard>`__
+    - `Embedding leaderboard <https://huggingface.co/spaces/mteb/leaderboard>`__
+- `Voyage embedding models <https://docs.voyageai.com/docs/embeddings>`__, this is a proprietary high performance embedding model.
+- `OpenAI <https://openai.com/>`_, this is where OpenAI LLMs and embeddings are hostes
+    - `LLM models <https://platform.openai.com/docs/models/gpt-4-turbo-and-gpt-4>`__
+    - `Embedding models <https://platform.openai.com/docs/models/embeddings>`__
 - `Langchain <https://python.langchain.com/docs/get_started/introduction>`_, this is a framework for building AI applications.
 - `Langsmith <https://smith.langchain.com/>`_, this is a platform for debugging and data analysis for inputs/outputs/runtime of AI models.
 - API key links:

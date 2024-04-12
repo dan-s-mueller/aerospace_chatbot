@@ -26,7 +26,6 @@ class SecretKeyException(Exception):
         super().__init__(message)
         self.id = id
 def load_sidebar(config_file,
-                 index_data_file,
                  vector_database=False,
                  embeddings=False,
                  rag_type=False,
@@ -39,7 +38,6 @@ def load_sidebar(config_file,
 
     Args:
         config_file (str): The path to the configuration file.
-        index_data_file (str): The path to the index data file.
         vector_database (bool, optional): Whether to include the vector database in the sidebar. Defaults to False.
         embeddings (bool, optional): Whether to include embeddings in the sidebar. Defaults to False.
         rag_type (bool, optional): Whether to include RAG type in the sidebar. Defaults to False.
@@ -57,9 +55,6 @@ def load_sidebar(config_file,
         databases = {db['name']: db for db in config['databases']}
         llms  = {m['name']: m for m in config['llms']}
         logging.info('Loaded: '+config_file)
-    with open(index_data_file, 'r') as f:
-        index_data = json.load(f)
-        logging.info('Loaded: '+index_data_file)
 
     # Set local db path
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
@@ -80,19 +75,23 @@ def load_sidebar(config_file,
                                                         databases[sb_out['index_type']]['hf_rag_models'], 
                                                         index=0,
                                                         help="Models listed are compatible with the selected index type.")
+                sb_out['embedding_name']=sb_out['query_model']
             else:
-                sb_out['query_model']=st.sidebar.selectbox('Embedding models', 
+                sb_out['query_model']=st.sidebar.selectbox('Embedding model family', 
                                                         databases[sb_out['index_type']]['embedding_models'], 
                                                         index=0,
+                                                        help="Model provider.")
+                sb_out['embedding_name']=st.sidebar.selectbox('Embedding model', 
+                                                        config[sb_out['query_model']], 
+                                                        index=0,
                                                         help="Models listed are compatible with the selected index type.")
+            # if sb_out['query_model']=='Openai':
+            #     sb_out['embedding_name']='text-embedding-ada-002'
+            # elif sb_out['query_model']=='Voyage':
+            #     sb_out['embedding_name']='voyage-02'
+            # elif sb_out['query_model']=='Hugging Face':
 
-            if sb_out['query_model']=='Openai':
-                sb_out['embedding_name']='text-embedding-ada-002'
-            elif sb_out['query_model']=='Voyage':
-                sb_out['embedding_name']='voyage-02'
-            logging.info('Query type: '+sb_out['query_model'])
-            if 'embedding_name' in locals() or 'embedding_name' in globals():
-                logging.info('Embedding name: '+sb_out['embedding_name'])
+            
         if rag_type:
             # RAG Type
             st.sidebar.title('RAG Type')
@@ -121,8 +120,8 @@ def load_sidebar(config_file,
             if embeddings and rag_type:
                 # Index Name 
                 st.sidebar.title('Index Name')  
-                sb_out['index_name']=index_data[sb_out['index_type']][sb_out['query_model']]
-                st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='config/index_data.json contains index base names. An index appendix is added on creation under Database Processing.')
+                sb_out['index_name'] = sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')
+                st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='An index appendix is added on creation under Database Processing.')
                 logging.info('Index name: '+sb_out['index_name'])
                 
                 # For each index type, list indices available for the base name

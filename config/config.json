@@ -6,12 +6,28 @@
         },
         {
             "name": "ChromaDB",
-            "embedding_models": ["Openai"]
+            "embedding_models": ["Openai","Hugging Face"]
         },
         {
             "name": "RAGatouille",
             "hf_rag_models": [
                 "colbert-ir/colbertv2.0"
+            ]
+        }
+    ],
+    "embeddings": [
+        {
+            "name": "Openai",
+            "embedding_models": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]
+        },
+        {
+            "name": "Voyage",
+            "embedding_models": ["voyage-2","voyage-large-2"]
+        },
+        {
+            "name": "Hugging Face",
+            "embedding_models": [
+                "Salesforce/SFR-Embedding-Mistral,intfloat/e5-mistral-7b-instruct"
             ]
         }
     ],
