@@ -2,11 +2,11 @@
     "databases": [
         {
             "name": "Pinecone",
-            "embedding_models": ["Openai", "Voyage"]
+            "embedding_models": ["OpenAI", "Voyage"]
         },
         {
             "name": "ChromaDB",
-            "embedding_models": ["Openai","Hugging Face"]
+            "embedding_models": ["OpenAI","Hugging Face"]
         },
         {
             "name": "RAGatouille",
@@ -17,16 +17,23 @@
     ],
     "embeddings": [
         {
-            "name": "Openai",
-            "embedding_models": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]
+            "name": "OpenAI",
+            "embedding_models": ["text-embedding-ada-002", 
+                                "text-embedding-3-small", 
+                                "text-embedding-3-large"
+            ]
         },
         {
             "name": "Voyage",
-            "embedding_models": ["voyage-2","voyage-large-2"]
+            "embedding_models": ["voyage-2",
+                                 "voyage-large-2"
+            ]
         },
         {
             "name": "Hugging Face",
-            "embedding_models": ["sentence-transformers/all-MiniLM-L6-v2","mixedbread-ai/mxbai-embed-large-v1"]
+            "embedding_models": ["sentence-transformers/all-MiniLM-L6-v2",
+                                "mixedbread-ai/mxbai-embed-large-v1"
+            ]
         }
     ],
     "llms": [
@@ -40,21 +47,9 @@
         },
         {
             "name": "Hugging Face",
-            "models": [
-                {
-                    "model":"mistralai/Mistral-7B-Instruct-v0.2"
-                },
-                {
-                    "model":"mistralai/Mixtral-8x7B-Instruct-v0.1"
-                },
-                {
-                    "model":"google/gemma-7b-it"
-                
-                },
-                {
-                    "model":"meta-llama/Llama-2-70b-chat-hf"
-                
-                }
+            "models": ["mistralai/Mistral-7B-Instruct-v0.2",
+                       "mistralai/Mixtral-8x7B-Instruct-v0.1",
+                       "google/gemma-1.1-7b-it"
             ]
         },
         {

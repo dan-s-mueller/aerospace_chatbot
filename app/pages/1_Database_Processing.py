@@ -50,8 +50,8 @@ if st.session_state["authentication_status"]:
     # Populate the main screen
     if sb["index_type"]=='RAGatouille':
         query_model=sb['query_model']
-    elif sb['query_model']=='Openai' or 'Voyage':
-        if sb['query_model']=='Openai':
+    elif sb['query_model']=='OpenAI' or sb['query_model']=='Voyage':
+        if sb['query_model']=='OpenAI':
             query_model=OpenAIEmbeddings(model=sb['embedding_name'],
                                          openai_api_key=secrets['OPENAI_API_KEY'])
         elif sb['query_model']=='Voyage':
@@ -139,6 +139,7 @@ if st.session_state["authentication_status"]:
                             docs,
                             rag_type=sb['rag_type'],
                             query_model=query_model,
+                            embedding_name=sb['embedding_name'],
                             index_name=sb['index_name']+'-'+database_appendix,
                             n_merge_pages=n_merge_pages,
                             chunk_method=chunk_method,

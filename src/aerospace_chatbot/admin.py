@@ -98,9 +98,8 @@ def load_sidebar(config_file,
                     if sb_out['rag_llm_source']=='OpenAI':
                         sb_out['rag_llm_model']=st.sidebar.selectbox('RAG OpenAI model', llms[sb_out['rag_llm_source']]['models'], index=0,help='Select the OpenAI model for RAG.')
                     if sb_out['rag_llm_source']=='Hugging Face':
-                        sb_out['hf_models']=llms['Hugging Face']['models']
                         sb_out['rag_llm_model']=st.sidebar.selectbox('RAG Hugging Face model', 
-                                                                [item['model'] for item in llms['Hugging Face']['models']], 
+                                                                llms['Hugging Face']['models'], 
                                                                 index=0,
                                                                 help='Select the Hugging Face model for RAG.')
                         sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
@@ -160,9 +159,8 @@ def load_sidebar(config_file,
             if sb_out['llm_source']=='OpenAI':
                 sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0,help='Select the OpenAI model for the application.')
             elif sb_out['llm_source']=='Hugging Face':
-                sb_out['hf_models']=llms['Hugging Face']['models']
                 sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', 
-                                                        [item['model'] for item in llms['Hugging Face']['models']], 
+                                                        llms['Hugging Face']['models'], 
                                                         index=0,
                                                         help='Select the Hugging Face model for the application.')
                 sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'

@@ -42,8 +42,9 @@ import pandas as pd
 
 
 def load_docs(index_type:str,
-              docs,
-              query_model,
+              docs:List[str],
+              query_model:any,
+              embedding_name:str,
               rag_type:str='Standard',
               index_name:str=None,
               n_merge_pages:int=None,
@@ -63,6 +64,7 @@ def load_docs(index_type:str,
         index_type (str): The type of index to use.
         docs: The documents to load.
         query_model: The query model to use.
+        embedding_name: The name of the embedding model to use.
         rag_type (str, optional): The type of RAG (Retrieval-Augmented Generation) to use. Defaults to 'Standard'.
         index_name (str, optional): The name of the index. Defaults to None.
         n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to 0.
@@ -104,6 +106,7 @@ def load_docs(index_type:str,
     vectorstore = initialize_database(index_type, 
                                       index_name, 
                                       query_model, 
+                                      embedding_name,
                                       rag_type=rag_type,
                                       clear=clear, 
                                       local_db_path=local_db_path,
@@ -194,7 +197,7 @@ def chunk_docs(docs: List[str],
                     my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
                 chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
                 chunks.append(chunk)    # Not sanitized because the page already was
-        elif chunk_method is 'None':
+        elif chunk_method=='None':
             text_splitter = None
             chunks = pages  # No chunking, take whole pages as documents
         else:
@@ -222,7 +225,7 @@ def chunk_docs(docs: List[str],
             child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
                                                           chunk_overlap=chunk_overlap,
                                                           add_start_index=True)
-        elif chunk_method is 'None':
+        elif chunk_method=='None':
             raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
         else:
             raise NotImplementedError
@@ -283,7 +286,8 @@ def chunk_docs(docs: List[str],
         raise NotImplementedError
 def initialize_database(index_type: str, 
                         index_name: str, 
-                        query_model: str, 
+                        query_model: str,
+                        embedding_name: str,
                         rag_type: str,
                         local_db_path: str = None, 
                         clear: bool = False,
@@ -295,6 +299,7 @@ def initialize_database(index_type: str,
         index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
         index_name (str): The name of the index.
         query_model (str): The query model to use.
+        embedding_name (str): The name of the embedding model to use.
         rag_type (str): The type of RAG model to use.
         local_db_path (str, optional): The path to the local database. Defaults to None.
         clear (bool, optional): Whether to clear the index. Defaults to False.
@@ -322,7 +327,7 @@ def initialize_database(index_type: str,
             pc.describe_index(index_name)
         except:
             pc.create_index(index_name,
-                            dimension=_embedding_size(query_model),
+                            dimension=_embedding_size(query_model,embedding_name),
                             spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
         
         index = pc.Index(index_name)
@@ -841,7 +846,7 @@ def _embedding_size(embedding_family:any,embedding_name:str):
             raise exception_embedding_name
     # https://docs.voyageai.com/embeddings/
     elif isinstance(embedding_family,VoyageAIEmbeddings):
-        if embedding_name=="voyage-02":
+        if embedding_name=="voyage-2":
             return 1024 
         elif embedding_name=="voyage-large-2":
             return 1536

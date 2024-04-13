@@ -98,6 +98,7 @@ if prompt := st.chat_input('Prompt here'):
                 st.session_state.qa_model_obj=queries.QA_Model(sb['index_type'],
                                                                sb['index_selected'],
                                                                query_model,
+                                                               sb['embedding_name'],
                                                                llm,
                                                                rag_type=sb['rag_type'],
                                                                k=sb['model_options']['k'],

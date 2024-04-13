@@ -1,6 +1,7 @@
 {
     "python.analysis.extraPaths": [
-        "./src/aerospace_chatbot"
+        "./src/aerospace_chatbot",
+        "./tests"
     ],
     "python.testing.cwd": "${workspaceFolder}",
     "python.testing.pytestArgs": [

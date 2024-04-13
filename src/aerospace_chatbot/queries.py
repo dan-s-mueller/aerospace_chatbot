@@ -74,6 +74,7 @@ class QA_Model:
                  index_type,
                  index_name,
                  query_model,
+                 embedding_name,
                  llm:ChatOpenAI,
                  rag_type='Standard',
                  k=6,
@@ -88,6 +89,7 @@ class QA_Model:
             index_type (str): The type of index.
             index_name (str): The name of the index.
             query_model (str): The query model.
+            embedding_name (str): The name of the embedding.
             llm (ChatOpenAI): The language model for generating responses.
             rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
             k (int, optional): The number of retriever results to consider. Defaults to 6.
@@ -100,6 +102,7 @@ class QA_Model:
         self.index_type=index_type
         self.index_name=index_name
         self.query_model=query_model
+        self.embedding_name=embedding_name
         self.llm=llm
         self.rag_type=rag_type
         self.k=k
@@ -118,6 +121,7 @@ class QA_Model:
         self.vectorstore=data_processing.initialize_database(self.index_type,
                                                              self.index_name,
                                                              self.query_model,
+                                                             self.embedding_name,
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
                                                              init_ragatouille=False)  

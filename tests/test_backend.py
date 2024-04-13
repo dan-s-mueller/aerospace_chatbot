@@ -9,7 +9,9 @@ from langchain_openai import ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
 from langchain_community.vectorstores import Chroma
 
+from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 from ragatouille import RAGPretrainedModel
 
@@ -28,7 +30,7 @@ from queries import QA_Model
 
 # Functions
 def permute_tests(test_data):
-    """
+    '''
     Generate permutations of test cases.
 
     Args:
@@ -36,7 +38,7 @@ def permute_tests(test_data):
 
     Returns:
         list: List of dictionaries representing permuted test cases.
-    """
+    '''
     rows = []
     idx=0
     for row_data in test_data:
@@ -49,7 +51,7 @@ def permute_tests(test_data):
             rows.append(row)
             idx+=1
     return rows
-def generate_test_cases(export:bool=True,export_dir:str='.'):
+def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
     '''
     Generate test cases and export them to a JSON file.
 
@@ -62,34 +64,102 @@ def generate_test_cases(export:bool=True,export_dir:str='.'):
     '''
     # Items in test_cases must match labels to select from in setup_fixture
     # TODO throw in bad inputs for each of the 4 major types below.
+
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+        embeddings_list = {e['name']: e for e in config['embeddings']}
+        llms  = {m['name']: m for m in config['llms']}
+
     test_cases = [
         {
-            # Tests ChromaDB setups, advanced RAG (standard/parent-child)
-            'index_type': ['ChromaDB'],
-            'query_model': ['OpenAI'],
-            'rag_type': ['Standard', 'Parent-Child'],
-            'llm': ['Hugging Face']
+            # Tests ChromaDB setups, standard RAG , openai embeddings
+            'index_type' : ['ChromaDB'],
+            'query_model' : ['OpenAI'],
+            'embedding_name' : embeddings_list['OpenAI']['embedding_models'],
+            'rag_type' : ['Standard'],
+            'llm_family' : ['OpenAI'],
+            'llm' : ["gpt-3.5-turbo-0125"]
         },
         {
-            # Tests advanced RAG (summary) and LLM (openai/hugging face)
-            'index_type': ['ChromaDB'],
-            'query_model': ['OpenAI'],
-            'rag_type': ['Summary'],
-            'llm': ['Hugging Face','OpenAI']
+            # Tests standard RAG , openai llm
+            'index_type' : ['ChromaDB'],
+            'query_model' : ['OpenAI'],
+            'embedding_name' : ["text-embedding-ada-002"],
+            'rag_type' : ['Standard'],
+            'llm_family' : ['OpenAI'],
+            'llm' : llms['OpenAI']['models']
         },
         {
-            # Tests Pinecone setups, embedding types (openai/voyage)
-            'index_type': ['Pinecone'],
-            'query_model': ['OpenAI', 'Voyage'],
-            'rag_type': ['Standard'],
-            'llm': ['Hugging Face']
+            # Tests standard RAG , voyage embedding models
+            'index_type' : ['ChromaDB'],
+            'query_model' : ['Voyage'],
+            'embedding_name' : embeddings_list['Voyage']['embedding_models'],
+            'rag_type' : ['Standard'],
+            'llm_family' : ['OpenAI'],
+            'llm' : ["gpt-3.5-turbo-0125"]
+        },
+        {
+            # Tests standard RAG , hugging face embeddings
+            'index_type' : ['ChromaDB'],
+            'query_model' : ['Hugging Face'],
+            'embedding_name' : embeddings_list['Hugging Face']['embedding_models'],
+            'rag_type' : ['Standard'],
+            'llm_family' : ['OpenAI'],
+            'llm' : ["gpt-3.5-turbo-0125"]
+        },
+        {
+            # Tests standard RAG , hugging face llm
+            'index_type' : ['ChromaDB'],
+            'query_model' : ['OpenAI'],
+            'embedding_name' : ["text-embedding-ada-002"],
+            'rag_type' : ['Standard'],
+            'llm_family' : ['Hugging Face'],
+            'llm' : llms['Hugging Face']['models']
+        },
+        {
+            # Tests parent-child rag, openai models
+            'index_type' : ['ChromaDB'],
+            'query_model' : ['OpenAI'],
+            'embedding_name' : ['text-embedding-ada-002'],
+            'rag_type' : ['Parent-Child'],
+            'llm_family' : ['OpenAI'],
+            'llm' : ["gpt-3.5-turbo-0125"]
+        },
+        {
+            # Tests advanced RAG (summary), openai models
+            'index_type' : ['ChromaDB'],
+            'query_model' : ['OpenAI'],
+            'embedding_name' : ['text-embedding-ada-002'],
+            'rag_type' : ['Summary'],
+            'llm_family' : ['OpenAI'],
+            'llm' : ['gpt-3.5-turbo-0125']
+        },
+        {
+            # Tests Pinecone setups, openai embedding type
+            'index_type' : ['Pinecone'],
+            'query_model' : ['OpenAI'],
+            'embedding_name' : ['text-embedding-ada-002'],
+            'rag_type' : ['Standard'],
+            'llm_family' : ['OpenAI'],
+            'llm' : ['gpt-3.5-turbo-0125']
+        },
+        {
+            # Tests Pinecone setups, voyage embedding type
+            'index_type' : ['Pinecone'],
+            'query_model' : ['Voyage'],
+            'embedding_name' : ['voyage-2'],
+            'rag_type' : ['Standard'],
+            'llm_family' : ['OpenAI'],
+            'llm' : ['gpt-3.5-turbo-0125']
         },
         {
             # Tests RAGatouille setup
-            'index_type': ['RAGatouille'],
-            'query_model': ['RAGatouille'],
-            'rag_type': ['Standard'],
-            'llm': ['Hugging Face']
+            'index_type' : ['RAGatouille'],
+            'query_model' : ['RAGatouille'],
+            'embedding_name' : ['colbert-ir/colbertv2.0'],
+            'rag_type' : ['Standard'],
+            'llm_family' : ['Hugging Face'],
+            'llm' : ['mistralai/Mistral-7B-Instruct-v0.2']
         }
     ]
 
@@ -122,9 +192,9 @@ def pytest_generate_tests(metafunc):
     Args:
         metafunc: The metafunc object provided by pytest.
     '''
-    if "test_input" in metafunc.fixturenames:
+    if 'test_input' in metafunc.fixturenames:
         tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)),'test_cases.json'))
-        metafunc.parametrize("test_input", tests)
+        metafunc.parametrize('test_input', tests)
 def parse_test_case(setup,test_case):
     ''' 
     Parse test case to be used in the test functions.
@@ -139,11 +209,13 @@ def parse_test_case(setup,test_case):
     parsed_test = {
         'id': test_case['id'],
         'index_type': setup['index_type'][test_case['index_type']],
-        'query_model': setup['query_model'][test_case['query_model']],
+        'query_model': test_case['query_model'],
+        'embedding_name': test_case['embedding_name'],
         'rag_type': setup['rag_type'][test_case['rag_type']],
-        'llm': setup['llm'][test_case['llm']],
+        'llm_family': test_case['llm_family'],
+        'llm' : test_case['llm']
     }
-    print_str = ', '.join(f"{key}: {value}" for key, value in test_case.items())
+    print_str = ', '.join(f'{key}: {value}' for key, value in test_case.items())
 
     return parsed_test, print_str
 def viz_database_setup(index_name:str,setup:dict):
@@ -180,16 +252,16 @@ def viz_database_setup(index_name:str,setup:dict):
     return rx_client, chroma_client
 
 # Fixtures
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope='session', autouse=True)
 def setup_fixture():
-    """
+    '''
     Sets up the necessary variables and configurations for the test.
     The tests in this script will only work if there exists environment variables for API keys: 
     OPENAI_API_KEY, VOYAGE_API_KEY, HUGGINGFACEHUB_API_TOKEN, and PINECONE_API_KEY.
 
     Returns:
         dict: A dictionary containing the setup variables and configurations.
-    """    
+    '''    
     # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
     load_dotenv(find_dotenv(),override=True)
     OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
@@ -219,18 +291,6 @@ def setup_fixture():
     test_prompt='What are some nuances associated with the analysis and design of hinged booms?'   # Info on test2.pdf
 
     # Variable inputs
-    llm={'OpenAI':ChatOpenAI(model_name='gpt-3.5-turbo-1106', # Openai
-                                openai_api_key=OPENAI_API_KEY,
-                                max_tokens=500), 
-            'Hugging Face':ChatOpenAI(base_url='https://api-inference.huggingface.co/v1',  # Hugging face
-                                    model='mistralai/Mistral-7B-Instruct-v0.2',
-                                    api_key=HUGGINGFACEHUB_API_TOKEN,
-                                    max_tokens=500)}
-    
-    # For voyage, see here for truncation: https://docs.voyageai.com/docs/embeddings#python-api
-    query_model={'OpenAI':OpenAIEmbeddings(model='text-embedding-ada-002',openai_api_key=OPENAI_API_KEY),
-                 'Voyage':VoyageAIEmbeddings(model='voyage-2',voyage_api_key=VOYAGE_API_KEY,truncation=False),
-                 'RAGatouille':'colbert-ir/colbertv2.0'}
     index_type = {index: index for index in ['ChromaDB', 'Pinecone', 'RAGatouille']}
     rag_type = {rag: rag for rag in ['Standard','Parent-Child','Summary']}
     
@@ -246,8 +306,6 @@ def setup_fixture():
         'chunk_overlap': chunk_overlap,
         'batch_size': batch_size,
         'test_prompt': test_prompt,
-        'llm': llm,
-        'query_model': query_model,
         'index_type': index_type,
         'rag_type': rag_type
     }
@@ -271,12 +329,12 @@ def temp_dotenv(setup_fixture):
 ### Begin tests
 # Test chunk docs
 def test_chunk_docs_standard(setup_fixture):
-    """
+    '''
     Test the chunk_docs function with standard RAG.
 
     Args:
         setup_fixture (dict): The setup variables and configurations.
-    """
+    '''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -287,12 +345,12 @@ def test_chunk_docs_standard(setup_fixture):
     assert result['chunks'] is not None
     assert result['splitters'] is not None
 def test_chunk_docs_nochunk(setup_fixture):
-    """
+    '''
     Test the chunk_docs function with no chunking.
 
     Args:
         setup_fixture (dict): The setup variables and configurations.
-    """
+    '''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
                         chunk_method='None', 
@@ -303,12 +361,12 @@ def test_chunk_docs_nochunk(setup_fixture):
     assert result['chunks'] is result['pages']
     assert result['splitters'] is None
 def test_chunk_docs_parent_child(setup_fixture):
-    """
+    '''
     Test the chunk_docs function with parent-child RAG.
 
     Args:
         setup_fixture (dict): The setup variables and configurations.
-    """
+    '''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Parent-Child'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -321,12 +379,12 @@ def test_chunk_docs_parent_child(setup_fixture):
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
 def test_chunk_docs_summary(setup_fixture):
-    """
+    '''
     Test the chunk_docs function with summary RAG.
 
     Args:
         setup_fixture (dict): The setup variables and configurations.
-    """
+    '''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Summary'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -339,7 +397,7 @@ def test_chunk_docs_summary(setup_fixture):
     assert result['summaries'] is not None
     assert result['llm'] == setup_fixture['llm']['Hugging Face']
 def test_chunk_id_lookup(setup_fixture):
-    """
+    '''
     Test case for chunk_id_lookup function.
 
     Args:
@@ -347,7 +405,7 @@ def test_chunk_id_lookup(setup_fixture):
 
     Returns:
         None
-    """
+    '''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -364,7 +422,7 @@ def test_chunk_id_lookup(setup_fixture):
 
 # Test initialize database with a test query
 def test_initialize_database_pinecone(monkeypatch,setup_fixture):
-    """
+    '''
     Test the initialization of a Pinecone database.
 
     Args:
@@ -376,7 +434,7 @@ def test_initialize_database_pinecone(monkeypatch,setup_fixture):
 
     Raises:
         AssertionError: If the initialized vector store is not an instance of PineconeVectorStore.
-    """
+    '''
     index_type = 'Pinecone'
     index_name = 'test-index'
     query_model = setup_fixture['query_model']['OpenAI']
@@ -403,7 +461,7 @@ def test_initialize_database_pinecone(monkeypatch,setup_fixture):
     except:
         pass
 def test_initialize_database_chromadb(monkeypatch,setup_fixture):
-    """
+    '''
     Test the initialization of a Chroma database.
 
     Args:
@@ -416,7 +474,7 @@ def test_initialize_database_chromadb(monkeypatch,setup_fixture):
     Raises:
         AssertionError: If the vectorstore is not an instance of Chroma.
 
-    """
+    '''
     index_type = 'ChromaDB'
     index_name = 'test-index'
     query_model = setup_fixture['query_model']['OpenAI']
@@ -443,7 +501,7 @@ def test_initialize_database_chromadb(monkeypatch,setup_fixture):
     except:
         pass
 def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
-    """
+    '''
     Test the initialization of a database for RAGatouille.
 
     Args:
@@ -456,7 +514,7 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
     Raises:
         AssertionError: If the vectorstore is not an instance of RAGPretrainedModel.
 
-    """
+    '''
     index_type = 'RAGatouille'
     index_name = 'test-index'
     query_model = setup_fixture['query_model']['RAGatouille']
@@ -486,7 +544,7 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
 
 # Test end to end process, adding query
 def test_database_setup_and_query(test_input,setup_fixture):
-    """Tests the entire process of initializing a database, upserting documents, and deleting a database.
+    '''Tests the entire process of initializing a database, upserting documents, and deleting a database.
 
     Args:
         setup_fixture (dict): The setup fixture containing the necessary configuration for the test.
@@ -497,24 +555,57 @@ def test_database_setup_and_query(test_input,setup_fixture):
 
     Returns:
         None
-    """
+    '''
     test, print_str = parse_test_case(setup_fixture,test_input)
     index_name='test'+str(test['id'])
-    print(f"Starting test: {print_str}")
+    print(f'Starting test: {print_str}')
+
+    # Parse out embedding
+    if test['index_type']=='RAGatouille':
+        query_model=test['embedding_name']
+    elif test['query_model']=='OpenAI' or test['query_model']=='Voyage' or test['query_model']=='Hugging Face':
+        if test['query_model']=='OpenAI':
+            query_model=OpenAIEmbeddings(model=test['embedding_name'],
+                                         openai_api_key=setup_fixture['OPENAI_API_KEY'])
+        elif test['query_model']=='Voyage':
+            query_model=VoyageAIEmbeddings(model=test['embedding_name'],
+                                           voyage_api_key=setup_fixture['VOYAGE_API_KEY'],
+                                           truncation=False)
+        elif test['query_model']=='Hugging Face':
+            query_model = HuggingFaceInferenceAPIEmbeddings(model_name=test['embedding_name'],
+                                                            api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'])
+    else:
+        raise NotImplementedError('Query model not implemented.')
+
+    # Parse out llm
+    if test['llm_family']=='OpenAI':
+        llm=ChatOpenAI(model_name=test['llm'],
+                       openai_api_key=setup_fixture['OPENAI_API_KEY'],
+                       max_tokens=500)
+    elif test['llm_family']=='Hugging Face':
+        llm=ChatOpenAI(base_url='https://api-inference.huggingface.co/v1',  # Hugging face
+                       model=test['llm'],
+                       api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'],
+                       max_tokens=500)
+    else:
+        raise NotImplementedError('LLM not implemented.')
+
+
 
     try: 
         vectorstore = load_docs(
             test['index_type'],
             setup_fixture['docs'],
             rag_type=test['rag_type'],
-            query_model=test['query_model'],
+            query_model=query_model,
+            embedding_name=test['embedding_name'],
             index_name=index_name, 
             chunk_size=setup_fixture['chunk_size'],
             chunk_overlap=setup_fixture['chunk_overlap'],
             clear=True,
             batch_size=setup_fixture['batch_size'],
             local_db_path=setup_fixture['LOCAL_DB_PATH'],
-            llm=test['llm'])
+            llm=llm)
         if test['index_type'] == 'ChromaDB':
             assert isinstance(vectorstore, Chroma)
         elif test['index_type'] == 'Pinecone':
@@ -527,7 +618,7 @@ def test_database_setup_and_query(test_input,setup_fixture):
         if test['rag_type'] == 'Parent-Child':
             index_name = index_name + '-parent-child'
         if test['rag_type'] == 'Summary':
-            index_name = index_name + '-summary-' + test['llm'].model_name.replace('/', '-')
+            index_name = index_name + '-summary-' + llm.model_name.replace('/', '-')
 
         if test['index_type'] == 'RAGatouille':
             query_model_qa = RAGPretrainedModel.from_index(
@@ -535,13 +626,14 @@ def test_database_setup_and_query(test_input,setup_fixture):
                 n_gpu=0,
                 verbose=0)             
         else:
-            query_model_qa = test['query_model']
+            query_model_qa = query_model
         assert query_model_qa is not None
         
         qa_model_obj = QA_Model(test['index_type'],
                             index_name,
                             query_model_qa,
-                            test['llm'],
+                            test['embedding_name'],
+                            llm,
                             rag_type=test['rag_type'],
                             local_db_path=setup_fixture['LOCAL_DB_PATH'])
         print('QA model object created.')
@@ -639,7 +731,7 @@ def test_load_sidebar():
     assert 'output_level' in sidebar_config['model_options']
     assert sidebar_config['model_options']['output_level'] == 1000
 def test_set_secrets_with_environment_variables(monkeypatch):
-    """
+    '''
     Test case to verify the behavior of the set_secrets function when environment variables are set.
 
     Args:
@@ -650,7 +742,7 @@ def test_set_secrets_with_environment_variables(monkeypatch):
 
     Raises:
         AssertionError: If the secrets are not set correctly.
-    """
+    '''
     # Set the environment variables
     monkeypatch.setenv('OPENAI_API_KEY', 'openai_key')
     monkeypatch.setenv('VOYAGE_API_KEY', 'voyage_key')
@@ -664,7 +756,7 @@ def test_set_secrets_with_environment_variables(monkeypatch):
     assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
     assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
 def test_set_secrets_with_inputs(monkeypatch):
-    """
+    '''
     Test case for the set_secrets function with sidebar data.
 
     Args:
@@ -675,7 +767,7 @@ def test_set_secrets_with_inputs(monkeypatch):
 
     Raises:
         AssertionError: If the secrets are not set correctly.
-    """
+    '''
     # For this test, delete the environment variables
     monkeypatch.delenv('OPENAI_API_KEY', raising=False)
     monkeypatch.delenv('VOYAGE_API_KEY', raising=False)
@@ -697,10 +789,10 @@ def test_set_secrets_with_inputs(monkeypatch):
     assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
     assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
     assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
-@pytest.mark.parametrize("missing_key",
+@pytest.mark.parametrize('missing_key',
                          ['OPENAI_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN'])
 def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
-    """
+    '''
     Test case for setting secrets with missing API keys.
 
     Args:
@@ -712,8 +804,8 @@ def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
 
     Returns:
         None
-    """
-    print(f"Testing missing required key: {missing_key}")
+    '''
+    print(f'Testing missing required key: {missing_key}')
     # For this test, delete the environment variables
     key_list=['OPENAI_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN']
     for key in key_list:
@@ -726,7 +818,7 @@ def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
 
 # Test streamlit setup
 def test_st_setup_page_local_db_path_only_defined(monkeypatch):
-    """
+    '''
     Test case for the `st_setup_page` function when only the local db path is defined.
 
     Args:
@@ -734,8 +826,8 @@ def test_st_setup_page_local_db_path_only_defined(monkeypatch):
 
     Returns:
         None
-    """
-    page_title = "Test Page"
+    '''
+    page_title = 'Test Page'
 
     # Clear all environment variables
     for var in list(os.environ.keys()):
@@ -759,7 +851,7 @@ def test_st_setup_page_local_db_path_only_defined(monkeypatch):
                        'PINECONE_API_KEY': None,
                        'VOYAGE_API_KEY': None}
 def test_st_setup_page_local_db_path_not_defined(monkeypatch):
-    """
+    '''
     Test case to verify the behavior of st_setup_page function when LOCAL_DB_PATH is not defined.
 
     Args:
@@ -767,9 +859,9 @@ def test_st_setup_page_local_db_path_not_defined(monkeypatch):
 
     Returns:
         None
-    """
+    '''
 
-    page_title = "Test Page"
+    page_title = 'Test Page'
 
     # Clear all environment variables
     for var in list(os.environ.keys()):
@@ -793,7 +885,7 @@ def test_st_setup_page_local_db_path_not_defined(monkeypatch):
                        'PINECONE_API_KEY': None,
                        'VOYAGE_API_KEY': None}
 def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
-    """
+    '''
     Test case for the st_setup_page function with all inputs in sidebar and manual input for environment variables.
 
     Args:
@@ -801,9 +893,9 @@ def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
 
     Returns:
         None
-    """
+    '''
 
-    page_title = "Test Page"
+    page_title = 'Test Page'
     sidebar_config = {
         'vector_database': True,
         'embeddings': True,
@@ -837,7 +929,7 @@ def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
                        'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
                        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
 def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
-    """
+    '''
     Test case for the `st_setup_page` function with all inputs in sidebar and all environment variables set using .env file.
 
     Args:
@@ -845,9 +937,9 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
 
     Returns:
         None
-    """
+    '''
 
-    page_title = "Test Page"
+    page_title = 'Test Page'
     sidebar_config = {
         'vector_database': True,
         'embeddings': True,
@@ -880,7 +972,7 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
 
 # Test data visualization
 def test_reduce_vector_query_size(setup_fixture):
-    """
+    '''
     Test function to verify the behavior of the reduce_vector_query_size function.
 
     Args:
@@ -891,7 +983,7 @@ def test_reduce_vector_query_size(setup_fixture):
 
     Returns:
         None
-    """
+    '''
     index_name = 'test-index'
     rx_client, chroma_client = viz_database_setup(index_name, setup_fixture)
     try:
@@ -908,7 +1000,7 @@ def test_reduce_vector_query_size(setup_fixture):
         chroma_client.delete_collection(name=rx_client._vectordb.name)
         raise e
 def test_create_data_viz_no_limit(setup_fixture):
-    """
+    '''
     Test case: Without limit_size_qty and df_export_path
 
     This test case verifies the behavior of the create_data_viz function when called without providing
@@ -930,7 +1022,7 @@ def test_create_data_viz_no_limit(setup_fixture):
     Returns:
         None
 
-    """
+    '''
     index_name = 'test-index'
     rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
     try:
@@ -943,7 +1035,7 @@ def test_create_data_viz_no_limit(setup_fixture):
         raise e   
     assert isinstance(rx_client_out, RAGxplorer)
     assert isinstance(chroma_client_out, ClientAPI)
-    assert "test-index" in rx_client_out._vectordb.name
+    assert 'test-index' in rx_client_out._vectordb.name
     chroma_client.delete_collection(name=rx_client_out._vectordb.name)
 def test_create_data_viz_limit(setup_fixture):
     '''
@@ -987,7 +1079,7 @@ def test_create_data_viz_limit(setup_fixture):
         raise e   
     assert isinstance(rx_client_out, RAGxplorer)
     assert isinstance(chroma_client_out, ClientAPI)
-    assert "test-index" in rx_client_out._vectordb.name
+    assert 'test-index' in rx_client_out._vectordb.name
     assert os.path.exists(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
     chroma_client.delete_collection(name=rx_client_out._vectordb.name)
     os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
