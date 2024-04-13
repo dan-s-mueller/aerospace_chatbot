@@ -79,10 +79,10 @@ if prompt := st.chat_input('Prompt here'):
             
             if st.session_state.message_id==1:
                 # Define embeddings
-                if sb['query_model']=='Openai':
+                if sb['query_model']=='OpenAI':
                     query_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
                 elif sb['query_model']=='Voyage':
-                    query_model=VoyageAIEmbeddings(model='voyage-2', voyage_api_key=secrets['VOYAGE_API_KEY'])
+                    query_model=VoyageAIEmbeddings(model=sb['embedding_name'], voyage_api_key=secrets['VOYAGE_API_KEY'])
                 elif sb['index_type']=='RAGatouille':
                     query_model=RAGPretrainedModel.from_index(os.path.join(paths['db_folder_path'],'.ragatouille/colbert/indexes',sb['index_selected']))
 

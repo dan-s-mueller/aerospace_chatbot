@@ -218,37 +218,84 @@ def parse_test_case(setup,test_case):
     print_str = ', '.join(f'{key}: {value}' for key, value in test_case.items())
 
     return parsed_test, print_str
-def viz_database_setup(index_name:str,setup:dict):
+def parse_test_model(type, test, setup_fixture):
+    """
+    Parses the test model based on the given type and test parameters.
+
+    Args:
+        type (str): The type of the test model ('embedding' or 'llm').
+        test (dict): The test parameters.
+        setup_fixture (dict): The setup fixture containing API keys.
+
+    Returns:
+        object: The parsed test model.
+
+    Raises:
+        NotImplementedError: If the query model or LLM is not implemented.
+    """
+    if type == 'embedding':
+        # Parse out embedding
+        if test['index_type'] == 'RAGatouille':
+            query_model = test['embedding_name']
+        elif test['query_model'] == 'OpenAI' or test['query_model'] == 'Voyage' or test['query_model'] == 'Hugging Face':
+            if test['query_model'] == 'OpenAI':
+                query_model = OpenAIEmbeddings(model=test['embedding_name'], openai_api_key=setup_fixture['OPENAI_API_KEY'])
+            elif test['query_model'] == 'Voyage':
+                query_model = VoyageAIEmbeddings(model=test['embedding_name'], voyage_api_key=setup_fixture['VOYAGE_API_KEY'], truncation=False)
+            elif test['query_model'] == 'Hugging Face':
+                query_model = HuggingFaceInferenceAPIEmbeddings(model_name=test['embedding_name'], api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'])
+        else:
+            raise NotImplementedError('Query model not implemented.')
+        return query_model
+    elif type == 'llm':
+        # Parse out llm
+        if test['llm_family'] == 'OpenAI':
+            llm = ChatOpenAI(model_name=test['llm'], openai_api_key=setup_fixture['OPENAI_API_KEY'], max_tokens=500)
+        elif test['llm_family'] == 'Hugging Face':
+            llm = ChatOpenAI(base_url='https://api-inference.huggingface.co/v1', model=test['llm'], api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'], max_tokens=500)
+        else:
+            raise NotImplementedError('LLM not implemented.')
+        return llm
+    else:
+        raise ValueError('Invalid type. Must be either "embedding" or "llm".')
+def viz_database_setup(index_name,setup_fixture):
     '''
     Set up the RAGxplorer and ChromaDB for database visualization.
 
     Args:
         index_name (str): Name of the index.
-        setup (dict): The setup variables and configurations.
+        setup_fixture (dict): A dictionary containing setup fixtures.
 
     Returns:
         tuple: A tuple containing the RAGxplorer client and ChromaDB client.
     '''
-    rx_client = RAGxplorer(embedding_model='text-embedding-ada-002')
-    chroma_client = chromadb.PersistentClient(path=os.path.join(setup['LOCAL_DB_PATH'],'chromadb'))
+    rag_type = 'Standard'
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+
+    rx_client = RAGxplorer(embedding_model=test_query_params['embedding_name'])
+    chroma_client = chromadb.PersistentClient(path=os.path.join(setup_fixture['LOCAL_DB_PATH'],'chromadb'))
 
     # Initialize a small database
-    index_type = 'ChromaDB'
-    rag_type = 'Standard'
     try:
         vectorstore = load_docs(
-            'ChromaDB',
-            setup['docs'],
-            rag_type=rag_type,
-            query_model=setup['query_model']['OpenAI'],
-            index_name=index_name, 
-            chunk_size=setup['chunk_size']*2,   # Double chunk size to reduce quantity
-            chunk_overlap=setup['chunk_overlap'],
+            test_query_params['index_type'],
+            setup_fixture['docs'],
+            query_model,
+            test_query_params['embedding_name'],
+            rag_type,
+            index_name, 
+            chunk_method=setup_fixture['chunk_method'],
+            chunk_size=setup_fixture['chunk_size']*2,   # Double chunk size to reduce quantity
+            chunk_overlap=setup_fixture['chunk_overlap'],
             clear=True,
-            batch_size=setup['batch_size'],
-            local_db_path=setup['LOCAL_DB_PATH'])
+            batch_size=setup_fixture['batch_size'],
+            local_db_path=setup_fixture['LOCAL_DB_PATH'])
     except Exception as e:
-        delete_index(index_type, index_name, rag_type, local_db_path=setup['LOCAL_DB_PATH'])
+        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        raise e
     return rx_client, chroma_client
 
 # Fixtures
@@ -385,17 +432,19 @@ def test_chunk_docs_summary(setup_fixture):
     Args:
         setup_fixture (dict): The setup variables and configurations.
     '''
+    llm=parse_test_model('llm', {'llm_family': 'OpenAI', 'llm': 'gpt-3.5-turbo-0125'}, setup_fixture)
+
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Summary'], 
                         chunk_method=setup_fixture['chunk_method'], 
                         chunk_size=setup_fixture['chunk_size'], 
                         chunk_overlap=setup_fixture['chunk_overlap'], 
-                        llm=setup_fixture['llm']['Hugging Face'])
+                        llm=llm)
     assert result['rag'] == setup_fixture['rag_type']['Summary']
     assert result['pages']['doc_ids'] is not None
     assert result['pages']['docs'] is not None
     assert result['summaries'] is not None
-    assert result['llm'] == setup_fixture['llm']['Hugging Face']
+    assert result['llm'] == llm
 def test_chunk_id_lookup(setup_fixture):
     '''
     Test case for chunk_id_lookup function.
@@ -435,29 +484,50 @@ def test_initialize_database_pinecone(monkeypatch,setup_fixture):
     Raises:
         AssertionError: If the initialized vector store is not an instance of PineconeVectorStore.
     '''
-    index_type = 'Pinecone'
     index_name = 'test-index'
-    query_model = setup_fixture['query_model']['OpenAI']
     rag_type = 'Standard'
     clear = True
     init_ragatouille = False
     show_progress = False
 
+    test_query_params={'index_type':'Pinecone',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+
     # Test with environment variable local_db_path
     try:
-        vectorstore = initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+        vectorstore = initialize_database(test_query_params['index_type'], 
+                                          index_name, 
+                                          query_model, 
+                                          test_query_params['embedding_name'],
+                                          rag_type, 
+                                          os.environ['LOCAL_DB_PATH'], 
+                                          clear, 
+                                          init_ragatouille, 
+                                          show_progress)
     except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        raise e
 
     assert isinstance(vectorstore, PineconeVectorStore)
-    delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+    delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
 
     # Test with local_db_path set manually, show it doesn't work if not set
     monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
     with pytest.raises(Exception):
-        initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+        initialize_database(test_query_params['index_type'], 
+                            index_name, 
+                            query_model, 
+                            test_query_params['embedding_name'],
+                            rag_type, 
+                            os.environ['LOCAL_DB_PATH'], 
+                            clear, 
+                            init_ragatouille, 
+                            show_progress)
     try:    # Probably redudnant but to avoid cleanup
-        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        raise e
     except:
         pass
 def test_initialize_database_chromadb(monkeypatch,setup_fixture):
@@ -475,29 +545,50 @@ def test_initialize_database_chromadb(monkeypatch,setup_fixture):
         AssertionError: If the vectorstore is not an instance of Chroma.
 
     '''
-    index_type = 'ChromaDB'
     index_name = 'test-index'
-    query_model = setup_fixture['query_model']['OpenAI']
     rag_type = 'Standard'
     clear = True
     init_ragatouille = False
     show_progress = False
 
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+
     # Test with environment variable local_db_path
     try:
-        vectorstore = initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+        vectorstore = initialize_database(test_query_params['index_type'], 
+                                          index_name, 
+                                          query_model, 
+                                          test_query_params['embedding_name'], 
+                                          rag_type, 
+                                          os.environ['LOCAL_DB_PATH'], 
+                                          clear, 
+                                          init_ragatouille, 
+                                          show_progress)
     except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        raise e
 
     assert isinstance(vectorstore, Chroma)
-    delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+    delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
 
     # Test with local_db_path set manually, show it doesn't work if not set
     monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
     with pytest.raises(Exception):
-        initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+        initialize_database(test_query_params['index_type'], 
+                            index_name, 
+                            query_model, 
+                            test_query_params['embedding_name'], 
+                            rag_type, 
+                            os.environ['LOCAL_DB_PATH'], 
+                            clear, 
+                            init_ragatouille, 
+                            show_progress)
     try:    # Probably redudnant but to avoid cleanup
-        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        raise e
     except:
         pass
 def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
@@ -515,30 +606,50 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
         AssertionError: If the vectorstore is not an instance of RAGPretrainedModel.
 
     '''
-    index_type = 'RAGatouille'
     index_name = 'test-index'
-    query_model = setup_fixture['query_model']['RAGatouille']
     rag_type = 'Standard'
-    local_db_path = setup_fixture['LOCAL_DB_PATH']
     clear = True
     init_ragatouille = True
     show_progress = False
 
+    test_query_params={'index_type':'RAGatouille',
+                    'query_model': 'RAGatouille', 
+                    'embedding_name': 'colbert-ir/colbertv2.0'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+
     # Test with environment variable local_db_path
     try:
-        vectorstore = initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+        vectorstore = initialize_database(test_query_params['index_type'], 
+                                          index_name, 
+                                          query_model, 
+                                          test_query_params['embedding_name'],
+                                          rag_type, 
+                                          os.environ['LOCAL_DB_PATH'], 
+                                          clear, 
+                                          init_ragatouille, 
+                                          show_progress)
     except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        raise e
     
     assert isinstance(vectorstore, RAGPretrainedModel)
-    delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+    delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
 
     # Test with local_db_path set manually, show it doesn't work if not set
     monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
     with pytest.raises(Exception):
-        initialize_database(index_type, index_name, query_model, rag_type, os.environ['LOCAL_DB_PATH'], clear, init_ragatouille, show_progress)
+        initialize_database(test_query_params['index_type'], 
+                            index_name, 
+                            query_model, 
+                            test_query_params['embedding_name'],
+                            rag_type, 
+                            os.environ['LOCAL_DB_PATH'], 
+                            clear, 
+                            init_ragatouille, 
+                            show_progress)
     try:    # Probably redudnant but to avoid cleanup
-        delete_index(index_type, index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        raise e
     except:
         pass
 
@@ -560,35 +671,8 @@ def test_database_setup_and_query(test_input,setup_fixture):
     index_name='test'+str(test['id'])
     print(f'Starting test: {print_str}')
 
-    # Parse out embedding
-    if test['index_type']=='RAGatouille':
-        query_model=test['embedding_name']
-    elif test['query_model']=='OpenAI' or test['query_model']=='Voyage' or test['query_model']=='Hugging Face':
-        if test['query_model']=='OpenAI':
-            query_model=OpenAIEmbeddings(model=test['embedding_name'],
-                                         openai_api_key=setup_fixture['OPENAI_API_KEY'])
-        elif test['query_model']=='Voyage':
-            query_model=VoyageAIEmbeddings(model=test['embedding_name'],
-                                           voyage_api_key=setup_fixture['VOYAGE_API_KEY'],
-                                           truncation=False)
-        elif test['query_model']=='Hugging Face':
-            query_model = HuggingFaceInferenceAPIEmbeddings(model_name=test['embedding_name'],
-                                                            api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'])
-    else:
-        raise NotImplementedError('Query model not implemented.')
-
-    # Parse out llm
-    if test['llm_family']=='OpenAI':
-        llm=ChatOpenAI(model_name=test['llm'],
-                       openai_api_key=setup_fixture['OPENAI_API_KEY'],
-                       max_tokens=500)
-    elif test['llm_family']=='Hugging Face':
-        llm=ChatOpenAI(base_url='https://api-inference.huggingface.co/v1',  # Hugging face
-                       model=test['llm'],
-                       api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'],
-                       max_tokens=500)
-    else:
-        raise NotImplementedError('LLM not implemented.')
+    query_model=parse_test_model('embedding', test, setup_fixture)
+    llm=parse_test_model('llm', test, setup_fixture)
 
 
 
@@ -673,57 +757,58 @@ def test_load_sidebar():
     '''
     # TODO Add mock changes from streamlit changing: index_type, rag_type
 
-    # Use the existing config files, to check they are set up correctly.
+    # Use the existing config file, to check they are set up correctly.
     base_folder_path = os.path.abspath(os.path.dirname(__file__))
     base_folder_path = os.path.join(base_folder_path, '..')
     base_folder_path = os.path.normpath(base_folder_path)
     config_file=os.path.join(base_folder_path, 'config', 'config.json')
-    index_data_file=os.path.join(base_folder_path, 'config', 'index_data.json')
 
     # Test case: Only embeddings is True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, embeddings=True)
+    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True)
     assert 'query_model' in sidebar_config
-    assert sidebar_config['query_model'] == 'Openai'
+    assert sidebar_config['query_model'] == 'OpenAI'
 
     # Test case: Only rag_type is True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, rag_type=True)
+    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, rag_type=True)
     assert 'rag_type' in sidebar_config
     assert sidebar_config['rag_type'] == 'Standard'
 
-    # Test case: Only index_name is True (should give valuerror)
-    with pytest.raises(ValueError):
-        sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, index_name=True)    
+    # # Test case: Only index_name is True (should give valuerror)
+    # with pytest.raises(ValueError):
+    #     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, index_name=True)    
 
     # Test case: Only embeddings, index_name and rag_type are True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, embeddings=True, index_name=True, rag_type=True)
+    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True, index_name=True, rag_type=True)
     assert 'query_model' in sidebar_config
-    assert sidebar_config['query_model'] == 'Openai'
+    assert sidebar_config['query_model'] == 'OpenAI'
     assert 'index_name' in sidebar_config
-    assert sidebar_config['index_name'] == 'chromadb-openai'
+    # Careful with this one, the ordering of embedding names in config.json matters. Take the first database type+first embedding name in OpenAI.
+    assert sidebar_config['index_name'] == 'ChromaDB-text-embedding-ada-002'    
 
     # Test case: Only llm is True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, llm=True)
+    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, llm=True)
     assert 'llm_source' in sidebar_config
     assert sidebar_config['llm_source'] == 'OpenAI'
 
     # Test case: Only model_options is True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True, model_options=True)
+    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, model_options=True)
     assert 'temperature' in sidebar_config['model_options']
     assert sidebar_config['model_options']['temperature'] == 0.1
     assert 'output_level' in sidebar_config['model_options']
     assert sidebar_config['model_options']['output_level'] == 1000
 
     # Test case: All options are True
-    sidebar_config = load_sidebar(config_file=config_file, index_data_file=index_data_file, vector_database=True,
+    sidebar_config = load_sidebar(config_file=config_file, vector_database=True,
                                   embeddings=True, rag_type=True, index_name=True, llm=True, model_options=True)
     assert 'index_type' in sidebar_config
     assert sidebar_config['index_type'] == 'ChromaDB'
     assert 'query_model' in sidebar_config
-    assert sidebar_config['query_model'] == 'Openai'
+    assert sidebar_config['query_model'] == 'OpenAI'
     assert 'rag_type' in sidebar_config
     assert sidebar_config['rag_type'] == 'Standard'
     assert 'index_name' in sidebar_config
-    assert sidebar_config['index_name'] == 'chromadb-openai'
+    # Careful with this one, the ordering of embedding names in config.json matters. Take the first database type+first embedding name in OpenAI.
+    assert sidebar_config['index_name'] == 'ChromaDB-text-embedding-ada-002'  
     assert 'llm_source' in sidebar_config
     assert sidebar_config['llm_source'] == 'OpenAI'
     assert 'temperature' in sidebar_config['model_options']
@@ -986,6 +1071,7 @@ def test_reduce_vector_query_size(setup_fixture):
     '''
     index_name = 'test-index'
     rx_client, chroma_client = viz_database_setup(index_name, setup_fixture)
+
     try:
         collection = chroma_client.get_collection(name=index_name, embedding_function=rx_client._chosen_embedding_model)
         rx_client.load_chroma(collection, initialize_projector=True)
