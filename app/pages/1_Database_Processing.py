@@ -20,7 +20,6 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
                                      {'vector_database':True,
                                       'embeddings':True,
                                       'rag_type':True,
-                                      'index_name':True,
                                       'secret_keys':True})
 
 # Read the user credentials from the config file, and authenticate the user

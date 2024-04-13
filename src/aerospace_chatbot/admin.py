@@ -25,6 +25,17 @@ class SecretKeyException(Exception):
     def __init__(self, message, id):
         super().__init__(message)
         self.id = id
+class DatabaseException(Exception):
+    """Exception raised for database related errors.
+
+    Attributes:
+        message -- explanation of the error
+        id -- unique identifier for the error
+    """
+
+    def __init__(self, message, id):
+        super().__init__(message)
+        self.id = id
 def load_sidebar(config_file,
                  vector_database=False,
                  embeddings=False,
@@ -118,18 +129,26 @@ def load_sidebar(config_file,
                 logging.info('Index name: '+sb_out['index_name'])
                 
                 # For each index type, list indices available for the base name
+                # TODO only list the indexes which match sb_out['index_type']+'-'+sb_out['embedding_name']
                 if sb_out['index_type']=='ChromaDB':
                     indices=show_chroma_collections(format=False)
                     if indices['status']:
                         name=[]
                         for index in indices['message']:
-                            if sb_out['rag_type']=='Parent-Child':
-                                if index.name.endswith('parent-child'):
-                                    name.append(index.name)
-                            else:
-                                if not index.name.endswith('parent-child'):
-                                    name.append(index.name)
+                            if index.name.startswith(sb_out['index_type'] + '-' + sb_out['embedding_name']):    # Be compatible with embedding
+                                if sb_out['rag_type']=='Parent-Child':
+                                    if index.name.endswith('parent-child'):
+                                        name.append(index.name)
+                                else:
+                                    if not index.name.endswith('parent-child'):
+                                        name.append(index.name)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
+                        try:
+                            if len(name) == 0:
+                                raise DatabaseException('No collections found for the selected index type/embedding. Create a new database, or select another index type/embedding.','NO_COMPATIBLE_COLLECTIONS')
+                        except DatabaseException as e:
+                            st.warning(f"{e}")
+                            st.stop()
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
                 elif sb_out['index_type']=='Pinecone':
