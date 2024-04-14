@@ -9,11 +9,13 @@ dist/
 # Data
 *.pdf
 /data/AMS/noupload/*.pdf
+/data/AMS/*jsonl
 !/data/AMS/*.pdf
 !/tests/*.pdf
 *.pickle
 /notebooks/*.json
 /notebooks/*.csv
+/notebooks/*.txt
 
 # Databases
 db/
