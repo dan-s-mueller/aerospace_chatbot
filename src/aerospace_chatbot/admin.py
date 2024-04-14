@@ -12,7 +12,10 @@ import openai
 from pinecone import Pinecone
 import chromadb
 from langchain_openai import ChatOpenAI
-import pytest
+
+from langchain_openai import OpenAIEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors.
@@ -25,8 +28,18 @@ class SecretKeyException(Exception):
     def __init__(self, message, id):
         super().__init__(message)
         self.id = id
+class DatabaseException(Exception):
+    """Exception raised for database related errors.
+
+    Attributes:
+        message -- explanation of the error
+        id -- unique identifier for the error
+    """
+
+    def __init__(self, message, id):
+        super().__init__(message)
+        self.id = id
 def load_sidebar(config_file,
-                 index_data_file,
                  vector_database=False,
                  embeddings=False,
                  rag_type=False,
@@ -39,7 +52,6 @@ def load_sidebar(config_file,
 
     Args:
         config_file (str): The path to the configuration file.
-        index_data_file (str): The path to the index data file.
         vector_database (bool, optional): Whether to include the vector database in the sidebar. Defaults to False.
         embeddings (bool, optional): Whether to include embeddings in the sidebar. Defaults to False.
         rag_type (bool, optional): Whether to include RAG type in the sidebar. Defaults to False.
@@ -55,11 +67,8 @@ def load_sidebar(config_file,
     with open(config_file, 'r') as f:
         config = json.load(f)
         databases = {db['name']: db for db in config['databases']}
+        embeddings_list = {e['name']: e for e in config['embeddings']}
         llms  = {m['name']: m for m in config['llms']}
-        logging.info('Loaded: '+config_file)
-    with open(index_data_file, 'r') as f:
-        index_data = json.load(f)
-        logging.info('Loaded: '+index_data_file)
 
     # Set local db path
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
@@ -74,25 +83,23 @@ def load_sidebar(config_file,
 
         if embeddings:
             # Embeddings
-            st.sidebar.title('Embeddings')
+            st.sidebar.title('Embeddings',help='See embedding leaderboard here for performance overview: https://huggingface.co/spaces/mteb/leaderboard')
             if sb_out['index_type']=='RAGatouille':    # Default to selecting hugging face model for RAGatouille, otherwise select alternates
                 sb_out['query_model']=st.sidebar.selectbox('Hugging face rag models', 
                                                         databases[sb_out['index_type']]['hf_rag_models'], 
                                                         index=0,
                                                         help="Models listed are compatible with the selected index type.")
+                sb_out['embedding_name']=sb_out['query_model']
             else:
-                sb_out['query_model']=st.sidebar.selectbox('Embedding models', 
+                sb_out['query_model']=st.sidebar.selectbox('Embedding model family', 
                                                         databases[sb_out['index_type']]['embedding_models'], 
                                                         index=0,
+                                                        help="Model provider.")
+                sb_out['embedding_name']=st.sidebar.selectbox('Embedding model', 
+                                                        embeddings_list[sb_out['query_model']]['embedding_models'], 
+                                                        index=0,
                                                         help="Models listed are compatible with the selected index type.")
-
-            if sb_out['query_model']=='Openai':
-                sb_out['embedding_name']='text-embedding-ada-002'
-            elif sb_out['query_model']=='Voyage':
-                sb_out['embedding_name']='voyage-02'
-            logging.info('Query type: '+sb_out['query_model'])
-            if 'embedding_name' in locals() or 'embedding_name' in globals():
-                logging.info('Embedding name: '+sb_out['embedding_name'])
+            
         if rag_type:
             # RAG Type
             st.sidebar.title('RAG Type')
@@ -105,9 +112,8 @@ def load_sidebar(config_file,
                     if sb_out['rag_llm_source']=='OpenAI':
                         sb_out['rag_llm_model']=st.sidebar.selectbox('RAG OpenAI model', llms[sb_out['rag_llm_source']]['models'], index=0,help='Select the OpenAI model for RAG.')
                     if sb_out['rag_llm_source']=='Hugging Face':
-                        sb_out['hf_models']=llms['Hugging Face']['models']
                         sb_out['rag_llm_model']=st.sidebar.selectbox('RAG Hugging Face model', 
-                                                                [item['model'] for item in llms['Hugging Face']['models']], 
+                                                                llms['Hugging Face']['models'], 
                                                                 index=0,
                                                                 help='Select the Hugging Face model for RAG.')
                         sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
@@ -121,8 +127,8 @@ def load_sidebar(config_file,
             if embeddings and rag_type:
                 # Index Name 
                 st.sidebar.title('Index Name')  
-                sb_out['index_name']=index_data[sb_out['index_type']][sb_out['query_model']]
-                st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='config/index_data.json contains index base names. An index appendix is added on creation under Database Processing.')
+                sb_out['index_name'] = (sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()
+                st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='An index appendix is added on creation under Database Processing.')
                 logging.info('Index name: '+sb_out['index_name'])
                 
                 # For each index type, list indices available for the base name
@@ -131,13 +137,23 @@ def load_sidebar(config_file,
                     if indices['status']:
                         name=[]
                         for index in indices['message']:
-                            if sb_out['rag_type']=='Parent-Child':
-                                if index.name.endswith('parent-child'):
-                                    name.append(index.name)
-                            else:
-                                if not index.name.endswith('parent-child'):
+                            # Be compatible with embedding types already used. Pinecone only supports lowercase.
+                            if index.name.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()):    
+                                if sb_out['rag_type']=='Parent-Child':
+                                    if index.name.endswith('-parent-child'):
+                                        name.append(index.name)
+                                elif sb_out['rag_type']=='Summary':
+                                    if index.name.endswith('-summary'):
+                                        name.append(index.name)
+                                else:
                                     name.append(index.name)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
+                        try:
+                            if len(name) == 0:
+                                raise DatabaseException('No collections found for the selected index type/embedding. Create a new database, or select another index type/embedding.','NO_COMPATIBLE_COLLECTIONS')
+                        except DatabaseException as e:
+                            st.warning(f"{e}")
+                            st.stop()
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
                 elif sb_out['index_type']=='Pinecone':
@@ -161,15 +177,14 @@ def load_sidebar(config_file,
                 raise ValueError('Embeddings must be enabled to select an index name.')
         if llm:
             # LLM
-            st.sidebar.title('LLM')
+            st.sidebar.title('LLM',help='See LLM leaderboard here for performance overview: https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard')
             sb_out['llm_source']=st.sidebar.selectbox('LLM model', list(llms.keys()), index=0,help='Select the LLM model for the application.')
             logging.info('LLM source: '+sb_out['llm_source'])
             if sb_out['llm_source']=='OpenAI':
                 sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0,help='Select the OpenAI model for the application.')
             elif sb_out['llm_source']=='Hugging Face':
-                sb_out['hf_models']=llms['Hugging Face']['models']
                 sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', 
-                                                        [item['model'] for item in llms['Hugging Face']['models']], 
+                                                        llms['Hugging Face']['models'], 
                                                         index=0,
                                                         help='Select the Hugging Face model for the application.')
                 sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
@@ -351,6 +366,31 @@ def set_llm(sb, secrets, type='prompt'):
         else:
             raise ValueError("Invalid LLM source specified.")
     return llm
+def get_query_model(sb, secrets):
+    """
+    Returns the query model based on the provided parameters.
+
+    Args:
+        sb (dict): A dictionary containing the parameters for the query model.
+        secrets (dict): A dictionary containing the API keys for different query models.
+
+    Returns:
+        query_model: The selected query model based on the provided parameters.
+
+    Raises:
+        NotImplementedError: If the query model is not recognized.
+    """
+    if sb['index_type'] == 'RAGatouille':
+        query_model = sb['query_model']
+    elif sb['query_model'] == 'OpenAI':
+        query_model = OpenAIEmbeddings(model=sb['embedding_name'], openai_api_key=secrets['OPENAI_API_KEY'])
+    elif sb['query_model'] == 'Voyage':
+        query_model = VoyageAIEmbeddings(model=sb['embedding_name'], voyage_api_key=secrets['VOYAGE_API_KEY'], truncation=False)
+    elif sb['query_model'] == 'Hugging Face':
+        query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+    else:
+        raise NotImplementedError('Query model not recognized.')
+    return query_model
 def show_pinecone_indexes(format=True):
     """
     Retrieves the list of Pinecone indexes and their status.
@@ -599,11 +639,9 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     # Load sidebar
     try:
         if sidebar_config is None:
-            sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
-                            index_data_file=os.path.join(config_folder_path,'index_data.json'))
+            sb=load_sidebar(os.path.join(config_folder_path,'config.json'))
         else:
-            sb=load_sidebar(config_file=os.path.join(config_folder_path,'config.json'),
-                            index_data_file=os.path.join(config_folder_path,'index_data.json'),
+            sb=load_sidebar(os.path.join(config_folder_path,'config.json'),
                             **sidebar_config)
     except SecretKeyException as e:
         # If no .env file is found, set the local db path when the warning is raised.
