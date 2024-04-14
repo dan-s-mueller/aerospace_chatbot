@@ -127,7 +127,7 @@ def load_sidebar(config_file,
             if embeddings and rag_type:
                 # Index Name 
                 st.sidebar.title('Index Name')  
-                sb_out['index_name'] = sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')
+                sb_out['index_name'] = (sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()
                 st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='An index appendix is added on creation under Database Processing.')
                 logging.info('Index name: '+sb_out['index_name'])
                 
@@ -138,7 +138,7 @@ def load_sidebar(config_file,
                         name=[]
                         for index in indices['message']:
                             # Be compatible with embedding types already used. Pinecone only supports lowercase.
-                            if index.name.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower):    
+                            if index.name.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()):    
                                 if sb_out['rag_type']=='Parent-Child':
                                     if index.name.endswith('-parent-child'):
                                         name.append(index.name)
