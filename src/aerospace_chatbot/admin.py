@@ -278,8 +278,6 @@ def set_secrets(sb):
         os.environ['HUGGINGFACEHUB_API_TOKEN'] = secrets['HUGGINGFACEHUB_API_TOKEN']
         if os.environ['HUGGINGFACEHUB_API_TOKEN']=='':
             raise SecretKeyException('Hugging Face API Key is required.','HUGGINGFACE_API_KEY_MISSING')
-    
-    print(secrets)
     return secrets
 def test_key_status():
     """
