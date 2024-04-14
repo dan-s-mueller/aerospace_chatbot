@@ -100,7 +100,7 @@ def load_docs(index_type:str,
     if rag_type == 'Parent-Child':
         index_name = index_name + '-parent-child'
     if rag_type == 'Summary':
-        index_name = index_name + '-summary-' + llm.model_name.replace('/', '-')
+        index_name = index_name + llm.model_name.replace('/', '-') + '-summary' 
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -371,7 +371,6 @@ def upsert_docs_pinecone(index_name: str,
                          vectorstore: any, 
                          chunker: dict, 
                          batch_size: int = 50, 
-                         show_progress: bool = False,
                          local_db_path: str = '.'):
     """
     Upserts documents into Pinecone index. Refactored spearately from upsert_docs to allow for tenacity retries.
@@ -381,16 +380,11 @@ def upsert_docs_pinecone(index_name: str,
         vectorstore (any): The vectorstore object for storing the document vectors.
         chunker (dict): The chunker object containing the documents to upsert.
         batch_size (int, optional): The number of documents to upsert in each batch. Defaults to 50.
-        show_progress (bool, optional): Whether to show progress bar during upsert. Defaults to False.
         local_db_path (str, optional): The path to the local database. Defaults to '.'.
 
     Returns:
         tuple: A tuple containing the updated vectorstore and retriever objects.
     """
-    
-    if show_progress:
-        progress_text = "Upsert in progress..."
-        my_bar = st.progress(0, text=progress_text)
     
     if chunker['rag'] == 'Standard':
         for i in range(0, len(chunker['chunks']), batch_size):
@@ -398,9 +392,6 @@ def upsert_docs_pinecone(index_name: str,
             chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
             vectorstore.add_documents(documents=chunk_batch,
                                         ids=chunk_batch_ids)
-            if show_progress:
-                progress_percentage = i / len(chunker['chunks'])
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         retriever = vectorstore.as_retriever()
     elif chunker['rag'] == 'Parent-Child':
         lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
@@ -414,10 +405,6 @@ def upsert_docs_pinecone(index_name: str,
             chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
             retriever.vectorstore.add_documents(documents=chunk_batch,
                                                 ids=chunk_batch_ids)
-            if show_progress:
-                progress_percentage = i / len(chunker['chunks'])
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        
         # Index parent docs all at once
         retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['parent_chunks'])))
     elif chunker['rag'] == 'Summary':
@@ -432,18 +419,10 @@ def upsert_docs_pinecone(index_name: str,
             chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
             retriever.vectorstore.add_documents(documents=chunk_batch,
                                                 ids=chunk_batch_ids)
-            if show_progress:
-                progress_percentage = i / len(chunker['summaries'])
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        
         # Index parent docs all at once
         retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['docs'])))
     else:
         raise NotImplementedError
-    
-    if show_progress:
-        my_bar.empty()
-
     return vectorstore, retriever
         
 def upsert_docs(index_type: str, 
@@ -475,11 +454,13 @@ def upsert_docs(index_type: str,
     if chunker['rag'] == 'Standard':
         # Upsert each chunk in batches
         if index_type == "Pinecone":
+            if show_progress:
+                progress_text = "Upsert in progress to Pinecone..."
+                my_bar.progress(0, text=progress_text)
             vectorstore, retriever=upsert_docs_pinecone(index_name,
                                                         vectorstore, 
                                                         chunker, 
                                                         batch_size, 
-                                                        show_progress,
                                                         local_db_path)
         elif index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
@@ -512,6 +493,9 @@ def upsert_docs(index_type: str,
             raise NotImplementedError
     elif chunker['rag'] == 'Parent-Child':
         if index_type == 'Pincone':
+            if show_progress:
+                progress_text = "Upsert in progress to Pinecone..."
+                my_bar.progress(0, text=progress_text)
             vectorstore, retriever=upsert_docs_pinecone(index_name,
                                                         vectorstore, 
                                                         chunker, 
@@ -542,6 +526,9 @@ def upsert_docs(index_type: str,
             raise NotImplementedError
     elif chunker['rag'] == 'Summary':
         if index_type == 'Pincone':
+            if show_progress:
+                progress_text = "Upsert in progress to Pinecone..."
+                my_bar.progress(0, text=progress_text)
             vectorstore, retriever=upsert_docs_pinecone(index_name,
                                                         vectorstore, 
                                                         chunker, 

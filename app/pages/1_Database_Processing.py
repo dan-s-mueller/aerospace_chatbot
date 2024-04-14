@@ -45,23 +45,9 @@ if st.session_state["authentication_status"]:
 
     # Add section for creating and loading into a vector database
     st.subheader('Create and load into a vector database')
-    
-    # Populate the main screen
-    if sb["index_type"]=='RAGatouille':
-        query_model=sb['query_model']
-    elif sb['query_model']=='OpenAI' or sb['query_model']=='Voyage':
-        if sb['query_model']=='OpenAI':
-            query_model=OpenAIEmbeddings(model=sb['embedding_name'],
-                                         openai_api_key=secrets['OPENAI_API_KEY'])
-        elif sb['query_model']=='Voyage':
-            # For voyage embedding truncation see here: https://docs.voyageai.com/docs/embeddings#python-api.
-            # Leaving out trunction gives an error.
-            query_model=VoyageAIEmbeddings(model=sb['embedding_name'],
-                                           voyage_api_key=secrets['VOYAGE_API_KEY'],
-                                           truncation=False)
-        elif sb['query_model']=='Hugging Face':
-            query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'],
-                                                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+
+    # Set query model
+    query_model = admin.get_query_model(sb, secrets)
 
     # Find docs
     data_folder = st.text_input('Enter a directory relative to the base directory',
@@ -72,7 +58,10 @@ if st.session_state["authentication_status"]:
     docs = glob.glob(os.path.join(data_folder,'*.pdf'))   # Only get the PDFs in the directory
     st.markdown('PDFs found: '+str(docs))
     st.markdown('Number of PDFs found: ' + str(len(docs)))
+
+    # Set database name
     database_appendix=st.text_input('Appendix for database name','ams')
+    database_name = (sb['index_type'] + '-' + sb['embedding_name'].replace('/', '-') + '-' + database_appendix).lower()
 
     # Add an expandable box for options
     with st.expander("Options",expanded=True):
@@ -139,7 +128,7 @@ if st.session_state["authentication_status"]:
                             rag_type=sb['rag_type'],
                             query_model=query_model,
                             embedding_name=sb['embedding_name'],
-                            index_name=sb['index_name']+'-'+database_appendix,
+                            index_name=database_name,
                             n_merge_pages=n_merge_pages,
                             chunk_method=chunk_method,
                             chunk_size=chunk_size,

@@ -702,7 +702,7 @@ def test_database_setup_and_query(test_input,setup_fixture):
         if test['rag_type'] == 'Parent-Child':
             index_name = index_name + '-parent-child'
         if test['rag_type'] == 'Summary':
-            index_name = index_name + '-summary-' + llm.model_name.replace('/', '-')
+            index_name = index_name + llm.model_name.replace('/', '-') + '-summary' 
 
         if test['index_type'] == 'RAGatouille':
             query_model_qa = RAGPretrainedModel.from_index(
@@ -771,11 +771,7 @@ def test_load_sidebar():
     # Test case: Only rag_type is True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, rag_type=True)
     assert 'rag_type' in sidebar_config
-    assert sidebar_config['rag_type'] == 'Standard'
-
-    # # Test case: Only index_name is True (should give valuerror)
-    # with pytest.raises(ValueError):
-    #     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, index_name=True)    
+    assert sidebar_config['rag_type'] == 'Standard'  
 
     # Test case: Only embeddings, index_name and rag_type are True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True, index_name=True, rag_type=True)
@@ -783,7 +779,7 @@ def test_load_sidebar():
     assert sidebar_config['query_model'] == 'OpenAI'
     assert 'index_name' in sidebar_config
     # Careful with this one, the ordering of embedding names in config.json matters. Take the first database type+first embedding name in OpenAI.
-    assert sidebar_config['index_name'] == 'ChromaDB-text-embedding-ada-002'    
+    assert sidebar_config['index_name'] == 'chromadb-text-embedding-ada-002'    
 
     # Test case: Only llm is True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, llm=True)
@@ -808,7 +804,7 @@ def test_load_sidebar():
     assert sidebar_config['rag_type'] == 'Standard'
     assert 'index_name' in sidebar_config
     # Careful with this one, the ordering of embedding names in config.json matters. Take the first database type+first embedding name in OpenAI.
-    assert sidebar_config['index_name'] == 'ChromaDB-text-embedding-ada-002'  
+    assert sidebar_config['index_name'] == 'chromadb-text-embedding-ada-002'  
     assert 'llm_source' in sidebar_config
     assert sidebar_config['llm_source'] == 'OpenAI'
     assert 'temperature' in sidebar_config['model_options']
