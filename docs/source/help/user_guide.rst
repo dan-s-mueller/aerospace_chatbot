@@ -32,6 +32,8 @@ A deployed version of this chatbot can be found in a hugging face container call
 
 The dockerfile used to build that space is located `here <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbots/edit/main/Dockerfile>`_.
 
+For specific details of this deployment, refer to the readme here: `Aerospace Chatbot README <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_ams/blob/main/README.md>`__.
+
 Using the Backend
 ^^^^^^^^^^^^^^^^^
 
