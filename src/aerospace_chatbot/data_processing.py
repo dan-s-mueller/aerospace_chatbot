@@ -153,7 +153,7 @@ def chunk_docs(docs: List[str],
         my_bar = st.progress(0, text=progress_text)
     pages=[]
     chunks=[]
-    doc_pages=[]
+    
     merged_docs = []
     
     # Parse doc pages
@@ -163,6 +163,7 @@ def chunk_docs(docs: List[str],
         doc_page_data = loader.load()
 
         # Clean up page info, update some metadata
+        doc_pages=[]
         for doc_page in doc_page_data:
             doc_page=_sanitize_raw_page_data(doc_page)
             if doc_page is not None:
@@ -179,10 +180,10 @@ def chunk_docs(docs: List[str],
                 group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
                                   'source': str([doc.metadata['source'] for doc in group])}
                 merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
-                merged_docs.append(merged_doc)
-            pages = merged_docs
+                pages.append(merged_doc)
+            # pages = merged_docs
         else:
-            pages = doc_pages
+            pages.extend(doc_pages)
     
     # Process pages
     if rag_type=='Standard': 
