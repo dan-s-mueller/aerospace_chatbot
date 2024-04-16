@@ -475,11 +475,11 @@ def upsert_docs(index_type: str,
             retriever = vectorstore.as_retriever()
         elif index_type == "RAGatouille":
             # Create an index from the vectorstore.
+            # This will default to split documents into 256 tokens each.
             vectorstore.index(
                 collection=[chunk.page_content for chunk in chunker['chunks']],
                 document_ids=[_stable_hash_meta(chunk.metadata) for chunk in chunker['chunks']],
                 index_name=index_name,
-                max_document_length=chunker['splitters']._chunk_size,
                 overwrite_index=True,
                 split_documents=True,
             )
