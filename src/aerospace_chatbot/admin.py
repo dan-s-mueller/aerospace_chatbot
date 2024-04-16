@@ -571,15 +571,18 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         
         # Ragatouille
         st.markdown(show_ragatouille_indexes())
-        try:
-            ragatouille_indexes = [obj.name for obj in show_ragatouille_indexes(format=False)['message']]
-            if delete_buttons:
-                ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
-                if st.button('Delete RAGatouille database', help='This is permanent!'):
-                    data_processing.delete_index('Ragatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
-                    st.markdown(f"Index {ragatouille_name} has been deleted.")
-        except:
-            pass
+        # try:
+        # TODO: this doesn't work, fix
+        ragatouille_indexes = [obj.name for obj in show_ragatouille_indexes(format=False)['message']]
+        print(ragatouille_indexes)
+        if delete_buttons:
+            ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
+            if st.button('Delete RAGatouille database', help='This is permanent!'):
+                data_processing.delete_index('Ragatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
+                st.markdown(f"Index {ragatouille_name} has been deleted.")
+        # except Exception as e:
+        #     print(e)
+        #     pass
 
         # Local database path
         st.markdown(f"Local database path: {os.environ['LOCAL_DB_PATH']}")
