@@ -469,17 +469,22 @@ def show_ragatouille_indexes(format=True):
     """
     if os.getenv('LOCAL_DB_PATH') is None:
         ragatouille_status = {'status': False, 'message': 'Local database path is not set.'}
-    try:
+    else:
         db_folder_path=os.getenv('LOCAL_DB_PATH')
-        path=os.path.join(db_folder_path,'.ragatouille/colbert/indexes')
-        indexes = []
-        for item in os.listdir(path):
-            item_path = os.path.join(path, item)
-            if os.path.isdir(item_path):
-                indexes.append(item)
-        ragatouille_status = {'status': True, 'message': indexes}
-    except Exception as e:
-        ragatouille_status = {'status': False, 'message': 'No indexes found.'}
+        try:
+            path=os.path.join(db_folder_path,'.ragatouille/colbert/indexes')
+            indexes = []
+            for item in os.listdir(path):
+                item_path = os.path.join(path, item)
+                if os.path.isdir(item_path):
+                    indexes.append(item)
+            if len(indexes)>0:
+                ragatouille_status = {'status': True, 'message': indexes}
+            else:
+                ragatouille_status = {'status': False, 'message': 'No indexes found.'}  # if .ragatouille structure exists but is empty
+        except:
+            ragatouille_status = {'status': False, 'message': 'No indexes found.'}  # if .ragatouille structure does not exist yet
+
     if format:
         return _format_ragatouille_status(ragatouille_status)
     else:
@@ -573,8 +578,9 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         # Ragatouille
         st.markdown(show_ragatouille_indexes())
         try:
-            ragatouille_indexes = [obj for obj in show_ragatouille_indexes(format=False)['message']]
-            if delete_buttons:
+            ragatouille_index_data=show_ragatouille_indexes(format=False)
+            ragatouille_indexes = [obj for obj in ragatouille_index_data['message']]
+            if delete_buttons and ragatouille_index_data['status']==True:
                 ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
                 if st.button('Delete RAGatouille database', help='This is permanent!'):
                     data_processing.delete_index('RAGatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
