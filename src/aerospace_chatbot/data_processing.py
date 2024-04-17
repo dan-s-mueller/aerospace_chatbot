@@ -614,7 +614,7 @@ def delete_index(index_type: str,
                 pass    # No need to do anything if it doesn't exist
     elif index_type == "RAGatouille":
         try:
-            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
+            ragatouille_path = os.path.join(local_db_path, '.ragatouille/colbert/indexes', index_name)
             shutil.rmtree(ragatouille_path)
         except Exception as e:
             # print(f"Error occurred while deleting RAGatouille index: {e}")

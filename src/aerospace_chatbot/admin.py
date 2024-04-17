@@ -477,7 +477,7 @@ def show_ragatouille_indexes(format=True):
             item_path = os.path.join(path, item)
             if os.path.isdir(item_path):
                 indexes.append(item)
-        ragatouille_status = {'status': True, 'indexes': indexes}
+        ragatouille_status = {'status': True, 'message': indexes}
     except Exception as e:
         ragatouille_status = {'status': False, 'message': 'No indexes found.'}
     if format:
@@ -533,6 +533,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         st.markdown("**API key status** (Indicates status of local variable. It does not guarantee the key itself is correct):")
         st.markdown(test_key_status())
 
+        # TODO the try statements below sometimes allow delete to be pressed but the index which does exist isn't deleted. Update so an error is thrown if the index is not deleted.
         # Pinecone
         st.markdown(show_pinecone_indexes())
         try:
@@ -571,18 +572,15 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         
         # Ragatouille
         st.markdown(show_ragatouille_indexes())
-        # try:
-        # TODO: this doesn't work, fix
-        ragatouille_indexes = [obj.name for obj in show_ragatouille_indexes(format=False)['message']]
-        print(ragatouille_indexes)
-        if delete_buttons:
-            ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
-            if st.button('Delete RAGatouille database', help='This is permanent!'):
-                data_processing.delete_index('Ragatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
-                st.markdown(f"Index {ragatouille_name} has been deleted.")
-        # except Exception as e:
-        #     print(e)
-        #     pass
+        try:
+            ragatouille_indexes = [obj for obj in show_ragatouille_indexes(format=False)['message']]
+            if delete_buttons:
+                ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
+                if st.button('Delete RAGatouille database', help='This is permanent!'):
+                    data_processing.delete_index('RAGatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
+                    st.markdown(f"Index {ragatouille_name} has been deleted.")
+        except:
+            pass
 
         # Local database path
         st.markdown(f"Local database path: {os.environ['LOCAL_DB_PATH']}")
@@ -752,7 +750,7 @@ def _format_ragatouille_status(ragatouille_status):
     """
     index_description=''
     if ragatouille_status['status']:
-        for index in ragatouille_status['indexes']:
+        for index in ragatouille_status['message']:
             name = index
             status = ":heavy_check_mark:"
             index_description += f"- {name}: ({status})\n"
