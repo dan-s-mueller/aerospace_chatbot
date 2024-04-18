@@ -8,26 +8,27 @@ dist/
 
 # Data
 *.pdf
-/data/AMS/noupload/*.pdf
-/data/AMS/*jsonl
-!/data/AMS/*.pdf
-!/tests/*.pdf
+data/AMS/noupload/*.pdf
+data/AMS/*jsonl
+!data/AMS/*.pdf
+!tests/*.pdf
 *.pickle
-/notebooks/*.json
-/notebooks/*.csv
-/notebooks/*.txt
+notebooks/*.json
+notebooks/*.csv
+notebooks/*.txt
 
 # Databases
-db/
-*.sqlite3
-.ragatouille/
+db/chromadb
+db/.ragatouille
+db/local_file_store
+!db/.ragatouille/colbert/ragatouille-colbert-ir-colbertv2.0-ams-15merge-2000-2020
 
 # Tests
 .pytest_cache/
 !tests/*.pdf   # Small files, required to perform standard tests.
 tests/chromadb
 tests/local_file_store
-tests/./ragatouille
+tests/.ragatouille
 notebooks/playground.ipynb
 
 # Sphinx documentation

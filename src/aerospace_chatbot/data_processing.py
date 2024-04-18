@@ -485,10 +485,11 @@ def upsert_docs(index_type: str,
             )
 
             # Move the directory to the db folder
-            try:
-                shutil.move('.ragatouille', local_db_path)
-            except shutil.Error:
-                pass    # If it already exists, don't do anything
+            if not os.path.exists(os.path.join(local_db_path, '.ragatouille/colbert/indexes')):
+                os.makedirs(os.path.join(local_db_path, '.ragatouille/colbert/indexes'))
+            shutil.move(os.path.join('.ragatouille/colbert/indexes',index_name), 
+                        os.path.join(local_db_path, '.ragatouille/colbert/indexes'))
+            shutil.rmtree('.ragatouille')
             retriever = vectorstore.as_langchain_retriever()
         else:
             raise NotImplementedError
