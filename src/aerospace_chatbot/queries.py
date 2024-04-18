@@ -92,9 +92,9 @@ class QA_Model:
             embedding_name (str): The name of the embedding.
             llm (ChatOpenAI): The language model for generating responses.
             rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
-            k (int, optional): The number of retriever results to consider. Defaults to 6.
-            search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
-            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
+            k (int, optional): The number of retriever results to consider. Defaults to 6. 
+            search_type (str, optional): The type of search to perform. Defaults to 'similarity'. Does not apply to RAGatouille.
+            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50. Does not apply to RAGatouille.
             temperature (int, optional): The temperature for response generation. Defaults to 0.
             local_db_path (str, optional): The path to the local database. Defaults to '.'.
 
@@ -125,18 +125,22 @@ class QA_Model:
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
                                                              init_ragatouille=False)  
+        print(self.vectorstore)
+
         if self.rag_type=='Standard':  
             if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
-                self.retriever=self.vectorstore.as_retriever(search_type=self.search_type)
+                self.retriever=self.vectorstore.as_retriever(search_type=self.search_type,
+                                                             search_kwargs=search_kwargs)
             elif self.index_type=='RAGatouille':
-                self.retriever=self.vectorstore.as_langchain_retriever()
+                self.retriever=self.vectorstore.as_langchain_retriever(k=search_kwargs['k'])
         elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':
             self.lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name)
             self.retriever = MultiVectorRetriever(
                                 vectorstore=self.vectorstore,
                                 byte_store=self.lfs,
                                 id_key="doc_id",
-                            )
+                                search_type=self.search_type,
+                                search_kwargs=search_kwargs)
         else:
             raise NotImplementedError
 
@@ -147,8 +151,7 @@ class QA_Model:
         # Assemble main chain
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.retriever,
-                                                      self.memory,
-                                                      kwargs=search_kwargs)
+                                                      self.memory)
     def query_docs(self,query): 
         """
         Executes a query and retrieves the relevant documents.
@@ -267,15 +270,13 @@ def _combine_documents(docs,
     return document_separator.join(doc_strings)
 def _define_qa_chain(llm,
                      retriever,
-                     memory,
-                     kwargs=None):
+                     memory):
     """Defines the conversational QA chain.
 
     Args:
         llm: The language model component.
         retriever: The document retriever component.
         memory: The memory component.
-        kwargs: Optional keyword arguments.
 
     Returns:
         The conversational QA chain.

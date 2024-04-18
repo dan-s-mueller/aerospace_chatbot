@@ -236,7 +236,8 @@ def parse_test_model(type, test, setup_fixture):
     if type == 'embedding':
         # Parse out embedding
         if test['index_type'] == 'RAGatouille':
-            query_model = test['embedding_name']
+            query_model = RAGPretrainedModel.from_pretrained(test['embedding_name'],
+                                                             index_root=os.path.join(setup_fixture['LOCAL_DB_PATH'],'.ragatouille'))
         elif test['query_model'] == 'OpenAI' or test['query_model'] == 'Voyage' or test['query_model'] == 'Hugging Face':
             if test['query_model'] == 'OpenAI':
                 query_model = OpenAIEmbeddings(model=test['embedding_name'], openai_api_key=setup_fixture['OPENAI_API_KEY'])
@@ -721,9 +722,8 @@ def test_database_setup_and_query(test_input,setup_fixture):
     print(f'Starting test: {print_str}')
 
     query_model=parse_test_model('embedding', test, setup_fixture)
+    print(query_model)
     llm=parse_test_model('llm', test, setup_fixture)
-
-
 
     try: 
         vectorstore = load_docs(
@@ -754,10 +754,7 @@ def test_database_setup_and_query(test_input,setup_fixture):
             index_name = index_name + llm.model_name.replace('/', '-') + '-summary' 
 
         if test['index_type'] == 'RAGatouille':
-            query_model_qa = RAGPretrainedModel.from_index(
-                os.path.join(setup_fixture['LOCAL_DB_PATH'],'.ragatouille/colbert/indexes','test'+str(test['id'])),
-                n_gpu=0,
-                verbose=0)             
+            query_model_qa=vectorstore           
         else:
             query_model_qa = query_model
         assert query_model_qa is not None
@@ -790,10 +787,10 @@ def test_database_setup_and_query(test_input,setup_fixture):
         print('Database deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(test['index_type'],
-                        'test'+str(test['id']), 
-                        test['rag_type'],
-                        local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        # delete_index(test['index_type'],
+        #                 'test'+str(test['id']), 
+        #                 test['rag_type'],
+        #                 local_db_path=setup_fixture['LOCAL_DB_PATH'])
         raise e
         
 # Test sidebar loading and secret keys

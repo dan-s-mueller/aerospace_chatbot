@@ -354,7 +354,9 @@ def initialize_database(index_type: str,
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         if init_ragatouille:    # Used if the index is not already set
-            vectorstore = RAGPretrainedModel.from_pretrained(query_model,verbose=0)
+            # vectorstore = RAGPretrainedModel.from_pretrained(query_model,
+            #                                                  index_root=os.path.join(local_db_path,'.ragatouille'))
+            vectorstore = query_model
         else:   # Used if the index is already set
             vectorstore = query_model    # The index is picked up directly.
         if show_progress:
@@ -484,12 +486,6 @@ def upsert_docs(index_type: str,
                 split_documents=True,
             )
 
-            # Move the directory to the db folder
-            if not os.path.exists(os.path.join(local_db_path, '.ragatouille/colbert/indexes')):
-                os.makedirs(os.path.join(local_db_path, '.ragatouille/colbert/indexes'))
-            shutil.move(os.path.join('.ragatouille/colbert/indexes',index_name), 
-                        os.path.join(local_db_path, '.ragatouille/colbert/indexes'))
-            shutil.rmtree('.ragatouille')
             retriever = vectorstore.as_langchain_retriever()
         else:
             raise NotImplementedError
@@ -599,10 +595,11 @@ def delete_index(index_type: str,
     elif index_type == "ChromaDB":  
         try:
             persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))
-            indices = persistent_client.list_collections()
-            for idx in indices:
-                if index_name in idx.name:
-                    persistent_client.delete_collection(name=idx.name)
+            # indices = persistent_client.list_collections()
+            # for idx in indices:
+            #     if index_name in idx.name:
+                    # persistent_client.delete_collection(name=idx.name)
+            persistent_client.delete_collection(name=index_name)
         except Exception as e:
             # print(f"Error occurred while deleting ChromaDB collection: {e}")
             pass

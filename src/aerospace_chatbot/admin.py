@@ -16,6 +16,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+from ragatouille import RAGPretrainedModel
 
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors.
@@ -86,7 +87,7 @@ def load_sidebar(config_file,
             st.sidebar.title('Embeddings',help='See embedding leaderboard here for performance overview: https://huggingface.co/spaces/mteb/leaderboard')
             if sb_out['index_type']=='RAGatouille':    # Default to selecting hugging face model for RAGatouille, otherwise select alternates
                 sb_out['query_model']=st.sidebar.selectbox('Hugging face rag models', 
-                                                        databases[sb_out['index_type']]['hf_rag_models'], 
+                                                        databases[sb_out['index_type']]['embedding_models'], 
                                                         index=0,
                                                         help="Models listed are compatible with the selected index type.")
                 sb_out['embedding_name']=sb_out['query_model']
@@ -168,8 +169,10 @@ def load_sidebar(config_file,
                     indices=show_ragatouille_indexes(format=False)
                     if len(indices)>0:
                         name=[]
-                        for index in indices:
-                            name.append(index)
+                        for index in indices['message']:
+                            # Be compatible with embedding types already used. Pinecone only supports lowercase.
+                            if index.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()):    
+                                name.append(index)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
@@ -211,6 +214,8 @@ def load_sidebar(config_file,
                                             'temperature':temperature}
                 else:
                     sb_out['model_options']={'output_level':output_level,
+                                             'k':None,
+                                            'search_type':None,
                                             'temperature':temperature}
     else:
         if embeddings or rag_type or index_name or llm or model_options:
@@ -381,7 +386,8 @@ def get_query_model(sb, secrets):
         NotImplementedError: If the query model is not recognized.
     """
     if sb['index_type'] == 'RAGatouille':
-        query_model = sb['query_model']
+        query_model = RAGPretrainedModel.from_pretrained(sb['embedding_name'],
+                                                         index_root=os.path.join(os.getenv('LOCAL_DB_PATH'),'.ragatouille'))
     elif sb['query_model'] == 'OpenAI':
         query_model = OpenAIEmbeddings(model=sb['embedding_name'], openai_api_key=secrets['OPENAI_API_KEY'])
     elif sb['query_model'] == 'Voyage':
