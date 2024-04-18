@@ -19,9 +19,9 @@ notebooks/*.txt
 
 # Databases
 db/chromadb
-db/.ragatouille
+db/.ragatouille/*
+!db/.ragatouille/colbert/indexes/ragatouille-colbert-ir-colbertv2.0-ams-15merge-2000-2020/
 db/local_file_store
-!db/.ragatouille/colbert/ragatouille-colbert-ir-colbertv2.0-ams-15merge-2000-2020
 
 # Tests
 .pytest_cache/
