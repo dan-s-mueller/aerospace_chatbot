@@ -353,12 +353,14 @@ def initialize_database(index_type: str,
     elif index_type == "RAGatouille":
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-        if init_ragatouille:    # Used if the index is not already set
-            # vectorstore = RAGPretrainedModel.from_pretrained(query_model,
-            #                                                  index_root=os.path.join(local_db_path,'.ragatouille'))
+        if init_ragatouille:    
+            # Used if the index is not already set, initializes root folder and embedding model
             vectorstore = query_model
-        else:   # Used if the index is already set
-            vectorstore = query_model    # The index is picked up directly.
+        else:   
+            # Used if the index is already set, loads the index directly
+            vectorstore = RAGPretrainedModel.from_index(index_path=os.path.join(local_db_path,
+                                                                                '.ragatouille/colbert/indexes',
+                                                                                index_name))
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')

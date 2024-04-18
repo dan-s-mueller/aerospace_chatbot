@@ -132,7 +132,9 @@ class QA_Model:
                 self.retriever=self.vectorstore.as_retriever(search_type=self.search_type,
                                                              search_kwargs=search_kwargs)
             elif self.index_type=='RAGatouille':
-                self.retriever=self.vectorstore.as_langchain_retriever(k=search_kwargs['k'])
+                # TODO does not work with search_kwargs
+                # TODO does not return sources, use ID to get sources
+                self.retriever=self.vectorstore.as_langchain_retriever()  
         elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':
             self.lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name)
             self.retriever = MultiVectorRetriever(

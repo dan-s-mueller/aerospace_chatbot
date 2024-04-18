@@ -756,6 +756,9 @@ def test_database_setup_and_query(test_input,setup_fixture):
             query_model_qa=vectorstore           
         else:
             query_model_qa = query_model
+            query_model_qa = RAGPretrainedModel.from_index(index_path=os.path.join(setup_fixture['LOCAL_DB_PATH'],
+                                                                                   '.ragatouille/colbert/indexes',
+                                                                                   index_name))
         assert query_model_qa is not None
         
         qa_model_obj = QA_Model(test['index_type'],
@@ -786,10 +789,10 @@ def test_database_setup_and_query(test_input,setup_fixture):
         print('Database deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
-        # delete_index(test['index_type'],
-        #                 'test'+str(test['id']), 
-        #                 test['rag_type'],
-        #                 local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        delete_index(test['index_type'],
+                        'test'+str(test['id']), 
+                        test['rag_type'],
+                        local_db_path=setup_fixture['LOCAL_DB_PATH'])
         raise e
         
 # Test sidebar loading and secret keys
