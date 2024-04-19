@@ -214,7 +214,7 @@ def load_sidebar(config_file,
                                             'temperature':temperature}
                 else:
                     sb_out['model_options']={'output_level':output_level,
-                                             'k':None,
+                                             'k':k,
                                             'search_type':None,
                                             'temperature':temperature}
     else:

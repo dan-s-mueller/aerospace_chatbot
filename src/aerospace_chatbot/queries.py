@@ -125,16 +125,13 @@ class QA_Model:
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
                                                              init_ragatouille=False)  
-        print(self.vectorstore)
 
         if self.rag_type=='Standard':  
             if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
                 self.retriever=self.vectorstore.as_retriever(search_type=self.search_type,
                                                              search_kwargs=search_kwargs)
             elif self.index_type=='RAGatouille':
-                # TODO does not work with search_kwargs
-                # TODO does not return sources, use ID to get sources
-                self.retriever=self.vectorstore.as_langchain_retriever()  
+                self.retriever=self.vectorstore.as_langchain_retriever(k=search_kwargs['k'])  
         elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':
             self.lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name)
             self.retriever = MultiVectorRetriever(
@@ -167,27 +164,27 @@ class QA_Model:
         self.memory.load_memory_variables({})
         self.result = self.conversational_qa_chain.invoke({'question': query})
 
-        if self.index_type!='RAGatouille':
-            self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
-            if self.llm.__class__.__name__=='ChatOpenAI':
-                self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
-            else:
-                raise NotImplementedError
-        else:
-            # RAGatouille doesn't have metadata, need to extract from context first.
-            extracted_metadata = []
-            pattern = r'\{([^}]*)\}(?=[^{}]*$)' # Regular expression pattern to match the last curly braces
+        # if self.index_type!='RAGatouille':
+        self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
+        if self.llm.__class__.__name__=='ChatOpenAI':
+            self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
+            # else:
+            #     raise NotImplementedError
+        # else:
+            # # RAGatouille doesn't have metadata, need to extract from context first.
+            # extracted_metadata = []
+            # pattern = r'\{([^}]*)\}(?=[^{}]*$)' # Regular expression pattern to match the last curly braces
 
-            for ref in self.result['references']:
-                match = re.search(pattern, ref.page_content)
-                if match:
-                    extracted_metadata.append("{"+match.group(1)+"}")
-            self.sources = '\n'.join(extracted_metadata)
+            # for ref in self.result['references']:
+            #     match = re.search(pattern, ref.page_content)
+            #     if match:
+            #         extracted_metadata.append("{"+match.group(1)+"}")
+            # self.sources = '\n'.join(extracted_metadata)
 
-            if self.llm.__class__.__name__=='ChatOpenAI':
-                self.ai_response=self.result['answer'].content + '\n\nSources:\n' + self.sources
-            else:
-                raise NotImplementedError
+            # if self.llm.__class__.__name__=='ChatOpenAI':
+            #     self.ai_response=self.result['answer'].content + '\n\nSources:\n' + self.sources
+            # else:
+            #     raise NotImplementedError
 
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
     def update_model(self,
@@ -196,33 +193,21 @@ class QA_Model:
                      k=6,
                      fetch_k=50):
         """
-        Updates the model with new parameters.
+        Updates with a new LLM.
 
         Args:
             llm (ChatOpenAI): The language model for generating responses.
-            search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
-            k (int, optional): The number of retriever results to consider. Defaults to 6.
-            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
 
         Returns:
             None
         """
+        # TODO: add in updated retrieval parameters
         self.llm=llm
-        self.search_type=search_type
-        self.k=k
-        self.fetch_k=fetch_k
 
-        # Define retriever search parameters
-        search_kwargs = _process_retriever_args(search_type=self.search_type,
-                                                k=self.k,
-                                                fetch_k=self.fetch_k)
-        
         # Update conversational retrieval chain
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.retriever,
-                                                      self.memory,
-                                                      kwargs=search_kwargs)
-        logging.info('Updated qa chain: '+str(self.conversational_qa_chain))
+                                                      self.memory)
     def generate_alternative_questions(self,
                                        prompt:str,
                                        response=None):
