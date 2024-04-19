@@ -196,7 +196,7 @@ def chunk_docs(docs: List[str],
                 if show_progress:
                     progress_percentage = i / len(page_chunks)
                     my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
-                chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
+                # chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
                 chunks.append(chunk)    # Not sanitized because the page already was
         elif chunk_method=='None':
             text_splitter = None
@@ -486,6 +486,7 @@ def upsert_docs(index_type: str,
                 index_name=index_name,
                 overwrite_index=True,
                 split_documents=True,
+                document_metadatas=[chunk.metadata for chunk in chunker['chunks']]
             )
 
             retriever = vectorstore.as_langchain_retriever()
