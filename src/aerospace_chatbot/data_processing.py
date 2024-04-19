@@ -821,6 +821,7 @@ def _embedding_size(embedding_family:any,embedding_name:str):
     Raises:
         NotImplementedError: If the embedding model is not supported.
     """
+    # TODO find a way to extract embedding name from each model, then can remove embedding_name from arguments in most functions.
     exception_embedding_name=NotImplementedError(f"The embedding name '{embedding_name}' is not available in config.json")
 
     # https://platform.openai.com/docs/models/embeddings
