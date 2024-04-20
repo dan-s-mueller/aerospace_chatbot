@@ -333,8 +333,8 @@ def _process_retriever_args(search_type='similarity',
 
     # Implement filtering and number of documents to return
     if search_type=='mmr':
-        search_kwargs={'k':k,'fetch_k':fetch_k,'filter':filter} # See as_retriever docs for parameters
+        search_kwargs={'k':k,'fetch_k':fetch_k} # See as_retriever docs for parameters
     else:
-        search_kwargs={'k':k,'filter':filter} # See as_retriever docs for parameters
+        search_kwargs={'k':k} # See as_retriever docs for parameters
     
     return search_kwargs

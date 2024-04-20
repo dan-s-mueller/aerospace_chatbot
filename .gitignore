@@ -13,9 +13,13 @@ data/AMS/*jsonl
 !data/AMS/*.pdf
 !tests/*.pdf
 *.pickle
-notebooks/*.json
+
+# Notebooks
+notebooks/playground.ipynb
 notebooks/*.csv
 notebooks/*.txt
+notebooks/*.parquet
+notebooks/rag_response_cache.json
 
 # Databases
 db/chromadb
@@ -29,7 +33,6 @@ db/local_file_store
 tests/chromadb
 tests/local_file_store
 tests/.ragatouille
-notebooks/playground.ipynb
 
 # Sphinx documentation
 docs/build/

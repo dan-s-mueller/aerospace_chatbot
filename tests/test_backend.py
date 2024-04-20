@@ -716,6 +716,7 @@ def test_database_setup_and_query(test_input,setup_fixture):
     Returns:
         None
     '''
+    # TODO add check that sources are always returned
     test, print_str = parse_test_case(setup_fixture,test_input)
     index_name='test'+str(test['id'])
     print(f'Starting test: {print_str}')
@@ -753,12 +754,12 @@ def test_database_setup_and_query(test_input,setup_fixture):
             index_name = index_name + llm.model_name.replace('/', '-') + '-summary' 
 
         if test['index_type'] == 'RAGatouille':
-            query_model_qa=vectorstore           
-        else:
-            query_model_qa = query_model
+            # query_model_qa=vectorstore  
             query_model_qa = RAGPretrainedModel.from_index(index_path=os.path.join(setup_fixture['LOCAL_DB_PATH'],
                                                                                    '.ragatouille/colbert/indexes',
-                                                                                   index_name))
+                                                                                   index_name))         
+        else:
+            query_model_qa = query_model
         assert query_model_qa is not None
         
         qa_model_obj = QA_Model(test['index_type'],
