@@ -77,13 +77,13 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             'embedding_name' : embeddings_list['OpenAI']['embedding_models'],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ["gpt-3.5-turbo-0125"]
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
-            # Tests standard RAG , openai llm
+            # Tests standard RAG , openai llms
             'index_type' : ['ChromaDB'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ["text-embedding-ada-002"],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
             'llm' : llms['OpenAI']['models']
@@ -95,7 +95,7 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             'embedding_name' : embeddings_list['Voyage']['embedding_models'],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ["gpt-3.5-turbo-0125"]
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
             # Tests standard RAG , hugging face embeddings
@@ -104,13 +104,13 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             'embedding_name' : embeddings_list['Hugging Face']['embedding_models'],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ["gpt-3.5-turbo-0125"]
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
-            # Tests standard RAG , hugging face llm
+            # Tests standard RAG , all hugging face llms
             'index_type' : ['ChromaDB'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ["text-embedding-ada-002"],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Standard'],
             'llm_family' : ['Hugging Face'],
             'llm' : llms['Hugging Face']['models']
@@ -119,46 +119,46 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             # Tests parent-child rag, openai models
             'index_type' : ['ChromaDB'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ['text-embedding-ada-002'],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Parent-Child'],
             'llm_family' : ['OpenAI'],
-            'llm' : ["gpt-3.5-turbo-0125"]
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
             # Tests advanced RAG (summary), openai models
             'index_type' : ['ChromaDB'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ['text-embedding-ada-002'],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Summary'],
             'llm_family' : ['OpenAI'],
-            'llm' : ['gpt-3.5-turbo-0125']
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
             # Tests Pinecone setups, openai embedding type
             'index_type' : ['Pinecone'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ['text-embedding-ada-002'],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ['gpt-3.5-turbo-0125']
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
-            # Tests Pinecone setups, voyage embedding type
+            # Tests Pinecone setups, voyage embedding types
             'index_type' : ['Pinecone'],
             'query_model' : ['Voyage'],
-            'embedding_name' : ['voyage-2'],
+            'embedding_name' : embeddings_list['Voyage']['embedding_models'],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ['gpt-3.5-turbo-0125']
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
             # Tests RAGatouille setup
             'index_type' : ['RAGatouille'],
             'query_model' : ['RAGatouille'],
-            'embedding_name' : ['colbert-ir/colbertv2.0'],
+            'embedding_name' : ['colbert-ir/colbertv2.0'],  # Hard coded, tied to RAGatouille
             'rag_type' : ['Standard'],
-            'llm_family' : ['Hugging Face'],
-            'llm' : ['mistralai/Mistral-7B-Instruct-v0.2']
+            'llm_family' : ['OpenAI'],
+            'llm' : [llms['OpenAI']['models'][0]]
         }
     ]
 
