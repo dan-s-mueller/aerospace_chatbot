@@ -71,30 +71,28 @@ class QA_Model:
 
     """
     def __init__(self, 
-                 index_type,
-                 index_name,
-                 query_model,
-                 embedding_name,
+                 index_type:str,
+                 index_name:str,
+                 query_model:object,
                  llm:ChatOpenAI,
-                 rag_type='Standard',
-                 k=6,
-                 search_type='similarity',
-                 fetch_k=50,
-                 temperature=0,
-                 local_db_path='.'):
+                 rag_type:str='Standard',
+                 k:int=6,
+                 search_type:str='similarity',
+                 fetch_k:int=50,
+                 temperature:int=0,
+                 local_db_path:str='.'):
         """
         Initializes a new instance of the QA_Model class.
 
         Args:
             index_type (str): The type of index.
             index_name (str): The name of the index.
-            query_model (str): The query model.
-            embedding_name (str): The name of the embedding.
+            query_model (object): The query model.
             llm (ChatOpenAI): The language model for generating responses.
             rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
-            k (int, optional): The number of retriever results to consider. Defaults to 6.
-            search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
-            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
+            k (int, optional): The number of retriever results to consider. Defaults to 6. 
+            search_type (str, optional): The type of search to perform. Defaults to 'similarity'. Does not apply to RAGatouille.
+            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50. Does not apply to RAGatouille.
             temperature (int, optional): The temperature for response generation. Defaults to 0.
             local_db_path (str, optional): The path to the local database. Defaults to '.'.
 
@@ -102,7 +100,6 @@ class QA_Model:
         self.index_type=index_type
         self.index_name=index_name
         self.query_model=query_model
-        self.embedding_name=embedding_name
         self.llm=llm
         self.rag_type=rag_type
         self.k=k
@@ -110,7 +107,11 @@ class QA_Model:
         self.fetch_k=fetch_k
         self.temperature=temperature
         self.local_db_path=local_db_path
-        self.sources=[]
+        self.memory=None
+        self.result=None
+        self.sources=None
+        self.ai_response=None
+
 
         # Define retriever search parameters
         search_kwargs = _process_retriever_args(self.search_type,
@@ -121,22 +122,24 @@ class QA_Model:
         self.vectorstore=data_processing.initialize_database(self.index_type,
                                                              self.index_name,
                                                              self.query_model,
-                                                             self.embedding_name,
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
                                                              init_ragatouille=False)  
+
         if self.rag_type=='Standard':  
             if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
-                self.retriever=self.vectorstore.as_retriever(search_type=self.search_type)
+                self.retriever=self.vectorstore.as_retriever(search_type=self.search_type,
+                                                             search_kwargs=search_kwargs)
             elif self.index_type=='RAGatouille':
-                self.retriever=self.vectorstore.as_langchain_retriever()
+                self.retriever=self.vectorstore.as_langchain_retriever(k=search_kwargs['k'])  
         elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':
             self.lfs = LocalFileStore(Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name)
             self.retriever = MultiVectorRetriever(
                                 vectorstore=self.vectorstore,
                                 byte_store=self.lfs,
                                 id_key="doc_id",
-                            )
+                                search_type=self.search_type,
+                                search_kwargs=search_kwargs)
         else:
             raise NotImplementedError
 
@@ -147,8 +150,7 @@ class QA_Model:
         # Assemble main chain
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.retriever,
-                                                      self.memory,
-                                                      kwargs=search_kwargs)
+                                                      self.memory)
     def query_docs(self,query): 
         """
         Executes a query and retrieves the relevant documents.
@@ -162,78 +164,46 @@ class QA_Model:
         self.memory.load_memory_variables({})
         self.result = self.conversational_qa_chain.invoke({'question': query})
 
-        if self.index_type!='RAGatouille':
-            self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
-            if self.llm.__class__.__name__=='ChatOpenAI':
-                self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
-            else:
-                raise NotImplementedError
+        self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
+        if self.llm.__class__.__name__=='ChatOpenAI':
+            self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
         else:
-            # RAGatouille doesn't have metadata, need to extract from context first.
-            extracted_metadata = []
-            pattern = r'\{([^}]*)\}(?=[^{}]*$)' # Regular expression pattern to match the last curly braces
-
-            for ref in self.result['references']:
-                match = re.search(pattern, ref.page_content)
-                if match:
-                    extracted_metadata.append("{"+match.group(1)+"}")
-            self.sources = '\n'.join(extracted_metadata)
-
-            if self.llm.__class__.__name__=='ChatOpenAI':
-                self.ai_response=self.result['answer'].content + '\n\nSources:\n' + self.sources
-            else:
-                raise NotImplementedError
+            raise NotImplementedError
 
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
+        
     def update_model(self,
-                     llm:ChatOpenAI,
-                     search_type='similarity',
-                     k=6,
-                     fetch_k=50):
+                     llm:ChatOpenAI):
         """
-        Updates the model with new parameters.
+        Updates with a new LLM.
 
         Args:
             llm (ChatOpenAI): The language model for generating responses.
-            search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
-            k (int, optional): The number of retriever results to consider. Defaults to 6.
-            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
 
         Returns:
             None
         """
+        # TODO add in updated retrieval parameters
         self.llm=llm
-        self.search_type=search_type
-        self.k=k
-        self.fetch_k=fetch_k
 
-        # Define retriever search parameters
-        search_kwargs = _process_retriever_args(search_type=self.search_type,
-                                                k=self.k,
-                                                fetch_k=self.fetch_k)
-        
         # Update conversational retrieval chain
         self.conversational_qa_chain=_define_qa_chain(self.llm,
                                                       self.retriever,
-                                                      self.memory,
-                                                      kwargs=search_kwargs)
-        logging.info('Updated qa chain: '+str(self.conversational_qa_chain))
+                                                      self.memory)
     def generate_alternative_questions(self,
-                                       prompt:str,
-                                       response=None):
+                                       prompt:str):
         """
         Generates alternative questions based on a prompt.
 
         Args:
             prompt (str): The prompt for generating alternative questions.
-            response (str, optional): The response context. Defaults to None.
 
         Returns:
             str: The generated alternative questions.
         """
-        if response:
+        if self.ai_response:
             prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
-            invoke_dict={'question':prompt,'context':response}
+            invoke_dict={'question':prompt,'context':self.ai_response}
         else:
             prompt_template=GENERATE_SIMILAR_QUESTIONS
             invoke_dict={'question':prompt}
@@ -267,15 +237,13 @@ def _combine_documents(docs,
     return document_separator.join(doc_strings)
 def _define_qa_chain(llm,
                      retriever,
-                     memory,
-                     kwargs=None):
+                     memory):
     """Defines the conversational QA chain.
 
     Args:
         llm: The language model component.
         retriever: The document retriever component.
         memory: The memory component.
-        kwargs: Optional keyword arguments.
 
     Returns:
         The conversational QA chain.
@@ -345,8 +313,8 @@ def _process_retriever_args(search_type='similarity',
 
     # Implement filtering and number of documents to return
     if search_type=='mmr':
-        search_kwargs={'k':k,'fetch_k':fetch_k,'filter':filter} # See as_retriever docs for parameters
+        search_kwargs={'k':k,'fetch_k':fetch_k} # See as_retriever docs for parameters
     else:
-        search_kwargs={'k':k,'filter':filter} # See as_retriever docs for parameters
+        search_kwargs={'k':k} # See as_retriever docs for parameters
     
     return search_kwargs

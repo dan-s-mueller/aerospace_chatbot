@@ -16,6 +16,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+from ragatouille import RAGPretrainedModel
 
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors.
@@ -86,7 +87,7 @@ def load_sidebar(config_file,
             st.sidebar.title('Embeddings',help='See embedding leaderboard here for performance overview: https://huggingface.co/spaces/mteb/leaderboard')
             if sb_out['index_type']=='RAGatouille':    # Default to selecting hugging face model for RAGatouille, otherwise select alternates
                 sb_out['query_model']=st.sidebar.selectbox('Hugging face rag models', 
-                                                        databases[sb_out['index_type']]['hf_rag_models'], 
+                                                        databases[sb_out['index_type']]['embedding_models'], 
                                                         index=0,
                                                         help="Models listed are compatible with the selected index type.")
                 sb_out['embedding_name']=sb_out['query_model']
@@ -168,8 +169,10 @@ def load_sidebar(config_file,
                     indices=show_ragatouille_indexes(format=False)
                     if len(indices)>0:
                         name=[]
-                        for index in indices:
-                            name.append(index)
+                        for index in indices['message']:
+                            # Be compatible with embedding types already used. Pinecone only supports lowercase.
+                            if index.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()):    
+                                name.append(index)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
@@ -211,6 +214,8 @@ def load_sidebar(config_file,
                                             'temperature':temperature}
                 else:
                     sb_out['model_options']={'output_level':output_level,
+                                             'k':k,
+                                            'search_type':None,
                                             'temperature':temperature}
     else:
         if embeddings or rag_type or index_name or llm or model_options:
@@ -381,7 +386,8 @@ def get_query_model(sb, secrets):
         NotImplementedError: If the query model is not recognized.
     """
     if sb['index_type'] == 'RAGatouille':
-        query_model = sb['query_model']
+        query_model = RAGPretrainedModel.from_pretrained(sb['embedding_name'],
+                                                         index_root=os.path.join(os.getenv('LOCAL_DB_PATH'),'.ragatouille'))
     elif sb['query_model'] == 'OpenAI':
         query_model = OpenAIEmbeddings(model=sb['embedding_name'], openai_api_key=secrets['OPENAI_API_KEY'])
     elif sb['query_model'] == 'Voyage':
@@ -470,17 +476,22 @@ def show_ragatouille_indexes(format=True):
     """
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         ragatouille_status = {'status': False, 'message': 'Local database path is not set.'}
-    try:
+    else:
         db_folder_path=os.getenv('LOCAL_DB_PATH')
-        path=os.path.join(db_folder_path,'.ragatouille/colbert/indexes')
-        indexes = []
-        for item in os.listdir(path):
-            item_path = os.path.join(path, item)
-            if os.path.isdir(item_path):
-                indexes.append(item)
-        ragatouille_status = {'status': True, 'indexes': indexes}
-    except Exception as e:
-        ragatouille_status = {'status': False, 'message': 'No indexes found.'}
+        try:
+            path=os.path.join(db_folder_path,'.ragatouille/colbert/indexes')
+            indexes = []
+            for item in os.listdir(path):
+                item_path = os.path.join(path, item)
+                if os.path.isdir(item_path):
+                    indexes.append(item)
+            if len(indexes)>0:
+                ragatouille_status = {'status': True, 'message': indexes}
+            else:
+                ragatouille_status = {'status': False, 'message': 'No indexes found.'}  # if .ragatouille structure exists but is empty
+        except:
+            ragatouille_status = {'status': False, 'message': 'No indexes found.'}  # if .ragatouille structure does not exist yet
+
     if format:
         return _format_ragatouille_status(ragatouille_status)
     else:
@@ -534,6 +545,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         st.markdown("**API key status** (Indicates status of local variable. It does not guarantee the key itself is correct):")
         st.markdown(test_key_status())
 
+        # TODO the try statements below sometimes allow delete to be pressed but the index which does exist isn't deleted. Update so an error is thrown if the index is not deleted.
         # Pinecone
         st.markdown(show_pinecone_indexes())
         try:
@@ -573,11 +585,12 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         # Ragatouille
         st.markdown(show_ragatouille_indexes())
         try:
-            ragatouille_indexes = [obj.name for obj in show_ragatouille_indexes(format=False)['message']]
-            if delete_buttons:
+            ragatouille_index_data=show_ragatouille_indexes(format=False)
+            ragatouille_indexes = [obj for obj in ragatouille_index_data['message']]
+            if delete_buttons and ragatouille_index_data['status']==True:
                 ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
                 if st.button('Delete RAGatouille database', help='This is permanent!'):
-                    data_processing.delete_index('Ragatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
+                    data_processing.delete_index('RAGatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
                     st.markdown(f"Index {ragatouille_name} has been deleted.")
         except:
             pass
@@ -750,7 +763,7 @@ def _format_ragatouille_status(ragatouille_status):
     """
     index_description=''
     if ragatouille_status['status']:
-        for index in ragatouille_status['indexes']:
+        for index in ragatouille_status['message']:
             name = index
             status = ":heavy_check_mark:"
             index_description += f"- {name}: ({status})\n"

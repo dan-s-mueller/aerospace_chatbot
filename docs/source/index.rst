@@ -67,9 +67,9 @@ Models
     - `LLM leaderboard <https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard>`__
     - `Embedding leaderboard <https://huggingface.co/spaces/mteb/leaderboard>`__
 - `Voyage embedding models <https://docs.voyageai.com/docs/embeddings>`__, this is a proprietary high performance embedding model.
-- `OpenAI <https://openai.com/>`_, this is where OpenAI LLMs and embeddings are hostes
-    - `LLM models <https://platform.openai.com/docs/models/gpt-4-turbo-and-gpt-4>`__
-    - `Embedding models <https://platform.openai.com/docs/models/embeddings>`__
+- OpenAI, this is where OpenAI LLMs and embeddings are hostes
+    - `OpenAI LLM models <https://platform.openai.com/docs/models/gpt-4-turbo-and-gpt-4>`__
+    - `OpenAI Embedding models <https://platform.openai.com/docs/models/embeddings>`__
 
 Frameworks
 ^^^^^^^^^^

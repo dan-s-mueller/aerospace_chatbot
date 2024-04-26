@@ -74,3 +74,28 @@ This matrix gives options for the user, depending on what the objective is. Prop
 +-------------------------+-----------------------+------------------------------------------------+----------------------+
 | RAG type: Summary       | ChromaDB, Pinecone    | OpenAI, Voyage                                 | Any                  |
 +-------------------------+-----------------------+------------------------------------------------+----------------------+
+
+Advanced functionality
+----------------------
+
+Index Types
+^^^^^^^^^^^
+
+RAGatouille
+"""""""""""
+
+RAGatouille docs are located here:
+- `Github Repository <https://github.com/bclavie/RAGatouille>`__
+- `API docs <https://ben.clavie.eu/ragatouille/api/#ragatouille.RAGPretrainedModel.RAGPretrainedModel.index>`__
+
+This functionality will create an indexed database using ColBERT late-interaction retrieval. For each document chunk which is uploaded it will take approximately 1-2 seconds. To not exceed context limitations of ColBERT, each document provided will be split into 256 token chunks. 
+
+RAG Types
+^^^^^^^^^^
+
+Parent-Child RAG
+""""""""""""""""
+
+Summary RAG
+"""""""""""
+

@@ -56,6 +56,7 @@ if st.session_state["authentication_status"]:
     if not os.path.isdir(data_folder):
         st.error('The entered directory does not exist')
     docs = glob.glob(os.path.join(data_folder,'*.pdf'))   # Only get the PDFs in the directory
+    # TODO update so that you can select the files to upload
     st.markdown('PDFs found: '+str(docs))
     st.markdown('Number of PDFs found: ' + str(len(docs)))
 
@@ -125,9 +126,8 @@ if st.session_state["authentication_status"]:
 
         data_processing.load_docs(sb['index_type'],
                             docs,
+                            query_model,
                             rag_type=sb['rag_type'],
-                            query_model=query_model,
-                            embedding_name=sb['embedding_name'],
                             index_name=database_name,
                             n_merge_pages=n_merge_pages,
                             chunk_method=chunk_method,

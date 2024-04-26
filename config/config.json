@@ -10,7 +10,7 @@
         },
         {
             "name": "RAGatouille",
-            "hf_rag_models": [
+            "embedding_models": [
                 "colbert-ir/colbertv2.0"
             ]
         }

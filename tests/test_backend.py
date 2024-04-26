@@ -12,7 +12,6 @@ from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-
 from ragatouille import RAGPretrainedModel
 
 import chromadb
@@ -78,13 +77,13 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             'embedding_name' : embeddings_list['OpenAI']['embedding_models'],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ["gpt-3.5-turbo-0125"]
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
-            # Tests standard RAG , openai llm
+            # Tests standard RAG , openai llms
             'index_type' : ['ChromaDB'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ["text-embedding-ada-002"],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
             'llm' : llms['OpenAI']['models']
@@ -96,7 +95,7 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             'embedding_name' : embeddings_list['Voyage']['embedding_models'],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ["gpt-3.5-turbo-0125"]
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
             # Tests standard RAG , hugging face embeddings
@@ -105,13 +104,13 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             'embedding_name' : embeddings_list['Hugging Face']['embedding_models'],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ["gpt-3.5-turbo-0125"]
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
-            # Tests standard RAG , hugging face llm
+            # Tests standard RAG , all hugging face llms
             'index_type' : ['ChromaDB'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ["text-embedding-ada-002"],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Standard'],
             'llm_family' : ['Hugging Face'],
             'llm' : llms['Hugging Face']['models']
@@ -120,46 +119,46 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             # Tests parent-child rag, openai models
             'index_type' : ['ChromaDB'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ['text-embedding-ada-002'],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Parent-Child'],
             'llm_family' : ['OpenAI'],
-            'llm' : ["gpt-3.5-turbo-0125"]
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
             # Tests advanced RAG (summary), openai models
             'index_type' : ['ChromaDB'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ['text-embedding-ada-002'],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Summary'],
             'llm_family' : ['OpenAI'],
-            'llm' : ['gpt-3.5-turbo-0125']
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
             # Tests Pinecone setups, openai embedding type
             'index_type' : ['Pinecone'],
             'query_model' : ['OpenAI'],
-            'embedding_name' : ['text-embedding-ada-002'],
+            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ['gpt-3.5-turbo-0125']
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
-            # Tests Pinecone setups, voyage embedding type
+            # Tests Pinecone setups, voyage embedding types
             'index_type' : ['Pinecone'],
             'query_model' : ['Voyage'],
-            'embedding_name' : ['voyage-2'],
+            'embedding_name' : embeddings_list['Voyage']['embedding_models'],
             'rag_type' : ['Standard'],
             'llm_family' : ['OpenAI'],
-            'llm' : ['gpt-3.5-turbo-0125']
+            'llm' : [llms['OpenAI']['models'][0]]
         },
         {
             # Tests RAGatouille setup
             'index_type' : ['RAGatouille'],
             'query_model' : ['RAGatouille'],
-            'embedding_name' : ['colbert-ir/colbertv2.0'],
+            'embedding_name' : ['colbert-ir/colbertv2.0'],  # Hard coded, tied to RAGatouille
             'rag_type' : ['Standard'],
-            'llm_family' : ['Hugging Face'],
-            'llm' : ['mistralai/Mistral-7B-Instruct-v0.2']
+            'llm_family' : ['OpenAI'],
+            'llm' : [llms['OpenAI']['models'][0]]
         }
     ]
 
@@ -236,7 +235,8 @@ def parse_test_model(type, test, setup_fixture):
     if type == 'embedding':
         # Parse out embedding
         if test['index_type'] == 'RAGatouille':
-            query_model = test['embedding_name']
+            query_model = RAGPretrainedModel.from_pretrained(test['embedding_name'],
+                                                             index_root=os.path.join(setup_fixture['LOCAL_DB_PATH'],'.ragatouille'))
         elif test['query_model'] == 'OpenAI' or test['query_model'] == 'Voyage' or test['query_model'] == 'Hugging Face':
             if test['query_model'] == 'OpenAI':
                 query_model = OpenAIEmbeddings(model=test['embedding_name'], openai_api_key=setup_fixture['OPENAI_API_KEY'])
@@ -284,7 +284,6 @@ def viz_database_setup(index_name,setup_fixture):
             test_query_params['index_type'],
             setup_fixture['docs'],
             query_model,
-            test_query_params['embedding_name'],
             rag_type,
             index_name, 
             chunk_method=setup_fixture['chunk_method'],
@@ -549,7 +548,6 @@ def test_initialize_database_pinecone(monkeypatch,setup_fixture):
         vectorstore = initialize_database(test_query_params['index_type'], 
                                           index_name, 
                                           query_model, 
-                                          test_query_params['embedding_name'],
                                           rag_type, 
                                           os.environ['LOCAL_DB_PATH'], 
                                           clear, 
@@ -568,7 +566,6 @@ def test_initialize_database_pinecone(monkeypatch,setup_fixture):
         initialize_database(test_query_params['index_type'], 
                             index_name, 
                             query_model, 
-                            test_query_params['embedding_name'],
                             rag_type, 
                             os.environ['LOCAL_DB_PATH'], 
                             clear, 
@@ -610,7 +607,6 @@ def test_initialize_database_chromadb(monkeypatch,setup_fixture):
         vectorstore = initialize_database(test_query_params['index_type'], 
                                           index_name, 
                                           query_model, 
-                                          test_query_params['embedding_name'], 
                                           rag_type, 
                                           os.environ['LOCAL_DB_PATH'], 
                                           clear, 
@@ -629,7 +625,6 @@ def test_initialize_database_chromadb(monkeypatch,setup_fixture):
         initialize_database(test_query_params['index_type'], 
                             index_name, 
                             query_model, 
-                            test_query_params['embedding_name'], 
                             rag_type, 
                             os.environ['LOCAL_DB_PATH'], 
                             clear, 
@@ -671,7 +666,6 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
         vectorstore = initialize_database(test_query_params['index_type'], 
                                           index_name, 
                                           query_model, 
-                                          test_query_params['embedding_name'],
                                           rag_type, 
                                           os.environ['LOCAL_DB_PATH'], 
                                           clear, 
@@ -690,7 +684,6 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
         initialize_database(test_query_params['index_type'], 
                             index_name, 
                             query_model, 
-                            test_query_params['embedding_name'],
                             rag_type, 
                             os.environ['LOCAL_DB_PATH'], 
                             clear, 
@@ -723,15 +716,12 @@ def test_database_setup_and_query(test_input,setup_fixture):
     query_model=parse_test_model('embedding', test, setup_fixture)
     llm=parse_test_model('llm', test, setup_fixture)
 
-
-
     try: 
         vectorstore = load_docs(
             test['index_type'],
             setup_fixture['docs'],
             rag_type=test['rag_type'],
             query_model=query_model,
-            embedding_name=test['embedding_name'],
             index_name=index_name, 
             chunk_size=setup_fixture['chunk_size'],
             chunk_overlap=setup_fixture['chunk_overlap'],
@@ -754,10 +744,10 @@ def test_database_setup_and_query(test_input,setup_fixture):
             index_name = index_name + llm.model_name.replace('/', '-') + '-summary' 
 
         if test['index_type'] == 'RAGatouille':
-            query_model_qa = RAGPretrainedModel.from_index(
-                os.path.join(setup_fixture['LOCAL_DB_PATH'],'.ragatouille/colbert/indexes','test'+str(test['id'])),
-                n_gpu=0,
-                verbose=0)             
+            # query_model_qa=vectorstore  
+            query_model_qa = RAGPretrainedModel.from_index(index_path=os.path.join(setup_fixture['LOCAL_DB_PATH'],
+                                                                                   '.ragatouille/colbert/indexes',
+                                                                                   index_name))         
         else:
             query_model_qa = query_model
         assert query_model_qa is not None
@@ -765,7 +755,6 @@ def test_database_setup_and_query(test_input,setup_fixture):
         qa_model_obj = QA_Model(test['index_type'],
                             index_name,
                             query_model_qa,
-                            test['embedding_name'],
                             llm,
                             rag_type=test['rag_type'],
                             local_db_path=setup_fixture['LOCAL_DB_PATH'])
@@ -773,10 +762,12 @@ def test_database_setup_and_query(test_input,setup_fixture):
         assert qa_model_obj is not None
 
         qa_model_obj.query_docs(setup_fixture['test_prompt'])
-        response = qa_model_obj.ai_response
-        assert response is not None
+        assert qa_model_obj.ai_response is not None
+        assert qa_model_obj.sources is not None
+        assert qa_model_obj.memory is not None
+        
 
-        alternate_question = qa_model_obj.generate_alternative_questions(setup_fixture['test_prompt'], response=response)
+        alternate_question = qa_model_obj.generate_alternative_questions(setup_fixture['test_prompt'])
         assert alternate_question is not None
         print('Query and alternative question successful!')
 
@@ -804,7 +795,7 @@ def test_load_sidebar():
     Returns:
         None
     '''
-    # TODO Add mock changes from streamlit changing: index_type, rag_type
+    # TODO add mock changes from streamlit changing: index_type, rag_type
 
     # Use the existing config file, to check they are set up correctly.
     base_folder_path = os.path.abspath(os.path.dirname(__file__))
@@ -1083,7 +1074,6 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
     for var in list(os.environ.keys()):
         monkeypatch.delenv(var, raising=False)
     dotenv_path = temp_dotenv
-    print(dotenv_path)
 
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')

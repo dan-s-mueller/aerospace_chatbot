@@ -90,7 +90,6 @@ if prompt := st.chat_input('Prompt here'):
                 st.session_state.qa_model_obj=queries.QA_Model(sb['index_type'],
                                                                sb['index_selected'],
                                                                query_model,
-                                                               sb['embedding_name'],
                                                                llm,
                                                                rag_type=sb['rag_type'],
                                                                k=sb['model_options']['k'],
@@ -100,17 +99,14 @@ if prompt := st.chat_input('Prompt here'):
                 # Update LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
 
-                st.session_state.qa_model_obj.update_model(llm,
-                                                           k=sb['model_options']['k'],
-                                                           search_type=sb['model_options']['search_type'])
+                st.session_state.qa_model_obj.update_model(llm)
             
             st.write('*Searching vector database, generating prompt...*')
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.ai_response
             message_placeholder.markdown(ai_response)
             st.write("**Alternative questions:** \n\n\n"+
-                     st.session_state.qa_model_obj.generate_alternative_questions(
-                         prompt,response=ai_response))
+                     st.session_state.qa_model_obj.generate_alternative_questions(prompt))
 
             t_delta=time.time() - t_start
             status.update(label='Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)

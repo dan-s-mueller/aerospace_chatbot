@@ -1,10 +1,10 @@
 from prompts import SUMMARIZE_TEXT
 
-import os, logging, re, shutil, random
+import os, re, shutil, random
 import hashlib
 import uuid
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -43,8 +43,7 @@ import pandas as pd
 
 def load_docs(index_type:str,
               docs:List[str],
-              query_model:any,
-              embedding_name:str,
+              query_model:object,
               rag_type:str='Standard',
               index_name:str=None,
               n_merge_pages:int=None,
@@ -63,8 +62,7 @@ def load_docs(index_type:str,
     Args:
         index_type (str): The type of index to use.
         docs: The documents to load.
-        query_model: The query model to use.
-        embedding_name: The name of the embedding model to use.
+        query_model (object): The query model to use.
         rag_type (str, optional): The type of RAG (Retrieval-Augmented Generation) to use. Defaults to 'Standard'.
         index_name (str, optional): The name of the index. Defaults to None.
         n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to 0.
@@ -105,20 +103,19 @@ def load_docs(index_type:str,
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
                                       index_name, 
-                                      query_model, 
-                                      embedding_name,
+                                      query_model,
                                       rag_type=rag_type,
                                       clear=clear, 
                                       local_db_path=local_db_path,
                                       init_ragatouille=True,
                                       show_progress=show_progress)
-    vectorstore, retriever = upsert_docs(index_type,
-                                         index_name,
-                                         vectorstore,
-                                         chunker,
-                                         batch_size=batch_size,
-                                         show_progress=show_progress,
-                                         local_db_path=local_db_path)
+    vectorstore, _ = upsert_docs(index_type,
+                                 index_name,
+                                 vectorstore,
+                                 chunker,
+                                 batch_size=batch_size,
+                                 show_progress=show_progress,
+                                 local_db_path=local_db_path)
     return vectorstore
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
@@ -196,7 +193,7 @@ def chunk_docs(docs: List[str],
                 if show_progress:
                     progress_percentage = i / len(page_chunks)
                     my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
-                chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
+                # chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
                 chunks.append(chunk)    # Not sanitized because the page already was
         elif chunk_method=='None':
             text_splitter = None
@@ -287,8 +284,7 @@ def chunk_docs(docs: List[str],
         raise NotImplementedError
 def initialize_database(index_type: str, 
                         index_name: str, 
-                        query_model: str,
-                        embedding_name: str,
+                        query_model: object,
                         rag_type: str,
                         local_db_path: str = None, 
                         clear: bool = False,
@@ -299,8 +295,7 @@ def initialize_database(index_type: str,
     Args:
         index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
         index_name (str): The name of the index.
-        query_model (str): The query model to use.
-        embedding_name (str): The name of the embedding model to use.
+        query_model (object): The query model to use.
         rag_type (str): The type of RAG model to use.
         local_db_path (str, optional): The path to the local database. Defaults to None.
         clear (bool, optional): Whether to clear the index. Defaults to False.
@@ -328,7 +323,7 @@ def initialize_database(index_type: str,
             pc.describe_index(index_name)
         except:
             pc.create_index(index_name,
-                            dimension=_embedding_size(query_model,embedding_name),
+                            dimension=_embedding_size(query_model),
                             spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
         
         index = pc.Index(index_name)
@@ -353,10 +348,14 @@ def initialize_database(index_type: str,
     elif index_type == "RAGatouille":
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-        if init_ragatouille:    # Used if the index is not already set
-            vectorstore = RAGPretrainedModel.from_pretrained(query_model,verbose=0)
-        else:   # Used if the index is already set
-            vectorstore = query_model    # The index is picked up directly.
+        if init_ragatouille:    
+            # Used if the index is not already set, initializes root folder and embedding model
+            vectorstore = query_model
+        else:   
+            # Used if the index is already set, loads the index directly
+            vectorstore = RAGPretrainedModel.from_index(index_path=os.path.join(local_db_path,
+                                                                                '.ragatouille/colbert/indexes',
+                                                                                index_name))
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -367,7 +366,7 @@ def initialize_database(index_type: str,
         my_bar.empty()
     return vectorstore
 
-@retry(stop=stop_after_attempt(15), wait=wait_exponential(multiplier=1,max=60))
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1,max=60))
 def upsert_docs_pinecone(index_name: str,
                          vectorstore: any, 
                          chunker: dict, 
@@ -475,20 +474,16 @@ def upsert_docs(index_type: str,
             retriever = vectorstore.as_retriever()
         elif index_type == "RAGatouille":
             # Create an index from the vectorstore.
+            # This will default to split documents into 256 tokens each.
             vectorstore.index(
                 collection=[chunk.page_content for chunk in chunker['chunks']],
                 document_ids=[_stable_hash_meta(chunk.metadata) for chunk in chunker['chunks']],
                 index_name=index_name,
-                max_document_length=chunker['splitters']._chunk_size,
                 overwrite_index=True,
                 split_documents=True,
+                document_metadatas=[chunk.metadata for chunk in chunker['chunks']]
             )
 
-            # Move the directory to the db folder
-            try:
-                shutil.move('.ragatouille', local_db_path)
-            except shutil.Error:
-                pass    # If it already exists, don't do anything
             retriever = vectorstore.as_langchain_retriever()
         else:
             raise NotImplementedError
@@ -598,10 +593,11 @@ def delete_index(index_type: str,
     elif index_type == "ChromaDB":  
         try:
             persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))
-            indices = persistent_client.list_collections()
-            for idx in indices:
-                if index_name in idx.name:
-                    persistent_client.delete_collection(name=idx.name)
+            # indices = persistent_client.list_collections()
+            # for idx in indices:
+            #     if index_name in idx.name:
+                    # persistent_client.delete_collection(name=idx.name)
+            persistent_client.delete_collection(name=index_name)
         except Exception as e:
             # print(f"Error occurred while deleting ChromaDB collection: {e}")
             pass
@@ -614,7 +610,7 @@ def delete_index(index_type: str,
                 pass    # No need to do anything if it doesn't exist
     elif index_type == "RAGatouille":
         try:
-            ragatouille_path = os.path.join(local_db_path, '.ragatouille')
+            ragatouille_path = os.path.join(local_db_path, '.ragatouille/colbert/indexes', index_name)
             shutil.rmtree(ragatouille_path)
         except Exception as e:
             # print(f"Error occurred while deleting RAGatouille index: {e}")
@@ -806,13 +802,14 @@ def _sanitize_raw_page_data(page):
         return None
     else:
         return page
-def _embedding_size(embedding_family:any,embedding_name:str):
+def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
+                                           VoyageAIEmbeddings,
+                                           HuggingFaceInferenceAPIEmbeddings]):
     """
     Returns the size of the embedding for a given embedding model.
 
     Args:
         embedding_family (object): The embedding model to get the size for.
-        embedding_name (str): The name of the embedding model.
 
     Returns:
         int: The size of the embedding.
@@ -820,34 +817,35 @@ def _embedding_size(embedding_family:any,embedding_name:str):
     Raises:
         NotImplementedError: If the embedding model is not supported.
     """
-    exception_embedding_name=NotImplementedError(f"The embedding name '{embedding_name}' is not available in config.json")
-
     # https://platform.openai.com/docs/models/embeddings
     if isinstance(embedding_family,OpenAIEmbeddings):
-        if embedding_name=="text-embedding-ada-002":
+        name=embedding_family.model
+        if name=="text-embedding-ada-002":
             return 1536
-        elif embedding_name=="text-embedding-3-small":
+        elif name=="text-embedding-3-small":
             return 1536
-        elif embedding_name=="text-embedding-3-large":
+        elif name=="text-embedding-3-large":
             return 3072
         else:
-            raise exception_embedding_name
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # https://docs.voyageai.com/embeddings/
     elif isinstance(embedding_family,VoyageAIEmbeddings):
-        if embedding_name=="voyage-2":
+        name=embedding_family.model
+        if name=="voyage-2":
             return 1024 
-        elif embedding_name=="voyage-large-2":
+        elif name=="voyage-large-2":
             return 1536
         else:
-            raise exception_embedding_name
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # See model pages for embedding sizes
     elif isinstance(embedding_family,HuggingFaceInferenceAPIEmbeddings):
-        if embedding_name=="sentence-transformers/all-MiniLM-L6-v2":
+        name=embedding_family.model_name
+        if name=="sentence-transformers/all-MiniLM-L6-v2":
             return 384
-        elif embedding_name=="mixedbread-ai/mxbai-embed-large-v1":
+        elif name=="mixedbread-ai/mxbai-embed-large-v1":
             return 1024
         else:
-            raise exception_embedding_name
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     else:
         raise NotImplementedError(f"The embedding family '{embedding_family}' is not available in config.json")
 
