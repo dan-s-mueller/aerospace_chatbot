@@ -7,7 +7,7 @@ In order for any configuration to work, you'll need the correct dependencies ins
 
 The app can be run in several configurations:
 
-- **Running Locally:** As a streamlit app in the ``app` directory, running ``streamlit run Home.py``.
+- **Running Locally:** As a streamlit app in the ``app`` directory, running ``streamlit run Home.py``.
 - **Deployed Configurations :** As a docker container using the ``Dockerfile`` in the root directory.
 - **Using the Backend:** With python code following packages and dependencies in the ``src/aerospace_chatbot`` directory.
 
@@ -37,9 +37,19 @@ For specific details of this deployment, refer to the readme here: `Aerospace Ch
 Using the Backend
 ^^^^^^^^^^^^^^^^^
 
-You can use the backend code to run the chatbot in a python environment. The backend code is located in the `src/aerospace_chatbot` directory.
+You can use the backend code to run the chatbot in a python environment. The backend code is located in the ``src/aerospace_chatbot`` directory, or you can add the package independently via:
 
-Example of how to use the backend are in the `notebooks` directory.
+.. code-block:: bash
+
+    poetry add aerospace-chatbot
+
+or
+
+.. code-block:: bash
+
+    pip install aerospace-chatbot
+
+Example of how to use the backend are in the ``notebooks`` directory.
 
 Example: Aerospace Mechanisms Symposia
 --------------------------------------
