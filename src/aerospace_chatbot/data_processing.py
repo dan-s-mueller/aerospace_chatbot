@@ -1,6 +1,7 @@
 from prompts import SUMMARIZE_TEXT
 
 import os, re, shutil, random
+import hashlib
 import uuid
 from pathlib import Path
 from typing import List, Union
@@ -365,7 +366,7 @@ def initialize_database(index_type: str,
         my_bar.empty()
     return vectorstore
 
-@retry(stop=stop_after_attempt(15), wait=wait_exponential(multiplier=1,max=60))
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1,max=60))
 def upsert_docs_pinecone(index_name: str,
                          vectorstore: any, 
                          chunker: dict, 
