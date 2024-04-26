@@ -230,7 +230,7 @@ def load_sidebar(config_file,
         st.sidebar.markdown('If .env file is in directory, will use that first.')
         if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',help='OpenAI API Key: https://platform.openai.com/api-keys')
-        elif 'query_model' in sb_out and sb_out['query_model'] == 'Openai':
+        elif 'query_model' in sb_out and sb_out['query_model'] == 'OpenAI':
             sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',help='OpenAI API Key: https://platform.openai.com/api-keys')
         if 'llm_source' in sb_out and sb_out['llm_source']=='Hugging Face':
             sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password',help='Hugging Face API Key: https://huggingface.co/settings/tokens')
@@ -410,7 +410,8 @@ def show_pinecone_indexes(format=True):
                     If format is False, returns a dictionary containing the Pinecone status.
 
     """
-    if os.getenv('PINECONE_API_KEY') is None:
+    print(os.getenv('PINECONE_API_KEY'))
+    if os.getenv('PINECONE_API_KEY') is None or os.getenv('PINECONE_API_KEY')=='':
         pinecone_status = {'status': False, 'message': 'Pinecone API Key is not set.'}
     else:
         pc=Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
@@ -440,7 +441,7 @@ def show_chroma_collections(format=True):
         ValueError: If the chroma vector database needs to be reset.
 
     """
-    if os.getenv('LOCAL_DB_PATH') is None:
+    if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
     else:
         db_folder_path=os.getenv('LOCAL_DB_PATH')
@@ -473,7 +474,7 @@ def show_ragatouille_indexes(format=True):
         ValueError: If the ragatouille vector database needs to be reset.
 
     """
-    if os.getenv('LOCAL_DB_PATH') is None:
+    if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         ragatouille_status = {'status': False, 'message': 'Local database path is not set.'}
     else:
         db_folder_path=os.getenv('LOCAL_DB_PATH')
