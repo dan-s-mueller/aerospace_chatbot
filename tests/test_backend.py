@@ -716,13 +716,11 @@ def test_database_setup_and_query(test_input,setup_fixture):
     Returns:
         None
     '''
-    # TODO add check that sources are always returned
     test, print_str = parse_test_case(setup_fixture,test_input)
     index_name='test'+str(test['id'])
     print(f'Starting test: {print_str}')
 
     query_model=parse_test_model('embedding', test, setup_fixture)
-    print(query_model)
     llm=parse_test_model('llm', test, setup_fixture)
 
     try: 
@@ -773,10 +771,12 @@ def test_database_setup_and_query(test_input,setup_fixture):
         assert qa_model_obj is not None
 
         qa_model_obj.query_docs(setup_fixture['test_prompt'])
-        response = qa_model_obj.ai_response
-        assert response is not None
+        assert qa_model_obj.ai_response is not None
+        assert qa_model_obj.sources is not None
+        assert qa_model_obj.memory is not None
+        
 
-        alternate_question = qa_model_obj.generate_alternative_questions(setup_fixture['test_prompt'], response=response)
+        alternate_question = qa_model_obj.generate_alternative_questions(setup_fixture['test_prompt'])
         assert alternate_question is not None
         print('Query and alternative question successful!')
 
@@ -804,7 +804,7 @@ def test_load_sidebar():
     Returns:
         None
     '''
-    # TODO Add mock changes from streamlit changing: index_type, rag_type
+    # TODO add mock changes from streamlit changing: index_type, rag_type
 
     # Use the existing config file, to check they are set up correctly.
     base_folder_path = os.path.abspath(os.path.dirname(__file__))
@@ -1083,7 +1083,6 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
     for var in list(os.environ.keys()):
         monkeypatch.delenv(var, raising=False)
     dotenv_path = temp_dotenv
-    print(dotenv_path)
 
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')

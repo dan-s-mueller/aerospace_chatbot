@@ -9,6 +9,12 @@ There is also a huge amount of research and development being done for the AI in
 
 aerospace_chatbot intents to provide a practical better way of accessing this type of information that comes in PDF formats. It is merely a shortcut using open source AI tools and applied to the aerospace industry.
 
+For visual learners, this app is meant to do the following (`reference <https://www.amazon.com/Organizational-Learning-Companies-Institutions-Knowledge/dp/1137301546>`__):
+
+.. image:: ../images/organizational_learning_7.1.png
+  :alt: Organizational Excellence, Figure 7.1
+  :align: center
+
 How it works (backend)
 ----------------------
 The backend refers to the modules which are used to process and return data. They generally are not user facing.

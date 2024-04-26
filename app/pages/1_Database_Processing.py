@@ -56,7 +56,7 @@ if st.session_state["authentication_status"]:
     if not os.path.isdir(data_folder):
         st.error('The entered directory does not exist')
     docs = glob.glob(os.path.join(data_folder,'*.pdf'))   # Only get the PDFs in the directory
-    # TODO Update so that you can select the files to upload
+    # TODO update so that you can select the files to upload
     st.markdown('PDFs found: '+str(docs))
     st.markdown('Number of PDFs found: ' + str(len(docs)))
 

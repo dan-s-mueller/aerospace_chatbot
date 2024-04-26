@@ -821,35 +821,36 @@ def _embedding_size(embedding_family:any,embedding_name:str):
     Raises:
         NotImplementedError: If the embedding model is not supported.
     """
-    # TODO find a way to extract embedding name from each model, then can remove embedding_name from arguments in most functions.
-    exception_embedding_name=NotImplementedError(f"The embedding name '{embedding_name}' is not available in config.json")
 
     # https://platform.openai.com/docs/models/embeddings
     if isinstance(embedding_family,OpenAIEmbeddings):
-        if embedding_name=="text-embedding-ada-002":
+        name=OpenAIEmbeddings.model
+        if name=="text-embedding-ada-002":
             return 1536
-        elif embedding_name=="text-embedding-3-small":
+        elif name=="text-embedding-3-small":
             return 1536
-        elif embedding_name=="text-embedding-3-large":
+        elif name=="text-embedding-3-large":
             return 3072
         else:
-            raise exception_embedding_name
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # https://docs.voyageai.com/embeddings/
     elif isinstance(embedding_family,VoyageAIEmbeddings):
-        if embedding_name=="voyage-2":
+        name=VoyageAIEmbeddings.model
+        if name=="voyage-2":
             return 1024 
-        elif embedding_name=="voyage-large-2":
+        elif name=="voyage-large-2":
             return 1536
         else:
-            raise exception_embedding_name
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # See model pages for embedding sizes
     elif isinstance(embedding_family,HuggingFaceInferenceAPIEmbeddings):
-        if embedding_name=="sentence-transformers/all-MiniLM-L6-v2":
+        name=HuggingFaceInferenceAPIEmbeddings.model_name
+        if name=="sentence-transformers/all-MiniLM-L6-v2":
             return 384
-        elif embedding_name=="mixedbread-ai/mxbai-embed-large-v1":
+        elif name=="mixedbread-ai/mxbai-embed-large-v1":
             return 1024
         else:
-            raise exception_embedding_name
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     else:
         raise NotImplementedError(f"The embedding family '{embedding_family}' is not available in config.json")
 

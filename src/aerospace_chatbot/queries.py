@@ -111,6 +111,11 @@ class QA_Model:
         self.temperature=temperature
         self.local_db_path=local_db_path
         self.sources=[]
+        self.memory=None
+        self.result=None
+        self.sources=None
+        self.ai_response=None
+
 
         # Define retriever search parameters
         search_kwargs = _process_retriever_args(self.search_type,
@@ -168,30 +173,13 @@ class QA_Model:
         self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
         if self.llm.__class__.__name__=='ChatOpenAI':
             self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
-            # else:
-            #     raise NotImplementedError
-        # else:
-            # # RAGatouille doesn't have metadata, need to extract from context first.
-            # extracted_metadata = []
-            # pattern = r'\{([^}]*)\}(?=[^{}]*$)' # Regular expression pattern to match the last curly braces
-
-            # for ref in self.result['references']:
-            #     match = re.search(pattern, ref.page_content)
-            #     if match:
-            #         extracted_metadata.append("{"+match.group(1)+"}")
-            # self.sources = '\n'.join(extracted_metadata)
-
-            # if self.llm.__class__.__name__=='ChatOpenAI':
-            #     self.ai_response=self.result['answer'].content + '\n\nSources:\n' + self.sources
-            # else:
-            #     raise NotImplementedError
+        else:
+            raise NotImplementedError
 
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
+        
     def update_model(self,
-                     llm:ChatOpenAI,
-                     search_type='similarity',
-                     k=6,
-                     fetch_k=50):
+                     llm:ChatOpenAI):
         """
         Updates with a new LLM.
 
@@ -201,7 +189,7 @@ class QA_Model:
         Returns:
             None
         """
-        # TODO: add in updated retrieval parameters
+        # TODO add in updated retrieval parameters
         self.llm=llm
 
         # Update conversational retrieval chain
@@ -209,21 +197,19 @@ class QA_Model:
                                                       self.retriever,
                                                       self.memory)
     def generate_alternative_questions(self,
-                                       prompt:str,
-                                       response=None):
+                                       prompt:str):
         """
         Generates alternative questions based on a prompt.
 
         Args:
             prompt (str): The prompt for generating alternative questions.
-            response (str, optional): The response context. Defaults to None.
 
         Returns:
             str: The generated alternative questions.
         """
-        if response:
+        if self.ai_response:
             prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
-            invoke_dict={'question':prompt,'context':response}
+            invoke_dict={'question':prompt,'context':self.ai_response}
         else:
             prompt_template=GENERATE_SIMILAR_QUESTIONS
             invoke_dict={'question':prompt}
