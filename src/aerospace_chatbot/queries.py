@@ -71,25 +71,23 @@ class QA_Model:
 
     """
     def __init__(self, 
-                 index_type,
-                 index_name,
-                 query_model,
-                 embedding_name,
+                 index_type:str,
+                 index_name:str,
+                 query_model:object,
                  llm:ChatOpenAI,
-                 rag_type='Standard',
-                 k=6,
-                 search_type='similarity',
-                 fetch_k=50,
-                 temperature=0,
-                 local_db_path='.'):
+                 rag_type:str='Standard',
+                 k:int=6,
+                 search_type:str='similarity',
+                 fetch_k:int=50,
+                 temperature:int=0,
+                 local_db_path:str='.'):
         """
         Initializes a new instance of the QA_Model class.
 
         Args:
             index_type (str): The type of index.
             index_name (str): The name of the index.
-            query_model (str): The query model.
-            embedding_name (str): The name of the embedding.
+            query_model (object): The query model.
             llm (ChatOpenAI): The language model for generating responses.
             rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
             k (int, optional): The number of retriever results to consider. Defaults to 6. 
@@ -102,7 +100,6 @@ class QA_Model:
         self.index_type=index_type
         self.index_name=index_name
         self.query_model=query_model
-        self.embedding_name=embedding_name
         self.llm=llm
         self.rag_type=rag_type
         self.k=k
@@ -110,7 +107,6 @@ class QA_Model:
         self.fetch_k=fetch_k
         self.temperature=temperature
         self.local_db_path=local_db_path
-        self.sources=[]
         self.memory=None
         self.result=None
         self.sources=None
@@ -126,7 +122,6 @@ class QA_Model:
         self.vectorstore=data_processing.initialize_database(self.index_type,
                                                              self.index_name,
                                                              self.query_model,
-                                                             self.embedding_name,
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
                                                              init_ragatouille=False)  
@@ -169,7 +164,6 @@ class QA_Model:
         self.memory.load_memory_variables({})
         self.result = self.conversational_qa_chain.invoke({'question': query})
 
-        # if self.index_type!='RAGatouille':
         self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
         if self.llm.__class__.__name__=='ChatOpenAI':
             self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources

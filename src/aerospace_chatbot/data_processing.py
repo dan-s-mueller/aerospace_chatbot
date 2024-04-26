@@ -1,10 +1,9 @@
 from prompts import SUMMARIZE_TEXT
 
-import os, logging, re, shutil, random
-import hashlib
+import os, re, shutil, random
 import uuid
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -43,8 +42,7 @@ import pandas as pd
 
 def load_docs(index_type:str,
               docs:List[str],
-              query_model:any,
-              embedding_name:str,
+              query_model:object,
               rag_type:str='Standard',
               index_name:str=None,
               n_merge_pages:int=None,
@@ -63,8 +61,7 @@ def load_docs(index_type:str,
     Args:
         index_type (str): The type of index to use.
         docs: The documents to load.
-        query_model: The query model to use.
-        embedding_name: The name of the embedding model to use.
+        query_model (object): The query model to use.
         rag_type (str, optional): The type of RAG (Retrieval-Augmented Generation) to use. Defaults to 'Standard'.
         index_name (str, optional): The name of the index. Defaults to None.
         n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to 0.
@@ -105,20 +102,19 @@ def load_docs(index_type:str,
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
                                       index_name, 
-                                      query_model, 
-                                      embedding_name,
+                                      query_model,
                                       rag_type=rag_type,
                                       clear=clear, 
                                       local_db_path=local_db_path,
                                       init_ragatouille=True,
                                       show_progress=show_progress)
-    vectorstore, retriever = upsert_docs(index_type,
-                                         index_name,
-                                         vectorstore,
-                                         chunker,
-                                         batch_size=batch_size,
-                                         show_progress=show_progress,
-                                         local_db_path=local_db_path)
+    vectorstore, _ = upsert_docs(index_type,
+                                 index_name,
+                                 vectorstore,
+                                 chunker,
+                                 batch_size=batch_size,
+                                 show_progress=show_progress,
+                                 local_db_path=local_db_path)
     return vectorstore
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
@@ -287,8 +283,7 @@ def chunk_docs(docs: List[str],
         raise NotImplementedError
 def initialize_database(index_type: str, 
                         index_name: str, 
-                        query_model: str,
-                        embedding_name: str,
+                        query_model: object,
                         rag_type: str,
                         local_db_path: str = None, 
                         clear: bool = False,
@@ -299,8 +294,7 @@ def initialize_database(index_type: str,
     Args:
         index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
         index_name (str): The name of the index.
-        query_model (str): The query model to use.
-        embedding_name (str): The name of the embedding model to use.
+        query_model (object): The query model to use.
         rag_type (str): The type of RAG model to use.
         local_db_path (str, optional): The path to the local database. Defaults to None.
         clear (bool, optional): Whether to clear the index. Defaults to False.
@@ -328,7 +322,7 @@ def initialize_database(index_type: str,
             pc.describe_index(index_name)
         except:
             pc.create_index(index_name,
-                            dimension=_embedding_size(query_model,embedding_name),
+                            dimension=_embedding_size(query_model),
                             spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
         
         index = pc.Index(index_name)
@@ -807,13 +801,14 @@ def _sanitize_raw_page_data(page):
         return None
     else:
         return page
-def _embedding_size(embedding_family:any,embedding_name:str):
+def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
+                                           VoyageAIEmbeddings,
+                                           HuggingFaceInferenceAPIEmbeddings]):
     """
     Returns the size of the embedding for a given embedding model.
 
     Args:
         embedding_family (object): The embedding model to get the size for.
-        embedding_name (str): The name of the embedding model.
 
     Returns:
         int: The size of the embedding.
@@ -821,10 +816,9 @@ def _embedding_size(embedding_family:any,embedding_name:str):
     Raises:
         NotImplementedError: If the embedding model is not supported.
     """
-
     # https://platform.openai.com/docs/models/embeddings
     if isinstance(embedding_family,OpenAIEmbeddings):
-        name=OpenAIEmbeddings.model
+        name=embedding_family.model
         if name=="text-embedding-ada-002":
             return 1536
         elif name=="text-embedding-3-small":
@@ -835,7 +829,7 @@ def _embedding_size(embedding_family:any,embedding_name:str):
             raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # https://docs.voyageai.com/embeddings/
     elif isinstance(embedding_family,VoyageAIEmbeddings):
-        name=VoyageAIEmbeddings.model
+        name=embedding_family.model
         if name=="voyage-2":
             return 1024 
         elif name=="voyage-large-2":
@@ -844,7 +838,7 @@ def _embedding_size(embedding_family:any,embedding_name:str):
             raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # See model pages for embedding sizes
     elif isinstance(embedding_family,HuggingFaceInferenceAPIEmbeddings):
-        name=HuggingFaceInferenceAPIEmbeddings.model_name
+        name=embedding_family.model_name
         if name=="sentence-transformers/all-MiniLM-L6-v2":
             return 384
         elif name=="mixedbread-ai/mxbai-embed-large-v1":

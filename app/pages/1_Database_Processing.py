@@ -127,7 +127,6 @@ if st.session_state["authentication_status"]:
         data_processing.load_docs(sb['index_type'],
                             docs,
                             rag_type=sb['rag_type'],
-                            query_model=query_model,
                             embedding_name=sb['embedding_name'],
                             index_name=database_name,
                             n_merge_pages=n_merge_pages,
