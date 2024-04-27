@@ -860,3 +860,102 @@ def _stable_hash_meta(metadata: dict) -> str:
         str: The hexadecimal representation of the hashed metadata.
     """
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
+
+
+### Stuff to test out spotlight
+# TODO implement function tie in with qa object
+# Taken from https://itnext.io/visualize-rag-data-with-renumics-rag-a-q-a-gui-with-interactive-data-exploration-8999dd092f3d
+def sl_get_or_create_spotlight_viewer():
+    try:
+        from renumics import spotlight
+        from renumics.spotlight import dtypes as spotlight_dtypes
+    except ImportError:
+        return None
+    viewers = spotlight.viewers()
+    if viewers:
+        for viewer in viewers[:-1]:
+            viewer.close()
+        return spotlight.viewers()[-1]
+    return spotlight.show(
+        pd.DataFrame({}),  # Hack for Spotlight
+        no_browser=True,
+        dtype={
+            "used_by_questions": spotlight_dtypes.SequenceDType(
+                spotlight_dtypes.str_dtype
+            )
+        },
+        wait=False,
+    )
+def sl_get_docs_questions_df(
+    docs_db_directory: Path,
+    docs_db_collection: str,
+    questions_db_directory: Path,
+    questions_db_collection: str,
+) -> pd.DataFrame:
+    docs_df = sl_get_docs_df(docs_db_directory, docs_db_collection)
+    docs_df["type"] = "doc"
+    questions_df = sl_get_questions_df(questions_db_directory, questions_db_collection)
+    questions_df["type"] = "question"
+
+    questions_df["num_sources"] = questions_df["sources"].apply(len)
+    questions_df["first_source"] = questions_df["sources"].apply(
+        lambda x: next(iter(x), None)
+    )
+
+    if len(questions_df):
+        docs_df["used_by_questions"] = docs_df["id"].apply(
+            lambda doc_id: questions_df[
+                questions_df["sources"].apply(lambda sources: doc_id in sources)
+            ]["id"].tolist()
+        )
+    else:
+        docs_df["used_by_questions"] = [[] for _ in range(len(docs_df))]
+    docs_df["used_by_num_questions"] = docs_df["used_by_questions"].apply(len)
+    docs_df["used_by_question_first"] = docs_df["used_by_questions"].apply(
+        lambda x: next(iter(x), None)
+    )
+
+    df = pd.concat([docs_df, questions_df], ignore_index=True)
+    return df
+def sl_get_docs_df(db_directory: Path, db_collection: str) -> pd.DataFrame:
+    try:
+        _assert_collection_exists(db_directory, db_collection)
+    except Exception:
+        return pd.DataFrame(columns=["id", "source", "page", "document", "embedding"])
+    vectorstore = get_chromadb(
+        persist_directory=db_directory, collection_name=db_collection
+    )
+    response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
+    return pd.DataFrame(
+        {
+            "id": response["ids"],
+            "source": [metadata.get("source") for metadata in response["metadatas"]],
+            "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
+            "document": response["documents"],
+            "embedding": response["embeddings"],
+        }
+    )
+
+
+def sl_get_questions_df(db_directory: Path, db_collection: str) -> pd.DataFrame:
+    try:
+        _assert_collection_exists(db_directory, db_collection)
+    except Exception:
+        return pd.DataFrame(
+            columns=["id", "question", "answer", "sources", "embedding"]
+        )
+    vectorstore = get_chromadb(
+        persist_directory=db_directory, collection_name=db_collection
+    )
+    response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
+    return pd.DataFrame(
+        {
+            "id": response["ids"],
+            "question": response["documents"],
+            "answer": [metadata.get("answer") for metadata in response["metadatas"]],
+            "sources": [
+                metadata.get("sources").split(",") for metadata in response["metadatas"]
+            ],
+            "embedding": response["embeddings"],
+        }
+    )
