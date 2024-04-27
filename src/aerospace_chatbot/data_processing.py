@@ -481,7 +481,6 @@ def upsert_docs(index_type: str,
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-            vectorstore.persist()    
             retriever = vectorstore.as_retriever()
         elif index_type == "RAGatouille":
             # Create an index from the vectorstore.

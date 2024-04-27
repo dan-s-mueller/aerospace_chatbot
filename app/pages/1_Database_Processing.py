@@ -62,7 +62,7 @@ if st.session_state["authentication_status"]:
 
     # Set database name
     database_appendix=st.text_input('Appendix for database name','ams')
-    database_name = (sb['index_type'] + '-' + sb['embedding_name'].replace('/', '-') + '-' + database_appendix).lower()
+    database_name = (sb['embedding_name'].replace('/', '-') + '-' + database_appendix).lower()
 
     # Add an expandable box for options
     with st.expander("Options",expanded=True):

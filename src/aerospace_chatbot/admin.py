@@ -139,7 +139,7 @@ def load_sidebar(config_file,
                         name=[]
                         for index in indices['message']:
                             # Be compatible with embedding types already used. Pinecone only supports lowercase.
-                            if index.name.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()):    
+                            if index.name.startswith((sb_out['embedding_name'].replace('/', '-')).lower()):    
                                 if not index.name.endswith('-queries'): # Don't list query database as selectable
                                     if sb_out['rag_type']=='Parent-Child':
                                         if index.name.endswith('-parent-child'):
@@ -162,6 +162,7 @@ def load_sidebar(config_file,
                     indices=show_pinecone_indexes(format=False)
                     if indices['status']:
                         name=[]
+                        # TODO update the name selection to be the same as the ChromaDB setup
                         for index in indices['message']:
                             if index['status']['state']=='Ready':
                                 name.append(index['name'])

@@ -139,10 +139,10 @@ class QA_Model:
         
         # Iniialize a database to capture queries in a temp database
         if self.index_type=='ChromaDB':
-            self.query_vectorstore=data_processing.initialize_database('Standard',
+            self.query_vectorstore=data_processing.initialize_database(self.index_type,
                                                                  self.index_name+'-queries',
                                                                  self.query_model,
-                                                                 self.rag_type,
+                                                                 'Standard',    # Regardless of doc_vectorstore, query_vectorstore is always Standard
                                                                  local_db_path=os.path.join(self.local_db_path,'-queries'),
                                                                  init_ragatouille=False)
 
@@ -185,6 +185,8 @@ class QA_Model:
 
         # Retrieve memory, invoke chain
         self.memory.load_memory_variables({})
+
+        # TODO add error checking for max window length of a given model.
         self.result = self.conversational_qa_chain.invoke({'question': query})
 
         # Add sources to response
