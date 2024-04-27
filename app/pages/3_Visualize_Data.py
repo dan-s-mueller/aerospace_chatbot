@@ -114,7 +114,7 @@ query = st.text_input('Query', 'What are examples of lubricants which should be 
 
 viewer = data_processing.sl_get_or_create_spotlight_viewer()
 
-if st.button('Explore'):
+if st.button('Visualize'):
     df = data_processing.sl_get_docs_questions_df(
         settings.docs_db_directory,
         settings.docs_db_collection,

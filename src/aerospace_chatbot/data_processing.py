@@ -151,8 +151,6 @@ def chunk_docs(docs: List[str],
     pages=[]
     chunks=[]
     
-    merged_docs = []
-    
     # Parse doc pages
     for i, doc in enumerate(docs):
         
@@ -178,7 +176,6 @@ def chunk_docs(docs: List[str],
                                   'source': str([doc.metadata['source'] for doc in group])}
                 merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
                 pages.append(merged_doc)
-            # pages = merged_docs
         else:
             pages.extend(doc_pages)
     
@@ -193,7 +190,6 @@ def chunk_docs(docs: List[str],
                 if show_progress:
                     progress_percentage = i / len(page_chunks)
                     my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
-                # chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
                 chunks.append(chunk)    # Not sanitized because the page already was
         elif chunk_method=='None':
             text_splitter = None
@@ -336,12 +332,26 @@ def initialize_database(index_type: str,
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
+        # TODO add in collection metadata like this:
+            #         collection_metadata = {}
+            # if embeddings_model is not None:
+            #     model_name, model_type = get_embeddings_model_config(embeddings_model)
+            #     collection_metadata["model_name"] = model_name
+            #     collection_metadata["model_type"] = model_type
+
+            # if isinstance(relevance_score_fn, str):
+            #     assert relevance_score_fn in get_args(PredefinedRelevanceScoreFn)
+            #     collection_metadata["hnsw:space"] = relevance_score_fn
+            # else:
+            #     kwargs["relevance_score_fn"] = relevance_score_fn
+            # kwargs["collection_metadata"] = collection_metadata
+            # return Chroma(**kwargs)
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
         vectorstore = Chroma(client=persistent_client,
                                 collection_name=index_name,
-                                embedding_function=query_model)     
+                                embedding_function=query_model) 
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')   
@@ -471,6 +481,7 @@ def upsert_docs(index_type: str,
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+            vectorstore.persist()    
             retriever = vectorstore.as_retriever()
         elif index_type == "RAGatouille":
             # Create an index from the vectorstore.
@@ -917,14 +928,19 @@ def sl_get_docs_questions_df(
 
     df = pd.concat([docs_df, questions_df], ignore_index=True)
     return df
-def sl_get_docs_df(db_directory: Path, db_collection: str) -> pd.DataFrame:
-    try:
-        _assert_collection_exists(db_directory, db_collection)
-    except Exception:
-        return pd.DataFrame(columns=["id", "source", "page", "document", "embedding"])
-    vectorstore = get_chromadb(
-        persist_directory=db_directory, collection_name=db_collection
-    )
+def sl_get_docs_df(local_db_path: Path, index_name: str, query_model: object):
+    # try:
+    #     _assert_collection_exists(db_directory, db_collection)
+    # except Exception:
+    #     return pd.DataFrame(columns=["id", "source", "page", "document", "embedding"])
+    # vectorstore = get_chromadb(
+    #     persist_directory=db_directory, collection_name=db_collection
+    # )
+    persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
+    vectorstore = Chroma(client=persistent_client,
+                            collection_name=index_name,
+                            embedding_function=query_model) 
+
     response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
     return pd.DataFrame(
         {
@@ -935,18 +951,21 @@ def sl_get_docs_df(db_directory: Path, db_collection: str) -> pd.DataFrame:
             "embedding": response["embeddings"],
         }
     )
+def sl_get_questions_df(local_db_path: Path, index_name: str, query_model: object):
+    # try:
+    #     _assert_collection_exists(db_directory, db_collection)
+    # except Exception:
+    #     return pd.DataFrame(
+    #         columns=["id", "question", "answer", "sources", "embedding"]
+    #     )
+    # vectorstore = get_chromadb(
+    #     persist_directory=db_directory, collection_name=db_collection
+    # )
+    persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
+    vectorstore = Chroma(client=persistent_client,
+                            collection_name=index_name,
+                            embedding_function=query_model) 
 
-
-def sl_get_questions_df(db_directory: Path, db_collection: str) -> pd.DataFrame:
-    try:
-        _assert_collection_exists(db_directory, db_collection)
-    except Exception:
-        return pd.DataFrame(
-            columns=["id", "question", "answer", "sources", "embedding"]
-        )
-    vectorstore = get_chromadb(
-        persist_directory=db_directory, collection_name=db_collection
-    )
     response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
     return pd.DataFrame(
         {

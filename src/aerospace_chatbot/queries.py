@@ -10,6 +10,8 @@ import pinecone
 from pinecone import Pinecone as pinecone_client
 import chromadb
 
+from langchain_core.documents import Document
+
 from langchain_openai import ChatOpenAI
 
 from langchain_pinecone import Pinecone
@@ -27,6 +29,7 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain.schema import format_document
 from langchain_core.messages import get_buffer_string
 
+import data_processing
 from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS, GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
 
 # Set secrets from environment file
@@ -136,17 +139,18 @@ class QA_Model:
         
         # Iniialize a database to capture queries in a temp database
         if self.index_type=='ChromaDB':
-            self.query_vectorstore=data_processing.initialize_database(self.index_type,
+            self.query_vectorstore=data_processing.initialize_database('Standard',
                                                                  self.index_name+'-queries',
                                                                  self.query_model,
                                                                  self.rag_type,
                                                                  local_db_path=os.path.join(self.local_db_path,'-queries'),
                                                                  init_ragatouille=False)
 
+        # Initialize retriever
         if self.rag_type=='Standard':  
             if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
                 self.retriever=self.doc_vectorstore.as_retriever(search_type=self.search_type,
-                                                             search_kwargs=search_kwargs)
+                                                                 search_kwargs=search_kwargs)
             elif self.index_type=='RAGatouille':
                 self.retriever=self.doc_vectorstore.as_langchain_retriever(k=search_kwargs['k'])  
         elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':
@@ -189,13 +193,9 @@ class QA_Model:
 
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
-        # TODO upsert query into query database
-        chunker={}
-        self.query_vectorstore, _ = data_processing.upsert_docs(self.index_type,
-                                                                self.index_name+'-queries',
-                                                                self.query_vectorstore,
-                                                                chunker,
-                                                                local_db_path=os.path.join(self.local_db_path,'-queries'))
+        # Upsert query into query database
+        self.query_vectorstore.add_documents([_question_as_doc(query, self.result)])
+        self.query_vectorstore.persist()
         
     def update_model(self,
                      llm:ChatOpenAI):
@@ -343,3 +343,13 @@ def _process_retriever_args(search_type='similarity',
         search_kwargs={'k':k} # See as_retriever docs for parameters
     
     return search_kwargs
+def _question_as_doc(question: str, rag_answer: dict):
+    sources = [data.metadata for data in rag_answer['references']]
+
+    return Document(
+        page_content=question,
+        metadata={
+            "answer": rag_answer["answer"],
+            "sources": ",".join(map(data_processing._stable_hash_meta, rag_answer["source_documents"])),
+        },
+    )
