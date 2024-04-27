@@ -140,9 +140,8 @@ class QA_Model:
                                                                  self.index_name+'-queries',
                                                                  self.query_model,
                                                                  self.rag_type,
-                                                                 local_db_path=os.path.join(self.local_db_path,'queries'),
+                                                                 local_db_path=os.path.join(self.local_db_path,'-queries'),
                                                                  init_ragatouille=False)
-        # TODO add question upload.
 
         if self.rag_type=='Standard':  
             if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
@@ -189,6 +188,14 @@ class QA_Model:
             raise NotImplementedError
 
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
+
+        # TODO upsert query into query database
+        chunker={}
+        self.query_vectorstore, _ = data_processing.upsert_docs(self.index_type,
+                                                                self.index_name+'-queries',
+                                                                self.query_vectorstore,
+                                                                chunker,
+                                                                local_db_path=os.path.join(self.local_db_path,'-queries'))
         
     def update_model(self,
                      llm:ChatOpenAI):

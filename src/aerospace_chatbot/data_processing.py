@@ -433,7 +433,7 @@ def upsert_docs(index_type: str,
                 show_progress: bool = False,
                 local_db_path: str = '.'):
     """
-    Upserts documents into the specified index. Uses tenacity with exponential backoff to retry upserting documents.
+    Upserts documents into the specified index.
 
     Args:
         index_type (str): The type of index to upsert the documents into.
