@@ -182,15 +182,17 @@ class QA_Model:
         Returns:
             None
         """       
+
+        # Retrieve memory, invoke chain
         self.memory.load_memory_variables({})
         self.result = self.conversational_qa_chain.invoke({'question': query})
 
+        # Add sources to response
         self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
         if self.llm.__class__.__name__=='ChatOpenAI':
             self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
         else:
             raise NotImplementedError
-
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
         # Upsert query into query database

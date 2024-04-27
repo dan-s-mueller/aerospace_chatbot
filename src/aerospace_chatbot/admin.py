@@ -138,17 +138,17 @@ def load_sidebar(config_file,
                     if indices['status']:
                         name=[]
                         for index in indices['message']:
-                            # TODO filter out query databases
                             # Be compatible with embedding types already used. Pinecone only supports lowercase.
                             if index.name.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()):    
-                                if sb_out['rag_type']=='Parent-Child':
-                                    if index.name.endswith('-parent-child'):
+                                if not index.name.endswith('-queries'): # Don't list query database as selectable
+                                    if sb_out['rag_type']=='Parent-Child':
+                                        if index.name.endswith('-parent-child'):
+                                            name.append(index.name)
+                                    elif sb_out['rag_type']=='Summary':
+                                        if index.name.endswith('-summary'):
+                                            name.append(index.name)
+                                    else:
                                         name.append(index.name)
-                                elif sb_out['rag_type']=='Summary':
-                                    if index.name.endswith('-summary'):
-                                        name.append(index.name)
-                                else:
-                                    name.append(index.name)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                         try:
                             if len(name) == 0:
@@ -411,7 +411,6 @@ def show_pinecone_indexes(format=True):
                     If format is False, returns a dictionary containing the Pinecone status.
 
     """
-    print(os.getenv('PINECONE_API_KEY'))
     if os.getenv('PINECONE_API_KEY') is None or os.getenv('PINECONE_API_KEY')=='':
         pinecone_status = {'status': False, 'message': 'Pinecone API Key is not set.'}
     else:
@@ -686,19 +685,6 @@ def _format_key_status(key_status: str):
 
     Returns:
         str: The formatted string representing the key status.
-
-    Example:
-        key_status = {
-            'key1': {'status': True},
-            'key2': {'status': False},
-            'key3': {'status': True}
-        }
-        formatted_status = _format_key_status(key_status)
-        print(formatted_status)
-        # Output:
-        # - key1: :heavy_check_mark:
-        # - key2: :x:
-        # - key3: :heavy_check_mark:
     """
     formatted_status = ""
     for key, value in key_status.items():
