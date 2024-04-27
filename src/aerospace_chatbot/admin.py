@@ -138,6 +138,7 @@ def load_sidebar(config_file,
                     if indices['status']:
                         name=[]
                         for index in indices['message']:
+                            # TODO filter out query databases
                             # Be compatible with embedding types already used. Pinecone only supports lowercase.
                             if index.name.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()):    
                                 if sb_out['rag_type']=='Parent-Child':
