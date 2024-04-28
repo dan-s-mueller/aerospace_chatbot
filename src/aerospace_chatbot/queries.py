@@ -86,7 +86,8 @@ class QA_Model:
                  search_type:str='similarity',
                  fetch_k:int=50,
                  temperature:int=0,
-                 local_db_path:str='.'):
+                 local_db_path:str='.',
+                 reset_query_db:bool=False):
         """
         Initializes a new instance of the QA_Model class.
 
@@ -101,6 +102,7 @@ class QA_Model:
             fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50. Does not apply to RAGatouille.
             temperature (int, optional): The temperature for response generation. Defaults to 0.
             local_db_path (str, optional): The path to the local database. Defaults to '.'.
+            reset_query_db (bool, optional): Whether to reset the query database. Defaults to False.
 
         """
         self.index_type=index_type
@@ -135,6 +137,7 @@ class QA_Model:
                                                              self.query_model,
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
+                                                             clear=reset_query_db,
                                                              init_ragatouille=False)  
         
         # Iniialize a database to capture queries in a temp database
@@ -143,7 +146,7 @@ class QA_Model:
                                                                  self.index_name+'-queries',
                                                                  self.query_model,
                                                                  'Standard',    # Regardless of doc_vectorstore, query_vectorstore is always Standard
-                                                                 local_db_path=os.path.join(self.local_db_path,'-queries'),
+                                                                 local_db_path=self.local_db_path,
                                                                  init_ragatouille=False)
 
         # Initialize retriever
@@ -199,7 +202,6 @@ class QA_Model:
 
         # Upsert query into query database
         self.query_vectorstore.add_documents([_question_as_doc(query, self.result)])
-        self.query_vectorstore.persist()
         
     def update_model(self,
                      llm:ChatOpenAI):
@@ -347,13 +349,13 @@ def _process_retriever_args(search_type='similarity',
         search_kwargs={'k':k} # See as_retriever docs for parameters
     
     return search_kwargs
-def _question_as_doc(question: str, rag_answer: dict):
+def _question_as_doc(question: str, rag_answer: dict):    
     sources = [data.metadata for data in rag_answer['references']]
 
     return Document(
         page_content=question,
         metadata={
-            "answer": rag_answer["answer"],
-            "sources": ",".join(map(data_processing._stable_hash_meta, rag_answer["source_documents"])),
+            "answer": rag_answer['answer'].content,
+            "sources": ",".join(map(data_processing._stable_hash_meta, sources)),
         },
     )

@@ -125,9 +125,6 @@ def load_sidebar(config_file,
             if embeddings and rag_type:
                 # Index Name 
                 st.sidebar.title('Index Selected')  
-                # sb_out['index_name'] = (sb_out['embedding_name'].replace('/', '-')).lower()
-                # st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='An index appendix is added on creation under Database Processing.')
-                
                 # For each index type, list indices available for the base name
                 if sb_out['index_type']=='ChromaDB':
                     indices=show_chroma_collections(format=False)
@@ -146,12 +143,6 @@ def load_sidebar(config_file,
                                     else:
                                         name.append(index.name)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
-                        try:
-                            if len(name) == 0:
-                                raise DatabaseException('No collections found for the selected index type/embedding. Create a new database, or select another index type/embedding.','NO_COMPATIBLE_COLLECTIONS')
-                        except DatabaseException as e:
-                            st.warning(f"{e}")
-                            st.stop()
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
                 elif sb_out['index_type']=='Pinecone':
@@ -183,6 +174,14 @@ def load_sidebar(config_file,
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
+                else:
+                    raise NotImplementedError
+                try:
+                    if len(name) == 0:
+                        raise DatabaseException('No collections found for the selected index type/embedding. Create a new database, or select another index type/embedding.','NO_COMPATIBLE_COLLECTIONS')
+                except DatabaseException as e:
+                    st.warning(f"{e}")
+                    st.stop()
             else:
                 raise ValueError('Embeddings must be enabled to select an index name.')
         if llm:

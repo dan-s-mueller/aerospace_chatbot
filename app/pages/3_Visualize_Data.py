@@ -1,4 +1,4 @@
-import os, sys, json, time, logging
+import os, sys, json, time
 from datetime import datetime
 import streamlit as st
 import pandas as pd
@@ -28,21 +28,16 @@ if 'rx_client' not in st.session_state:
 if 'chroma_client' not in st.session_state:
     st.session_state.chroma_client = None
 
-# Populate the main screen
-logging.info(f'index_type test, {sb["index_type"]}')
-
 # Set the query model
 if sb["index_type"]=='RAGatouille':
     raise Exception('Only index type ChromaDB is supported for this function.')
 elif sb["index_type"]=='Pinecone':
     raise Exception('Only index type ChromaDB is supported for this function.')
 elif sb['query_model']=='OpenAI' or sb['query_model']=='Voyage':
-    logging.info('Set embeddings model for queries.')
     if sb['query_model']=='OpenAI':
         query_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
     elif sb['query_model']=='Voyage':
         query_model=VoyageAIEmbeddings(model='voyage-2', voyage_api_key=secrets['VOYAGE_API_KEY'])
-logging.info('Query model set: '+str(query_model))
 
 st.info('You must have created a database using Document Upload in ChromaDB for this to work.')
 

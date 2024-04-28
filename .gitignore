@@ -24,7 +24,7 @@ notebooks/rag_response_cache.json
 # Databases
 db/chromadb
 db/.ragatouille/*
-!db/.ragatouille/colbert/indexes/ragatouille-colbert-ir-colbertv2.0-ams-15merge-2000-2020/
+!db/.ragatouille/colbert/indexes/colbert-ir-colbertv2.0-ams-15merge-2000-2020/
 db/local_file_store
 
 # Tests

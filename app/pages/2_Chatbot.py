@@ -1,4 +1,4 @@
-import os, sys, time, logging
+import os, sys, time
 import streamlit as st
 
 from langchain_community.vectorstores import Pinecone
@@ -47,20 +47,18 @@ with st.expander('''What's under the hood?'''):
     * What can you tell me about the efficacy of lead naphthenate for wear protection in space mechanisms?
     ''')
 
+reset_query_db=st.checkbox('Reset query database?', value=False, help='This will reset the query database used for visualization.')
+
 # Set up chat history
 if 'qa_model_obj' not in st.session_state:
     st.session_state.qa_model_obj = []
-    logging.info('QA model object initialized.')
 if 'message_id' not in st.session_state:
     st.session_state.message_id = 0
-    logging.info('Message ID initialized.')
 if 'messages' not in st.session_state:
     st.session_state.messages = []
-    logging.info('Messages initialized.')
 for message in st.session_state.messages:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
-    logging.info('Chat history loaded.')
 
 # Define chat
 if prompt := st.chat_input('Prompt here'):
@@ -94,7 +92,9 @@ if prompt := st.chat_input('Prompt here'):
                                                                rag_type=sb['rag_type'],
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
-                                                               local_db_path=paths['db_folder_path'])
+                                                               local_db_path=paths['db_folder_path'],
+                                                               reset_query_db=reset_query_db)
+                reset_query_db=None
             if st.session_state.message_id>1:
                 # Update LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
