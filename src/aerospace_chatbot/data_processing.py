@@ -333,19 +333,19 @@ def initialize_database(index_type: str,
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
         # TODO add in collection metadata like this:
-            #         collection_metadata = {}
-            # if embeddings_model is not None:
-            #     model_name, model_type = get_embeddings_model_config(embeddings_model)
-            #     collection_metadata["model_name"] = model_name
-            #     collection_metadata["model_type"] = model_type
+        #         collection_metadata = {}
+        # if embeddings_model is not None:
+        #     model_name, model_type = get_embeddings_model_config(embeddings_model)
+        #     collection_metadata["model_name"] = model_name
+        #     collection_metadata["model_type"] = model_type
 
-            # if isinstance(relevance_score_fn, str):
-            #     assert relevance_score_fn in get_args(PredefinedRelevanceScoreFn)
-            #     collection_metadata["hnsw:space"] = relevance_score_fn
-            # else:
-            #     kwargs["relevance_score_fn"] = relevance_score_fn
-            # kwargs["collection_metadata"] = collection_metadata
-            # return Chroma(**kwargs)
+        # if isinstance(relevance_score_fn, str):
+        #     assert relevance_score_fn in get_args(PredefinedRelevanceScoreFn)
+        #     collection_metadata["hnsw:space"] = relevance_score_fn
+        # else:
+        #     kwargs["relevance_score_fn"] = relevance_score_fn
+        # kwargs["collection_metadata"] = collection_metadata
+        # return Chroma(**kwargs)
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
@@ -870,7 +870,19 @@ def _stable_hash_meta(metadata: dict) -> str:
         str: The hexadecimal representation of the hashed metadata.
     """
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-
+def _check_db_name(index_type:str,index_name:object):
+    if index_type=="Pinecone":
+        if len(index_name)>45:
+            raise ValueError(f'The Pinecone index name must be less than 45 characters. Entry: {index_name}')
+    elif index_type=="ChromaDB":
+        if len(index_name) > 63:
+            raise ValueError(f'The ChromaDB collection name must be less than 63 characters. Entry: {index_name}')
+        if not index_name[0].isalnum() or not index_name[-1].isalnum():
+            raise ValueError(f'The ChromaDB collection name must start and end with an alphanumeric character. Entry: {index_name}')
+        if not re.match(r'^[a-zA-Z0-9_-]+$', index_name):
+            raise ValueError(f'The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {index_name}')
+        if '..' in index_name:
+            raise ValueError(f'The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}')
 
 ### Stuff to test out spotlight
 # TODO implement function tie in with qa object

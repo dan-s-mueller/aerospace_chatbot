@@ -3,7 +3,6 @@ from prompts import TEST_QUERY_PROMPT
 
 import inspect
 import os
-import logging
 import json
 import streamlit as st
 from dotenv import load_dotenv,find_dotenv
@@ -44,7 +43,7 @@ def load_sidebar(config_file,
                  vector_database=False,
                  embeddings=False,
                  rag_type=False,
-                 index_name=False,
+                 index_selected=False,
                  llm=False,
                  model_options=False,
                  secret_keys=False):
@@ -56,7 +55,7 @@ def load_sidebar(config_file,
         vector_database (bool, optional): Whether to include the vector database in the sidebar. Defaults to False.
         embeddings (bool, optional): Whether to include embeddings in the sidebar. Defaults to False.
         rag_type (bool, optional): Whether to include RAG type in the sidebar. Defaults to False.
-        index_name (bool, optional): Whether to include index name in the sidebar. Defaults to False.
+        index_selected (bool, optional): Whether to include index name in the sidebar. Defaults to False.
         llm (bool, optional): Whether to include LLM in the sidebar. Defaults to False.
         model_options (bool, optional): Whether to include model options in the sidebar. Defaults to False.
         secret_keys (bool, optional): Whether to include secret keys in the sidebar. Defaults to False.
@@ -80,7 +79,6 @@ def load_sidebar(config_file,
     if vector_database:
         st.sidebar.title('Vector database')
         sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=1,help='Select the type of index to use.')
-        logging.info('Index type: '+sb_out['index_type'])
 
         if embeddings:
             # Embeddings
@@ -123,14 +121,12 @@ def load_sidebar(config_file,
                                                                 'http://localhost:1234/v1',
                                                                 help='See LM studio configuration for local host URL.')
                         st.sidebar.warning('You must load a model in LM studio first for this to work.')
-            logging.info('RAG type: '+sb_out['rag_type'])
-        if index_name:
+        if index_selected:
             if embeddings and rag_type:
                 # Index Name 
-                st.sidebar.title('Index Name')  
-                sb_out['index_name'] = (sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()
-                st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='An index appendix is added on creation under Database Processing.')
-                logging.info('Index name: '+sb_out['index_name'])
+                st.sidebar.title('Index Selected')  
+                # sb_out['index_name'] = (sb_out['embedding_name'].replace('/', '-')).lower()
+                # st.sidebar.markdown('Index base name: '+sb_out['index_name'],help='An index appendix is added on creation under Database Processing.')
                 
                 # For each index type, list indices available for the base name
                 if sb_out['index_type']=='ChromaDB':
@@ -162,10 +158,19 @@ def load_sidebar(config_file,
                     indices=show_pinecone_indexes(format=False)
                     if indices['status']:
                         name=[]
-                        # TODO update the name selection to be the same as the ChromaDB setup
                         for index in indices['message']:
-                            if index['status']['state']=='Ready':
-                                name.append(index['name'])
+                            # if index['status']['state']=='Ready':
+                            #     name.append(index['name'])
+                            if index['name'].startswith((sb_out['embedding_name'].replace('/', '-')).lower()):    
+                                if not index['name'].endswith('-queries'): # Don't list query database as selectable
+                                    if sb_out['rag_type']=='Parent-Child':
+                                        if index['name'].endswith('-parent-child'):
+                                            name.append(index['name'])
+                                    elif sb_out['rag_type']=='Summary':
+                                        if index['name'].endswith('-summary'):
+                                            name.append(index['name'])
+                                    else:
+                                        name.append(index['name'])
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                 elif sb_out['index_type']=='RAGatouille':
                     indices=show_ragatouille_indexes(format=False)
@@ -173,7 +178,7 @@ def load_sidebar(config_file,
                         name=[]
                         for index in indices['message']:
                             # Be compatible with embedding types already used. Pinecone only supports lowercase.
-                            if index.startswith((sb_out['index_type'] + '-' + sb_out['embedding_name'].replace('/', '-')).lower()):    
+                            if index.startswith((sb_out['embedding_name'].replace('/', '-')).lower()):    
                                 name.append(index)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                     else:
@@ -184,7 +189,6 @@ def load_sidebar(config_file,
             # LLM
             st.sidebar.title('LLM',help='See LLM leaderboard here for performance overview: https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard')
             sb_out['llm_source']=st.sidebar.selectbox('LLM model', list(llms.keys()), index=0,help='Select the LLM model for the application.')
-            logging.info('LLM source: '+sb_out['llm_source'])
             if sb_out['llm_source']=='OpenAI':
                 sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0,help='Select the OpenAI model for the application.')
             elif sb_out['llm_source']=='Hugging Face':
@@ -220,7 +224,7 @@ def load_sidebar(config_file,
                                             'search_type':None,
                                             'temperature':temperature}
     else:
-        if embeddings or rag_type or index_name or llm or model_options:
+        if embeddings or rag_type or index_selected or llm or model_options:
             # Must have vector database for any of this functionality.
             raise ValueError('Vector database must be enabled to use these options.')
 

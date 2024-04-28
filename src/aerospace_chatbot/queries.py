@@ -186,7 +186,7 @@ class QA_Model:
         # Retrieve memory, invoke chain
         self.memory.load_memory_variables({})
 
-        # TODO add error checking for max window length of a given model.
+        # TODO add error checking for max token length of a given model.
         self.result = self.conversational_qa_chain.invoke({'question': query})
 
         # Add sources to response

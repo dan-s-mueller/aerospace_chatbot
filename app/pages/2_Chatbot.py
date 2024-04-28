@@ -32,7 +32,7 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
                                      {'vector_database':True,
                                       'embeddings':True,
                                       'rag_type':True,
-                                      'index_name':True,
+                                      'index_selected':True,
                                       'llm':True,
                                       'model_options':True,
                                       'secret_keys':True})
