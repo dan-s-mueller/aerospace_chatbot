@@ -75,12 +75,12 @@ Frameworks
 ^^^^^^^^^^
 
 - `Langchain <https://python.langchain.com/docs/get_started/introduction>`_, this is a framework for building AI applications.
-- `Langsmith <https://smith.langchain.com/>`_, this is a platform for debugging and data analysis for inputs/outputs/runtime of AI models.
+- `Langsmith <https://smith.langchain.com/>`__, this is a platform for debugging and data analysis for inputs/outputs/runtime of AI models.
 
 API key links
 ^^^^^^^^^^^^^
 
-- `OpenAI <https://platform.openai.com/api-keys>`_
-- `Pinecone <https://www.pinecone.io>`_
-- `Hugging Face Hub <https://huggingface.co/settings/tokens>`_
-- `Voyage <https://dash.voyageai.com/api-keys>`_
+- `OpenAI <https://platform.openai.com/api-keys>`__
+- `Pinecone <https://www.pinecone.io>`__
+- `Hugging Face Hub <https://huggingface.co/settings/tokens>`__
+- `Voyage <https://dash.voyageai.com/api-keys>`__

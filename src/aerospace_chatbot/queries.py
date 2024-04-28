@@ -32,12 +32,6 @@ from langchain_core.messages import get_buffer_string
 import data_processing
 from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS, GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
 
-# Set secrets from environment file
-OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
-VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
-PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
-HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN') 
-
 # Class and functions
 class QA_Model:
     """

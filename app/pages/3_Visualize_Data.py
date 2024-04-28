@@ -19,7 +19,7 @@ paths,sb,secrets=admin.st_setup_page('Visualize Data',
                                      {'vector_database':True,
                                       'embeddings':True,
                                       'rag_type':True,
-                                      'index_name':True,
+                                      'index_selected':True,
                                       'secret_keys':True})
 
 # Set up session state variables
@@ -89,7 +89,7 @@ st.session_state.chroma_client = chromadb.PersistentClient(path=os.path.join(pat
 #     else:
 #         import_file_path=None
     
-query = st.text_input('Query', 'What are examples of lubricants which should be avoided for space mechanism applications?')
+# query = st.text_input('Query', 'What are examples of lubricants which should be avoided for space mechanism applications?')
 
 #     if st.button('Visualize data'):
 #         start_time = time.time()  # Start the timer
@@ -111,9 +111,9 @@ viewer = data_processing.sl_get_or_create_spotlight_viewer()
 
 if st.button('Visualize'):
     df = data_processing.sl_get_docs_questions_df(
-        settings.docs_db_directory,
-        settings.docs_db_collection,
-        settings.questions_db_directory,
-        settings.questions_db_collection,
+        paths['db_folder_path'],
+        sb['index_selected'],
+        paths['db_folder_path'],
+        sb['index_selected']+'-queries',
     )
     viewer.show(df, wait=False)

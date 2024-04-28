@@ -78,4 +78,4 @@ Hugging Face Spaces
 
 Aerospace Chatbot is deployed on Hugging Face spaces with pre-loaded Aerospace Mechanisms Symposia papers. By default, the papers which can be queried are those which are committed to the Aerospace Chatbot repository here: `data/AMS <https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS>`__.
 
-This app is available at `Aerospace Chatbot <https://huggingface.co/llm/rag-chatbot>`_.
+This app is available at `Aerospace Chatbot <https://huggingface.co/llm/rag-chatbot>`__.
