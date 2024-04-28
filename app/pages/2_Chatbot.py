@@ -47,7 +47,9 @@ with st.expander('''What's under the hood?'''):
     * What can you tell me about the efficacy of lead naphthenate for wear protection in space mechanisms?
     ''')
 
-reset_query_db=st.checkbox('Reset query database?', value=False, help='This will reset the query database used for visualization.')
+# Add reset option for query database
+reset_query_db = st.empty()
+reset_query_db.checkbox('Reset query database?', value=False, help='This will reset the query database used for visualization.')
 
 # Set up chat history
 if 'qa_model_obj' not in st.session_state:
@@ -76,7 +78,7 @@ if prompt := st.chat_input('Prompt here'):
             st.session_state.message_id += 1
             st.write(f'*Starting response generation for message: {str(st.session_state.message_id)}*')
             
-            if st.session_state.message_id==1:
+            if st.session_state.message_id==1:  # Initialize chat
                 query_model = admin.get_query_model(sb, secrets)    # Set query model
                 llm=admin.set_llm(sb,secrets,type='prompt') # Define LLM
 
@@ -94,8 +96,8 @@ if prompt := st.chat_input('Prompt here'):
                                                                search_type=search_type,
                                                                local_db_path=paths['db_folder_path'],
                                                                reset_query_db=reset_query_db)
-                reset_query_db=None
-            if st.session_state.message_id>1:
+                reset_query_db.empty()  # Remove this option after initialization
+            if st.session_state.message_id>1:   # Chat after first message and initialization
                 # Update LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
 

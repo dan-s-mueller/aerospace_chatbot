@@ -137,7 +137,7 @@ class QA_Model:
                                                              self.query_model,
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
-                                                             clear=reset_query_db,
+                                                             clear=False,
                                                              init_ragatouille=False)  
         
         # Iniialize a database to capture queries in a temp database
@@ -147,7 +147,7 @@ class QA_Model:
                                                                  self.query_model,
                                                                  'Standard',    # Regardless of doc_vectorstore, query_vectorstore is always Standard
                                                                  local_db_path=self.local_db_path,
-                                                                 init_ragatouille=False)
+                                                                 clear=reset_query_db)
 
         # Initialize retriever
         if self.rag_type=='Standard':  
