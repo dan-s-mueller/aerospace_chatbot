@@ -23,7 +23,7 @@ from ragxplorer import RAGxplorer
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 from data_processing import chunk_docs, initialize_database, load_docs, \
-      delete_index, reduce_vector_query_size, create_data_viz, _stable_hash_meta
+      delete_index, _stable_hash_meta
 from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
 from queries import QA_Model
 
@@ -1091,116 +1091,117 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
                        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
 
 # Test data visualization
-def test_reduce_vector_query_size(setup_fixture):
-    '''
-    Test function to verify the behavior of the reduce_vector_query_size function.
+# TODO write new cases for spotlight visualization
+# def test_reduce_vector_query_size(setup_fixture):
+#     '''
+#     Test function to verify the behavior of the reduce_vector_query_size function.
 
-    Args:
-        setup_fixture: The setup fixture for the test.
+#     Args:
+#         setup_fixture: The setup fixture for the test.
 
-    Raises:
-        Exception: If an error occurs during the test.
+#     Raises:
+#         Exception: If an error occurs during the test.
 
-    Returns:
-        None
-    '''
-    index_name = 'test-index'
-    rx_client, chroma_client = viz_database_setup(index_name, setup_fixture)
+#     Returns:
+#         None
+#     '''
+#     index_name = 'test-index'
+#     rx_client, chroma_client = viz_database_setup(index_name, setup_fixture)
 
-    try:
-        collection = chroma_client.get_collection(name=index_name, embedding_function=rx_client._chosen_embedding_model)
-        rx_client.load_chroma(collection, initialize_projector=True)
-        vector_qty = 3  # Do a small quantity for the test
+#     try:
+#         collection = chroma_client.get_collection(name=index_name, embedding_function=rx_client._chosen_embedding_model)
+#         rx_client.load_chroma(collection, initialize_projector=True)
+#         vector_qty = 3  # Do a small quantity for the test
 
-        rx_client = reduce_vector_query_size(rx_client, chroma_client, vector_qty, verbose=True)
-        assert len(rx_client._documents.embeddings) == vector_qty
-        assert len(rx_client._documents.text) == vector_qty
-        assert len(rx_client._documents.ids) == vector_qty
-        chroma_client.delete_collection(name=rx_client._vectordb.name)
-    except Exception as e:
-        chroma_client.delete_collection(name=rx_client._vectordb.name)
-        raise e
-def test_create_data_viz_no_limit(setup_fixture):
-    '''
-    Test case: Without limit_size_qty and df_export_path
+#         rx_client = reduce_vector_query_size(rx_client, chroma_client, vector_qty, verbose=True)
+#         assert len(rx_client._documents.embeddings) == vector_qty
+#         assert len(rx_client._documents.text) == vector_qty
+#         assert len(rx_client._documents.ids) == vector_qty
+#         chroma_client.delete_collection(name=rx_client._vectordb.name)
+#     except Exception as e:
+#         chroma_client.delete_collection(name=rx_client._vectordb.name)
+#         raise e
+# def test_create_data_viz_no_limit(setup_fixture):
+#     '''
+#     Test case: Without limit_size_qty and df_export_path
 
-    This test case verifies the behavior of the create_data_viz function when called without providing
-    the limit_size_qty and df_export_path parameters. It performs the following steps:
-    1. Sets up the necessary fixtures for the test.
-    2. Sets up the RX and Chroma clients for visualization database.
-    3. Calls the create_data_viz function with the index_name, rx_client, and chroma_client.
-    4. Verifies that the returned rx_client_out is an instance of RAGxplorer.
-    5. Verifies that the returned chroma_client_out is an instance of ClientAPI.
-    6. Verifies that the name of the RX client's vector database contains the index_name.
-    7. Deletes the collection associated with the RX client's vector database.
+#     This test case verifies the behavior of the create_data_viz function when called without providing
+#     the limit_size_qty and df_export_path parameters. It performs the following steps:
+#     1. Sets up the necessary fixtures for the test.
+#     2. Sets up the RX and Chroma clients for visualization database.
+#     3. Calls the create_data_viz function with the index_name, rx_client, and chroma_client.
+#     4. Verifies that the returned rx_client_out is an instance of RAGxplorer.
+#     5. Verifies that the returned chroma_client_out is an instance of ClientAPI.
+#     6. Verifies that the name of the RX client's vector database contains the index_name.
+#     7. Deletes the collection associated with the RX client's vector database.
 
-    Args:
-        setup_fixture: The setup fixture for the test.
+#     Args:
+#         setup_fixture: The setup fixture for the test.
 
-    Raises:
-        Exception: If an error occurs during the test.
+#     Raises:
+#         Exception: If an error occurs during the test.
 
-    Returns:
-        None
+#     Returns:
+#         None
 
-    '''
-    index_name = 'test-index'
-    rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
-    try:
-        rx_client_out, chroma_client_out = create_data_viz(index_name, rx_client, chroma_client)
-    except Exception as e:
-        try:
-            chroma_client.delete_collection(name=rx_client._vectordb.name)
-        except:
-            pass
-        raise e   
-    assert isinstance(rx_client_out, RAGxplorer)
-    assert isinstance(chroma_client_out, ClientAPI)
-    assert 'test-index' in rx_client_out._vectordb.name
-    chroma_client.delete_collection(name=rx_client_out._vectordb.name)
-def test_create_data_viz_limit(setup_fixture):
-    '''
-    Test case: With limit_size_qty and df_export_path
+#     '''
+#     index_name = 'test-index'
+#     rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
+#     try:
+#         rx_client_out, chroma_client_out = create_data_viz(index_name, rx_client, chroma_client)
+#     except Exception as e:
+#         try:
+#             chroma_client.delete_collection(name=rx_client._vectordb.name)
+#         except:
+#             pass
+#         raise e   
+#     assert isinstance(rx_client_out, RAGxplorer)
+#     assert isinstance(chroma_client_out, ClientAPI)
+#     assert 'test-index' in rx_client_out._vectordb.name
+#     chroma_client.delete_collection(name=rx_client_out._vectordb.name)
+# def test_create_data_viz_limit(setup_fixture):
+#     '''
+#     Test case: With limit_size_qty and df_export_path
 
-    This test case verifies the behavior of the create_data_viz function when called without providing
-    the limit_size_qty and df_export_path parameters. It performs the following steps:
-    1. Sets up the necessary fixtures for the test.
-    2. Sets up the RX and Chroma clients for visualization database.
-    3. Calls the create_data_viz function with the index_name, rx_client, and chroma_client.
-    4. Verifies that the returned rx_client_out is an instance of RAGxplorer.
-    5. Verifies that the returned chroma_client_out is an instance of ClientAPI.
-    6. Verifies that the name of the RX client's vector database contains the index_name.
-    7. Deletes the collection associated with the RX client's vector database.
+#     This test case verifies the behavior of the create_data_viz function when called without providing
+#     the limit_size_qty and df_export_path parameters. It performs the following steps:
+#     1. Sets up the necessary fixtures for the test.
+#     2. Sets up the RX and Chroma clients for visualization database.
+#     3. Calls the create_data_viz function with the index_name, rx_client, and chroma_client.
+#     4. Verifies that the returned rx_client_out is an instance of RAGxplorer.
+#     5. Verifies that the returned chroma_client_out is an instance of ClientAPI.
+#     6. Verifies that the name of the RX client's vector database contains the index_name.
+#     7. Deletes the collection associated with the RX client's vector database.
 
-    Args:
-        setup_fixture: The setup fixture for the test.
+#     Args:
+#         setup_fixture: The setup fixture for the test.
 
-    Raises:
-        Exception: If an error occurs during the test.
+#     Raises:
+#         Exception: If an error occurs during the test.
 
-    Returns:
-        None
+#     Returns:
+#         None
 
-    '''
-    index_name = 'test-index'
-    export_file='data_viz_test.json'
-    rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
-    try:
-        rx_client_out, chroma_client_out = create_data_viz(
-            index_name, rx_client, chroma_client, limit_size_qty=10, df_export_path=os.path.join(setup_fixture['LOCAL_DB_PATH'],export_file))
-    except Exception as e:
-        try:
-            chroma_client.delete_collection(name=rx_client._vectordb.name)
-        except:
-            pass
-        try:
-            os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
-        except:
-            pass
-        raise e   
-    assert isinstance(rx_client_out, RAGxplorer)
-    assert isinstance(chroma_client_out, ClientAPI)
-    assert 'test-index' in rx_client_out._vectordb.name
-    assert os.path.exists(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
-    chroma_client.delete_collection(name=rx_client_out._vectordb.name)
-    os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
+#     '''
+#     index_name = 'test-index'
+#     export_file='data_viz_test.json'
+#     rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
+#     try:
+#         rx_client_out, chroma_client_out = create_data_viz(
+#             index_name, rx_client, chroma_client, limit_size_qty=10, df_export_path=os.path.join(setup_fixture['LOCAL_DB_PATH'],export_file))
+#     except Exception as e:
+#         try:
+#             chroma_client.delete_collection(name=rx_client._vectordb.name)
+#         except:
+#             pass
+#         try:
+#             os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
+#         except:
+#             pass
+#         raise e   
+#     assert isinstance(rx_client_out, RAGxplorer)
+#     assert isinstance(chroma_client_out, ClientAPI)
+#     assert 'test-index' in rx_client_out._vectordb.name
+#     assert os.path.exists(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
+#     chroma_client.delete_collection(name=rx_client_out._vectordb.name)
+#     os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))

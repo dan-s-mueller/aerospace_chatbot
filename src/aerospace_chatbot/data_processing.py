@@ -886,8 +886,19 @@ def _check_db_name(index_type:str,index_name:object):
             raise ValueError(f'The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}')
 
 ### Stuff to test out spotlight
-# Taken from https://itnext.io/visualize-rag-data-with-renumics-rag-a-q-a-gui-with-interactive-data-exploration-8999dd092f3d
+
 def sl_get_or_create_spotlight_viewer():
+    """
+    Get or create a Spotlight viewer.
+
+    This function attempts to import the necessary modules from `renumics` to create a Spotlight viewer.
+    If the import is successful, it checks if there are existing viewers and closes all but the last one.
+    If there are no existing viewers, it creates a new viewer using an empty DataFrame as a placeholder.
+    The function returns the created or existing viewer.
+
+    Returns:
+        spotlight.viewer or None: The created or existing Spotlight viewer, or None if the import failed.
+    """
     try:
         from renumics import spotlight
         from renumics.spotlight import dtypes as spotlight_dtypes
@@ -914,6 +925,19 @@ def sl_get_docs_questions_df(
         questions_db_directory: Path,
         questions_db_collection: str,
         query_model:object):
+    """
+    Retrieves and combines documents and questions dataframes.
+
+    Args:
+        docs_db_directory (Path): The directory of the documents database.
+        docs_db_collection (str): The name of the documents database collection.
+        questions_db_directory (Path): The directory of the questions database.
+        questions_db_collection (str): The name of the questions database collection.
+        query_model (object): The query model object.
+
+    Returns:
+        pd.DataFrame: The combined dataframe containing documents and questions data.
+    """
     # TODO there's definitely a way to not have to pass query_model, since it should be possible to pull from the db, try to remove this in future versions
 
     # Check if there exists a query database
@@ -955,13 +979,23 @@ def sl_get_docs_questions_df(
     df = pd.concat([docs_df, questions_df], ignore_index=True)
     return df
 def sl_get_docs_df(local_db_path: Path, index_name: str, query_model: object):
-    # try:
-    #     _assert_collection_exists(db_directory, db_collection)
-    # except Exception:
-    #     return pd.DataFrame(columns=["id", "source", "page", "document", "embedding"])
-    # vectorstore = get_chromadb(
-    #     persist_directory=db_directory, collection_name=db_collection
-    # )
+    """
+    Retrieves documents from a Chroma database and returns them as a pandas DataFrame.
+
+    Args:
+        local_db_path (Path): The local path to the Chroma database.
+        index_name (str): The name of the collection in the Chroma database.
+        query_model (object): The embedding function used for querying the database.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the retrieved documents, along with their metadata and embeddings.
+            The DataFrame has the following columns:
+            - id: The ID of the document.
+            - source: The source of the document.
+            - page: The page number of the document (default: -1 if not available).
+            - document: The content of the document.
+            - embedding: The embedding of the document.
+    """
     persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
     vectorstore = Chroma(client=persistent_client,
                             collection_name=index_name,
@@ -978,15 +1012,17 @@ def sl_get_docs_df(local_db_path: Path, index_name: str, query_model: object):
         }
     )
 def sl_get_questions_df(local_db_path: Path, index_name: str, query_model: object):
-    # try:
-    #     _assert_collection_exists(db_directory, db_collection)
-    # except Exception:
-    #     return pd.DataFrame(
-    #         columns=["id", "question", "answer", "sources", "embedding"]
-    #     )
-    # vectorstore = get_chromadb(
-    #     persist_directory=db_directory, collection_name=db_collection
-    # )
+    """
+    Retrieves questions and related information from a Chroma database and returns them as a pandas DataFrame.
+
+    Args:
+        local_db_path (Path): The local path to the Chroma database.
+        index_name (str): The name of the collection in the Chroma database.
+        query_model (object): The embedding function used for querying the Chroma database.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the retrieved questions, answers, sources, and embeddings.
+    """
     persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
     vectorstore = Chroma(client=persistent_client,
                             collection_name=index_name,
