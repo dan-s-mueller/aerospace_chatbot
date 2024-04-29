@@ -44,17 +44,17 @@ This is the main app which is used for querying and asking questions about the d
 
 To restart a conversation, click the "Restart session" button twice.
 
+When a query is made, the responses are stored in a separate vector database. This database is used for visualization in the Visualize Data app, which can be used to explore.
+
 .. image:: ../images/chatbot.png
   :alt: Chatbot
   :align: center
 
 Visualize Data
 ^^^^^^^^^^^^^^
-This app allows visualization using `RAGxplorer <https://github.com/gabrielchua/RAGxplorer>`__. This app can be time consuming, there are options to downselect data, export to a file, then upload.
+This app allows visualization using `Spotlight from Renumics <https://renumics.com/open-source/spotlight/>`__. A new browser will open with the visualization. The data is loaded from the database and the settings are applied from the sidebar.
 
-.. image:: ../images/visualize_data.png
-  :alt: Chatbot
-  :align: center
+`Under construction`, add picture
 
 Deployments
 -----------

@@ -76,6 +76,7 @@ Frameworks
 
 - `Langchain <https://python.langchain.com/docs/get_started/introduction>`_, this is a framework for building AI applications.
 - `Langsmith <https://smith.langchain.com/>`__, this is a platform for debugging and data analysis for inputs/outputs/runtime of AI models.
+- `Spotlight from Renumics <https://renumics.com/open-source/spotlight/>`__, open source platform GUI for data visualization and analysis.
 
 API key links
 ^^^^^^^^^^^^^
