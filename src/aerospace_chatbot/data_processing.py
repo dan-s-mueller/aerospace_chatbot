@@ -37,7 +37,9 @@ from langchain_core.output_parsers import StrOutputParser
 
 from ragatouille import RAGPretrainedModel
 
-# from ragxplorer import RAGxplorer, rag 
+from renumics import spotlight
+from renumics.spotlight import dtypes as spotlight_dtypes
+
 import pandas as pd
 
 import admin
@@ -899,26 +901,15 @@ def sl_get_or_create_spotlight_viewer():
     Returns:
         spotlight.viewer or None: The created or existing Spotlight viewer, or None if the import failed.
     """
-    try:
-        from renumics import spotlight
-        from renumics.spotlight import dtypes as spotlight_dtypes
-    except ImportError:
-        return None
     viewers = spotlight.viewers()
     if viewers:
         for viewer in viewers[:-1]:
             viewer.close()
         return spotlight.viewers()[-1]
-    return spotlight.show(
-        pd.DataFrame({}),  # Hack for Spotlight
-        no_browser=True,
-        dtype={
-            "used_by_questions": spotlight_dtypes.SequenceDType(
-                spotlight_dtypes.str_dtype
-            )
-        },
-        wait=False,
-    )
+    return spotlight.show(pd.DataFrame({}),  # Hack for Spotlight
+                          no_browser=True,
+                          dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
+                          wait=False)
 def sl_get_docs_questions_df(
         docs_db_directory: Path,
         docs_db_collection: str,
