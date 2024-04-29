@@ -105,8 +105,8 @@ st.session_state.chroma_client = chromadb.PersistentClient(path=os.path.join(pat
 #         st.markdown(f":heavy_check_mark: Created visualization in {elapsed_time:.2f} seconds")
 
 # With Spotlight
-# def explore() -> None:
 
+query_model = admin.get_query_model(sb, secrets)    # Set query model
 viewer = data_processing.sl_get_or_create_spotlight_viewer()
 
 if st.button('Visualize'):
@@ -115,5 +115,6 @@ if st.button('Visualize'):
         sb['index_selected'],
         paths['db_folder_path'],
         sb['index_selected']+'-queries',
+        query_model
     )
     viewer.show(df, wait=False)

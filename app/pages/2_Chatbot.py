@@ -104,6 +104,7 @@ if prompt := st.chat_input('Prompt here'):
                 st.session_state.qa_model_obj.update_model(llm)
             
             st.write('*Searching vector database, generating prompt...*')
+            st.write(f"*Query added to query database: {sb['index_selected']+'-queries'}*")
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.ai_response
             message_placeholder.markdown(ai_response)
