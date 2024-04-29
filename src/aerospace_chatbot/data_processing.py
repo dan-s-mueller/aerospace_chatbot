@@ -783,7 +783,7 @@ def delete_index(index_type: str,
 #         fig = rx_client.visualize_query(query)
 #     st.plotly_chart(fig, use_container_width=True)
 
-    return rx_client, chroma_client
+    # return rx_client, chroma_client
 def _sanitize_raw_page_data(page):
     """
     Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
