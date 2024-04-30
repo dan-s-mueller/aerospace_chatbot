@@ -1,8 +1,7 @@
 from prompts import SUMMARIZE_TEXT
 
-import os, re, shutil, random
+import os, re, shutil
 import hashlib
-import uuid
 from pathlib import Path
 from typing import List, Union
 
@@ -41,8 +40,11 @@ from renumics import spotlight
 from renumics.spotlight import dtypes as spotlight_dtypes
 
 import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
 
 import admin
+from prompts import CLUSTER_LABEL
 
 def load_docs(index_type:str,
               docs:List[str],
@@ -630,162 +632,6 @@ def delete_index(index_type: str,
             pass
     else:
         raise NotImplementedError
-# def reduce_vector_query_size(rx_client:RAGxplorer,
-#                              chroma_client:chromadb,
-#                              vector_qty:int,
-#                              verbose:bool=False):
-#     """
-#     Reduces the number of vectors in the RAGxplorer client to a specified quantity.
-
-#     Args:
-#         rx_client (RAGxplorer): The RAGxplorer client.
-#         chroma_client (chromadb): The chromadb client.
-#         vector_qty (int): The desired number of vectors.
-#         verbose (bool, optional): Whether to print verbose output. Defaults to False.
-
-#     Returns:
-#         RAGxplorer: The updated RAGxplorer client with the reduced number of vectors.
-#     """
-
-#     ids = rx_client._vectordb.get()['ids']
-#     embeddings = rag.get_doc_embeddings(rx_client._vectordb)
-#     text = rag.get_docs(rx_client._vectordb)
-
-#     if verbose:
-#         print('Reducing the number of vectors from '+str(len(embeddings))+' to '+str(vector_qty)+'...')
-#     indices = random.sample(range(len(embeddings)), vector_qty)
-#     id = str(uuid.uuid4())[:8]
-#     temp_index_name=rx_client._vectordb.name+'-'+id
-    
-#     # Create a temporary index with the reduced number of vectors
-#     chroma_client.create_collection(name=temp_index_name,embedding_function=rx_client._chosen_embedding_model)
-#     temp_collection = chroma_client.get_collection(name=temp_index_name,embedding_function=rx_client._chosen_embedding_model)
-#     temp_collection.add(
-#         ids=[ids[i] for i in indices],
-#         embeddings=[embeddings[i] for i in indices],
-#         documents=[text[i] for i in indices]
-#     )
-
-#     # Replace the original index with the temporary one
-#     rx_client._vectordb = temp_collection
-#     rx_client._documents.embeddings = rag.get_doc_embeddings(rx_client._vectordb)
-#     rx_client._documents.text = rag.get_docs(rx_client._vectordb)
-#     rx_client._documents.ids = rx_client._vectordb.get()['ids']
-
-#     if verbose:
-#         print('Reduced number of vectors to '+str(len(rx_client._documents.embeddings))+' ✓')
-#     return rx_client
-# def export_data_viz(rx_client: RAGxplorer, df_export_path: str):
-#     """
-#     Exports the visualization data to a JSON file.
-
-#     Args:
-#         rx_client (RAGxplorer): The RAGxplorer object containing the visualization data.
-#         df_export_path (str): The file path to export the JSON data.
-
-#     Returns:
-#         None
-#     """
-#     export_data = {
-#         'visualization_index_name': rx_client._vectordb.name,
-#         'umap_params': rx_client._projector.get_params(),
-#         'viz_data': rx_client._VizData.base_df.to_json(orient='split')
-#     }
-
-#     # Save the data to a JSON file
-#     with open(df_export_path, 'w') as f:
-#         json.dump(export_data, f, indent=4)
-# def create_data_viz(index_selected: str,
-#                     rx_client: RAGxplorer,
-#                     chroma_client: PersistentClient,
-#                     umap_params: dict = {'n_neighbors': 5, 'n_components': 2, 'random_state': 42},
-#                     limit_size_qty: int = None,
-#                     df_export_path: str = None,
-#                     show_progress: bool = False):
-#     """
-#     Creates data visualization using RAGxplorer and PersistentClient.
-
-#     Args:
-#         index_selected (str): The name of the collection to load from chroma_client.
-#         rx_client (RAGxplorer): An instance of RAGxplorer class.
-#         chroma_client (PersistentClient): An instance of PersistentClient class.
-#         umap_params (dict, optional): UMAP parameters for embedding. Defaults to {'n_neighbors': 5, 'n_components': 2, 'random_state': 42}.
-#         limit_size_qty (int, optional): The maximum number of vectors to include in the visualization. Defaults to None.
-#         df_export_path (str, optional): The file path to export the visualization data. Defaults to None.
-#         show_progress (bool, optional): Whether to show progress bar. Defaults to False.
-
-#     Returns:
-#         tuple: A tuple containing the updated rx_client and chroma_client instances.
-#     """
-#     if show_progress:
-#         my_bar = st.progress(0, text='Loading collection...')
-    
-#     # Load collection from chroma_client
-#     collection = chroma_client.get_collection(name=index_selected,
-#                                               embedding_function=rx_client._chosen_embedding_model)
-#     rx_client.load_chroma(collection,
-#                           umap_params=umap_params,
-#                           initialize_projector=True)
-    
-#     if limit_size_qty:
-#         if show_progress:
-#             my_bar.progress(0.25, text='Reducing vector query size...')
-        
-#         # Reduce vector query size
-#         rx_client = reduce_vector_query_size(rx_client,
-#                                              chroma_client,
-#                                              vector_qty=limit_size_qty,
-#                                              verbose=True)
-    
-#     if show_progress:
-#         my_bar.progress(0.5, text='Projecting embeddings for visualization...')
-    
-#     # Run projector
-#     rx_client.run_projector()
-    
-#     if show_progress:
-#         my_bar.progress(1, text='Projecting complete!')
-    
-#     if df_export_path:
-#         # Export data visualization
-#         export_data_viz(rx_client, df_export_path)
-    
-#     if show_progress:
-#         my_bar.empty()
-    
-#     return rx_client, chroma_client
-# def visualize_data(index_selected: str,
-#                    rx_client: RAGxplorer,
-#                    chroma_client: PersistentClient,
-#                    query: str,
-#                    umap_params: dict = {'n_neighbors': 5, 'n_components': 2, 'random_state': 42},
-#                    import_file: bool = True):
-#     """
-#     Visualizes data using RAGxplorer and PersistentClient.
-
-#     Args:
-#         index_selected (str): The name of the selected index.
-#         rx_client (RAGxplorer): An instance of the RAGxplorer class.
-#         chroma_client (PersistentClient): An instance of the PersistentClient class.
-#         query (str): The query to visualize.
-#         umap_params (dict, optional): UMAP parameters for data visualization. Defaults to {'n_neighbors': 5, 'n_components': 2, 'random_state': 42}.
-#         import_file (bool, optional): Whether to import data from a file. Defaults to True.
-
-#     Returns:
-#         Tuple[RAGxplorer, PersistentClient]: A tuple containing the updated instances of RAGxplorer and PersistentClient.
-#     """
-#     if import_file:
-#         with open(import_file, 'r') as f:
-#             data = json.load(f)
-#         viz_data = pd.read_json(data['viz_data'], orient='split')
-#         collection = chroma_client.get_collection(name=index_selected, embedding_function=rx_client._chosen_embedding_model)
-#         rx_client.load_chroma(collection, umap_params=umap_params, initialize_projector=True)
-#         fig = rx_client.visualize_query(query, import_projection_data=viz_data)
-#     else:
-#         fig = rx_client.visualize_query(query)
-#     st.plotly_chart(fig, use_container_width=True)
-
-    # return rx_client, chroma_client
 def _sanitize_raw_page_data(page):
     """
     Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
@@ -889,7 +735,7 @@ def _check_db_name(index_type:str,index_name:object):
 
 ### Stuff to test out spotlight
 
-def sl_get_or_create_spotlight_viewer():
+def get_or_create_spotlight_viewer():
     """
     Get or create a Spotlight viewer.
 
@@ -910,7 +756,7 @@ def sl_get_or_create_spotlight_viewer():
                           no_browser=True,
                           dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
                           wait=False)
-def sl_get_docs_questions_df(
+def get_docs_questions_df(
         docs_db_directory: Path,
         docs_db_collection: str,
         questions_db_directory: Path,
@@ -944,9 +790,9 @@ def sl_get_docs_questions_df(
         st.stop()
     st.markdown(f"Query database found: {questions_db_collection}")
 
-    docs_df = sl_get_docs_df(docs_db_directory, docs_db_collection, query_model)
+    docs_df = get_docs_df(docs_db_directory, docs_db_collection, query_model)
     docs_df["type"] = "doc"
-    questions_df = sl_get_questions_df(questions_db_directory, questions_db_collection, query_model)
+    questions_df = get_questions_df(questions_db_directory, questions_db_collection, query_model)
     questions_df["type"] = "question"
 
     questions_df["num_sources"] = questions_df["sources"].apply(len)
@@ -969,7 +815,7 @@ def sl_get_docs_questions_df(
 
     df = pd.concat([docs_df, questions_df], ignore_index=True)
     return df
-def sl_get_docs_df(local_db_path: Path, index_name: str, query_model: object):
+def get_docs_df(local_db_path: Path, index_name: str, query_model: object):
     """
     Retrieves documents from a Chroma database and returns them as a pandas DataFrame.
 
@@ -1002,7 +848,7 @@ def sl_get_docs_df(local_db_path: Path, index_name: str, query_model: object):
             "embedding": response["embeddings"],
         }
     )
-def sl_get_questions_df(local_db_path: Path, index_name: str, query_model: object):
+def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
     """
     Retrieves questions and related information from a Chroma database and returns them as a pandas DataFrame.
 
@@ -1031,3 +877,31 @@ def sl_get_questions_df(local_db_path: Path, index_name: str, query_model: objec
             "embedding": response["embeddings"],
         }
     )
+def add_clusters(df:pd,n_clusters:int,label_llm:object=None,doc_per_cluster:int=5):
+    """
+    Add clusters to a DataFrame based on the embeddings of its documents.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the documents and their embeddings.
+        n_clusters (int): The number of clusters to create.
+        label_llm (object, optional): The label language model to use for generating cluster labels. Defaults to None.
+        doc_per_cluster (int, optional): The number of documents to sample per cluster for label generation. Defaults to 5.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the added cluster information.
+    """
+    matrix = np.vstack(df.embedding.values)
+    kmeans = KMeans(n_clusters=n_clusters, init="k-means++", random_state=42)
+    kmeans.fit(matrix)
+    labels = kmeans.labels_
+    df["Cluster"] = labels
+
+    summary=[]
+    if label_llm is not None:
+        for i in range(n_clusters):
+            chunks =  df[df.Cluster == i].document.sample(doc_per_cluster, random_state=42)
+            llm_chain = CLUSTER_LABEL | label_llm
+            summary.append(llm_chain.invoke(chunks))
+        df["Cluster_Label"] = [summary[i].content for i in df["Cluster"]]
+    
+    return df

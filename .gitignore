@@ -13,6 +13,7 @@ data/AMS/*jsonl
 !data/AMS/*.pdf
 !tests/*.pdf
 *.pickle
+*.parquet
 
 # Notebooks
 notebooks/playground.ipynb
