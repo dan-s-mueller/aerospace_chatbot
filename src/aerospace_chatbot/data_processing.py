@@ -899,9 +899,11 @@ def add_clusters(df:pd,n_clusters:int,label_llm:object=None,doc_per_cluster:int=
     summary=[]
     if label_llm is not None:
         for i in range(n_clusters):
+            print(f"Cluster {i} Theme:")
             chunks =  df[df.Cluster == i].document.sample(doc_per_cluster, random_state=42)
             llm_chain = CLUSTER_LABEL | label_llm
             summary.append(llm_chain.invoke(chunks))
+            print(summary[-1].content)
         df["Cluster_Label"] = [summary[i].content for i in df["Cluster"]]
     
     return df
