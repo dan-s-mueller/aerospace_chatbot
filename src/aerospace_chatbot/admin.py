@@ -177,7 +177,7 @@ def load_sidebar(config_file,
                 else:
                     raise NotImplementedError
                 try:
-                    if len(name) == 0:
+                    if not name:
                         raise DatabaseException('No collections found for the selected index type/embedding. Create a new database, or select another index type/embedding.','NO_COMPATIBLE_COLLECTIONS')
                 except DatabaseException as e:
                     st.warning(f"{e}")

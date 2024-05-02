@@ -4,7 +4,7 @@ FROM python:3.11.5-bookworm
 # Came from here: https://huggingface.co/docs/hub/spaces-sdks-docker#permissions Set up a new user named "user" with user ID 1000.
 RUN useradd -m -u 1000 user
 
-# Do root things: clone repo and install dependencies
+# Do root things: clone repo and install dependencies. libsndfile1 for spotlight. libhdf5-serial-dev for vector distance.
 USER root
 # WORKDIR /clonedir
 # RUN apt-get update && \
@@ -12,6 +12,7 @@ USER root
 # RUN git clone --depth 1 https://github.com/dan-s-mueller/aerospace_chatbot.git .
 RUN apt-get update && apt-get install -y \
     libhdf5-serial-dev \
+    libsndfile1 \   
     && rm -rf /var/lib/apt/lists/*
 USER user
 
@@ -26,10 +27,15 @@ WORKDIR $HOME
 # RUN mkdir $HOME/data 
 # RUN mkdir $HOME/config
 
+# Check if /data directory exists, if not create a local db directory. Hugging face spaces has it by default, but not local docker.
+RUN if [ ! -d "/data" ]; then \
+		mkdir $HOME/db; \
+	fi
+
 # Install Poetry
 RUN pip3 install poetry==1.7.1
 
-# Copy poetry files
+# Copy poetry files. Use cp for github config, followed by chown statements.
 COPY --chown=user pyproject.toml $HOME
 
 # Disable virtual environments creation by Poetry. Making this false results in permissions issues.
@@ -44,8 +50,7 @@ ENV PATH="$HOME/.venv/bin:$PATH"
 # Install dependencies using Poetry
 RUN poetry install --no-root
 
-# Copy the rest of your application code
-# COPY --chown=user . $HOME
+# Copy the rest of your application code.  Use cp for github config, followed by chown statements.
 COPY ./src $HOME/src
 COPY ./data $HOME/data
 COPY ./config $HOME/config
