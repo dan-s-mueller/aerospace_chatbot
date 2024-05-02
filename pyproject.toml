@@ -42,7 +42,6 @@ ragas = "^0.1.6"
 sphinxawesome-theme = "^5.1.1"
 sphinx-design = "^0.5.0"
 langchain-voyageai = "^0.1.0"
-ragxplorer = "^0.1.10"
 
 [build-system]
 requires = ["poetry-core"]
