@@ -125,11 +125,11 @@ def load_sidebar(config_file,
             if embeddings and rag_type:
                 # Index Name 
                 st.sidebar.title('Index Selected')  
+                name=[]
                 # For each index type, list indices available for the base name
                 if sb_out['index_type']=='ChromaDB':
                     indices=show_chroma_collections(format=False)
                     if indices['status']:
-                        name=[]
                         for index in indices['message']:
                             # Be compatible with embedding types already used. Pinecone only supports lowercase.
                             if index.name.startswith((sb_out['embedding_name'].replace('/', '-')).lower()):    
@@ -148,7 +148,6 @@ def load_sidebar(config_file,
                 elif sb_out['index_type']=='Pinecone':
                     indices=show_pinecone_indexes(format=False)
                     if indices['status']:
-                        name=[]
                         for index in indices['message']:
                             # if index['status']['state']=='Ready':
                             #     name.append(index['name'])
@@ -166,7 +165,6 @@ def load_sidebar(config_file,
                 elif sb_out['index_type']=='RAGatouille':
                     indices=show_ragatouille_indexes(format=False)
                     if len(indices)>0:
-                        name=[]
                         for index in indices['message']:
                             # Be compatible with embedding types already used. Pinecone only supports lowercase.
                             if index.startswith((sb_out['embedding_name'].replace('/', '-')).lower()):    

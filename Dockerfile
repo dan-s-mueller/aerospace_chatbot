@@ -21,16 +21,23 @@ ENV HOME=/home/user \
 	PATH=/home/user/.local/bin:$PATH
 WORKDIR $HOME
 
+# Set the home directory so any user can read/write to it.
+
 # Create directories for the app code to be copied into
 # RUN mkdir $HOME/app
-# RUN mkdir $HOME/src 
-# RUN mkdir $HOME/data 
+# RUN mkdir $HOME/src
+# RUN mkdir $HOME/data
 # RUN mkdir $HOME/config
 
+RUN mkdir $HOME/app && chmod a+rw $HOME/app
+RUN mkdir $HOME/src && chmod a+rw $HOME/src
+RUN mkdir $HOME/data && chmod a+rw $HOME/data
+RUN mkdir $HOME/config && chmod a+rw $HOME/config
+
 # Check if /data directory exists, if not create a local db directory. Hugging face spaces has it by default, but not local docker.
-RUN if [ ! -d "/data" ]; then \
-		mkdir $HOME/db; \
-	fi
+# RUN if [ ! -d "/data" ]; then \
+# 		mkdir $HOME/db; \
+# 	fi
 
 # Install Poetry
 RUN pip3 install poetry==1.7.1
@@ -56,18 +63,25 @@ COPY ./data $HOME/data
 COPY ./config $HOME/config
 COPY ./app $HOME/app
 
+# For local deployments.
+RUN mkdir $HOME/db && chmod a+rw $HOME/db
+# RUN mkdir $HOME/db
+# RUN chmod -R 666 $HOME/db
+ENV LOCAL_DB_PATH=$HOME/db
+
+# Set final work directory for the application
+WORKDIR $HOME/app
+RUN pwd
+RUN ls -R
+
 # Expose the port Streamlit runs on
 EXPOSE 8501
 
 # The HEALTHCHECK instruction tells Docker how to test a container to check that it is still working. Your container needs to listen to Streamlit’s (default) port 8501:
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
-# Set final work directory for the application
-WORKDIR $HOME/app
-
-RUN ls -R
-
 # An ENTRYPOINT allows you to configure a container that will run as an executable.
+# TODO test out that there are not weird bugs when running on docker locally. Spotlight, databases, etc.
 ENTRYPOINT ["streamlit", "run", "Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
 # Run this if you're running with terminal locally
