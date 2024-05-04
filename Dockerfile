@@ -58,10 +58,7 @@ COPY --chown=user:user ./data $HOME/data
 COPY --chown=user:user ./config $HOME/config
 COPY --chown=user:user ./app $HOME/app
 
-# Check if /data directory exists, if not create a local db directory. Hugging face spaces has it by default, but not local docker.
-# RUN if [ ! -d "/data" ]; then \
-# 		mkdir $HOME/db; \
-# 	fi
+# Set up database path and env variabole. Comment out if running on hugging face spaces
 RUN mkdir $HOME/db
 RUN chmod 777 $HOME/db
 ENV LOCAL_DB_PATH=$HOME/db
@@ -73,6 +70,7 @@ RUN ls -R
 
 # Expose the port Streamlit runs on
 EXPOSE 8501
+EXPOSE 9000
 
 # The HEALTHCHECK instruction tells Docker how to test a container to check that it is still working. Your container needs to listen to Streamlit’s (default) port 8501:
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
@@ -86,11 +84,11 @@ ENTRYPOINT ["streamlit", "run", "Home.py", "--server.port=8501", "--server.addre
 
 # To run locally
 # docker build -t aerospace-chatbot .
-# docker run --user 1000:1000 -p 8501:8501 aerospace-chatbot
+# docker run --user 1000:1000 -p 8501:8501 -p 9000:9000 -it aerospace-chatbot
 
 # To run locally with a terminal.
 # docker build -t aerospace-chatbot .
-# docker run -it --user 1000:1000 --entrypoint /bin/bash aerospace-chatbot
+# docker run --user 1000:1000 --entrypoint /bin/bash -it aerospace-chatbot
 
 # To run remotely from hugging face spaces
 # docker run -it --user 1000:1000 -p 7860:7860 --platform=linux/amd64 \

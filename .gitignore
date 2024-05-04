@@ -6,6 +6,9 @@
 *__pycache__*
 dist/
 
+# Secrets
+key.pem
+
 # Data
 *.pdf
 data/AMS/noupload/*.pdf

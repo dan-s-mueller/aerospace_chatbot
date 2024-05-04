@@ -45,7 +45,11 @@ st.info('Visualization is only functional with ChromaDB index type.')
 # TODO there's not really a reason for this tab to exist. Consider moving into 2_Chatbot.py app
 llm=admin.set_llm(sb,secrets)    # Set the LLM
 query_model = admin.get_query_model(sb, secrets)    # Set query model
-viewer = data_processing.get_or_create_spotlight_viewer()
+
+# Get the viewer
+cert_file_path=os.path.join(paths['base_folder_path'],'app','tls_certificate')
+viewer = data_processing.get_or_create_spotlight_viewer(ssl_certfile=os.path.join(cert_file_path,'cert.pem'),
+                                                        ssl_keyfile=os.path.join(cert_file_path,'key.pem'))
 
 # Add options
 export_file=st.checkbox('Export file?',value=False,help='Export the data, including embeddings to a parquet file')

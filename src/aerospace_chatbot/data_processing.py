@@ -735,27 +735,40 @@ def _check_db_name(index_type:str,index_name:object):
 
 ### Stuff to test out spotlight
 
-def get_or_create_spotlight_viewer():
+def get_or_create_spotlight_viewer(ssl_certfile: str, ssl_keyfile: str):
     """
     Get or create a Spotlight viewer.
 
-    This function attempts to import the necessary modules from `renumics` to create a Spotlight viewer.
-    If the import is successful, it checks if there are existing viewers and closes all but the last one.
-    If there are no existing viewers, it creates a new viewer using an empty DataFrame as a placeholder.
-    The function returns the created or existing viewer.
-
+    Args:
+        ssl_certfile (str): The path to the SSL certificate file.
+        ssl_keyfile (str): The path to the SSL key file.
+    
     Returns:
-        spotlight.viewer or None: The created or existing Spotlight viewer, or None if the import failed.
+        spotlight.viewer: The created or existing Spotlight viewer.
     """
     viewers = spotlight.viewers()
     if viewers:
         for viewer in viewers[:-1]:
             viewer.close()
-        return spotlight.viewers()[-1]
-    return spotlight.show(pd.DataFrame({}),  # Hack for Spotlight
+        existing_viewer=spotlight.viewers()[-1]
+        return existing_viewer
+
+    # new_viewer = spotlight.show(pd.DataFrame({}),  # Hack for Spotlight
+    #                       no_browser=True,
+    #                       wait=False,
+    #                       dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
+    #                       host='localhost',
+    #                       port=9000)
+    
+    new_viewer = spotlight.show(pd.DataFrame({}),  # Hack for Spotlight
                           no_browser=True,
+                          wait=False,
                           dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
-                          wait=False)
+                          host='0.0.0.0',
+                          port=9000,
+                          ssl_certfile=ssl_certfile,
+                          ssl_keyfile=ssl_keyfile)
+    return new_viewer
 def get_docs_questions_df(
         docs_db_directory: Path,
         docs_db_collection: str,
