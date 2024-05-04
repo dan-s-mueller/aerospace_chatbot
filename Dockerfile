@@ -70,13 +70,11 @@ RUN ls -R
 
 # Expose the port Streamlit runs on
 EXPOSE 8501
-EXPOSE 9000
 
 # The HEALTHCHECK instruction tells Docker how to test a container to check that it is still working. Your container needs to listen to Streamlit’s (default) port 8501:
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
 # An ENTRYPOINT allows you to configure a container that will run as an executable.
-# TODO test out that there are not weird bugs when running on docker locally. Spotlight, databases, etc.
 ENTRYPOINT ["streamlit", "run", "Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
 # Run this if you're running with terminal locally
@@ -84,7 +82,7 @@ ENTRYPOINT ["streamlit", "run", "Home.py", "--server.port=8501", "--server.addre
 
 # To run locally
 # docker build -t aerospace-chatbot .
-# docker run --user 1000:1000 -p 8501:8501 -p 9000:9000 -it aerospace-chatbot
+# docker run --user 1000:1000 -p 8501:8501 -it aerospace-chatbot
 
 # To run locally with a terminal.
 # docker build -t aerospace-chatbot .
