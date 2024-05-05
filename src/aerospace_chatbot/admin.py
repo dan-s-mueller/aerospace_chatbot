@@ -511,7 +511,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
     with st.expander("Connection Status", expanded=expanded):
         # Set secrets and assign to environment variables
         if set_secrets:
-            st.markdown("**Set API keyss**:")
+            st.markdown("**Set API keys**:")
             keys={}
             # OPENAI_API_KEY
             keys['OPENAI_API_KEY'] = st.text_input('OpenAI API Key', type='password',help='OpenAI API Key: https://platform.openai.com/api-keys')

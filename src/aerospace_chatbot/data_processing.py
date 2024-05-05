@@ -735,17 +735,7 @@ def _check_db_name(index_type:str,index_name:object):
 
 ### Stuff to test out spotlight
 
-def get_or_create_spotlight_viewer():
-    """
-    Get or create a Spotlight viewer.
-
-    Args:
-        ssl_certfile (str): The path to the SSL certificate file.
-        ssl_keyfile (str): The path to the SSL key file.
-    
-    Returns:
-        spotlight.viewer: The created or existing Spotlight viewer.
-    """
+def get_or_create_spotlight_viewer(df:pd.DataFrame,host:str='0.0.0.0',port:int=9000):
     viewers = spotlight.viewers()
     if viewers:
         for viewer in viewers[:-1]:
@@ -760,12 +750,11 @@ def get_or_create_spotlight_viewer():
     #                       host='localhost',
     #                       port=9000)
     
-    new_viewer = spotlight.show(pd.DataFrame({}),  # Hack for Spotlight
-                          no_browser=True,
-                          wait=False,
+    new_viewer = spotlight.show(df,  # Hack for Spotlight
+                          wait='auto',
                           dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
-                          host='0.0.0.0',
-                          port=9000)
+                          host=host,
+                          port=port)
     return new_viewer
 def get_docs_questions_df(
         docs_db_directory: Path,
