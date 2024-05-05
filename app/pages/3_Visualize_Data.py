@@ -2,6 +2,7 @@ import os, sys, json, time
 from datetime import datetime
 import streamlit as st
 import pandas as pd
+import webbrowser
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
@@ -24,10 +25,8 @@ paths,sb,secrets=admin.st_setup_page('Visualize Data',
                                       'secret_keys':True})
 
 # Set up session state variables
-if 'rx_client' not in st.session_state:
-    st.session_state.rx_client = None
-if 'chroma_client' not in st.session_state:
-    st.session_state.chroma_client = None
+if 'viewer' not in st.session_state:
+    st.session_state.viewer = False
 
 # Set the query model
 if sb["index_type"]=='RAGatouille':
@@ -42,26 +41,25 @@ elif sb['query_model']=='OpenAI' or sb['query_model']=='Voyage':
 
 st.info('Visualization is only functional with ChromaDB index type.')
 
-# TODO there's not really a reason for this tab to exist. Consider moving into 2_Chatbot.py app
+# Set query model and llm
 llm=admin.set_llm(sb,secrets)    # Set the LLM
 query_model = admin.get_query_model(sb, secrets)    # Set query model
 
 # Get the viewer
-cert_file_path=os.path.join(paths['base_folder_path'],'app','tls_certificate')
-viewer = data_processing.get_or_create_spotlight_viewer(ssl_certfile=os.path.join(cert_file_path,'cert.pem'),
-                                                        ssl_keyfile=os.path.join(cert_file_path,'key.pem'))
+# viewer = data_processing.get_or_create_spotlight_viewer()
 
 # Add options
-export_file=st.checkbox('Export file?',value=False,help='Export the data, including embeddings to a parquet file')
-if export_file:
-    file_name=st.text_input('Enter the file name',value=f"{os.path.join(paths['data_folder_path'],sb['index_selected']+'.parquet')}")
+hf_org_name=st.text_input('Enter the Hugging Face organization name',value='ai-aerospace',help='The organization name on Hugging Face.')
+dataset_name=st.text_input('Enter the dataset name',value=sb['index_selected'],help='The name of the dataset to be created on Hugging Face. Will be appended with ac-.')
+dataset_name=hf_org_name+'/'+'ac-'+dataset_name
+st.markdown(f"The dataset will be created at: {'https://huggingface.co/datasets/'+dataset_name}")
 cluster_data=st.checkbox('Cluster data?',value=False,help='Cluster the data using the embeddings using KMeans clustering.')
 if cluster_data:
     st.markdown('LLM to be used for clustering is set in sidebar.')
     n_clusters=st.number_input('Enter the number of clusters',value=10)
     docs_per_cluster=st.number_input('Enter the number of documents per cluster to generate label',value=10)
 
-if st.button('Visualize'):
+if st.button('Upload dataset to Hugging Face'):
     df = data_processing.get_docs_questions_df(
         paths['db_folder_path'],
         sb['index_selected'],
@@ -69,10 +67,17 @@ if st.button('Visualize'):
         sb['index_selected']+'-queries',
         query_model
     )
+    progress_bar = st.progress(0,text='Clustering data...')
     if cluster_data:
         df=data_processing.add_clusters(df,n_clusters,
                                         label_llm=llm,
                                         doc_per_cluster=docs_per_cluster)
-    if export_file:
-        df.to_parquet(file_name)
-    viewer.show(df, wait=False)
+    progress_bar.progress(50,text='Exporting to Hugging Face dataset...')
+    data_processing.export_to_hf_dataset(df,dataset_name)
+    progress_bar.progress(100,text='Export complete!')
+    st.session_state.viewer=True
+
+if st.session_state.viewer:
+    if st.button('Launch Spotlight data viewer'):
+        webbrowser.open_new_tab('https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize')
+        st.markdown('Spotlight viewer launched at: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize')

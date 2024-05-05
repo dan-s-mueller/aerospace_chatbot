@@ -7,6 +7,8 @@ from typing import List, Union
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from datasets import Dataset
+
 from pinecone import Pinecone as pinecone_client
 from pinecone import PodSpec
 
@@ -733,33 +735,31 @@ def _check_db_name(index_type:str,index_name:object):
         if '..' in index_name:
             raise ValueError(f'The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}')
 
-### Stuff to test out spotlight
+# def get_or_create_spotlight_viewer():
+#     """
+#     Get or create a Spotlight viewer.
 
-def get_or_create_spotlight_viewer():
-    """
-    Get or create a Spotlight viewer.
-
-    Args:
-        ssl_certfile (str): The path to the SSL certificate file.
-        ssl_keyfile (str): The path to the SSL key file.
+#     Args:
+#         ssl_certfile (str): The path to the SSL certificate file.
+#         ssl_keyfile (str): The path to the SSL key file.
     
-    Returns:
-        spotlight.viewer: The created or existing Spotlight viewer.
-    """
-    viewers = spotlight.viewers()
-    if viewers:
-        for viewer in viewers[:-1]:
-            viewer.close()
-        existing_viewer=spotlight.viewers()[-1]
-        return existing_viewer
+#     Returns:
+#         spotlight.viewer: The created or existing Spotlight viewer.
+#     """
+#     viewers = spotlight.viewers()
+#     if viewers:
+#         for viewer in viewers[:-1]:
+#             viewer.close()
+#         existing_viewer=spotlight.viewers()[-1]
+#         return existing_viewer
 
-    new_viewer = spotlight.show(pd.DataFrame({}),  # Hack for Spotlight
-                          no_browser=True,
-                          wait=False,
-                          dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
-                          host='localhost',
-                          port=9000)
-    return new_viewer
+#     new_viewer = spotlight.show(pd.DataFrame({}),  # Hack for Spotlight
+#                           no_browser=True,
+#                           wait=False,
+#                           dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
+#                           host='localhost',
+#                           port=9000)
+#     return new_viewer
 def get_docs_questions_df(
         docs_db_directory: Path,
         docs_db_collection: str,
@@ -911,3 +911,6 @@ def add_clusters(df:pd,n_clusters:int,label_llm:object=None,doc_per_cluster:int=
         df["Cluster_Label"] = [summary[i].content for i in df["Cluster"]]
     
     return df
+def export_to_hf_dataset(df:pd.DataFrame,dataset_name:str):
+    hf_dataset=Dataset.from_pandas(df)
+    hf_dataset.push_to_hub(dataset_name,token=os.getenv('HUGGINGFACEHUB_API_TOKEN'))

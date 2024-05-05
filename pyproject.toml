@@ -24,7 +24,6 @@ sentence-transformers = "^2.2.2"
 nbformat = "^5.9.2"
 pydantic = "^2.6.0"
 sphinx = "7.2.6"
-huggingface-hub = "^0.20.3"
 sphinx-rtd-theme = "2.0.0"
 pytest = "^8.1.1"
 pinecone-client = "^3.2.0"
@@ -42,6 +41,7 @@ ragas = "^0.1.6"
 sphinxawesome-theme = "^5.1.1"
 sphinx-design = "^0.5.0"
 langchain-voyageai = "^0.1.0"
+datasets = "^2.19.0"
 
 [build-system]
 requires = ["poetry-core"]
