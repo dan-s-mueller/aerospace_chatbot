@@ -765,9 +765,7 @@ def get_or_create_spotlight_viewer(ssl_certfile: str, ssl_keyfile: str):
                           wait=False,
                           dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
                           host='0.0.0.0',
-                          port=9000,
-                          ssl_certfile=ssl_certfile,
-                          ssl_keyfile=ssl_keyfile)
+                          port=9000,)
     return new_viewer
 def get_docs_questions_df(
         docs_db_directory: Path,

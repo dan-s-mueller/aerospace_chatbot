@@ -47,9 +47,8 @@ llm=admin.set_llm(sb,secrets)    # Set the LLM
 query_model = admin.get_query_model(sb, secrets)    # Set query model
 
 # Get the viewer
-cert_file_path=os.path.join(paths['base_folder_path'],'app','tls_certificate')
-viewer = data_processing.get_or_create_spotlight_viewer(ssl_certfile=os.path.join(cert_file_path,'cert.pem'),
-                                                        ssl_keyfile=os.path.join(cert_file_path,'key.pem'))
+# cert_file_path=os.path.join(paths['base_folder_path'],'app','tls_certificate')
+viewer = data_processing.get_or_create_spotlight_viewer()
 
 # Add options
 export_file=st.checkbox('Export file?',value=False,help='Export the data, including embeddings to a parquet file')
@@ -75,4 +74,5 @@ if st.button('Visualize'):
                                         doc_per_cluster=docs_per_cluster)
     if export_file:
         df.to_parquet(file_name)
+    st.markdown('Spotlight running on: http://0.0.0.0:9000')
     viewer.show(df, wait=False)
