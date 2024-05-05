@@ -5811,12 +5811,12 @@ files = [
 
 [[package]]
 name = "renumics-spotlight"
-version = "1.6.6"
+version = "1.6.5"
 description = "Visualize and maintain datasets to develop and understand data-driven algorithms."
 optional = false
 python-versions = ">=3.8,<3.12"
 files = [
-    {file = "renumics_spotlight-1.6.6-py3-none-any.whl", hash = "sha256:a8da1fb0c259b25d34d7cd3551de7a7276d6e91e8d23dfb016b127436e2449ef"},
+    {file = "renumics_spotlight-1.6.5-py3-none-any.whl", hash = "sha256:6ff313bf3d48037233b4d7a5f107ecbafcb956b9101f95e7db9f94c2a088abad"},
 ]
 
 [package.dependencies]
@@ -8372,4 +8372,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.9.7,<3.12"
-content-hash = "20fb5ab5a72f1b2239299c66655350b69c5933583e7d4a6c010ec067c9e692fc"
+content-hash = "72657c5895b03f24d186778b5613b8fb6effc51834016bed8b16e6a7b012652f"

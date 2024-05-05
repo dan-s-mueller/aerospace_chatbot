@@ -72,8 +72,7 @@ if st.button('Visualize'):
         df.to_parquet(file_name)
     
     # Get the viewer
-    # cert_file_path=os.path.join(paths['base_folder_path'],'app','tls_certificate')
     host='0.0.0.0'
     port=9000
-    st.markdown(f"Spotlight running on: {'http://'+'localhost+':'+str(port)}")
+    st.markdown(f"Spotlight running on: {'http://'+'localhost'+':'+str(port)}")
     viewer = data_processing.get_or_create_spotlight_viewer(df,host=host,port=port)

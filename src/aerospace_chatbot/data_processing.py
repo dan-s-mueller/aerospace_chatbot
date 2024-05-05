@@ -742,19 +742,13 @@ def get_or_create_spotlight_viewer(df:pd.DataFrame,host:str='0.0.0.0',port:int=9
             viewer.close()
         existing_viewer=spotlight.viewers()[-1]
         return existing_viewer
-
-    # new_viewer = spotlight.show(pd.DataFrame({}),  # Hack for Spotlight
-    #                       no_browser=True,
-    #                       wait=False,
-    #                       dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
-    #                       host='localhost',
-    #                       port=9000)
     
-    new_viewer = spotlight.show(df,  # Hack for Spotlight
+    new_viewer = spotlight.show(df,
                           wait='auto',
                           dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
                           host=host,
                           port=port)
+
     return new_viewer
 def get_docs_questions_df(
         docs_db_directory: Path,
