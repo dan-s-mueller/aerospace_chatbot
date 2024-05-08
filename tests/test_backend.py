@@ -1,6 +1,7 @@
 import os, sys, json
 import itertools
 import pytest
+import pandas as pd
 from dotenv import load_dotenv,find_dotenv
 
 from langchain_openai import OpenAIEmbeddings
@@ -17,13 +18,12 @@ from ragatouille import RAGPretrainedModel
 import chromadb
 from chromadb import ClientAPI
 
-from ragxplorer import RAGxplorer
-
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 from data_processing import chunk_docs, initialize_database, load_docs, \
-      delete_index, _stable_hash_meta
+      delete_index, _stable_hash_meta, get_docs_df, get_questions_df, \
+      add_clusters, get_docs_questions_df
 from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
 from queries import QA_Model
 
@@ -258,44 +258,6 @@ def parse_test_model(type, test, setup_fixture):
         return llm
     else:
         raise ValueError('Invalid type. Must be either "embedding" or "llm".')
-def viz_database_setup(index_name,setup_fixture):
-    '''
-    Set up the RAGxplorer and ChromaDB for database visualization.
-
-    Args:
-        index_name (str): Name of the index.
-        setup_fixture (dict): A dictionary containing setup fixtures.
-
-    Returns:
-        tuple: A tuple containing the RAGxplorer client and ChromaDB client.
-    '''
-    rag_type = 'Standard'
-    test_query_params={'index_type':'ChromaDB',
-                       'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
-
-    rx_client = RAGxplorer(embedding_model=test_query_params['embedding_name'])
-    chroma_client = chromadb.PersistentClient(path=os.path.join(setup_fixture['LOCAL_DB_PATH'],'chromadb'))
-
-    # Initialize a small database
-    try:
-        vectorstore = load_docs(
-            test_query_params['index_type'],
-            setup_fixture['docs'],
-            query_model,
-            rag_type,
-            index_name, 
-            chunk_method=setup_fixture['chunk_method'],
-            chunk_size=setup_fixture['chunk_size']*2,   # Double chunk size to reduce quantity
-            chunk_overlap=setup_fixture['chunk_overlap'],
-            clear=True,
-            batch_size=setup_fixture['batch_size'],
-            local_db_path=setup_fixture['LOCAL_DB_PATH'])
-    except Exception as e:
-        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=setup_fixture['LOCAL_DB_PATH'])
-        raise e
-    return rx_client, chroma_client
 
 # Fixtures
 @pytest.fixture(scope='session', autouse=True)
@@ -1092,4 +1054,175 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
 
 # Test data visualization
 # TODO write new cases for spotlight visualization
-# TODO Add test case for when cluster size for query is small
+def test_get_docs_df(setup_fixture):
+    index_name = 'test-index'
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+
+    # Call the function
+    df = get_docs_df(setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
+
+    # Perform assertions
+    assert isinstance(df, pd.DataFrame)
+    assert "id" in df.columns
+    assert "source" in df.columns
+    assert "page" in df.columns
+    assert "document" in df.columns
+    assert "embedding" in df.columns
+
+def test_get_questions_df(setup_fixture):
+    index_name = 'test-index'
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+
+    # Call the function
+    df = get_questions_df(setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
+
+    # Perform assertions
+    assert isinstance(df, pd.DataFrame)
+    assert "id" in df.columns
+    assert "question" in df.columns
+    assert "answer" in df.columns
+    assert "sources" in df.columns
+    assert "embedding" in df.columns
+
+def test_get_docs_questions_df(setup_fixture):
+    index_name='test-vizualisation'
+    rag_type='Standard'
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    test_llm_params={'llm_family': 'OpenAI', 
+                     'llm': 'gpt-3.5-turbo-0125'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+    llm=parse_test_model('llm', test_llm_params, setup_fixture)
+
+    try: 
+        vectorstore = load_docs(
+            test_query_params['index_type'],
+            setup_fixture['docs'],
+            rag_type=rag_type,
+            query_model=query_model,
+            index_name=index_name, 
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap'],
+            clear=True,
+            batch_size=setup_fixture['batch_size'],
+            local_db_path=setup_fixture['LOCAL_DB_PATH'],
+            llm=llm)
+        qa_model_obj = QA_Model(test_query_params['index_type'],
+                            index_name,
+                            query_model,
+                            llm,
+                            rag_type=rag_type,
+                            local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        qa_model_obj.query_docs(setup_fixture['test_prompt'])
+        assert qa_model_obj.query_vectorstore is not None
+        
+        df = get_docs_questions_df(
+            setup_fixture['LOCAL_DB_PATH'],
+            index_name,
+            setup_fixture['LOCAL_DB_PATH'],
+            index_name+'-queries',
+            query_model
+        )
+
+        # Assert the result
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) > 0
+        assert "id" in df.columns
+        assert "source" in df.columns
+        assert "page" in df.columns
+        assert "document" in df.columns
+        assert "embedding" in df.columns
+        assert "type" in df.columns
+        assert "num_sources" in df.columns
+        assert "first_source" in df.columns
+        assert "used_by_questions" in df.columns
+        assert "used_by_num_questions" in df.columns
+        assert "used_by_question_first" in df.columns
+
+        delete_index(test_query_params['index_type'],
+                index_name, 
+                rag_type,
+                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+
+    except Exception as e:  # If there is an error, be sure to delete the database
+        delete_index(test_query_params['index_type'],
+                index_name, 
+                rag_type,
+                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        raise e
+def test_add_clusters(setup_fixture):
+    index_name='test-vizualisation'
+    rag_type='Standard'
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    test_llm_params={'llm_family': 'OpenAI', 
+                     'llm': 'gpt-3.5-turbo-0125'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+    llm=parse_test_model('llm', test_llm_params, setup_fixture)
+
+    try: 
+        vectorstore = load_docs(
+            test_query_params['index_type'],
+            setup_fixture['docs'],
+            rag_type=rag_type,
+            query_model=query_model,
+            index_name=index_name, 
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap'],
+            clear=True,
+            batch_size=setup_fixture['batch_size'],
+            local_db_path=setup_fixture['LOCAL_DB_PATH'],
+            llm=llm)
+        qa_model_obj = QA_Model(test_query_params['index_type'],
+                            index_name,
+                            query_model,
+                            llm,
+                            rag_type=rag_type,
+                            local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        qa_model_obj.query_docs(setup_fixture['test_prompt'])
+
+        df = get_docs_questions_df(
+            setup_fixture['LOCAL_DB_PATH'],
+            index_name,
+            setup_fixture['LOCAL_DB_PATH'],
+            index_name+'-queries',
+            query_model
+        )
+
+        delete_index(test_query_params['index_type'],
+                index_name, 
+                rag_type,
+                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+
+    except Exception as e:  # If there is an error, be sure to delete the database
+        delete_index(test_query_params['index_type'],
+                index_name, 
+                rag_type,
+                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+
+    # Check the add_clusters function with no labeling
+    n_clusters = 2  # Define the expected number of clusters
+    df_with_clusters = add_clusters(df, n_clusters) # Call the add_clusters function
+    assert len(df_with_clusters["Cluster"].unique()) == n_clusters  # Check if the number of clusters is correct
+    for cluster in df_with_clusters["Cluster"].unique():    # Check if the number of documents per cluster is correct
+        num_documents = len(df_with_clusters[df_with_clusters["Cluster"] == cluster])
+        assert num_documents >= 1
+
+    # Check the add_clusters function with labeling
+    n_clusters = 2  # Define a different number of clusters
+    df_with_clusters = add_clusters(df, n_clusters, llm, 2)  # Call the add_clusters function
+    assert len(df_with_clusters["Cluster"].unique()) == n_clusters  # Check if the number of clusters is correct
+    assert "Cluster_Label" in df_with_clusters.columns  # Check if the cluster labels are added correctly
+    assert df_with_clusters["Cluster_Label"].notnull().all()  # Check if the cluster labels are non-empty
+    assert df_with_clusters["Cluster_Label"].apply(lambda x: isinstance(x, str)).all()  # Check if the cluster labels are strings
+    for cluster in df_with_clusters["Cluster"].unique():  # Check if the number of documents per cluster is more than zero
+        num_documents = len(df_with_clusters[df_with_clusters["Cluster"] == cluster])
+        assert num_documents > 0

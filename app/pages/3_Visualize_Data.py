@@ -42,7 +42,6 @@ elif sb['query_model']=='OpenAI' or sb['query_model']=='Voyage':
 
 st.info('Visualization is only functional with ChromaDB index type.')
 
-# TODO there's not really a reason for this tab to exist. Consider moving into 2_Chatbot.py app
 llm=admin.set_llm(sb,secrets)    # Set the LLM
 query_model = admin.get_query_model(sb, secrets)    # Set query model
 
@@ -75,4 +74,5 @@ if st.button('Visualize'):
     host='0.0.0.0'
     port=9000
     st.markdown(f"Spotlight running on: {'http://'+'localhost'+':'+str(port)}")
+    st.info('Functionality only works with locally deployed versions. A version of Streamlit with a pre-loaded dataset is located here: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize')
     viewer = data_processing.get_or_create_spotlight_viewer(df,host=host,port=port)

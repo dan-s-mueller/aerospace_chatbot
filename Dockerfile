@@ -1,20 +1,21 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11.5-bookworm
 
-# Came from here: https://huggingface.co/docs/hub/spaces-sdks-docker#permissions Set up a new user named "user" with user ID 1000.
-# RUN useradd -m -u 1000 user
-
 # Do root things: clone repo and install dependencies. libsndfile1 for spotlight. libhdf5-serial-dev for vector distance.
 USER root
+
 RUN useradd -m -u 1000 user && chown -R user:user /home/user && chmod -R 777 /home/user
+
 # WORKDIR /clonedir
 # RUN apt-get update && \
 # 	apt-get install -y git
 # RUN git clone --depth 1 https://github.com/dan-s-mueller/aerospace_chatbot.git .
+
 RUN apt-get update && apt-get install -y \
     libhdf5-serial-dev \
     libsndfile1 \   
     && rm -rf /var/lib/apt/lists/*
+
 USER user
 
 # Set home to the user's home directory
@@ -39,6 +40,8 @@ RUN pip3 install poetry==1.7.1
 
 # Copy poetry files. Use cp for github config, followed by chown statements.
 COPY --chown=user:user pyproject.toml $HOME
+# RUN cp /clonedir/pyproject.toml $HOME
+# RUN chown user:user $HOME/pyproject.toml
 
 # Disable virtual environments creation by Poetry. Making this false results in permissions issues.
 RUN poetry config virtualenvs.in-project true
@@ -52,11 +55,13 @@ ENV PATH="$HOME/.venv/bin:$PATH"
 # Install dependencies using Poetry
 RUN poetry install --no-root
 
-# Copy the rest of your application code.  Use cp for github config, followed by chown statements.
+# Copy the rest of your application code.  Use cp for github config, followed by chown statements. cp commands for non-local builds.
 COPY --chown=user:user ./src $HOME/src
 COPY --chown=user:user ./data $HOME/data
 COPY --chown=user:user ./config $HOME/config
 COPY --chown=user:user ./app $HOME/app
+# RUN cp -R /clonedir/src /clonedir/data /clonedir/config /clonedir/app $HOME
+# RUN chown -R user:user $HOME/src $HOME/data $HOME/config $HOME/db
 
 # Set up database path and env variabole. Comment out if running on hugging face spaces
 RUN mkdir $HOME/db
@@ -76,15 +81,17 @@ EXPOSE 9000
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
 # An ENTRYPOINT allows you to configure a container that will run as an executable.
-# TODO test out that there are not weird bugs when running on docker locally. Spotlight, databases, etc.
 ENTRYPOINT ["streamlit", "run", "Home.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
 # Run this if you're running with terminal locally
 # ENTRYPOINT ["/bin/bash", "-c"]
 
-# To run locally
+# To build and run locally
 # docker build -t aerospace-chatbot .
 # docker run --user 1000:1000 -p 8501:8501 -p 9000:9000 -it aerospace-chatbot
+
+# To build for remote hosts with different architectures:
+# docker build --platform linux/amd64 -t dsmuellerpro/aerospace-chatbot:linux-amd64 .
 
 # To run locally with a terminal.
 # docker build -t aerospace-chatbot .
