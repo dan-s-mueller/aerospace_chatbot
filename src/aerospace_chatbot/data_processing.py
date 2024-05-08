@@ -43,6 +43,8 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
 
+from datasets import Dataset
+
 import admin
 from prompts import CLUSTER_LABEL
 
@@ -901,3 +903,16 @@ def add_clusters(df:pd,n_clusters:int,label_llm:object=None,doc_per_cluster:int=
         df["Cluster_Label"] = [summary[i].content for i in df["Cluster"]]
     
     return df
+def export_to_hf_dataset(df: pd.DataFrame, dataset_name: str):
+    """
+    Export a pandas DataFrame to a Hugging Face dataset and push it to the Hugging Face Hub.
+
+    Args:
+        df (pd.DataFrame): The pandas DataFrame to be exported.
+        dataset_name (str): The name of the dataset to be created in the Hugging Face Hub.
+
+    Returns:
+        None
+    """
+    hf_dataset = Dataset.from_pandas(df)
+    hf_dataset.push_to_hub(dataset_name, token=os.getenv('HUGGINGFACEHUB_API_TOKEN'))

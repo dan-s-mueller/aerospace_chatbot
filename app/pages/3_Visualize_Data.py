@@ -24,10 +24,8 @@ paths,sb,secrets=admin.st_setup_page('Visualize Data',
                                       'secret_keys':True})
 
 # Set up session state variables
-if 'rx_client' not in st.session_state:
-    st.session_state.rx_client = None
-if 'chroma_client' not in st.session_state:
-    st.session_state.chroma_client = None
+if 'viewer' not in st.session_state:
+    st.session_state.viewer = None
 
 # Set the query model
 if sb["index_type"]=='RAGatouille':
@@ -46,33 +44,51 @@ llm=admin.set_llm(sb,secrets)    # Set the LLM
 query_model = admin.get_query_model(sb, secrets)    # Set query model
 
 # Add options
-export_file=st.checkbox('Export file?',value=False,help='Export the data, including embeddings to a parquet file')
+export_file=st.checkbox('Export local dataset file?',value=False,help='Export the data, including embeddings to a parquet file')
 if export_file:
     file_name=st.text_input('Enter the file name',value=f"{os.path.join(paths['data_folder_path'],sb['index_selected']+'.parquet')}")
+hf_dataset=st.checkbox('Export dataset to Hugging Face?',value=False,help='Export the data, including embeddings to a Hugging Face dataset.')
+if hf_dataset:
+    hf_org_name=st.text_input('Enter the Hugging Face organization name',value='ai-aerospace',help='The organization name on Hugging Face.')
+    dataset_name=st.text_input('Enter the dataset name',value=sb['index_selected'],help='The name of the dataset to be created on Hugging Face. Output will be sidebar selection. Will be appended with ac-.')
+    dataset_name=hf_org_name+'/'+'ac-'+dataset_name
 cluster_data=st.checkbox('Cluster data?',value=False,help='Cluster the data using the embeddings using KMeans clustering.')
 if cluster_data:
     st.markdown('LLM to be used for clustering is set in sidebar.')
     n_clusters=st.number_input('Enter the number of clusters',value=10)
     docs_per_cluster=st.number_input('Enter the number of documents per cluster to generate label',value=10)
+spotlight_viewer=st.checkbox('Launch Spotlight viewer?',value=False,help='Launch the Spotlight viewer to visualize the data. If unselected, will provide link to static Spotlight viewer.')
+if spotlight_viewer:
+    host=st.text_input('Enter the host IP address',value='0.0.0.0',help='The IP address of the host running the viewer. Default to 0.0.0.0 to run on all interfaces.')
+    port=st.number_input('Enter the port number',value=9000,help='The port number to run the viewer on. Default to 9000.')
 
 if st.button('Visualize'):
-    df = data_processing.get_docs_questions_df(
-        paths['db_folder_path'],
-        sb['index_selected'],
-        paths['db_folder_path'],
-        sb['index_selected']+'-queries',
-        query_model
-    )
-    if cluster_data:
-        df=data_processing.add_clusters(df,n_clusters,
-                                        label_llm=llm,
-                                        doc_per_cluster=docs_per_cluster)
-    if export_file:
-        df.to_parquet(file_name)
-    
-    # Get the viewer
-    host='0.0.0.0'
-    port=9000
-    st.markdown(f"Spotlight running on: {'http://'+'localhost'+':'+str(port)}")
-    st.info('Functionality only works with locally deployed versions. A version of Streamlit with a pre-loaded dataset is located here: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize')
-    viewer = data_processing.get_or_create_spotlight_viewer(df,host=host,port=port)
+    with st.status('Processing visualization...'):
+        df = data_processing.get_docs_questions_df(
+            paths['db_folder_path'],
+            sb['index_selected'],
+            paths['db_folder_path'],
+            sb['index_selected']+'-queries',
+            query_model
+        )
+        if cluster_data:
+            st.write('Clustering data...')
+            df=data_processing.add_clusters(df,n_clusters,
+                                            label_llm=llm,
+                                            doc_per_cluster=docs_per_cluster)
+        
+        if export_file:
+            st.write('Clustering data...')
+            df.to_parquet(file_name)
+
+        if hf_dataset:
+            st.write('Uploading Hugging Face dataset...')
+            data_processing.export_to_hf_dataset(df,dataset_name)
+            st.markdown(f"The dataset is uploaded to: {'https://huggingface.co/datasets/'+dataset_name}")
+
+    if spotlight_viewer or st.session_state.viewer is not None: 
+        st.markdown(f"Spotlight running on: {'http://'+'localhost'+':'+str(port)}")
+        st.info('Functionality only works with locally deployed versions. A version of Streamlit with a pre-loaded dataset is located here: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize')
+        st.session_state.viewer = data_processing.get_or_create_spotlight_viewer(df,host=host,port=port)
+    else:
+        st.info('Functionality only works with locally deployed versions. A version of Streamlit with a pre-loaded dataset is located here: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize')
