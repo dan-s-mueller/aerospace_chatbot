@@ -85,6 +85,11 @@ The prompt which is used to return the response at the end of this process is lo
 
 The response is then returned to the user.
 
+8. Visualization
+""""""""""""""""
+
+For locally deployed applications, `Renumics Spotlight <https://renumics.com/open-source/spotlight/>`__ is used to visualize the embeddings and related data. This is particularly valuable to see related data to queries made and clustering.
+
 Secret Keys
 ^^^^^^^^^^^
 

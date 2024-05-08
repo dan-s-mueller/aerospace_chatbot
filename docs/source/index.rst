@@ -33,6 +33,7 @@ Deployed apps
 
 - `Hugging Face Organization AI-Aerospace <https://huggingface.co/ai-aerospace>`_
 - `Aerospace Chatbot: Aerospace Mechanisms Symposia <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_ams>`_.
+    - `Aerospace Chatbot: Aerospace Mechanisms Symposia, Sample Visualization <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize>`_.
 
 Project links
 -------------

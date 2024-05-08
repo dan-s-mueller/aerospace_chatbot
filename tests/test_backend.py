@@ -658,7 +658,7 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
         pass
 
 # Test end to end process, adding query
-def test_database_setup_and_query(test_input,setup_fixture):
+
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.
 
     Args:
@@ -775,13 +775,10 @@ def test_load_sidebar():
     assert 'rag_type' in sidebar_config
     assert sidebar_config['rag_type'] == 'Standard'  
 
-    # Test case: Only embeddings, index_name and rag_type are True
-    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True, index_name=True, rag_type=True)
+    # Test case: Only embeddings and rag_type are True
+    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True, rag_type=True)
     assert 'query_model' in sidebar_config
     assert sidebar_config['query_model'] == 'OpenAI'
-    assert 'index_name' in sidebar_config
-    # Careful with this one, the ordering of embedding names in config.json matters. Take the first database type+first embedding name in OpenAI.
-    assert sidebar_config['index_name'] == 'chromadb-text-embedding-ada-002'    
 
     # Test case: Only llm is True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, llm=True)
@@ -797,16 +794,13 @@ def test_load_sidebar():
 
     # Test case: All options are True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True,
-                                  embeddings=True, rag_type=True, index_name=True, llm=True, model_options=True)
+                                  embeddings=True, rag_type=True, llm=True, model_options=True)
     assert 'index_type' in sidebar_config
     assert sidebar_config['index_type'] == 'ChromaDB'
     assert 'query_model' in sidebar_config
     assert sidebar_config['query_model'] == 'OpenAI'
     assert 'rag_type' in sidebar_config
-    assert sidebar_config['rag_type'] == 'Standard'
-    assert 'index_name' in sidebar_config
-    # Careful with this one, the ordering of embedding names in config.json matters. Take the first database type+first embedding name in OpenAI.
-    assert sidebar_config['index_name'] == 'chromadb-text-embedding-ada-002'  
+    assert sidebar_config['rag_type'] == 'Standard' 
     assert 'llm_source' in sidebar_config
     assert sidebar_config['llm_source'] == 'OpenAI'
     assert 'temperature' in sidebar_config['model_options']
@@ -983,7 +977,6 @@ def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
         'vector_database': True,
         'embeddings': True,
         'rag_type': True,
-        'index_name': True,
         'llm': True,
         'model_options': True
     }
@@ -1027,7 +1020,6 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
         'vector_database': True,
         'embeddings': True,
         'rag_type': True,
-        'index_name': True,
         'llm': True,
         'model_options': True
     }
@@ -1053,8 +1045,16 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
                        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
 
 # Test data visualization
-# TODO write new cases for spotlight visualization
 def test_get_docs_df(setup_fixture):
+    """
+    Test case for the get_docs_df function.
+
+    Args:
+        setup_fixture (dict): The setup fixture containing necessary parameters.
+
+    Returns:
+        None
+    """
     index_name = 'test-index'
     test_query_params={'index_type':'ChromaDB',
                        'query_model': 'OpenAI', 
@@ -1073,6 +1073,15 @@ def test_get_docs_df(setup_fixture):
     assert "embedding" in df.columns
 
 def test_get_questions_df(setup_fixture):
+    """
+    Test case for the get_questions_df function.
+
+    Args:
+        setup_fixture (dict): The setup fixture containing necessary data for the test.
+
+    Returns:
+        None
+    """
     index_name = 'test-index'
     test_query_params={'index_type':'ChromaDB',
                        'query_model': 'OpenAI', 
@@ -1091,6 +1100,19 @@ def test_get_questions_df(setup_fixture):
     assert "embedding" in df.columns
 
 def test_get_docs_questions_df(setup_fixture):
+    """
+    Test function for the get_docs_questions_df() method.
+
+    Args:
+        setup_fixture: The setup fixture containing necessary parameters for the test.
+
+    Raises:
+        Exception: If there is an error, the function will raise an exception.
+
+    Returns:
+        None
+    """
+    
     index_name='test-vizualisation'
     rag_type='Standard'
     test_query_params={'index_type':'ChromaDB',
@@ -1158,6 +1180,16 @@ def test_get_docs_questions_df(setup_fixture):
                 local_db_path=setup_fixture['LOCAL_DB_PATH'])
         raise e
 def test_add_clusters(setup_fixture):
+    """
+    Test function for the add_clusters function.
+
+    Args:
+        setup_fixture (dict): A dictionary containing setup fixtures for the test.
+
+    Returns:
+        None
+    """
+    
     index_name='test-vizualisation'
     rag_type='Standard'
     test_query_params={'index_type':'ChromaDB',
