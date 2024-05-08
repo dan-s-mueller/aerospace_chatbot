@@ -658,7 +658,7 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
         pass
 
 # Test end to end process, adding query
-
+def test_database_setup_and_query(test_input,setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.
 
     Args:
@@ -1071,7 +1071,6 @@ def test_get_docs_df(setup_fixture):
     assert "page" in df.columns
     assert "document" in df.columns
     assert "embedding" in df.columns
-
 def test_get_questions_df(setup_fixture):
     """
     Test case for the get_questions_df function.
@@ -1098,7 +1097,6 @@ def test_get_questions_df(setup_fixture):
     assert "answer" in df.columns
     assert "sources" in df.columns
     assert "embedding" in df.columns
-
 def test_get_docs_questions_df(setup_fixture):
     """
     Test function for the get_docs_questions_df() method.
