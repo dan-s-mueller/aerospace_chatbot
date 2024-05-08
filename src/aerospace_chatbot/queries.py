@@ -194,8 +194,9 @@ class QA_Model:
             raise NotImplementedError
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
-        # Upsert query into query database
-        self.query_vectorstore.add_documents([_question_as_doc(query, self.result)])
+        # If ChromaDB type, upsert query into query database
+        if self.index_type=='ChromaDB':
+            self.query_vectorstore.add_documents([_question_as_doc(query, self.result)])
         
     def update_model(self,
                      llm:ChatOpenAI):
