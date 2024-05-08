@@ -106,6 +106,14 @@ RAG Types
 Parent-Child RAG
 """"""""""""""""
 
+`Under construction`
+
 Summary RAG
 """""""""""
 
+`Under construction`
+
+Data Visualization
+^^^^^^^^^^^^^^^^^^
+
+`Under construction`, see `Spotlight from Renumics <https://renumics.com/open-source/spotlight/>`__

@@ -1,4 +1,4 @@
-import os, sys, time, logging
+import os, sys, time
 import streamlit as st
 
 from langchain_community.vectorstores import Pinecone
@@ -32,7 +32,7 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
                                      {'vector_database':True,
                                       'embeddings':True,
                                       'rag_type':True,
-                                      'index_name':True,
+                                      'index_selected':True,
                                       'llm':True,
                                       'model_options':True,
                                       'secret_keys':True})
@@ -47,20 +47,20 @@ with st.expander('''What's under the hood?'''):
     * What can you tell me about the efficacy of lead naphthenate for wear protection in space mechanisms?
     ''')
 
+# Add reset option for query database
+reset_query_db = st.empty()
+reset_query_db.checkbox('Reset query database?', value=False, help='This will reset the query database used for visualization.')
+
 # Set up chat history
 if 'qa_model_obj' not in st.session_state:
     st.session_state.qa_model_obj = []
-    logging.info('QA model object initialized.')
 if 'message_id' not in st.session_state:
     st.session_state.message_id = 0
-    logging.info('Message ID initialized.')
 if 'messages' not in st.session_state:
     st.session_state.messages = []
-    logging.info('Messages initialized.')
 for message in st.session_state.messages:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
-    logging.info('Chat history loaded.')
 
 # Define chat
 if prompt := st.chat_input('Prompt here'):
@@ -78,7 +78,7 @@ if prompt := st.chat_input('Prompt here'):
             st.session_state.message_id += 1
             st.write(f'*Starting response generation for message: {str(st.session_state.message_id)}*')
             
-            if st.session_state.message_id==1:
+            if st.session_state.message_id==1:  # Initialize chat
                 query_model = admin.get_query_model(sb, secrets)    # Set query model
                 llm=admin.set_llm(sb,secrets,type='prompt') # Define LLM
 
@@ -94,14 +94,17 @@ if prompt := st.chat_input('Prompt here'):
                                                                rag_type=sb['rag_type'],
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
-                                                               local_db_path=paths['db_folder_path'])
-            if st.session_state.message_id>1:
+                                                               local_db_path=paths['db_folder_path'],
+                                                               reset_query_db=reset_query_db)
+                reset_query_db.empty()  # Remove this option after initialization
+            if st.session_state.message_id>1:   # Chat after first message and initialization
                 # Update LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
 
                 st.session_state.qa_model_obj.update_model(llm)
             
             st.write('*Searching vector database, generating prompt...*')
+            st.write(f"*Query added to query database: {sb['index_selected']+'-queries'}*")
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.ai_response
             message_placeholder.markdown(ai_response)

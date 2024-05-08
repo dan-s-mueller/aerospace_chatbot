@@ -41,7 +41,7 @@ if st.session_state["authentication_status"]:
 
     # Add section for connection status and vector database cleanup
     st.subheader('Connection status and vector database cleanup')
-    admin.st_connection_status_expander(expanded=False,delete_buttons=True)
+    admin.st_connection_status_expander(expanded=True,delete_buttons=True)
 
     # Add section for creating and loading into a vector database
     st.subheader('Create and load into a vector database')
@@ -62,7 +62,12 @@ if st.session_state["authentication_status"]:
 
     # Set database name
     database_appendix=st.text_input('Appendix for database name','ams')
-    database_name = (sb['index_type'] + '-' + sb['embedding_name'].replace('/', '-') + '-' + database_appendix).lower()
+    database_name = (sb['embedding_name'].replace('/', '-') + '-' + database_appendix).lower()
+    try:
+        data_processing._check_db_name(sb['index_type'],database_name)
+    except ValueError as e:
+        st.warning(str(e))
+        st.stop()
 
     # Add an expandable box for options
     with st.expander("Options",expanded=True):

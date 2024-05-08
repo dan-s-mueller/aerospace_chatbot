@@ -1,13 +1,11 @@
 import streamlit as st
 import sys, os
 
-import logging
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin
 
 # Set up page, enable logging
-logging.basicConfig(filename='app_Home.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../"))

@@ -5,7 +5,7 @@ There are standard configuration files used for setup. These are located in the 
 
 `config.json`
 -------------
-The `config.json` file is the main configuration file used to list available databases, and large language models. Modifying this config file will require ensuring that the models and sources are compatible with the `aerospace_chatbot` code. Any changes to the config file should be tested to ensure that the chatbot still functions as expected. 
+The `config.json` file is the main configuration file used to list available databases, and large language models. Modifying this config file will require ensuring that the models and sources are compatible with the ``aerospace_chatbot`` code. Any changes to the config file should be tested to ensure that the chatbot still functions as expected. 
 
 This file controls the specific models avaialble for embeddings and llms. Submit an issue if you would like to add a new model to the chatbot.
 

@@ -1,8 +1,7 @@
 from prompts import SUMMARIZE_TEXT
 
-import os, re, shutil, random
+import os, re, shutil
 import hashlib
-import uuid
 from pathlib import Path
 from typing import List, Union
 
@@ -37,9 +36,15 @@ from langchain_core.output_parsers import StrOutputParser
 
 from ragatouille import RAGPretrainedModel
 
-from ragxplorer import RAGxplorer, rag
-import pandas as pd
+from renumics import spotlight
+from renumics.spotlight import dtypes as spotlight_dtypes
 
+import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+
+import admin
+from prompts import CLUSTER_LABEL
 
 def load_docs(index_type:str,
               docs:List[str],
@@ -151,8 +156,6 @@ def chunk_docs(docs: List[str],
     pages=[]
     chunks=[]
     
-    merged_docs = []
-    
     # Parse doc pages
     for i, doc in enumerate(docs):
         
@@ -178,7 +181,6 @@ def chunk_docs(docs: List[str],
                                   'source': str([doc.metadata['source'] for doc in group])}
                 merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
                 pages.append(merged_doc)
-            # pages = merged_docs
         else:
             pages.extend(doc_pages)
     
@@ -193,7 +195,6 @@ def chunk_docs(docs: List[str],
                 if show_progress:
                     progress_percentage = i / len(page_chunks)
                     my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
-                # chunk.page_content += str(chunk.metadata)    # Add metadata to the end of the page content, some RAG models don't have metadata.
                 chunks.append(chunk)    # Not sanitized because the page already was
         elif chunk_method=='None':
             text_splitter = None
@@ -336,12 +337,26 @@ def initialize_database(index_type: str,
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
+        # TODO add in collection metadata like this:
+        #         collection_metadata = {}
+        # if embeddings_model is not None:
+        #     model_name, model_type = get_embeddings_model_config(embeddings_model)
+        #     collection_metadata["model_name"] = model_name
+        #     collection_metadata["model_type"] = model_type
+
+        # if isinstance(relevance_score_fn, str):
+        #     assert relevance_score_fn in get_args(PredefinedRelevanceScoreFn)
+        #     collection_metadata["hnsw:space"] = relevance_score_fn
+        # else:
+        #     kwargs["relevance_score_fn"] = relevance_score_fn
+        # kwargs["collection_metadata"] = collection_metadata
+        # return Chroma(**kwargs)
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
         vectorstore = Chroma(client=persistent_client,
                                 collection_name=index_name,
-                                embedding_function=query_model)     
+                                embedding_function=query_model) 
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')   
@@ -433,7 +448,7 @@ def upsert_docs(index_type: str,
                 show_progress: bool = False,
                 local_db_path: str = '.'):
     """
-    Upserts documents into the specified index. Uses tenacity with exponential backoff to retry upserting documents.
+    Upserts documents into the specified index.
 
     Args:
         index_type (str): The type of index to upsert the documents into.
@@ -617,162 +632,6 @@ def delete_index(index_type: str,
             pass
     else:
         raise NotImplementedError
-def reduce_vector_query_size(rx_client:RAGxplorer,
-                             chroma_client:chromadb,
-                             vector_qty:int,
-                             verbose:bool=False):
-    """
-    Reduces the number of vectors in the RAGxplorer client to a specified quantity.
-
-    Args:
-        rx_client (RAGxplorer): The RAGxplorer client.
-        chroma_client (chromadb): The chromadb client.
-        vector_qty (int): The desired number of vectors.
-        verbose (bool, optional): Whether to print verbose output. Defaults to False.
-
-    Returns:
-        RAGxplorer: The updated RAGxplorer client with the reduced number of vectors.
-    """
-
-    ids = rx_client._vectordb.get()['ids']
-    embeddings = rag.get_doc_embeddings(rx_client._vectordb)
-    text = rag.get_docs(rx_client._vectordb)
-
-    if verbose:
-        print('Reducing the number of vectors from '+str(len(embeddings))+' to '+str(vector_qty)+'...')
-    indices = random.sample(range(len(embeddings)), vector_qty)
-    id = str(uuid.uuid4())[:8]
-    temp_index_name=rx_client._vectordb.name+'-'+id
-    
-    # Create a temporary index with the reduced number of vectors
-    chroma_client.create_collection(name=temp_index_name,embedding_function=rx_client._chosen_embedding_model)
-    temp_collection = chroma_client.get_collection(name=temp_index_name,embedding_function=rx_client._chosen_embedding_model)
-    temp_collection.add(
-        ids=[ids[i] for i in indices],
-        embeddings=[embeddings[i] for i in indices],
-        documents=[text[i] for i in indices]
-    )
-
-    # Replace the original index with the temporary one
-    rx_client._vectordb = temp_collection
-    rx_client._documents.embeddings = rag.get_doc_embeddings(rx_client._vectordb)
-    rx_client._documents.text = rag.get_docs(rx_client._vectordb)
-    rx_client._documents.ids = rx_client._vectordb.get()['ids']
-
-    if verbose:
-        print('Reduced number of vectors to '+str(len(rx_client._documents.embeddings))+' ✓')
-    return rx_client
-def export_data_viz(rx_client: RAGxplorer, df_export_path: str):
-    """
-    Exports the visualization data to a JSON file.
-
-    Args:
-        rx_client (RAGxplorer): The RAGxplorer object containing the visualization data.
-        df_export_path (str): The file path to export the JSON data.
-
-    Returns:
-        None
-    """
-    export_data = {
-        'visualization_index_name': rx_client._vectordb.name,
-        'umap_params': rx_client._projector.get_params(),
-        'viz_data': rx_client._VizData.base_df.to_json(orient='split')
-    }
-
-    # Save the data to a JSON file
-    with open(df_export_path, 'w') as f:
-        json.dump(export_data, f, indent=4)
-def create_data_viz(index_selected: str,
-                    rx_client: RAGxplorer,
-                    chroma_client: PersistentClient,
-                    umap_params: dict = {'n_neighbors': 5, 'n_components': 2, 'random_state': 42},
-                    limit_size_qty: int = None,
-                    df_export_path: str = None,
-                    show_progress: bool = False):
-    """
-    Creates data visualization using RAGxplorer and PersistentClient.
-
-    Args:
-        index_selected (str): The name of the collection to load from chroma_client.
-        rx_client (RAGxplorer): An instance of RAGxplorer class.
-        chroma_client (PersistentClient): An instance of PersistentClient class.
-        umap_params (dict, optional): UMAP parameters for embedding. Defaults to {'n_neighbors': 5, 'n_components': 2, 'random_state': 42}.
-        limit_size_qty (int, optional): The maximum number of vectors to include in the visualization. Defaults to None.
-        df_export_path (str, optional): The file path to export the visualization data. Defaults to None.
-        show_progress (bool, optional): Whether to show progress bar. Defaults to False.
-
-    Returns:
-        tuple: A tuple containing the updated rx_client and chroma_client instances.
-    """
-    if show_progress:
-        my_bar = st.progress(0, text='Loading collection...')
-    
-    # Load collection from chroma_client
-    collection = chroma_client.get_collection(name=index_selected,
-                                              embedding_function=rx_client._chosen_embedding_model)
-    rx_client.load_chroma(collection,
-                          umap_params=umap_params,
-                          initialize_projector=True)
-    
-    if limit_size_qty:
-        if show_progress:
-            my_bar.progress(0.25, text='Reducing vector query size...')
-        
-        # Reduce vector query size
-        rx_client = reduce_vector_query_size(rx_client,
-                                             chroma_client,
-                                             vector_qty=limit_size_qty,
-                                             verbose=True)
-    
-    if show_progress:
-        my_bar.progress(0.5, text='Projecting embeddings for visualization...')
-    
-    # Run projector
-    rx_client.run_projector()
-    
-    if show_progress:
-        my_bar.progress(1, text='Projecting complete!')
-    
-    if df_export_path:
-        # Export data visualization
-        export_data_viz(rx_client, df_export_path)
-    
-    if show_progress:
-        my_bar.empty()
-    
-    return rx_client, chroma_client
-def visualize_data(index_selected: str,
-                   rx_client: RAGxplorer,
-                   chroma_client: PersistentClient,
-                   query: str,
-                   umap_params: dict = {'n_neighbors': 5, 'n_components': 2, 'random_state': 42},
-                   import_file: bool = True):
-    """
-    Visualizes data using RAGxplorer and PersistentClient.
-
-    Args:
-        index_selected (str): The name of the selected index.
-        rx_client (RAGxplorer): An instance of the RAGxplorer class.
-        chroma_client (PersistentClient): An instance of the PersistentClient class.
-        query (str): The query to visualize.
-        umap_params (dict, optional): UMAP parameters for data visualization. Defaults to {'n_neighbors': 5, 'n_components': 2, 'random_state': 42}.
-        import_file (bool, optional): Whether to import data from a file. Defaults to True.
-
-    Returns:
-        Tuple[RAGxplorer, PersistentClient]: A tuple containing the updated instances of RAGxplorer and PersistentClient.
-    """
-    if import_file:
-        with open(import_file, 'r') as f:
-            data = json.load(f)
-        viz_data = pd.read_json(data['viz_data'], orient='split')
-        collection = chroma_client.get_collection(name=index_selected, embedding_function=rx_client._chosen_embedding_model)
-        rx_client.load_chroma(collection, umap_params=umap_params, initialize_projector=True)
-        fig = rx_client.visualize_query(query, import_projection_data=viz_data)
-    else:
-        fig = rx_client.visualize_query(query)
-    st.plotly_chart(fig, use_container_width=True)
-
-    return rx_client, chroma_client
 def _sanitize_raw_page_data(page):
     """
     Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
@@ -860,3 +719,185 @@ def _stable_hash_meta(metadata: dict) -> str:
         str: The hexadecimal representation of the hashed metadata.
     """
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
+def _check_db_name(index_type:str,index_name:object):
+    if index_type=="Pinecone":
+        if len(index_name)>45:
+            raise ValueError(f'The Pinecone index name must be less than 45 characters. Entry: {index_name}')
+    elif index_type=="ChromaDB":
+        if len(index_name) > 63:
+            raise ValueError(f'The ChromaDB collection name must be less than 63 characters. Entry: {index_name}')
+        if not index_name[0].isalnum() or not index_name[-1].isalnum():
+            raise ValueError(f'The ChromaDB collection name must start and end with an alphanumeric character. Entry: {index_name}')
+        if not re.match(r'^[a-zA-Z0-9_-]+$', index_name):
+            raise ValueError(f'The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {index_name}')
+        if '..' in index_name:
+            raise ValueError(f'The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}')
+
+### Stuff to test out spotlight
+
+def get_or_create_spotlight_viewer(df:pd.DataFrame,host:str='0.0.0.0',port:int=9000):
+    viewers = spotlight.viewers()
+    if viewers:
+        for viewer in viewers[:-1]:
+            viewer.close()
+        existing_viewer=spotlight.viewers()[-1]
+        return existing_viewer
+    
+    new_viewer = spotlight.show(df,
+                          wait='auto',
+                          dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
+                          host=host,
+                          port=port)
+
+    return new_viewer
+def get_docs_questions_df(
+        docs_db_directory: Path,
+        docs_db_collection: str,
+        questions_db_directory: Path,
+        questions_db_collection: str,
+        query_model:object):
+    """
+    Retrieves and combines documents and questions dataframes.
+
+    Args:
+        docs_db_directory (Path): The directory of the documents database.
+        docs_db_collection (str): The name of the documents database collection.
+        questions_db_directory (Path): The directory of the questions database.
+        questions_db_collection (str): The name of the questions database collection.
+        query_model (object): The query model object.
+
+    Returns:
+        pd.DataFrame: The combined dataframe containing documents and questions data.
+    """
+    # TODO there's definitely a way to not have to pass query_model, since it should be possible to pull from the db, try to remove this in future versions
+
+    # Check if there exists a query database
+    chroma_collections = [collection.name for collection in admin.show_chroma_collections(format=False)['message']]
+    matching_collection = [collection for collection in chroma_collections if collection == questions_db_collection]
+    if len(matching_collection) > 1:
+        raise Exception('Matching collection not found or multiple matching collections found.')
+    try:
+        if not matching_collection:
+            raise Exception('Query database not found. Please create a query database using the Chatbot page and a selected index.')
+    except Exception as e:
+        st.warning(f"{e}")
+        st.stop()
+    st.markdown(f"Query database found: {questions_db_collection}")
+
+    docs_df = get_docs_df(docs_db_directory, docs_db_collection, query_model)
+    docs_df["type"] = "doc"
+    questions_df = get_questions_df(questions_db_directory, questions_db_collection, query_model)
+    questions_df["type"] = "question"
+
+    questions_df["num_sources"] = questions_df["sources"].apply(len)
+    questions_df["first_source"] = questions_df["sources"].apply(
+        lambda x: next(iter(x), None)
+    )
+
+    if len(questions_df):
+        docs_df["used_by_questions"] = docs_df["id"].apply(
+            lambda doc_id: questions_df[
+                questions_df["sources"].apply(lambda sources: doc_id in sources)
+            ]["id"].tolist()
+        )
+    else:
+        docs_df["used_by_questions"] = [[] for _ in range(len(docs_df))]
+    docs_df["used_by_num_questions"] = docs_df["used_by_questions"].apply(len)
+    docs_df["used_by_question_first"] = docs_df["used_by_questions"].apply(
+        lambda x: next(iter(x), None)
+    )
+
+    df = pd.concat([docs_df, questions_df], ignore_index=True)
+    return df
+def get_docs_df(local_db_path: Path, index_name: str, query_model: object):
+    """
+    Retrieves documents from a Chroma database and returns them as a pandas DataFrame.
+
+    Args:
+        local_db_path (Path): The local path to the Chroma database.
+        index_name (str): The name of the collection in the Chroma database.
+        query_model (object): The embedding function used for querying the database.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the retrieved documents, along with their metadata and embeddings.
+            The DataFrame has the following columns:
+            - id: The ID of the document.
+            - source: The source of the document.
+            - page: The page number of the document (default: -1 if not available).
+            - document: The content of the document.
+            - embedding: The embedding of the document.
+    """
+    persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
+    vectorstore = Chroma(client=persistent_client,
+                            collection_name=index_name,
+                            embedding_function=query_model) 
+
+    response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
+    return pd.DataFrame(
+        {
+            "id": response["ids"],
+            "source": [metadata.get("source") for metadata in response["metadatas"]],
+            "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
+            "document": response["documents"],
+            "embedding": response["embeddings"],
+        }
+    )
+def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
+    """
+    Retrieves questions and related information from a Chroma database and returns them as a pandas DataFrame.
+
+    Args:
+        local_db_path (Path): The local path to the Chroma database.
+        index_name (str): The name of the collection in the Chroma database.
+        query_model (object): The embedding function used for querying the Chroma database.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the retrieved questions, answers, sources, and embeddings.
+    """
+    persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
+    vectorstore = Chroma(client=persistent_client,
+                            collection_name=index_name,
+                            embedding_function=query_model) 
+
+    response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
+    return pd.DataFrame(
+        {
+            "id": response["ids"],
+            "question": response["documents"],
+            "answer": [metadata.get("answer") for metadata in response["metadatas"]],
+            "sources": [
+                metadata.get("sources").split(",") for metadata in response["metadatas"]
+            ],
+            "embedding": response["embeddings"],
+        }
+    )
+def add_clusters(df:pd,n_clusters:int,label_llm:object=None,doc_per_cluster:int=5):
+    """
+    Add clusters to a DataFrame based on the embeddings of its documents.
+
+    Args:
+        df (pd.DataFrame): The DataFrame containing the documents and their embeddings.
+        n_clusters (int): The number of clusters to create.
+        label_llm (object, optional): The label language model to use for generating cluster labels. Defaults to None.
+        doc_per_cluster (int, optional): The number of documents to sample per cluster for label generation. Defaults to 5.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the added cluster information.
+    """
+    matrix = np.vstack(df.embedding.values)
+    kmeans = KMeans(n_clusters=n_clusters, init="k-means++", random_state=42)
+    kmeans.fit(matrix)
+    labels = kmeans.labels_
+    df["Cluster"] = labels
+
+    summary=[]
+    if label_llm is not None:
+        for i in range(n_clusters):
+            print(f"Cluster {i} Theme:")
+            chunks =  df[df.Cluster == i].document.sample(doc_per_cluster, random_state=42)
+            llm_chain = CLUSTER_LABEL | label_llm
+            summary.append(llm_chain.invoke(chunks))
+            print(summary[-1].content)
+        df["Cluster_Label"] = [summary[i].content for i in df["Cluster"]]
+    
+    return df

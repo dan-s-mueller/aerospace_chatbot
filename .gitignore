@@ -6,6 +6,9 @@
 *__pycache__*
 dist/
 
+# Secrets
+key.pem
+
 # Data
 *.pdf
 data/AMS/noupload/*.pdf
@@ -13,6 +16,7 @@ data/AMS/*jsonl
 !data/AMS/*.pdf
 !tests/*.pdf
 *.pickle
+*.parquet
 
 # Notebooks
 notebooks/playground.ipynb
@@ -24,7 +28,7 @@ notebooks/rag_response_cache.json
 # Databases
 db/chromadb
 db/.ragatouille/*
-!db/.ragatouille/colbert/indexes/ragatouille-colbert-ir-colbertv2.0-ams-15merge-2000-2020/
+!db/.ragatouille/colbert/indexes/colbert-ir-colbertv2.0-ams-15merge-2000-2020/
 db/local_file_store
 
 # Tests

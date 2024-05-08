@@ -44,17 +44,18 @@ This is the main app which is used for querying and asking questions about the d
 
 To restart a conversation, click the "Restart session" button twice.
 
+When a query is made, the responses are stored in a separate vector database. This database is used for visualization in the Visualize Data app, which can be used to explore.
+
 .. image:: ../images/chatbot.png
   :alt: Chatbot
   :align: center
 
 Visualize Data
 ^^^^^^^^^^^^^^
-This app allows visualization using `RAGxplorer <https://github.com/gabrielchua/RAGxplorer>`__. This app can be time consuming, there are options to downselect data, export to a file, then upload.
+This app allows visualization using `Spotlight from Renumics <https://renumics.com/open-source/spotlight/>`__. A new browser will open with the visualization. The data is loaded from the database and the settings are applied from the sidebar.
 
-.. image:: ../images/visualize_data.png
-  :alt: Chatbot
-  :align: center
+.. note::
+  Note that this functionality is only available for locally deployed applications for now. For a static version of this functionality, refer to this Hugging Face space: `Aerospace Chatbot AMS, Visualize <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize>`__. This space allows users to visualize 400 character chunks of aerospace mechanism symposia papers from the years 2000-2020.
 
 Deployments
 -----------
@@ -72,10 +73,13 @@ To deploy Aerospace Chatbot locally, run steramlit with the following commands:
     cd ./app
     streamlit run Home.py
 
+.. note::
+  The data visualization functionality will only work with local deployments for now.
+
 Hugging Face Spaces
 ^^^^^^^^^^^^^^^^^^^
 `Hugging Face <https://huggingface.co/>`__ is an open source platform for deploying machine learning models. The Aerospace Chatbot is deployed on Hugging Face using `Spaces <https://huggingface.co/spaces>`__. Spaces are apps which containerize machine learning models and LLMs. 
 
 Aerospace Chatbot is deployed on Hugging Face spaces with pre-loaded Aerospace Mechanisms Symposia papers. By default, the papers which can be queried are those which are committed to the Aerospace Chatbot repository here: `data/AMS <https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS>`__.
 
-This app is available at `Aerospace Chatbot <https://huggingface.co/llm/rag-chatbot>`_.
+This app is available at `Aerospace Chatbot <https://huggingface.co/llm/rag-chatbot>`__.

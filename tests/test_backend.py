@@ -1,6 +1,7 @@
 import os, sys, json
 import itertools
 import pytest
+import pandas as pd
 from dotenv import load_dotenv,find_dotenv
 
 from langchain_openai import OpenAIEmbeddings
@@ -17,13 +18,12 @@ from ragatouille import RAGPretrainedModel
 import chromadb
 from chromadb import ClientAPI
 
-from ragxplorer import RAGxplorer
-
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 from data_processing import chunk_docs, initialize_database, load_docs, \
-      delete_index, reduce_vector_query_size, create_data_viz, _stable_hash_meta
+      delete_index, _stable_hash_meta, get_docs_df, get_questions_df, \
+      add_clusters, get_docs_questions_df
 from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
 from queries import QA_Model
 
@@ -258,44 +258,6 @@ def parse_test_model(type, test, setup_fixture):
         return llm
     else:
         raise ValueError('Invalid type. Must be either "embedding" or "llm".')
-def viz_database_setup(index_name,setup_fixture):
-    '''
-    Set up the RAGxplorer and ChromaDB for database visualization.
-
-    Args:
-        index_name (str): Name of the index.
-        setup_fixture (dict): A dictionary containing setup fixtures.
-
-    Returns:
-        tuple: A tuple containing the RAGxplorer client and ChromaDB client.
-    '''
-    rag_type = 'Standard'
-    test_query_params={'index_type':'ChromaDB',
-                       'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
-
-    rx_client = RAGxplorer(embedding_model=test_query_params['embedding_name'])
-    chroma_client = chromadb.PersistentClient(path=os.path.join(setup_fixture['LOCAL_DB_PATH'],'chromadb'))
-
-    # Initialize a small database
-    try:
-        vectorstore = load_docs(
-            test_query_params['index_type'],
-            setup_fixture['docs'],
-            query_model,
-            rag_type,
-            index_name, 
-            chunk_method=setup_fixture['chunk_method'],
-            chunk_size=setup_fixture['chunk_size']*2,   # Double chunk size to reduce quantity
-            chunk_overlap=setup_fixture['chunk_overlap'],
-            clear=True,
-            batch_size=setup_fixture['batch_size'],
-            local_db_path=setup_fixture['LOCAL_DB_PATH'])
-    except Exception as e:
-        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=setup_fixture['LOCAL_DB_PATH'])
-        raise e
-    return rx_client, chroma_client
 
 # Fixtures
 @pytest.fixture(scope='session', autouse=True)
@@ -813,13 +775,10 @@ def test_load_sidebar():
     assert 'rag_type' in sidebar_config
     assert sidebar_config['rag_type'] == 'Standard'  
 
-    # Test case: Only embeddings, index_name and rag_type are True
-    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True, index_name=True, rag_type=True)
+    # Test case: Only embeddings and rag_type are True
+    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True, rag_type=True)
     assert 'query_model' in sidebar_config
     assert sidebar_config['query_model'] == 'OpenAI'
-    assert 'index_name' in sidebar_config
-    # Careful with this one, the ordering of embedding names in config.json matters. Take the first database type+first embedding name in OpenAI.
-    assert sidebar_config['index_name'] == 'chromadb-text-embedding-ada-002'    
 
     # Test case: Only llm is True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, llm=True)
@@ -835,16 +794,13 @@ def test_load_sidebar():
 
     # Test case: All options are True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True,
-                                  embeddings=True, rag_type=True, index_name=True, llm=True, model_options=True)
+                                  embeddings=True, rag_type=True, llm=True, model_options=True)
     assert 'index_type' in sidebar_config
     assert sidebar_config['index_type'] == 'ChromaDB'
     assert 'query_model' in sidebar_config
     assert sidebar_config['query_model'] == 'OpenAI'
     assert 'rag_type' in sidebar_config
-    assert sidebar_config['rag_type'] == 'Standard'
-    assert 'index_name' in sidebar_config
-    # Careful with this one, the ordering of embedding names in config.json matters. Take the first database type+first embedding name in OpenAI.
-    assert sidebar_config['index_name'] == 'chromadb-text-embedding-ada-002'  
+    assert sidebar_config['rag_type'] == 'Standard' 
     assert 'llm_source' in sidebar_config
     assert sidebar_config['llm_source'] == 'OpenAI'
     assert 'temperature' in sidebar_config['model_options']
@@ -1021,7 +977,6 @@ def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
         'vector_database': True,
         'embeddings': True,
         'rag_type': True,
-        'index_name': True,
         'llm': True,
         'model_options': True
     }
@@ -1065,7 +1020,6 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
         'vector_database': True,
         'embeddings': True,
         'rag_type': True,
-        'index_name': True,
         'llm': True,
         'model_options': True
     }
@@ -1091,116 +1045,214 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
                        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
 
 # Test data visualization
-def test_reduce_vector_query_size(setup_fixture):
-    '''
-    Test function to verify the behavior of the reduce_vector_query_size function.
+def test_get_docs_df(setup_fixture):
+    """
+    Test case for the get_docs_df function.
 
     Args:
-        setup_fixture: The setup fixture for the test.
-
-    Raises:
-        Exception: If an error occurs during the test.
+        setup_fixture (dict): The setup fixture containing necessary parameters.
 
     Returns:
         None
-    '''
+    """
     index_name = 'test-index'
-    rx_client, chroma_client = viz_database_setup(index_name, setup_fixture)
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
 
-    try:
-        collection = chroma_client.get_collection(name=index_name, embedding_function=rx_client._chosen_embedding_model)
-        rx_client.load_chroma(collection, initialize_projector=True)
-        vector_qty = 3  # Do a small quantity for the test
+    # Call the function
+    df = get_docs_df(setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
 
-        rx_client = reduce_vector_query_size(rx_client, chroma_client, vector_qty, verbose=True)
-        assert len(rx_client._documents.embeddings) == vector_qty
-        assert len(rx_client._documents.text) == vector_qty
-        assert len(rx_client._documents.ids) == vector_qty
-        chroma_client.delete_collection(name=rx_client._vectordb.name)
-    except Exception as e:
-        chroma_client.delete_collection(name=rx_client._vectordb.name)
+    # Perform assertions
+    assert isinstance(df, pd.DataFrame)
+    assert "id" in df.columns
+    assert "source" in df.columns
+    assert "page" in df.columns
+    assert "document" in df.columns
+    assert "embedding" in df.columns
+def test_get_questions_df(setup_fixture):
+    """
+    Test case for the get_questions_df function.
+
+    Args:
+        setup_fixture (dict): The setup fixture containing necessary data for the test.
+
+    Returns:
+        None
+    """
+    index_name = 'test-index'
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+
+    # Call the function
+    df = get_questions_df(setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
+
+    # Perform assertions
+    assert isinstance(df, pd.DataFrame)
+    assert "id" in df.columns
+    assert "question" in df.columns
+    assert "answer" in df.columns
+    assert "sources" in df.columns
+    assert "embedding" in df.columns
+def test_get_docs_questions_df(setup_fixture):
+    """
+    Test function for the get_docs_questions_df() method.
+
+    Args:
+        setup_fixture: The setup fixture containing necessary parameters for the test.
+
+    Raises:
+        Exception: If there is an error, the function will raise an exception.
+
+    Returns:
+        None
+    """
+    
+    index_name='test-vizualisation'
+    rag_type='Standard'
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    test_llm_params={'llm_family': 'OpenAI', 
+                     'llm': 'gpt-3.5-turbo-0125'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+    llm=parse_test_model('llm', test_llm_params, setup_fixture)
+
+    try: 
+        vectorstore = load_docs(
+            test_query_params['index_type'],
+            setup_fixture['docs'],
+            rag_type=rag_type,
+            query_model=query_model,
+            index_name=index_name, 
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap'],
+            clear=True,
+            batch_size=setup_fixture['batch_size'],
+            local_db_path=setup_fixture['LOCAL_DB_PATH'],
+            llm=llm)
+        qa_model_obj = QA_Model(test_query_params['index_type'],
+                            index_name,
+                            query_model,
+                            llm,
+                            rag_type=rag_type,
+                            local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        qa_model_obj.query_docs(setup_fixture['test_prompt'])
+        assert qa_model_obj.query_vectorstore is not None
+        
+        df = get_docs_questions_df(
+            setup_fixture['LOCAL_DB_PATH'],
+            index_name,
+            setup_fixture['LOCAL_DB_PATH'],
+            index_name+'-queries',
+            query_model
+        )
+
+        # Assert the result
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) > 0
+        assert "id" in df.columns
+        assert "source" in df.columns
+        assert "page" in df.columns
+        assert "document" in df.columns
+        assert "embedding" in df.columns
+        assert "type" in df.columns
+        assert "num_sources" in df.columns
+        assert "first_source" in df.columns
+        assert "used_by_questions" in df.columns
+        assert "used_by_num_questions" in df.columns
+        assert "used_by_question_first" in df.columns
+
+        delete_index(test_query_params['index_type'],
+                index_name, 
+                rag_type,
+                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+
+    except Exception as e:  # If there is an error, be sure to delete the database
+        delete_index(test_query_params['index_type'],
+                index_name, 
+                rag_type,
+                local_db_path=setup_fixture['LOCAL_DB_PATH'])
         raise e
-def test_create_data_viz_no_limit(setup_fixture):
-    '''
-    Test case: Without limit_size_qty and df_export_path
-
-    This test case verifies the behavior of the create_data_viz function when called without providing
-    the limit_size_qty and df_export_path parameters. It performs the following steps:
-    1. Sets up the necessary fixtures for the test.
-    2. Sets up the RX and Chroma clients for visualization database.
-    3. Calls the create_data_viz function with the index_name, rx_client, and chroma_client.
-    4. Verifies that the returned rx_client_out is an instance of RAGxplorer.
-    5. Verifies that the returned chroma_client_out is an instance of ClientAPI.
-    6. Verifies that the name of the RX client's vector database contains the index_name.
-    7. Deletes the collection associated with the RX client's vector database.
+def test_add_clusters(setup_fixture):
+    """
+    Test function for the add_clusters function.
 
     Args:
-        setup_fixture: The setup fixture for the test.
-
-    Raises:
-        Exception: If an error occurs during the test.
+        setup_fixture (dict): A dictionary containing setup fixtures for the test.
 
     Returns:
         None
+    """
+    
+    index_name='test-vizualisation'
+    rag_type='Standard'
+    test_query_params={'index_type':'ChromaDB',
+                       'query_model': 'OpenAI', 
+                       'embedding_name': 'text-embedding-ada-002'}
+    test_llm_params={'llm_family': 'OpenAI', 
+                     'llm': 'gpt-3.5-turbo-0125'}
+    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+    llm=parse_test_model('llm', test_llm_params, setup_fixture)
 
-    '''
-    index_name = 'test-index'
-    rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
-    try:
-        rx_client_out, chroma_client_out = create_data_viz(index_name, rx_client, chroma_client)
-    except Exception as e:
-        try:
-            chroma_client.delete_collection(name=rx_client._vectordb.name)
-        except:
-            pass
-        raise e   
-    assert isinstance(rx_client_out, RAGxplorer)
-    assert isinstance(chroma_client_out, ClientAPI)
-    assert 'test-index' in rx_client_out._vectordb.name
-    chroma_client.delete_collection(name=rx_client_out._vectordb.name)
-def test_create_data_viz_limit(setup_fixture):
-    '''
-    Test case: With limit_size_qty and df_export_path
+    try: 
+        vectorstore = load_docs(
+            test_query_params['index_type'],
+            setup_fixture['docs'],
+            rag_type=rag_type,
+            query_model=query_model,
+            index_name=index_name, 
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap'],
+            clear=True,
+            batch_size=setup_fixture['batch_size'],
+            local_db_path=setup_fixture['LOCAL_DB_PATH'],
+            llm=llm)
+        qa_model_obj = QA_Model(test_query_params['index_type'],
+                            index_name,
+                            query_model,
+                            llm,
+                            rag_type=rag_type,
+                            local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        qa_model_obj.query_docs(setup_fixture['test_prompt'])
 
-    This test case verifies the behavior of the create_data_viz function when called without providing
-    the limit_size_qty and df_export_path parameters. It performs the following steps:
-    1. Sets up the necessary fixtures for the test.
-    2. Sets up the RX and Chroma clients for visualization database.
-    3. Calls the create_data_viz function with the index_name, rx_client, and chroma_client.
-    4. Verifies that the returned rx_client_out is an instance of RAGxplorer.
-    5. Verifies that the returned chroma_client_out is an instance of ClientAPI.
-    6. Verifies that the name of the RX client's vector database contains the index_name.
-    7. Deletes the collection associated with the RX client's vector database.
+        df = get_docs_questions_df(
+            setup_fixture['LOCAL_DB_PATH'],
+            index_name,
+            setup_fixture['LOCAL_DB_PATH'],
+            index_name+'-queries',
+            query_model
+        )
 
-    Args:
-        setup_fixture: The setup fixture for the test.
+        delete_index(test_query_params['index_type'],
+                index_name, 
+                rag_type,
+                local_db_path=setup_fixture['LOCAL_DB_PATH'])
 
-    Raises:
-        Exception: If an error occurs during the test.
+    except Exception as e:  # If there is an error, be sure to delete the database
+        delete_index(test_query_params['index_type'],
+                index_name, 
+                rag_type,
+                local_db_path=setup_fixture['LOCAL_DB_PATH'])
 
-    Returns:
-        None
+    # Check the add_clusters function with no labeling
+    n_clusters = 2  # Define the expected number of clusters
+    df_with_clusters = add_clusters(df, n_clusters) # Call the add_clusters function
+    assert len(df_with_clusters["Cluster"].unique()) == n_clusters  # Check if the number of clusters is correct
+    for cluster in df_with_clusters["Cluster"].unique():    # Check if the number of documents per cluster is correct
+        num_documents = len(df_with_clusters[df_with_clusters["Cluster"] == cluster])
+        assert num_documents >= 1
 
-    '''
-    index_name = 'test-index'
-    export_file='data_viz_test.json'
-    rx_client, chroma_client = viz_database_setup(index_name,setup_fixture)
-    try:
-        rx_client_out, chroma_client_out = create_data_viz(
-            index_name, rx_client, chroma_client, limit_size_qty=10, df_export_path=os.path.join(setup_fixture['LOCAL_DB_PATH'],export_file))
-    except Exception as e:
-        try:
-            chroma_client.delete_collection(name=rx_client._vectordb.name)
-        except:
-            pass
-        try:
-            os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
-        except:
-            pass
-        raise e   
-    assert isinstance(rx_client_out, RAGxplorer)
-    assert isinstance(chroma_client_out, ClientAPI)
-    assert 'test-index' in rx_client_out._vectordb.name
-    assert os.path.exists(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
-    chroma_client.delete_collection(name=rx_client_out._vectordb.name)
-    os.remove(os.path.join(setup_fixture['LOCAL_DB_PATH'], export_file))
+    # Check the add_clusters function with labeling
+    n_clusters = 2  # Define a different number of clusters
+    df_with_clusters = add_clusters(df, n_clusters, llm, 2)  # Call the add_clusters function
+    assert len(df_with_clusters["Cluster"].unique()) == n_clusters  # Check if the number of clusters is correct
+    assert "Cluster_Label" in df_with_clusters.columns  # Check if the cluster labels are added correctly
+    assert df_with_clusters["Cluster_Label"].notnull().all()  # Check if the cluster labels are non-empty
+    assert df_with_clusters["Cluster_Label"].apply(lambda x: isinstance(x, str)).all()  # Check if the cluster labels are strings
+    for cluster in df_with_clusters["Cluster"].unique():  # Check if the number of documents per cluster is more than zero
+        num_documents = len(df_with_clusters[df_with_clusters["Cluster"] == cluster])
+        assert num_documents > 0
