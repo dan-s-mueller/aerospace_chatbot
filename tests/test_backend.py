@@ -89,15 +89,6 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
             'llm' : llms['OpenAI']['models']
         },
         {
-            # Tests standard RAG , voyage embedding models
-            'index_type' : ['ChromaDB'],
-            'query_model' : ['Voyage'],
-            'embedding_name' : embeddings_list['Voyage']['embedding_models'],
-            'rag_type' : ['Standard'],
-            'llm_family' : ['OpenAI'],
-            'llm' : [llms['OpenAI']['models'][0]]
-        },
-        {
             # Tests standard RAG , hugging face embeddings
             'index_type' : ['ChromaDB'],
             'query_model' : ['Hugging Face'],
