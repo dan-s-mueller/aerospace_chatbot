@@ -27,14 +27,12 @@ sphinx = "7.2.6"
 huggingface-hub = "^0.20.3"
 sphinx-rtd-theme = "2.0.0"
 pytest = "^8.1.1"
-pinecone-client = "^3.2.0"
 ipykernel = "^6.29.3"
 ragatouille = "^0.0.8.post2"
 streamlit-authenticator = "^0.3.1"
 langchain = "^0.1.13"
 langchain-core = "^0.1.36"
 langchainhub = "^0.1.15"
-langchain-pinecone = "^0.0.3"
 langchain-community = "^0.0.29"
 langchain-openai = "^0.1.1"
 ragas = "^0.1.6"
@@ -42,6 +40,8 @@ sphinxawesome-theme = "^5.1.1"
 sphinx-design = "^0.5.0"
 langchain-voyageai = "^0.1.0"
 renumics-spotlight = "^1.6.9"
+langchain-pinecone = "^0.1.1"
+pinecone-client = {version = "<4.0.0", extras = ["grpc"]}
 
 [build-system]
 requires = ["poetry-core"]

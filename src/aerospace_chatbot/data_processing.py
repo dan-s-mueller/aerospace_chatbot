@@ -8,8 +8,7 @@ import pickle
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from pinecone import Pinecone as pinecone_client
-from pinecone import PodSpec
+from pinecone import Pinecone as pinecone_client, ServerlessSpec
 
 import chromadb
 from chromadb import PersistentClient
@@ -329,7 +328,7 @@ def initialize_database(index_type: str,
         except:
             pc.create_index(index_name,
                             dimension=_embedding_size(query_model),
-                            spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
+                            spec=ServerlessSpec(cloud="aws", region="us-east-1"))
         
         index = pc.Index(index_name)
         vectorstore=PineconeVectorStore(index,
@@ -341,20 +340,7 @@ def initialize_database(index_type: str,
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
-        # TODO add in collection metadata like this:
-        #         collection_metadata = {}
-        # if embeddings_model is not None:
-        #     model_name, model_type = get_embeddings_model_config(embeddings_model)
-        #     collection_metadata["model_name"] = model_name
-        #     collection_metadata["model_type"] = model_type
-
-        # if isinstance(relevance_score_fn, str):
-        #     assert relevance_score_fn in get_args(PredefinedRelevanceScoreFn)
-        #     collection_metadata["hnsw:space"] = relevance_score_fn
-        # else:
-        #     kwargs["relevance_score_fn"] = relevance_score_fn
-        # kwargs["collection_metadata"] = collection_metadata
-        # return Chroma(**kwargs)
+        # TODO add in collection metadata
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
