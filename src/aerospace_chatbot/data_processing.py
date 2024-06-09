@@ -47,6 +47,7 @@ from datasets import Dataset
 
 import admin
 from prompts import CLUSTER_LABEL
+import time
 
 def load_docs(index_type:str,
               docs:List[str],
@@ -441,7 +442,27 @@ def upsert_docs_pinecone(index_name: str,
     else:
         raise NotImplementedError
     return vectorstore, retriever
-        
+
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1,max=60))
+def upsert_docs_chromadb(vectorstore,
+                         chunk_batch: List[Document],
+                         chunk_batch_ids: List[str]):
+    """
+    Upserts a batch of documents into ChromaDB.
+    This function handles the issue with ChromaDB upserts when using hugging face or other endpoint services which are less stable.
+
+    Parameters:
+    vectorstore (VectorStore): The VectorStore object representing the ChromaDB.
+    chunk_batch (List[Document]): A list of Document objects representing the batch of documents to be upserted.
+    chunk_batch_ids (List[str]): A list of strings representing the IDs of the documents in the batch.
+
+    Returns:
+    VectorStore: The updated VectorStore object after upserting the documents.
+    """
+    vectorstore.add_documents(documents=chunk_batch,
+                              ids=chunk_batch_ids)
+    return vectorstore
+
 def upsert_docs(index_type: str, 
                 index_name: str,
                 vectorstore: any, 
@@ -483,8 +504,11 @@ def upsert_docs(index_type: str,
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-                vectorstore.add_documents(documents=chunk_batch,
-                                          ids=chunk_batch_ids)
+                
+                # TODO Clean up so that pinecone and chromadb upsert methods both have retry and are similar function calls.
+                vectorstore = upsert_docs_chromadb(vectorstore,
+                                                   chunk_batch, chunk_batch_ids)
+                    
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -525,8 +549,10 @@ def upsert_docs(index_type: str,
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-                retriever.vectorstore.add_documents(documents=chunk_batch,
-                                                    ids=chunk_batch_ids)
+                
+                retriever.vectorstore = upsert_docs_chromadb(retriever.vectorstore,
+                                                   chunk_batch, chunk_batch_ids)
+                
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -558,8 +584,10 @@ def upsert_docs(index_type: str,
             for i in range(0, len(chunker['summaries']), batch_size):
                 chunk_batch = chunker['summaries'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-                retriever.vectorstore.add_documents(documents=chunk_batch,
-                                                    ids=chunk_batch_ids)
+                
+                retriever.vectorstore = upsert_docs_chromadb(retriever.vectorstore,
+                                                   chunk_batch, chunk_batch_ids)
+
                 if show_progress:
                     progress_percentage = i / len(chunker['summaries'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')

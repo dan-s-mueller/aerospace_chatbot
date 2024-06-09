@@ -26,7 +26,8 @@
         {
             "name": "Voyage",
             "embedding_models": ["voyage-2",
-                                 "voyage-large-2"
+                                 "voyage-large-2",
+                                 "voyage-large-2-instruct"
             ]
         },
         {

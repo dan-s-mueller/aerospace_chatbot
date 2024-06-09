@@ -72,10 +72,18 @@ if st.session_state["authentication_status"]:
     # Add an expandable box for options
     with st.expander("Options",expanded=True):
         clear_database = st.checkbox('Delete existing database?',value=True)
+
+        if sb['query_model']=='Hugging Face':
+            batch_size_max=32
+            batch_size=32
+        else:
+            batch_size_max=None
+            batch_size=100
         batch_size=st.number_input('Batch size for upsert', 
-                        min_value=1, step=1, value=50,
+                        min_value=1, max_value=batch_size_max, step=1, value=batch_size,
                         help='''The number of documents to upsert at a time. 
-                                Useful for hosted databases (e.g. Pinecone), or those that require long processing times.''')
+                                Useful for hosted databases (e.g. Pinecone), or those that require long processing times.
+                                When using hugging face embeddings, batch size maximum is 32.''')
         
         # Merge pages before processing
         merge_pages=st.checkbox('Merge pages before processing?',value=False,

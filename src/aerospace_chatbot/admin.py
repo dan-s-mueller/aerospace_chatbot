@@ -396,7 +396,9 @@ def get_query_model(sb, secrets):
     elif sb['query_model'] == 'Voyage':
         query_model = VoyageAIEmbeddings(model=sb['embedding_name'], voyage_api_key=secrets['VOYAGE_API_KEY'], truncation=False)
     elif sb['query_model'] == 'Hugging Face':
-        query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+        # TODO add dedicated endpoints as an embedding model option.
+        query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], 
+                                                        api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
     else:
         raise NotImplementedError('Query model not recognized.')
     return query_model

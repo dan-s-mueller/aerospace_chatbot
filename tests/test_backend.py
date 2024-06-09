@@ -234,7 +234,11 @@ def parse_test_model(type, test, setup_fixture):
             elif test['query_model'] == 'Voyage':
                 query_model = VoyageAIEmbeddings(model=test['embedding_name'], voyage_api_key=setup_fixture['VOYAGE_API_KEY'], truncation=False)
             elif test['query_model'] == 'Hugging Face':
-                query_model = HuggingFaceInferenceAPIEmbeddings(model_name=test['embedding_name'], api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'])
+                # TODO implement robustly
+                api_url='https://z88t012v68ajfr2q.us-east-1.aws.endpoints.huggingface.cloud'
+                query_model = HuggingFaceInferenceAPIEmbeddings(model_name=test['embedding_name'], 
+                                                                api_url=api_url,
+                                                                api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'])
         else:
             raise NotImplementedError('Query model not implemented.')
         return query_model
@@ -668,6 +672,12 @@ def test_database_setup_and_query(test_input,setup_fixture):
 
     query_model=parse_test_model('embedding', test, setup_fixture)
     llm=parse_test_model('llm', test, setup_fixture)
+
+    # TODO remove this test
+    text='This is a test document.'
+    embedding=query_model.embed_documents(text)
+    assert embedding is not None
+    
 
     try: 
         vectorstore = load_docs(
