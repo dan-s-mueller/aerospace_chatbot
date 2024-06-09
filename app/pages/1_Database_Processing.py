@@ -121,6 +121,10 @@ if st.session_state["authentication_status"]:
             chunk_method=None
             chunk_size=None
             chunk_overlap=None
+            sb['model_options']={}
+            sb['model_options']['temperature'] = st.slider('Summary model remperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
+            sb['model_options']['output_level'] = st.number_input('Summary model max output tokens', min_value=50, step=10, value=4000,
+                                                help='Max output tokens for LLM. Concise: 50, Verbose: >1000. Limit depends on model.')
         else:  
             raise NotImplementedError
         export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')

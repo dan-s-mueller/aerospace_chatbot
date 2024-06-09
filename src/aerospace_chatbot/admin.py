@@ -361,10 +361,14 @@ def set_llm(sb, secrets, type='prompt'):
         if sb['rag_llm_source'] == 'OpenAI':
             llm = ChatOpenAI(model_name=sb['rag_llm_model'],
                              openai_api_key=secrets['OPENAI_API_KEY'],
+                             temperature=sb['model_options']['temperature'],
+                             max_tokens=sb['model_options']['output_level'],
                              tags=[sb['rag_llm_model']])
         elif sb['rag_llm_source'] == 'Hugging Face':
             llm = ChatOpenAI(base_url=sb['rag_hf_endpoint'],
                              model=sb['rag_llm_model'],
+                             temperature=sb['model_options']['temperature'],
+                             max_tokens=sb['model_options']['output_level'],
                              api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
                              tags=[sb['rag_llm_model']])
         elif sb['rag_llm_source'] == 'LM Studio (local)':

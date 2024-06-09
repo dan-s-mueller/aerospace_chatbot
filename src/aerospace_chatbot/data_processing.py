@@ -106,7 +106,7 @@ def load_docs(index_type:str,
     if rag_type == 'Parent-Child':
         index_name = index_name + '-parent-child'
     if rag_type == 'Summary':
-        index_name = index_name + llm.model_name.replace('/', '-') + '-summary' 
+        index_name = index_name + '-'+llm.model_name.replace('/', '-')[:5] + '-summary' 
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -839,7 +839,7 @@ def get_docs_questions_df(
 
     df = pd.concat([docs_df, questions_df], ignore_index=True)
     return df
-def get_docs_df(local_db_path: Path, index_name: str, query_model: object):
+def get_docs_df(local_db_path: Path, index_name: str, query_model: object,rag_type:str='Standard'):
     """
     Retrieves documents from a Chroma database and returns them as a pandas DataFrame.
 
@@ -847,6 +847,7 @@ def get_docs_df(local_db_path: Path, index_name: str, query_model: object):
         local_db_path (Path): The local path to the Chroma database.
         index_name (str): The name of the collection in the Chroma database.
         query_model (object): The embedding function used for querying the database.
+        rag_type (str, optional): The type of RAG model to use. Defaults to 'Standard'.
 
     Returns:
         pd.DataFrame: A DataFrame containing the retrieved documents, along with their metadata and embeddings.
@@ -857,21 +858,33 @@ def get_docs_df(local_db_path: Path, index_name: str, query_model: object):
             - document: The content of the document.
             - embedding: The embedding of the document.
     """
+    # TODO: Check for different RAG types and export results accordingly (parent-child, summary)
     persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
     vectorstore = Chroma(client=persistent_client,
                             collection_name=index_name,
                             embedding_function=query_model) 
 
     response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
-    return pd.DataFrame(
+
+    df_out=pd.DataFrame(
         {
             "id": response["ids"],
             "source": [metadata.get("source") for metadata in response["metadatas"]],
             "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
+            "metadata": response["metadatas"],
             "document": response["documents"],
             "embedding": response["embeddings"],
         }
     )
+
+    if rag_type == 'Parent-Child':
+        lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+        df_out["parent"] = df_out["id"].apply(lambda x: json.load(open(os.path.join(lfs_path, x))))
+    elif rag_type == 'Summary':
+        lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+
+        
+    return df_out
 def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
     """
     Retrieves questions and related information from a Chroma database and returns them as a pandas DataFrame.

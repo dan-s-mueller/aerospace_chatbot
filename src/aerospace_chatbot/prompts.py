@@ -1,7 +1,7 @@
 from langchain import hub
 from langchain.prompts.prompt import PromptTemplate
 
-# Prompts on the hub: https://smith.langchain.com/hub/my-prompts?organizationId=45eb8917-7353-4296-978d-bb461fc45c65
+# Prompts on the hub: https://smith.langchain.com/hub/dmueller?organizationId=45eb8917-7353-4296-978d-bb461fc45c65
 CONDENSE_QUESTION_PROMPT = hub.pull("dmueller/ams-chatbot-qa-condense-history")
 QA_PROMPT=hub.pull("dmueller/ams-chatbot-qa-retrieval")
 QA_WSOURCES_PROMPT=hub.pull("dmueller/ams-chatbot-qa-retrieval-wsources")
