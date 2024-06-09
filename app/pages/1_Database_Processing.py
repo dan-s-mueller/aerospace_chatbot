@@ -118,6 +118,7 @@ if st.session_state["authentication_status"]:
             else:
                 raise NotImplementedError
         elif sb['rag_type']=='Summary':
+            chunk_method=None
             chunk_size=None
             chunk_overlap=None
         else:  
