@@ -16,7 +16,6 @@ data/AMS/*jsonl
 !data/AMS/*.pdf
 !tests/*.pdf
 *.pickle
-!db/chromadb/*.pickle
 *.parquet
 
 # Notebooks
