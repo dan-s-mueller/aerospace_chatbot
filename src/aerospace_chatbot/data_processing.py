@@ -711,6 +711,8 @@ def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
             return 1024 
         elif name=="voyage-large-2":
             return 1536
+        elif name=="voyage-large-2-instruct":
+            return 1024
         else:
             raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # See model pages for embedding sizes
@@ -801,7 +803,8 @@ def get_docs_questions_df(
         st.stop()
     st.markdown(f"Query database found: {questions_db_collection}")
 
-    docs_df = get_docs_df(docs_db_directory, docs_db_collection, query_model)
+    # TODO extend this functionality to Pinecone
+    docs_df = get_docs_df('ChromaDB',docs_db_directory, docs_db_collection, query_model)
     docs_df["type"] = "doc"
     questions_df = get_questions_df(questions_db_directory, questions_db_collection, query_model)
     questions_df["type"] = "question"
@@ -826,15 +829,15 @@ def get_docs_questions_df(
 
     df = pd.concat([docs_df, questions_df], ignore_index=True)
     return df
-def get_docs_df(local_db_path: Path, index_name: str, query_model: object,rag_type:str='Standard'):
+def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_model: object):
     """
-    Retrieves documents from a Chroma database and returns them as a pandas DataFrame.
+    Retrieves documents from a database and returns them as a pandas DataFrame.
 
     Args:
+        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB").
         local_db_path (Path): The local path to the Chroma database.
         index_name (str): The name of the collection in the Chroma database.
         query_model (object): The embedding function used for querying the database.
-        rag_type (str, optional): The type of RAG model to use. Defaults to 'Standard'.
 
     Returns:
         pd.DataFrame: A DataFrame containing the retrieved documents, along with their metadata and embeddings.
@@ -845,32 +848,76 @@ def get_docs_df(local_db_path: Path, index_name: str, query_model: object,rag_ty
             - document: The content of the document.
             - embedding: The embedding of the document.
     """
-    # TODO: Check for different RAG types and export results accordingly (parent-child, summary)
-    persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
-    vectorstore = Chroma(client=persistent_client,
-                            collection_name=index_name,
-                            embedding_function=query_model) 
+    # Find rag_type
+    if index_name.endswith('-parent-child'):
+        rag_type = 'Parent-Child'
+    elif index_name.endswith('-summary'):
+        rag_type = 'Summary'
+    else:
+        rag_type = 'Standard'
 
-    response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
-
-    df_out=pd.DataFrame(
-        {
-            "id": response["ids"],
-            "source": [metadata.get("source") for metadata in response["metadatas"]],
-            "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
-            "metadata": response["metadatas"],
-            "document": response["documents"],
-            "embedding": response["embeddings"],
-        }
-    )
-
-    if rag_type == 'Parent-Child':
-        lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-        df_out["parent"] = df_out["id"].apply(lambda x: json.load(open(os.path.join(lfs_path, x))))
-    elif rag_type == 'Summary':
-        lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-
+    if index_type=='ChromaDB':
+        persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
+        vectorstore = Chroma(client=persistent_client,
+                                collection_name=index_name,
+                                embedding_function=query_model) 
+        response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
         
+        df_out=pd.DataFrame(
+            {
+                "id": response["ids"],
+                "source": [metadata.get("source") for metadata in response["metadatas"]],
+                "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
+                "metadata": response["metadatas"],
+                "document": response["documents"],
+                "embedding": response["embeddings"],
+            })  
+
+    elif index_type=='Pinecone':
+        # Connect to index
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+        index = pc.Index(index_name) 
+        # Obtain list of ids
+        ids=[]
+        for id in index.list():
+            ids.extend(id)
+        # Fetch vectors from IDs in chunks (to not overload the API)
+        docs=[]
+        chunk_size=200  # 200 doesn't error our
+        for i in range(0, len(ids), chunk_size):
+            print(f"Fetching {i} to {i+chunk_size}")
+            vector=index.fetch(ids[i:i+chunk_size])['vectors']
+            vector_data = []
+            for key, value in vector.items():
+                vector_data.append(value)
+            docs.extend(vector_data)
+
+        df_out=pd.DataFrame(
+            {
+                "id": ids,
+                "source": [data['metadata']['source'] for data in docs],
+                "page": [data['metadata']['page'] for data in docs],
+                "metadata": [{'page':data['metadata']['page'],'source':data['metadata']['source']} for data in docs],
+                "document": [data['metadata']['page_content'] for data in docs],
+                "embedding": [data['values'] for data in docs],
+            })  
+        # raise NotImplementedError('Only ChromaDB is supported for now')
+
+    # Add parent-doc or original-doc
+    if rag_type!='Standard':
+        json_data_list = []
+        for i, row in df_out.iterrows():
+            doc_id = row['metadata']['doc_id']
+            file_path = os.path.join(os.getenv('LOCAL_DB_PATH'),'local_file_store',index_name,f"{doc_id}")
+            with open(file_path, "r") as f:
+                json_data = json.load(f)
+            json_data=json_data['kwargs']['page_content']
+            json_data_list.append(json_data)
+        if rag_type=='Parent-Child':
+            df_out['parent-doc'] = json_data_list
+        elif rag_type=='Summary':
+            df_out['original-doc'] = json_data_list
+
     return df_out
 def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
     """
@@ -946,32 +993,34 @@ def export_to_hf_dataset(df: pd.DataFrame, dataset_name: str):
     hf_dataset.push_to_hub(dataset_name, token=os.getenv('HUGGINGFACEHUB_API_TOKEN'))
 
 def archive_db(index_type:str,index_name:str,query_model:object,export_pickle:bool=False):
-    # Find rag_type
-    if index_name.endswith('-parent-child'):
-        rag_type = 'Parent-Child'
-    elif index_name.endswith('-summary'):
-        rag_type = 'Summary'
-    else:
-        rag_type = 'Standard'
+    # # Find rag_type
+    # if index_name.endswith('-parent-child'):
+    #     rag_type = 'Parent-Child'
+    # elif index_name.endswith('-summary'):
+    #     rag_type = 'Summary'
+    # else:
+    #     rag_type = 'Standard'
 
     # Export database to data frame, append parent-doc or original-doc
-    if index_type=='ChromaDB':
-        df_temp=get_docs_df(os.getenv('LOCAL_DB_PATH'), index_name, query_model)
-    else:
-        raise NotImplementedError('Only ChromaDB is supported for now')
-    if rag_type!='Standard':
-        json_data_list = []
-        for i, row in df_temp.iterrows():
-            doc_id = row['metadata']['doc_id']
-            file_path = os.path.join(os.getenv('LOCAL_DB_PATH'),'local_file_store',index_name,f"{doc_id}")
-            with open(file_path, "r") as f:
-                json_data = json.load(f)
-            json_data=json_data['kwargs']['page_content']
-            json_data_list.append(json_data)
-        if rag_type=='Parent-Child':
-            df_temp['parent-doc'] = json_data_list
-        elif rag_type=='Summary':
-            df_temp['original-doc'] = json_data_list
+    # if index_type=='ChromaDB':
+    df_temp=get_docs_df(index_type,os.getenv('LOCAL_DB_PATH'), index_name, query_model)
+    # else:
+    #     raise NotImplementedError('Only ChromaDB is supported for now')
+    
+    # # Add parent-doc or original-doc
+    # if rag_type!='Standard':
+    #     json_data_list = []
+    #     for i, row in df_temp.iterrows():
+    #         doc_id = row['metadata']['doc_id']
+    #         file_path = os.path.join(os.getenv('LOCAL_DB_PATH'),'local_file_store',index_name,f"{doc_id}")
+    #         with open(file_path, "r") as f:
+    #             json_data = json.load(f)
+    #         json_data=json_data['kwargs']['page_content']
+    #         json_data_list.append(json_data)
+    #     if rag_type=='Parent-Child':
+    #         df_temp['parent-doc'] = json_data_list
+    #     elif rag_type=='Summary':
+    #         df_temp['original-doc'] = json_data_list
 
     if export_pickle:
         # Export pickle to db directory
