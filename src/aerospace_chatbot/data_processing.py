@@ -993,34 +993,7 @@ def export_to_hf_dataset(df: pd.DataFrame, dataset_name: str):
     hf_dataset.push_to_hub(dataset_name, token=os.getenv('HUGGINGFACEHUB_API_TOKEN'))
 
 def archive_db(index_type:str,index_name:str,query_model:object,export_pickle:bool=False):
-    # # Find rag_type
-    # if index_name.endswith('-parent-child'):
-    #     rag_type = 'Parent-Child'
-    # elif index_name.endswith('-summary'):
-    #     rag_type = 'Summary'
-    # else:
-    #     rag_type = 'Standard'
-
-    # Export database to data frame, append parent-doc or original-doc
-    # if index_type=='ChromaDB':
     df_temp=get_docs_df(index_type,os.getenv('LOCAL_DB_PATH'), index_name, query_model)
-    # else:
-    #     raise NotImplementedError('Only ChromaDB is supported for now')
-    
-    # # Add parent-doc or original-doc
-    # if rag_type!='Standard':
-    #     json_data_list = []
-    #     for i, row in df_temp.iterrows():
-    #         doc_id = row['metadata']['doc_id']
-    #         file_path = os.path.join(os.getenv('LOCAL_DB_PATH'),'local_file_store',index_name,f"{doc_id}")
-    #         with open(file_path, "r") as f:
-    #             json_data = json.load(f)
-    #         json_data=json_data['kwargs']['page_content']
-    #         json_data_list.append(json_data)
-    #     if rag_type=='Parent-Child':
-    #         df_temp['parent-doc'] = json_data_list
-    #     elif rag_type=='Summary':
-    #         df_temp['original-doc'] = json_data_list
 
     if export_pickle:
         # Export pickle to db directory
