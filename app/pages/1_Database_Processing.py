@@ -61,13 +61,8 @@ if st.session_state["authentication_status"]:
     st.markdown('Number of PDFs found: ' + str(len(docs)))
 
     # Set database name
-    database_appendix=st.text_input('Appendix for database name','ams')
-    database_name = (sb['embedding_name'].replace('/', '-') + '-' + database_appendix).lower()
-    try:
-        data_processing._check_db_name(sb['index_type'],database_name)
-    except ValueError as e:
-        st.warning(str(e))
-        st.stop()
+    index_appendix=st.text_input('Appendix for index name','ams')
+    index_name = (sb['embedding_name'].replace('/', '-') + '-' + index_appendix).lower()
 
     # Add an expandable box for options
     with st.expander("Options",expanded=True):
@@ -129,24 +124,40 @@ if st.session_state["authentication_status"]:
             raise NotImplementedError
         export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
         if export_json:
-            json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{database_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
+            json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{index_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
             json_file=os.path.join(paths['base_folder_path'],json_file)
 
-
-    # Add a button to run the function
-    if st.button('Load docs into vector database'):
-        start_time = time.time()  # Start the timer
-
+        # Set LLM if relevant
         if sb['rag_type']=='Summary':
             llm=admin.set_llm(sb,secrets,type='rag')
         else:
             llm=None
 
+    # Check the index name, give error before running if it is invalid
+    try:
+        if sb['rag_type'] == 'Parent-Child':
+            index_name_check = index_name + '-parent-child'
+        if sb['rag_type'] == 'Summary':
+            index_name_check = index_name + '-'+llm.model_name.replace('/', '-')[:6] + '-summary' 
+        else:
+            index_name_check = index_name
+        index_name_disp=data_processing.check_db_name(sb['index_type'],index_name_check)
+        st.markdown(f'Index name: {index_name_disp}')
+    except ValueError as e:
+        st.warning(str(e))
+        st.stop()
+
+        
+
+    # Add a button to run the function
+    if st.button('Load docs into vector database'):
+        start_time = time.time()  # Start the timer
+
         data_processing.load_docs(sb['index_type'],
                             docs,
                             query_model,
                             rag_type=sb['rag_type'],
-                            index_name=database_name,
+                            index_name=index_name,
                             n_merge_pages=n_merge_pages,
                             chunk_method=chunk_method,
                             chunk_size=chunk_size,

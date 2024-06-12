@@ -106,7 +106,7 @@ def load_docs(index_type:str,
     if rag_type == 'Parent-Child':
         index_name = index_name + '-parent-child'
     if rag_type == 'Summary':
-        index_name = index_name + '-'+llm.model_name.replace('/', '-')[:5] + '-summary' 
+        index_name = index_name + '-'+llm.model_name.replace('/', '-')[:6] + '-summary' 
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -738,10 +738,12 @@ def _stable_hash_meta(metadata: dict) -> str:
         str: The hexadecimal representation of the hashed metadata.
     """
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-def _check_db_name(index_type:str,index_name:object):
+def check_db_name(index_type:str,index_name:str):
     if index_type=="Pinecone":
         if len(index_name)>45:
             raise ValueError(f'The Pinecone index name must be less than 45 characters. Entry: {index_name}')
+        else:
+            return index_name
     elif index_type=="ChromaDB":
         if len(index_name) > 63:
             raise ValueError(f'The ChromaDB collection name must be less than 63 characters. Entry: {index_name}')
@@ -751,9 +753,8 @@ def _check_db_name(index_type:str,index_name:object):
             raise ValueError(f'The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {index_name}')
         if '..' in index_name:
             raise ValueError(f'The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}')
-
-### Stuff to test out spotlight
-
+        else:
+            return index_name
 def get_or_create_spotlight_viewer(df:pd.DataFrame,host:str='0.0.0.0',port:int=9000):
     viewers = spotlight.viewers()
     if viewers:
@@ -789,6 +790,7 @@ def get_docs_questions_df(
         pd.DataFrame: The combined dataframe containing documents and questions data.
     """
     # TODO there's definitely a way to not have to pass query_model, since it should be possible to pull from the db, try to remove this in future versions
+    # TODO extend this functionality to Pinecone
 
     # Check if there exists a query database
     chroma_collections = [collection.name for collection in admin.show_chroma_collections(format=False)['message']]
@@ -803,7 +805,6 @@ def get_docs_questions_df(
         st.stop()
     st.markdown(f"Query database found: {questions_db_collection}")
 
-    # TODO extend this functionality to Pinecone
     docs_df = get_docs_df('ChromaDB',docs_db_directory, docs_db_collection, query_model)
     docs_df["type"] = "doc"
     questions_df = get_questions_df(questions_db_directory, questions_db_collection, query_model)

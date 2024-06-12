@@ -18,16 +18,17 @@
     "embeddings": [
         {
             "name": "OpenAI",
-            "embedding_models": ["text-embedding-ada-002", 
-                                "text-embedding-3-small", 
-                                "text-embedding-3-large"
+            "embedding_models": ["text-embedding-3-large",
+                                 "text-embedding-ada-002", 
+                                 "text-embedding-3-small"
+                                
             ]
         },
         {
             "name": "Voyage",
-            "embedding_models": ["voyage-2",
-                                 "voyage-large-2",
-                                 "voyage-large-2-instruct"
+            "embedding_models": ["voyage-large-2",
+                                 "voyage-large-2-instruct",
+                                 "voyage-2"
             ]
         },
         {
@@ -41,7 +42,8 @@
             "name": "OpenAI",
             "models": [   
                 "gpt-3.5-turbo-0125",
-                "gpt-4o"
+                "gpt-4o",
+                "gpt-4"
             ]
         },
         {
