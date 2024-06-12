@@ -267,9 +267,11 @@ def chunk_docs(docs: List[str],
         )
 
         summaries = []
-        for i, page in enumerate(pages):
-            summary = chain.invoke(page)
-            summaries.append(summary)
+        batch_size = 10  # Set the batch size
+        for i in range(0, len(pages), batch_size):
+            batch_pages = pages[i:i+batch_size]  # Get the batch of pages
+            summary = chain.batch(batch_pages, config={"max_concurrency": batch_size})
+            summaries.extend(summary)
             if show_progress:
                 progress_percentage = i / len(pages)
                 my_bar.progress(progress_percentage, text=f'Generating summaries...{progress_percentage*100:.2f}%')
@@ -487,6 +489,14 @@ def upsert_docs(index_type: str,
                                                         chunker, 
                                                         batch_size, 
                                                         local_db_path)
+            
+        # for i in range(0, len(chunker['chunks']), batch_size):
+        #     chunk_batch = chunker['chunks'][i:i + batch_size]
+        #     chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+        #     vectorstore.add_documents(documents=chunk_batch,
+        #                                 ids=chunk_batch_ids)
+        # retriever = vectorstore.as_retriever()
+
         elif index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
@@ -526,6 +536,22 @@ def upsert_docs(index_type: str,
                                                         batch_size, 
                                                         show_progress,
                                                         local_db_path)
+            
+        # lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+        # store = LocalFileStore(lfs_path)
+        
+        # id_key = "doc_id"
+        # retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
+
+        # for i in range(0, len(chunker['chunks']), batch_size):
+        #     chunk_batch = chunker['chunks'][i:i + batch_size]
+        #     chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+        #     retriever.vectorstore.add_documents(documents=chunk_batch,
+        #                                         ids=chunk_batch_ids)
+        # # Index parent docs all at once
+        # retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['parent_chunks'])))
+
+
         elif index_type == 'ChromaDB':
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
@@ -561,6 +587,22 @@ def upsert_docs(index_type: str,
                                                         batch_size, 
                                                         show_progress,
                                                         local_db_path)
+            
+        # lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
+        # store = LocalFileStore(lfs_path)
+        
+        # id_key = "doc_id"
+        # retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
+
+        # for i in range(0, len(chunker['summaries']), batch_size):
+        #     chunk_batch = chunker['summaries'][i:i + batch_size]
+        #     chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
+        #     retriever.vectorstore.add_documents(documents=chunk_batch,
+        #                                         ids=chunk_batch_ids)
+        # # Index parent docs all at once
+        # retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['docs'])))
+
+
         elif index_type == 'ChromaDB':
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
