@@ -115,7 +115,12 @@ def load_sidebar(config_file,
                                                                 llms['Hugging Face']['models'], 
                                                                 index=0,
                                                                 help='Select the Hugging Face model for RAG.')
-                        sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
+                        if sb_out['rag_llm_model']=="Dedicated Endpoint":
+                            sb_out['rag_hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
+                                                                help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
+                            sb_out['rag_hf_endpoint']=sb_out['rag_hf_endpoint']+'/v1/'
+                        else:
+                            sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
                     elif sb_out['rag_llm_source']=='LM Studio (local)':
                         sb_out['rag_llm_model']=st.sidebar.text_input('Local host URL',
                                                                 'http://localhost:1234/v1',
@@ -194,6 +199,13 @@ def load_sidebar(config_file,
                                                         index=0,
                                                         help='Select the Hugging Face model for the application.')
                 sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
+
+                if sb_out['llm_model']=="Dedicated Endpoint":
+                    sb_out['hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
+                                                        help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
+                    sb_out['hf_endpoint']=sb_out['hf_endpoint']+'/v1/'
+                else:
+                    sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
             elif sb_out['llm_source']=='LM Studio (local)':
                 sb_out['llm_model']=st.sidebar.text_input('Local host URL',
                                                         'http://localhost:1234/v1',

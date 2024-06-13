@@ -106,7 +106,7 @@ def load_docs(index_type:str,
     if rag_type == 'Parent-Child':
         index_name = index_name + '-parent-child'
     if rag_type == 'Summary':
-        index_name = index_name + '-'+llm.model_name.replace('/', '-')[:6] + '-summary' 
+        index_name = index_name + '-' + llm.model_name.replace('.', '-').replace('/', '-')[:6].lower() + '-summary'
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -267,10 +267,10 @@ def chunk_docs(docs: List[str],
         )
 
         summaries = []
-        batch_size = 10  # Set the batch size
-        for i in range(0, len(pages), batch_size):
-            batch_pages = pages[i:i+batch_size]  # Get the batch of pages
-            summary = chain.batch(batch_pages, config={"max_concurrency": batch_size})
+        batch_size_submit = 10  # Set the batch size
+        for i in range(0, len(pages), batch_size_submit):
+            batch_pages = pages[i:i+batch_size_submit]  # Get the batch of pages
+            summary = chain.batch(batch_pages, config={"max_concurrency": batch_size_submit})
             summaries.extend(summary)
             if show_progress:
                 progress_percentage = i / len(pages)

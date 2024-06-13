@@ -1054,7 +1054,8 @@ def test_get_docs_df(setup_fixture):
     query_model=parse_test_model('embedding', test_query_params, setup_fixture)
 
     # Call the function
-    df = get_docs_df(setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
+    # TODO add pinecone test
+    df = get_docs_df('ChromaDB',setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
 
     # Perform assertions
     assert isinstance(df, pd.DataFrame)

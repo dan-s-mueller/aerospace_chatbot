@@ -52,7 +52,8 @@
                        "mistralai/Mixtral-8x7B-Instruct-v0.1",
                        "google/gemma-1.1-7b-it",
                        "meta-llama/Meta-Llama-3-8B-Instruct",
-                       "meta-llama/Meta-Llama-3-70B-Instruct"
+                       "meta-llama/Meta-Llama-3-70B-Instruct",
+                       "Dedicated Endpoint"
             ]
         },
         {
