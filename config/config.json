@@ -33,7 +33,8 @@
         },
         {
             "name": "Hugging Face",
-            "embedding_models": ["mixedbread-ai/mxbai-embed-large-v1"
+            "embedding_models": ["mixedbread-ai/mxbai-embed-large-v1",
+                                 "Dedicated Endpoint"
             ]
         }
     ],

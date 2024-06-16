@@ -103,10 +103,12 @@ def load_docs(index_type:str,
                        show_progress=show_progress)
         
     # Set index names for special databases
-    if rag_type == 'Parent-Child':
-        index_name = index_name + '-parent-child'
-    if rag_type == 'Summary':
-        index_name = index_name + '-' + llm.model_name.replace('.', '-').replace('/', '-')[:6].lower() + '-summary'
+    # TODO replace with db_name
+    index_name=db_name(index_type=index_type,index_name=index_name,model_name=llm.model_name,check=False)
+    # if rag_type == 'Parent-Child':
+    #     index_name = index_name + '-parent-child'
+    # if rag_type == 'Summary':
+    #     index_name = index_name + '-' + llm.model_name.replace('.', '-').replace('/', '-')[:6].lower() + '-summary'
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -373,65 +375,6 @@ def initialize_database(index_type: str,
         my_bar.empty()
     return vectorstore
 
-# @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1,max=60))
-# def upsert_docs_pinecone(index_name: str,
-#                          vectorstore: any, 
-#                          chunker: dict, 
-#                          batch_size: int = 50, 
-#                          local_db_path: str = '.'):
-#     """
-#     Upserts documents into Pinecone index. Refactored spearately from upsert_docs to allow for tenacity retries.
-
-#     Args:
-#         index_name (str): The name of the Pinecone index.
-#         vectorstore (any): The vectorstore object for storing the document vectors.
-#         chunker (dict): The chunker object containing the documents to upsert.
-#         batch_size (int, optional): The number of documents to upsert in each batch. Defaults to 50.
-#         local_db_path (str, optional): The path to the local database. Defaults to '.'.
-
-#     Returns:
-#         tuple: A tuple containing the updated vectorstore and retriever objects.
-#     """
-    
-#     if chunker['rag'] == 'Standard':
-#         for i in range(0, len(chunker['chunks']), batch_size):
-#             chunk_batch = chunker['chunks'][i:i + batch_size]
-#             chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-#             vectorstore.add_documents(documents=chunk_batch,
-#                                         ids=chunk_batch_ids)
-#         retriever = vectorstore.as_retriever()
-#     elif chunker['rag'] == 'Parent-Child':
-#         lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-#         store = LocalFileStore(lfs_path)
-        
-#         id_key = "doc_id"
-#         retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
-
-#         for i in range(0, len(chunker['chunks']), batch_size):
-#             chunk_batch = chunker['chunks'][i:i + batch_size]
-#             chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-#             retriever.vectorstore.add_documents(documents=chunk_batch,
-#                                                 ids=chunk_batch_ids)
-#         # Index parent docs all at once
-#         retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['parent_chunks'])))
-#     elif chunker['rag'] == 'Summary':
-#         lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-#         store = LocalFileStore(lfs_path)
-        
-#         id_key = "doc_id"
-#         retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
-
-#         for i in range(0, len(chunker['summaries']), batch_size):
-#             chunk_batch = chunker['summaries'][i:i + batch_size]
-#             chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-#             retriever.vectorstore.add_documents(documents=chunk_batch,
-#                                                 ids=chunk_batch_ids)
-#         # Index parent docs all at once
-#         retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['docs'])))
-#     else:
-#         raise NotImplementedError
-#     return vectorstore, retriever
-
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1,max=60))
 def upsert_docs_db(vectorstore,
                          chunk_batch: List[Document],
@@ -477,26 +420,7 @@ def upsert_docs(index_type: str,
     if show_progress:
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
-
     if chunker['rag'] == 'Standard':
-        # Upsert each chunk in batches
-        # if index_type == "Pinecone":
-        #     if show_progress:
-        #         progress_text = "Upsert in progress to Pinecone..."
-        #         my_bar.progress(0, text=progress_text)
-        #     vectorstore, retriever=upsert_docs_pinecone(index_name,
-        #                                                 vectorstore, 
-        #                                                 chunker, 
-        #                                                 batch_size, 
-        #                                                 local_db_path)
-            
-        # for i in range(0, len(chunker['chunks']), batch_size):
-        #     chunk_batch = chunker['chunks'][i:i + batch_size]
-        #     chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-        #     vectorstore.add_documents(documents=chunk_batch,
-        #                                 ids=chunk_batch_ids)
-        # retriever = vectorstore.as_retriever()
-
         if index_type != "RAGatouille":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
@@ -525,32 +449,6 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Parent-Child':
-        # if index_type == 'Pincone':
-        #     if show_progress:
-        #         progress_text = "Upsert in progress to Pinecone..."
-        #         my_bar.progress(0, text=progress_text)
-        #     vectorstore, retriever=upsert_docs_pinecone(index_name,
-        #                                                 vectorstore, 
-        #                                                 chunker, 
-        #                                                 batch_size, 
-        #                                                 show_progress,
-        #                                                 local_db_path)
-            
-        # lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-        # store = LocalFileStore(lfs_path)
-        
-        # id_key = "doc_id"
-        # retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
-
-        # for i in range(0, len(chunker['chunks']), batch_size):
-        #     chunk_batch = chunker['chunks'][i:i + batch_size]
-        #     chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-        #     retriever.vectorstore.add_documents(documents=chunk_batch,
-        #                                         ids=chunk_batch_ids)
-        # # Index parent docs all at once
-        # retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['parent_chunks'])))
-
-
         if index_type != "RAGatouille":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
@@ -576,32 +474,6 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Summary':
-        # if index_type == 'Pincone':
-        #     if show_progress:
-        #         progress_text = "Upsert in progress to Pinecone..."
-        #         my_bar.progress(0, text=progress_text)
-        #     vectorstore, retriever=upsert_docs_pinecone(index_name,
-        #                                                 vectorstore, 
-        #                                                 chunker, 
-        #                                                 batch_size, 
-        #                                                 show_progress,
-        #                                                 local_db_path)
-            
-        # lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-        # store = LocalFileStore(lfs_path)
-        
-        # id_key = "doc_id"
-        # retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
-
-        # for i in range(0, len(chunker['summaries']), batch_size):
-        #     chunk_batch = chunker['summaries'][i:i + batch_size]
-        #     chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-        #     retriever.vectorstore.add_documents(documents=chunk_batch,
-        #                                         ids=chunk_batch_ids)
-        # # Index parent docs all at once
-        # retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['docs'])))
-
-
         if index_type != "RAGatouille":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
@@ -655,13 +527,11 @@ def delete_index(index_type: str,
             pc.describe_index(index_name)
             pc.delete_index(index_name)
         except Exception as e:
-            # print(f"Error occurred while deleting Pinecone index: {e}")
             pass
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except Exception as e:
-                # print(f"Error occurred while deleting ChromaDB local_file_store collection: {e}")
                 pass    # No need to do anything if it doesn't exist
     elif index_type == "ChromaDB":  
         try:
@@ -672,21 +542,18 @@ def delete_index(index_type: str,
                     # persistent_client.delete_collection(name=idx.name)
             persistent_client.delete_collection(name=index_name)
         except Exception as e:
-            # print(f"Error occurred while deleting ChromaDB collection: {e}")
             pass
         # Delete local file store if they exist
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except Exception as e:
-                # print(f"Error occurred while deleting ChromaDB local_file_store collection: {e}")
                 pass    # No need to do anything if it doesn't exist
     elif index_type == "RAGatouille":
         try:
             ragatouille_path = os.path.join(local_db_path, '.ragatouille/colbert/indexes', index_name)
             shutil.rmtree(ragatouille_path)
         except Exception as e:
-            # print(f"Error occurred while deleting RAGatouille index: {e}")
             pass
     else:
         raise NotImplementedError
@@ -768,34 +635,42 @@ def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
     else:
         raise NotImplementedError(f"The embedding family '{embedding_family}' is not available in config.json")
 
-def _stable_hash_meta(metadata: dict) -> str:
-    """
-    Stable hash of metadata from Langchain Document.
-
-    Args:
-        metadata (dict): The metadata dictionary to be hashed.
-
-    Returns:
-        str: The hexadecimal representation of the hashed metadata.
-    """
+def _stable_hash_meta(metadata: dict):
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-def check_db_name(index_type:str,index_name:str):
-    if index_type=="Pinecone":
-        if len(index_name)>45:
-            raise ValueError(f'The Pinecone index name must be less than 45 characters. Entry: {index_name}')
-        else:
-            return index_name
-    elif index_type=="ChromaDB":
-        if len(index_name) > 63:
-            raise ValueError(f'The ChromaDB collection name must be less than 63 characters. Entry: {index_name}')
-        if not index_name[0].isalnum() or not index_name[-1].isalnum():
-            raise ValueError(f'The ChromaDB collection name must start and end with an alphanumeric character. Entry: {index_name}')
-        if not re.match(r'^[a-zA-Z0-9_-]+$', index_name):
-            raise ValueError(f'The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {index_name}')
-        if '..' in index_name:
-            raise ValueError(f'The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}')
-        else:
-            return index_name
+def db_name(index_type:str,index_name:str,model_name:bool=None,check:bool=True):
+
+    # Modify name if it's an advanded RAG type
+    if index_name.endswith("-parent-child"):
+        index_name = index_name + "-parent-child"
+    elif index_name.endswith("-summary"):
+        model_name_temp=model_name.replace(".", "-").replace("/", "-").lower()
+        model_name_temp = model_name_temp.split('/')[-1]    # Just get the model name, not org
+        model_name_temp = model_name_temp[:3] + model_name_temp[-3:]    # First and last 3 characters
+        
+        model_name_temp=model_name_temp+"-"+_stable_hash_meta({"model_name":model_name})[:4]
+
+        index_name = index_name + "-" + model_name_temp + "-summary"
+    else:
+        index_name = index_name
+    
+    # Check if the name is valid
+    if check:
+        if index_type=="Pinecone":
+            if len(index_name) > 45:
+                raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {index_name}")
+            else:
+                return index_name
+        elif index_type=="ChromaDB":
+            if len(index_name) > 63:
+                raise ValueError(f"The ChromaDB collection name must be less than 63 characters. Entry: {index_name}")
+            if not index_name[0].isalnum() or not index_name[-1].isalnum():
+                raise ValueError(f"The ChromaDB collection name must start and end with an alphanumeric character. Entry: {index_name}")
+            if not re.match(r"^[a-zA-Z0-9_-]+$", index_name):
+                raise ValueError(f"The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {index_name}")
+            if ".." in index_name:
+                raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}")
+            else:
+                return index_name
 def get_or_create_spotlight_viewer(df:pd.DataFrame,host:str='0.0.0.0',port:int=9000):
     viewers = spotlight.viewers()
     if viewers:
@@ -927,7 +802,6 @@ def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_mod
         docs=[]
         chunk_size=200  # 200 doesn't error our
         for i in range(0, len(ids), chunk_size):
-            print(f"Fetching {i} to {i+chunk_size}")
             vector=index.fetch(ids[i:i+chunk_size])['vectors']
             vector_data = []
             for key, value in vector.items():

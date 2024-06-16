@@ -130,20 +130,20 @@ if st.session_state["authentication_status"]:
         # Set LLM if relevant
         if sb['rag_type']=='Summary':
             llm=admin.set_llm(sb,secrets,type='rag')
-            print(llm)
         else:
             llm=None
 
     # Check the index name, give error before running if it is invalid
     try:
-        if sb['rag_type'] == 'Parent-Child':
-            index_name_check = index_name + '-parent-child'
-        if sb['rag_type'] == 'Summary':
-            index_name_check = index_name + '-' + llm.model_name.replace('.', '-').replace('/', '-')[:6].lower() + '-summary'
-        else:
-            index_name_check = index_name
-        index_name_disp=data_processing.check_db_name(sb['index_type'],index_name_check)
-        st.markdown(f'Index name: {index_name_disp}')
+        index_name=data_processing.db_name(index_type=sb['index_type'],index_name=index_name,model_name=llm.model_name)
+        # if sb['rag_type'] == 'Parent-Child':
+        #     index_name_check = index_name + '-parent-child'
+        # if sb['rag_type'] == 'Summary':
+        #     index_name_check = index_name + '-' + llm.model_name.replace('.', '-').replace('/', '-')[:6].lower() + '-summary'
+        # else:
+        #     index_name_check = index_name
+        # index_name_disp=data_processing.db_name(sb['index_type'],index_name_check)
+        st.markdown(f'Index name: {index_name}')
     except ValueError as e:
         st.warning(str(e))
         st.stop()
