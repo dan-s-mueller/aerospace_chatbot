@@ -103,12 +103,7 @@ def load_docs(index_type:str,
                        show_progress=show_progress)
         
     # Set index names for special databases
-    # TODO replace with db_name
-    index_name=db_name(index_type=index_type,index_name=index_name,model_name=llm.model_name,check=False)
-    # if rag_type == 'Parent-Child':
-    #     index_name = index_name + '-parent-child'
-    # if rag_type == 'Summary':
-    #     index_name = index_name + '-' + llm.model_name.replace('.', '-').replace('/', '-')[:6].lower() + '-summary'
+    index_name=db_name(index_type,rag_type,index_name,model_name=llm.model_name,check=False)
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -637,12 +632,11 @@ def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
 
 def _stable_hash_meta(metadata: dict):
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-def db_name(index_type:str,index_name:str,model_name:bool=None,check:bool=True):
-
+def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,check:bool=True):
     # Modify name if it's an advanded RAG type
-    if index_name.endswith("-parent-child"):
+    if rag_type == 'Parent-Child':
         index_name = index_name + "-parent-child"
-    elif index_name.endswith("-summary"):
+    elif rag_type == 'Summary':
         model_name_temp=model_name.replace(".", "-").replace("/", "-").lower()
         model_name_temp = model_name_temp.split('/')[-1]    # Just get the model name, not org
         model_name_temp = model_name_temp[:3] + model_name_temp[-3:]    # First and last 3 characters

@@ -62,7 +62,7 @@ if st.session_state["authentication_status"]:
 
     # Set database name
     index_appendix=st.text_input('Appendix for index name','ams')
-    index_name = (sb['embedding_name'].replace('/', '-') + '-' + index_appendix).lower()
+    index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
 
     # Add an expandable box for options
     with st.expander("Options",expanded=True):
@@ -127,22 +127,17 @@ if st.session_state["authentication_status"]:
             json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{index_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
             json_file=os.path.join(paths['base_folder_path'],json_file)
 
-        # Set LLM if relevant
-        if sb['rag_type']=='Summary':
-            llm=admin.set_llm(sb,secrets,type='rag')
-        else:
-            llm=None
+        
 
     # Check the index name, give error before running if it is invalid
     try:
-        index_name=data_processing.db_name(index_type=sb['index_type'],index_name=index_name,model_name=llm.model_name)
-        # if sb['rag_type'] == 'Parent-Child':
-        #     index_name_check = index_name + '-parent-child'
-        # if sb['rag_type'] == 'Summary':
-        #     index_name_check = index_name + '-' + llm.model_name.replace('.', '-').replace('/', '-')[:6].lower() + '-summary'
-        # else:
-        #     index_name_check = index_name
-        # index_name_disp=data_processing.db_name(sb['index_type'],index_name_check)
+        # Set LLM if relevant
+        if sb['rag_type']=='Summary':
+            llm=admin.set_llm(sb,secrets,type='rag')
+            index_name=data_processing.db_name(sb['index_type'],sb['rag_type'],index_name,model_name=llm.model_name)
+        else:
+            llm=None
+            index_name=data_processing.db_name(sb['index_type'],sb['rag_type'],index_name)
         st.markdown(f'Index name: {index_name}')
     except ValueError as e:
         st.warning(str(e))

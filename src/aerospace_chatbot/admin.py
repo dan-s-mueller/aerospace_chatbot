@@ -98,7 +98,11 @@ def load_sidebar(config_file,
                                                         embeddings_list[sb_out['query_model']]['embedding_models'], 
                                                         index=0,
                                                         help="Models listed are compatible with the selected index type.")
-            
+                if sb_out['embedding_name']=="Dedicated Endpoint":
+                    sb_out['embedding_hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
+                                                        help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
+                else:
+                    sb_out['embedding_hf_endpoint']=None
         if rag_type:
             # RAG Type
             st.sidebar.title('RAG Type')
@@ -412,9 +416,13 @@ def get_query_model(sb, secrets):
     elif sb['query_model'] == 'Voyage':
         query_model = VoyageAIEmbeddings(model=sb['embedding_name'], voyage_api_key=secrets['VOYAGE_API_KEY'], truncation=False)
     elif sb['query_model'] == 'Hugging Face':
-        # TODO add dedicated endpoints as an embedding model option.
-        query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], 
-                                                        api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+        if sb['embedding_hf_endpoint']:
+            query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], 
+                                                            api_url=sb['embedding_hf_endpoint'],
+                                                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+        else:
+            query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], 
+                                                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
     else:
         raise NotImplementedError('Query model not recognized.')
     return query_model

@@ -649,6 +649,8 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
     except:
         pass
 
+# TODO test db_name function
+
 # Test end to end process, adding query
 def test_database_setup_and_query(test_input,setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.
