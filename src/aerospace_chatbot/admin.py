@@ -534,6 +534,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes. Defaults to False.
         set_secrets (bool, optional): Whether to set the secrets. Defaults to False.
     """
+    # TODO add capability to add dedicated endpoints for Hugging Face models
     with st.expander("Connection Status", expanded=expanded):
         # Set secrets and assign to environment variables
         if set_secrets:

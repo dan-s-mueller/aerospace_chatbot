@@ -101,13 +101,6 @@ def load_docs(index_type:str,
                        file_out=file_out,
                        llm=llm,
                        show_progress=show_progress)
-        
-    # Set index names for special databases
-    # if 'rag_type'=='Summary':
-    #     index_name=db_name('index_type','rag_type',index_name,model_name=llm.model_name)
-    # else:
-    #     index_name=db_name('index_type','rag_type',index_name)
-    # index_name=db_name(index_type,rag_type,index_name,model_name=llm.model_name,check=False)
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -155,14 +148,19 @@ def chunk_docs(docs: List[str],
         dict: A dictionary containing the chunking results based on the specified rag_type.
     """
     if show_progress:
-        progress_text = "Chunking in progress..."
+        progress_text = 'Reading documents...'
         my_bar = st.progress(0, text=progress_text)
     pages=[]
     chunks=[]
     
     # Parse doc pages
     for i, doc in enumerate(docs):
+        # Show and update the progress bar
+        if show_progress:
+            progress_percentage = i / len(docs)
+            my_bar.progress(progress_percentage, text=f'Reading documents...{doc}...{progress_percentage*100:.2f}%')
         
+        # Load the document
         loader = PyPDFLoader(doc)
         doc_page_data = loader.load()
 
@@ -172,10 +170,7 @@ def chunk_docs(docs: List[str],
             doc_page=_sanitize_raw_page_data(doc_page)
             if doc_page is not None:
                 doc_pages.append(doc_page)
-        if show_progress:
-            progress_percentage = i / len(docs)
-            my_bar.progress(progress_percentage, text=f'Reading documents...{progress_percentage*100:.2f}%')
-        
+
         # Merge pages if option is selected
         if n_merge_pages:
             for i in range(0, len(doc_pages), n_merge_pages):
@@ -670,6 +665,7 @@ def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,chec
             else:
                 return index_name
 def get_or_create_spotlight_viewer(df:pd.DataFrame,host:str='0.0.0.0',port:int=9000):
+    # TODO update this with the latest version no-ssl
     viewers = spotlight.viewers()
     if viewers:
         for viewer in viewers[:-1]:

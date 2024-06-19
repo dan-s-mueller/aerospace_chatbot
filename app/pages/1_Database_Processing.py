@@ -138,8 +138,6 @@ if st.session_state["authentication_status"]:
         st.warning(str(e))
         st.stop()
 
-        
-
     # Add a button to run the function
     if st.button('Load docs into vector database'):
         start_time = time.time()  # Start the timer
