@@ -12,7 +12,8 @@ key.pem
 # Data
 *.pdf
 data/AMS/noupload/*.pdf
-data/AMS/*jsonl
+data/AMS/**/*.txt
+data/AMS/*.jsonl
 !data/AMS/*.pdf
 !tests/*.pdf
 *.pickle
