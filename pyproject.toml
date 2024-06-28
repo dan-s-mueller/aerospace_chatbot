@@ -42,6 +42,8 @@ langchain-voyageai = "^0.1.0"
 renumics-spotlight = "^1.6.9"
 langchain-pinecone = "^0.1.1"
 pinecone-client = {version = "<4.0.0", extras = ["grpc"]}
+requests = "^2.32.3"
+beautifulsoup4 = "^4.12.3"
 
 [build-system]
 requires = ["poetry-core"]
