@@ -44,6 +44,7 @@ langchain-pinecone = "^0.1.1"
 pinecone-client = {version = "<4.0.0", extras = ["grpc"]}
 requests = "^2.32.3"
 beautifulsoup4 = "^4.12.3"
+selenium = "^4.22.0"
 
 [build-system]
 requires = ["poetry-core"]
