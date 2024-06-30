@@ -18,21 +18,23 @@
     "embeddings": [
         {
             "name": "OpenAI",
-            "embedding_models": ["text-embedding-ada-002", 
-                                "text-embedding-3-small", 
-                                "text-embedding-3-large"
+            "embedding_models": ["text-embedding-3-large",
+                                 "text-embedding-ada-002", 
+                                 "text-embedding-3-small"
+                                
             ]
         },
         {
             "name": "Voyage",
-            "embedding_models": ["voyage-2",
-                                 "voyage-large-2"
+            "embedding_models": ["voyage-large-2",
+                                 "voyage-large-2-instruct",
+                                 "voyage-2"
             ]
         },
         {
             "name": "Hugging Face",
-            "embedding_models": ["sentence-transformers/all-MiniLM-L6-v2",
-                                "mixedbread-ai/mxbai-embed-large-v1"
+            "embedding_models": ["mixedbread-ai/mxbai-embed-large-v1",
+                                 "Dedicated Endpoint"
             ]
         }
     ],
@@ -41,15 +43,18 @@
             "name": "OpenAI",
             "models": [   
                 "gpt-3.5-turbo-0125",
-                "gpt-4",
-                "gpt-4-0125-preview"
+                "gpt-4o",
+                "gpt-4"
             ]
         },
         {
             "name": "Hugging Face",
             "models": ["mistralai/Mistral-7B-Instruct-v0.2",
                        "mistralai/Mixtral-8x7B-Instruct-v0.1",
-                       "google/gemma-1.1-7b-it"
+                       "google/gemma-1.1-7b-it",
+                       "meta-llama/Meta-Llama-3-8B-Instruct",
+                       "meta-llama/Meta-Llama-3-70B-Instruct",
+                       "Dedicated Endpoint"
             ]
         },
         {

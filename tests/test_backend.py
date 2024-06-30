@@ -234,7 +234,8 @@ def parse_test_model(type, test, setup_fixture):
             elif test['query_model'] == 'Voyage':
                 query_model = VoyageAIEmbeddings(model=test['embedding_name'], voyage_api_key=setup_fixture['VOYAGE_API_KEY'], truncation=False)
             elif test['query_model'] == 'Hugging Face':
-                query_model = HuggingFaceInferenceAPIEmbeddings(model_name=test['embedding_name'], api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'])
+                query_model = HuggingFaceInferenceAPIEmbeddings(model_name=test['embedding_name'], 
+                                                                api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'])
         else:
             raise NotImplementedError('Query model not implemented.')
         return query_model
@@ -648,6 +649,8 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
     except:
         pass
 
+# TODO test db_name function
+
 # Test end to end process, adding query
 def test_database_setup_and_query(test_input,setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.
@@ -667,7 +670,7 @@ def test_database_setup_and_query(test_input,setup_fixture):
     print(f'Starting test: {print_str}')
 
     query_model=parse_test_model('embedding', test, setup_fixture)
-    llm=parse_test_model('llm', test, setup_fixture)
+    llm=parse_test_model('llm', test, setup_fixture)    
 
     try: 
         vectorstore = load_docs(
@@ -1053,7 +1056,8 @@ def test_get_docs_df(setup_fixture):
     query_model=parse_test_model('embedding', test_query_params, setup_fixture)
 
     # Call the function
-    df = get_docs_df(setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
+    # TODO add pinecone test
+    df = get_docs_df('ChromaDB',setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
 
     # Perform assertions
     assert isinstance(df, pd.DataFrame)

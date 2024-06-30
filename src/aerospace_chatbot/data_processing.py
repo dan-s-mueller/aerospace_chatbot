@@ -4,11 +4,11 @@ import os, re, shutil
 import hashlib
 from pathlib import Path
 from typing import List, Union
+import pickle
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from pinecone import Pinecone as pinecone_client
-from pinecone import PodSpec
+from pinecone import Pinecone as pinecone_client, ServerlessSpec
 
 import chromadb
 from chromadb import PersistentClient
@@ -47,6 +47,7 @@ from datasets import Dataset
 
 import admin
 from prompts import CLUSTER_LABEL
+import time
 
 def load_docs(index_type:str,
               docs:List[str],
@@ -100,12 +101,6 @@ def load_docs(index_type:str,
                        file_out=file_out,
                        llm=llm,
                        show_progress=show_progress)
-        
-    # Set index names for special databases
-    if rag_type == 'Parent-Child':
-        index_name = index_name + '-parent-child'
-    if rag_type == 'Summary':
-        index_name = index_name + llm.model_name.replace('/', '-') + '-summary' 
 
     # Initialize client an upsert docs
     vectorstore = initialize_database(index_type, 
@@ -153,14 +148,19 @@ def chunk_docs(docs: List[str],
         dict: A dictionary containing the chunking results based on the specified rag_type.
     """
     if show_progress:
-        progress_text = "Chunking in progress..."
+        progress_text = 'Reading documents...'
         my_bar = st.progress(0, text=progress_text)
     pages=[]
     chunks=[]
     
     # Parse doc pages
     for i, doc in enumerate(docs):
+        # Show and update the progress bar
+        if show_progress:
+            progress_percentage = i / len(docs)
+            my_bar.progress(progress_percentage, text=f'Reading documents...{doc}...{progress_percentage*100:.2f}%')
         
+        # Load the document
         loader = PyPDFLoader(doc)
         doc_page_data = loader.load()
 
@@ -170,10 +170,7 @@ def chunk_docs(docs: List[str],
             doc_page=_sanitize_raw_page_data(doc_page)
             if doc_page is not None:
                 doc_pages.append(doc_page)
-        if show_progress:
-            progress_percentage = i / len(docs)
-            my_bar.progress(progress_percentage, text=f'Reading documents...{progress_percentage*100:.2f}%')
-        
+
         # Merge pages if option is selected
         if n_merge_pages:
             for i in range(0, len(doc_pages), n_merge_pages):
@@ -266,9 +263,11 @@ def chunk_docs(docs: List[str],
         )
 
         summaries = []
-        for i, page in enumerate(pages):
-            summary = chain.invoke(page)
-            summaries.append(summary)
+        batch_size_submit = 10  # Set the batch size
+        for i in range(0, len(pages), batch_size_submit):
+            batch_pages = pages[i:i+batch_size_submit]  # Get the batch of pages
+            summary = chain.batch(batch_pages, config={"max_concurrency": batch_size_submit})
+            summaries.extend(summary)
             if show_progress:
                 progress_percentage = i / len(pages)
                 my_bar.progress(progress_percentage, text=f'Generating summaries...{progress_percentage*100:.2f}%')
@@ -327,7 +326,7 @@ def initialize_database(index_type: str,
         except:
             pc.create_index(index_name,
                             dimension=_embedding_size(query_model),
-                            spec=PodSpec(environment="us-west1-gcp", pod_type="p1.x1"))
+                            spec=ServerlessSpec(cloud="aws", region="us-east-1"))
         
         index = pc.Index(index_name)
         vectorstore=PineconeVectorStore(index,
@@ -339,20 +338,7 @@ def initialize_database(index_type: str,
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
-        # TODO add in collection metadata like this:
-        #         collection_metadata = {}
-        # if embeddings_model is not None:
-        #     model_name, model_type = get_embeddings_model_config(embeddings_model)
-        #     collection_metadata["model_name"] = model_name
-        #     collection_metadata["model_type"] = model_type
-
-        # if isinstance(relevance_score_fn, str):
-        #     assert relevance_score_fn in get_args(PredefinedRelevanceScoreFn)
-        #     collection_metadata["hnsw:space"] = relevance_score_fn
-        # else:
-        #     kwargs["relevance_score_fn"] = relevance_score_fn
-        # kwargs["collection_metadata"] = collection_metadata
-        # return Chroma(**kwargs)
+        # TODO add in collection metadata
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
@@ -384,64 +370,25 @@ def initialize_database(index_type: str,
     return vectorstore
 
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1,max=60))
-def upsert_docs_pinecone(index_name: str,
-                         vectorstore: any, 
-                         chunker: dict, 
-                         batch_size: int = 50, 
-                         local_db_path: str = '.'):
+def upsert_docs_db(vectorstore,
+                         chunk_batch: List[Document],
+                         chunk_batch_ids: List[str]):
     """
-    Upserts documents into Pinecone index. Refactored spearately from upsert_docs to allow for tenacity retries.
+    Upserts a batch of documents into a vector database. The lancghain call is identical between Pinecone and ChromaDB.
+    This function handles issues with hosted database upserts or when using hugging face or other endpoint services which are less stable.
 
-    Args:
-        index_name (str): The name of the Pinecone index.
-        vectorstore (any): The vectorstore object for storing the document vectors.
-        chunker (dict): The chunker object containing the documents to upsert.
-        batch_size (int, optional): The number of documents to upsert in each batch. Defaults to 50.
-        local_db_path (str, optional): The path to the local database. Defaults to '.'.
+    Parameters:
+    vectorstore (VectorStore): The VectorStore object representing the Pinecone or ChromaDB.
+    chunk_batch (List[Document]): A list of Document objects representing the batch of documents to be upserted.
+    chunk_batch_ids (List[str]): A list of strings representing the IDs of the documents in the batch.
 
     Returns:
-        tuple: A tuple containing the updated vectorstore and retriever objects.
+    VectorStore: The updated VectorStore object after upserting the documents.
     """
-    
-    if chunker['rag'] == 'Standard':
-        for i in range(0, len(chunker['chunks']), batch_size):
-            chunk_batch = chunker['chunks'][i:i + batch_size]
-            chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-            vectorstore.add_documents(documents=chunk_batch,
-                                        ids=chunk_batch_ids)
-        retriever = vectorstore.as_retriever()
-    elif chunker['rag'] == 'Parent-Child':
-        lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-        store = LocalFileStore(lfs_path)
-        
-        id_key = "doc_id"
-        retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
+    vectorstore.add_documents(documents=chunk_batch,
+                              ids=chunk_batch_ids)
+    return vectorstore
 
-        for i in range(0, len(chunker['chunks']), batch_size):
-            chunk_batch = chunker['chunks'][i:i + batch_size]
-            chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-            retriever.vectorstore.add_documents(documents=chunk_batch,
-                                                ids=chunk_batch_ids)
-        # Index parent docs all at once
-        retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['parent_chunks'])))
-    elif chunker['rag'] == 'Summary':
-        lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
-        store = LocalFileStore(lfs_path)
-        
-        id_key = "doc_id"
-        retriever = MultiVectorRetriever(vectorstore=vectorstore, byte_store=store, id_key=id_key)
-
-        for i in range(0, len(chunker['summaries']), batch_size):
-            chunk_batch = chunker['summaries'][i:i + batch_size]
-            chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-            retriever.vectorstore.add_documents(documents=chunk_batch,
-                                                ids=chunk_batch_ids)
-        # Index parent docs all at once
-        retriever.docstore.mset(list(zip(chunker['pages']['doc_ids'], chunker['pages']['docs'])))
-    else:
-        raise NotImplementedError
-    return vectorstore, retriever
-        
 def upsert_docs(index_type: str, 
                 index_name: str,
                 vectorstore: any, 
@@ -467,24 +414,15 @@ def upsert_docs(index_type: str,
     if show_progress:
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
-
     if chunker['rag'] == 'Standard':
-        # Upsert each chunk in batches
-        if index_type == "Pinecone":
-            if show_progress:
-                progress_text = "Upsert in progress to Pinecone..."
-                my_bar.progress(0, text=progress_text)
-            vectorstore, retriever=upsert_docs_pinecone(index_name,
-                                                        vectorstore, 
-                                                        chunker, 
-                                                        batch_size, 
-                                                        local_db_path)
-        elif index_type == "ChromaDB":
+        if index_type != "RAGatouille":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-                vectorstore.add_documents(documents=chunk_batch,
-                                          ids=chunk_batch_ids)
+                
+                vectorstore = upsert_docs_db(vectorstore,
+                                             chunk_batch, chunk_batch_ids)
+                    
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -505,17 +443,7 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Parent-Child':
-        if index_type == 'Pincone':
-            if show_progress:
-                progress_text = "Upsert in progress to Pinecone..."
-                my_bar.progress(0, text=progress_text)
-            vectorstore, retriever=upsert_docs_pinecone(index_name,
-                                                        vectorstore, 
-                                                        chunker, 
-                                                        batch_size, 
-                                                        show_progress,
-                                                        local_db_path)
-        elif index_type == 'ChromaDB':
+        if index_type != "RAGatouille":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -525,8 +453,10 @@ def upsert_docs(index_type: str,
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-                retriever.vectorstore.add_documents(documents=chunk_batch,
-                                                    ids=chunk_batch_ids)
+                
+                retriever.vectorstore = upsert_docs_db(retriever.vectorstore,
+                                                       chunk_batch, chunk_batch_ids)
+                
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -538,17 +468,7 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Summary':
-        if index_type == 'Pincone':
-            if show_progress:
-                progress_text = "Upsert in progress to Pinecone..."
-                my_bar.progress(0, text=progress_text)
-            vectorstore, retriever=upsert_docs_pinecone(index_name,
-                                                        vectorstore, 
-                                                        chunker, 
-                                                        batch_size, 
-                                                        show_progress,
-                                                        local_db_path)
-        elif index_type == 'ChromaDB':
+        if index_type != "RAGatouille":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -558,8 +478,10 @@ def upsert_docs(index_type: str,
             for i in range(0, len(chunker['summaries']), batch_size):
                 chunk_batch = chunker['summaries'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
-                retriever.vectorstore.add_documents(documents=chunk_batch,
-                                                    ids=chunk_batch_ids)
+                
+                retriever.vectorstore = upsert_docs_db(retriever.vectorstore,
+                                                       chunk_batch, chunk_batch_ids)
+
                 if show_progress:
                     progress_percentage = i / len(chunker['summaries'])
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -599,13 +521,11 @@ def delete_index(index_type: str,
             pc.describe_index(index_name)
             pc.delete_index(index_name)
         except Exception as e:
-            # print(f"Error occurred while deleting Pinecone index: {e}")
             pass
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except Exception as e:
-                # print(f"Error occurred while deleting ChromaDB local_file_store collection: {e}")
                 pass    # No need to do anything if it doesn't exist
     elif index_type == "ChromaDB":  
         try:
@@ -616,21 +536,18 @@ def delete_index(index_type: str,
                     # persistent_client.delete_collection(name=idx.name)
             persistent_client.delete_collection(name=index_name)
         except Exception as e:
-            # print(f"Error occurred while deleting ChromaDB collection: {e}")
             pass
         # Delete local file store if they exist
         if rag_type == 'Parent-Child' or rag_type == 'Summary':
             try:
                 shutil.rmtree(Path(local_db_path).resolve() / 'local_file_store' / index_name)
             except Exception as e:
-                # print(f"Error occurred while deleting ChromaDB local_file_store collection: {e}")
                 pass    # No need to do anything if it doesn't exist
     elif index_type == "RAGatouille":
         try:
             ragatouille_path = os.path.join(local_db_path, '.ragatouille/colbert/indexes', index_name)
             shutil.rmtree(ragatouille_path)
         except Exception as e:
-            # print(f"Error occurred while deleting RAGatouille index: {e}")
             pass
     else:
         raise NotImplementedError
@@ -696,6 +613,8 @@ def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
             return 1024 
         elif name=="voyage-large-2":
             return 1536
+        elif name=="voyage-large-2-instruct":
+            return 1024
         else:
             raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # See model pages for embedding sizes
@@ -710,34 +629,43 @@ def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
     else:
         raise NotImplementedError(f"The embedding family '{embedding_family}' is not available in config.json")
 
-def _stable_hash_meta(metadata: dict) -> str:
-    """
-    Stable hash of metadata from Langchain Document.
-
-    Args:
-        metadata (dict): The metadata dictionary to be hashed.
-
-    Returns:
-        str: The hexadecimal representation of the hashed metadata.
-    """
+def _stable_hash_meta(metadata: dict):
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-def _check_db_name(index_type:str,index_name:object):
-    if index_type=="Pinecone":
-        if len(index_name)>45:
-            raise ValueError(f'The Pinecone index name must be less than 45 characters. Entry: {index_name}')
-    elif index_type=="ChromaDB":
-        if len(index_name) > 63:
-            raise ValueError(f'The ChromaDB collection name must be less than 63 characters. Entry: {index_name}')
-        if not index_name[0].isalnum() or not index_name[-1].isalnum():
-            raise ValueError(f'The ChromaDB collection name must start and end with an alphanumeric character. Entry: {index_name}')
-        if not re.match(r'^[a-zA-Z0-9_-]+$', index_name):
-            raise ValueError(f'The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {index_name}')
-        if '..' in index_name:
-            raise ValueError(f'The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}')
+def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,check:bool=True):
+    # Modify name if it's an advanded RAG type
+    if rag_type == 'Parent-Child':
+        index_name = index_name + "-parent-child"
+    elif rag_type == 'Summary':
+        model_name_temp=model_name.replace(".", "-").replace("/", "-").lower()
+        model_name_temp = model_name_temp.split('/')[-1]    # Just get the model name, not org
+        model_name_temp = model_name_temp[:3] + model_name_temp[-3:]    # First and last 3 characters
+        
+        model_name_temp=model_name_temp+"-"+_stable_hash_meta({"model_name":model_name})[:4]
 
-### Stuff to test out spotlight
-
+        index_name = index_name + "-" + model_name_temp + "-summary"
+    else:
+        index_name = index_name
+    
+    # Check if the name is valid
+    if check:
+        if index_type=="Pinecone":
+            if len(index_name) > 45:
+                raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {index_name}")
+            else:
+                return index_name
+        elif index_type=="ChromaDB":
+            if len(index_name) > 63:
+                raise ValueError(f"The ChromaDB collection name must be less than 63 characters. Entry: {index_name}")
+            if not index_name[0].isalnum() or not index_name[-1].isalnum():
+                raise ValueError(f"The ChromaDB collection name must start and end with an alphanumeric character. Entry: {index_name}")
+            if not re.match(r"^[a-zA-Z0-9_-]+$", index_name):
+                raise ValueError(f"The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {index_name}")
+            if ".." in index_name:
+                raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}")
+            else:
+                return index_name
 def get_or_create_spotlight_viewer(df:pd.DataFrame,host:str='0.0.0.0',port:int=9000):
+    # TODO update this with the latest version no-ssl
     viewers = spotlight.viewers()
     if viewers:
         for viewer in viewers[:-1]:
@@ -772,6 +700,7 @@ def get_docs_questions_df(
         pd.DataFrame: The combined dataframe containing documents and questions data.
     """
     # TODO there's definitely a way to not have to pass query_model, since it should be possible to pull from the db, try to remove this in future versions
+    # TODO extend this functionality to Pinecone
 
     # Check if there exists a query database
     chroma_collections = [collection.name for collection in admin.show_chroma_collections(format=False)['message']]
@@ -786,7 +715,7 @@ def get_docs_questions_df(
         st.stop()
     st.markdown(f"Query database found: {questions_db_collection}")
 
-    docs_df = get_docs_df(docs_db_directory, docs_db_collection, query_model)
+    docs_df = get_docs_df('ChromaDB',docs_db_directory, docs_db_collection, query_model)
     docs_df["type"] = "doc"
     questions_df = get_questions_df(questions_db_directory, questions_db_collection, query_model)
     questions_df["type"] = "question"
@@ -811,11 +740,12 @@ def get_docs_questions_df(
 
     df = pd.concat([docs_df, questions_df], ignore_index=True)
     return df
-def get_docs_df(local_db_path: Path, index_name: str, query_model: object):
+def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_model: object):
     """
-    Retrieves documents from a Chroma database and returns them as a pandas DataFrame.
+    Retrieves documents from a database and returns them as a pandas DataFrame.
 
     Args:
+        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB").
         local_db_path (Path): The local path to the Chroma database.
         index_name (str): The name of the collection in the Chroma database.
         query_model (object): The embedding function used for querying the database.
@@ -829,21 +759,76 @@ def get_docs_df(local_db_path: Path, index_name: str, query_model: object):
             - document: The content of the document.
             - embedding: The embedding of the document.
     """
-    persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
-    vectorstore = Chroma(client=persistent_client,
-                            collection_name=index_name,
-                            embedding_function=query_model) 
+    # Find rag_type
+    if index_name.endswith('-parent-child'):
+        rag_type = 'Parent-Child'
+    elif index_name.endswith('-summary'):
+        rag_type = 'Summary'
+    else:
+        rag_type = 'Standard'
 
-    response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
-    return pd.DataFrame(
-        {
-            "id": response["ids"],
-            "source": [metadata.get("source") for metadata in response["metadatas"]],
-            "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
-            "document": response["documents"],
-            "embedding": response["embeddings"],
-        }
-    )
+    if index_type=='ChromaDB':
+        persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
+        vectorstore = Chroma(client=persistent_client,
+                                collection_name=index_name,
+                                embedding_function=query_model) 
+        response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
+        
+        df_out=pd.DataFrame(
+            {
+                "id": response["ids"],
+                "source": [metadata.get("source") for metadata in response["metadatas"]],
+                "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
+                "metadata": response["metadatas"],
+                "document": response["documents"],
+                "embedding": response["embeddings"],
+            })  
+
+    elif index_type=='Pinecone':
+        # Connect to index
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+        index = pc.Index(index_name) 
+        # Obtain list of ids
+        ids=[]
+        for id in index.list():
+            ids.extend(id)
+        # Fetch vectors from IDs in chunks (to not overload the API)
+        docs=[]
+        chunk_size=200  # 200 doesn't error our
+        for i in range(0, len(ids), chunk_size):
+            vector=index.fetch(ids[i:i+chunk_size])['vectors']
+            vector_data = []
+            for key, value in vector.items():
+                vector_data.append(value)
+            docs.extend(vector_data)
+
+        df_out=pd.DataFrame(
+            {
+                "id": ids,
+                "source": [data['metadata']['source'] for data in docs],
+                "page": [data['metadata']['page'] for data in docs],
+                "metadata": [{'page':data['metadata']['page'],'source':data['metadata']['source']} for data in docs],
+                "document": [data['metadata']['page_content'] for data in docs],
+                "embedding": [data['values'] for data in docs],
+            })  
+        # raise NotImplementedError('Only ChromaDB is supported for now')
+
+    # Add parent-doc or original-doc
+    if rag_type!='Standard':
+        json_data_list = []
+        for i, row in df_out.iterrows():
+            doc_id = row['metadata']['doc_id']
+            file_path = os.path.join(os.getenv('LOCAL_DB_PATH'),'local_file_store',index_name,f"{doc_id}")
+            with open(file_path, "r") as f:
+                json_data = json.load(f)
+            json_data=json_data['kwargs']['page_content']
+            json_data_list.append(json_data)
+        if rag_type=='Parent-Child':
+            df_out['parent-doc'] = json_data_list
+        elif rag_type=='Summary':
+            df_out['original-doc'] = json_data_list
+
+    return df_out
 def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
     """
     Retrieves questions and related information from a Chroma database and returns them as a pandas DataFrame.
@@ -916,3 +901,14 @@ def export_to_hf_dataset(df: pd.DataFrame, dataset_name: str):
     """
     hf_dataset = Dataset.from_pandas(df)
     hf_dataset.push_to_hub(dataset_name, token=os.getenv('HUGGINGFACEHUB_API_TOKEN'))
+
+def archive_db(index_type:str,index_name:str,query_model:object,export_pickle:bool=False):
+    df_temp=get_docs_df(index_type,os.getenv('LOCAL_DB_PATH'), index_name, query_model)
+
+    if export_pickle:
+        # Export pickle to db directory
+        with open(os.path.join(os.getenv('LOCAL_DB_PATH'),f"archive_chromadb_{index_name}.pickle"), "wb") as f:
+            pickle.dump(df_temp, f)
+    return df_temp
+
+# TODO add function to unarchive db (create chroma db and associated local filestore from pickle file)

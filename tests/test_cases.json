@@ -41,26 +41,8 @@
         "embedding_name": "text-embedding-ada-002",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-4",
+        "llm": "gpt-4o",
         "id": 4
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
-        "rag_type": "Standard",
-        "llm_family": "OpenAI",
-        "llm": "gpt-4-0125-preview",
-        "id": 5
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "Hugging Face",
-        "embedding_name": "sentence-transformers/all-MiniLM-L6-v2",
-        "rag_type": "Standard",
-        "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
-        "id": 6
     },
     {
         "index_type": "ChromaDB",
@@ -69,7 +51,7 @@
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-3.5-turbo-0125",
-        "id": 7
+        "id": 5
     },
     {
         "index_type": "ChromaDB",
@@ -78,7 +60,7 @@
         "rag_type": "Standard",
         "llm_family": "Hugging Face",
         "llm": "mistralai/Mistral-7B-Instruct-v0.2",
-        "id": 8
+        "id": 6
     },
     {
         "index_type": "ChromaDB",
@@ -87,7 +69,7 @@
         "rag_type": "Standard",
         "llm_family": "Hugging Face",
         "llm": "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        "id": 9
+        "id": 7
     },
     {
         "index_type": "ChromaDB",
@@ -96,7 +78,7 @@
         "rag_type": "Standard",
         "llm_family": "Hugging Face",
         "llm": "google/gemma-1.1-7b-it",
-        "id": 10
+        "id": 8
     },
     {
         "index_type": "ChromaDB",
@@ -105,7 +87,7 @@
         "rag_type": "Parent-Child",
         "llm_family": "OpenAI",
         "llm": "gpt-3.5-turbo-0125",
-        "id": 11
+        "id": 9
     },
     {
         "index_type": "ChromaDB",
@@ -114,7 +96,7 @@
         "rag_type": "Summary",
         "llm_family": "OpenAI",
         "llm": "gpt-3.5-turbo-0125",
-        "id": 12
+        "id": 10
     },
     {
         "index_type": "Pinecone",
@@ -123,7 +105,7 @@
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-3.5-turbo-0125",
-        "id": 13
+        "id": 11
     },
     {
         "index_type": "Pinecone",
@@ -132,7 +114,7 @@
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-3.5-turbo-0125",
-        "id": 14
+        "id": 12
     },
     {
         "index_type": "Pinecone",
@@ -141,7 +123,7 @@
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-3.5-turbo-0125",
-        "id": 15
+        "id": 13
     },
     {
         "index_type": "RAGatouille",
@@ -150,6 +132,6 @@
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-3.5-turbo-0125",
-        "id": 16
+        "id": 14
     }
 ]

@@ -98,7 +98,11 @@ def load_sidebar(config_file,
                                                         embeddings_list[sb_out['query_model']]['embedding_models'], 
                                                         index=0,
                                                         help="Models listed are compatible with the selected index type.")
-            
+                if sb_out['embedding_name']=="Dedicated Endpoint":
+                    sb_out['embedding_hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
+                                                        help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
+                else:
+                    sb_out['embedding_hf_endpoint']=None
         if rag_type:
             # RAG Type
             st.sidebar.title('RAG Type')
@@ -115,7 +119,12 @@ def load_sidebar(config_file,
                                                                 llms['Hugging Face']['models'], 
                                                                 index=0,
                                                                 help='Select the Hugging Face model for RAG.')
-                        sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
+                        if sb_out['rag_llm_model']=="Dedicated Endpoint":
+                            sb_out['rag_hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
+                                                                help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
+                            sb_out['rag_hf_endpoint']=sb_out['rag_hf_endpoint']+'/v1/'
+                        else:
+                            sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
                     elif sb_out['rag_llm_source']=='LM Studio (local)':
                         sb_out['rag_llm_model']=st.sidebar.text_input('Local host URL',
                                                                 'http://localhost:1234/v1',
@@ -194,6 +203,13 @@ def load_sidebar(config_file,
                                                         index=0,
                                                         help='Select the Hugging Face model for the application.')
                 sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
+
+                if sb_out['llm_model']=="Dedicated Endpoint":
+                    sb_out['hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
+                                                        help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
+                    sb_out['hf_endpoint']=sb_out['hf_endpoint']+'/v1/'
+                else:
+                    sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
             elif sb_out['llm_source']=='LM Studio (local)':
                 sb_out['llm_model']=st.sidebar.text_input('Local host URL',
                                                         'http://localhost:1234/v1',
@@ -361,10 +377,14 @@ def set_llm(sb, secrets, type='prompt'):
         if sb['rag_llm_source'] == 'OpenAI':
             llm = ChatOpenAI(model_name=sb['rag_llm_model'],
                              openai_api_key=secrets['OPENAI_API_KEY'],
+                             temperature=sb['model_options']['temperature'],
+                             max_tokens=sb['model_options']['output_level'],
                              tags=[sb['rag_llm_model']])
         elif sb['rag_llm_source'] == 'Hugging Face':
             llm = ChatOpenAI(base_url=sb['rag_hf_endpoint'],
                              model=sb['rag_llm_model'],
+                             temperature=sb['model_options']['temperature'],
+                             max_tokens=sb['model_options']['output_level'],
                              api_key=secrets['HUGGINGFACEHUB_API_TOKEN'],
                              tags=[sb['rag_llm_model']])
         elif sb['rag_llm_source'] == 'LM Studio (local)':
@@ -396,7 +416,13 @@ def get_query_model(sb, secrets):
     elif sb['query_model'] == 'Voyage':
         query_model = VoyageAIEmbeddings(model=sb['embedding_name'], voyage_api_key=secrets['VOYAGE_API_KEY'], truncation=False)
     elif sb['query_model'] == 'Hugging Face':
-        query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+        if sb['embedding_hf_endpoint']:
+            query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], 
+                                                            api_url=sb['embedding_hf_endpoint'],
+                                                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
+        else:
+            query_model = HuggingFaceInferenceAPIEmbeddings(model_name=sb['embedding_name'], 
+                                                            api_key=secrets['HUGGINGFACEHUB_API_TOKEN'])
     else:
         raise NotImplementedError('Query model not recognized.')
     return query_model
@@ -508,6 +534,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes. Defaults to False.
         set_secrets (bool, optional): Whether to set the secrets. Defaults to False.
     """
+    # TODO add capability to add dedicated endpoints for Hugging Face models
     with st.expander("Connection Status", expanded=expanded):
         # Set secrets and assign to environment variables
         if set_secrets:
