@@ -75,7 +75,6 @@ RUN ls -R
 
 # Expose the port Streamlit runs on
 EXPOSE 8501
-EXPOSE 9000
 
 # The HEALTHCHECK instruction tells Docker how to test a container to check that it is still working. Your container needs to listen to Streamlit’s (default) port 8501:
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health

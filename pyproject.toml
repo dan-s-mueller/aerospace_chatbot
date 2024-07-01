@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aerospace-chatbot"
-version = "0.0.6.1"
+version = "0.0.7.1"
 description = "Aerospace engineering chatbot and AI tools."
 authors = ["dsmueller <dsm@danmueller.pro>"]
 license = "MIT"
@@ -39,12 +39,12 @@ ragas = "^0.1.6"
 sphinxawesome-theme = "^5.1.1"
 sphinx-design = "^0.5.0"
 langchain-voyageai = "^0.1.0"
-renumics-spotlight = "^1.6.9"
 langchain-pinecone = "^0.1.1"
 pinecone-client = {version = "<4.0.0", extras = ["grpc"]}
 requests = "^2.32.3"
 beautifulsoup4 = "^4.12.3"
 selenium = "^4.22.0"
+renumics-spotlight = "^1.6.9"
 
 [build-system]
 requires = ["poetry-core"]

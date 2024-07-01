@@ -664,20 +664,21 @@ def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,chec
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}")
             else:
                 return index_name
-def get_or_create_spotlight_viewer(df:pd.DataFrame,host:str='0.0.0.0',port:int=9000):
-    # TODO update this with the latest version no-ssl
+def get_or_create_spotlight_viewer(df:pd.DataFrame,port:int=9000):
+    # TODO if you try to close spotlight and reuse a port, you get an error that the port is unavailable
+    # TODO The viewer does not work properly with merged documents, it does not show the source column properly
     viewers = spotlight.viewers()
+    print(viewers)
     if viewers:
         for viewer in viewers[:-1]:
             viewer.close()
         existing_viewer=spotlight.viewers()[-1]
         return existing_viewer
     
-    new_viewer = spotlight.show(df,
-                          wait='auto',
-                          dtype={"used_by_questions": spotlight_dtypes.SequenceDType(spotlight_dtypes.str_dtype)},
-                          host=host,
-                          port=port)
+    new_viewer = spotlight.show(dataset=df,
+                                wait='auto',
+                                port=port,
+                                no_ssl=True)
 
     return new_viewer
 def get_docs_questions_df(
