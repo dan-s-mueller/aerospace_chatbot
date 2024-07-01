@@ -17,7 +17,6 @@ watchdog = "^3.0.0"
 chromadb = "^0.4.22"
 jsonlines = "^4.0.0"
 pypdf = "^3.17.4"
-streamlit = "^1.29.0"
 tenacity = "^8.2.3"
 openai = "^1.7.2"
 sentence-transformers = "^2.2.2"
@@ -45,6 +44,7 @@ requests = "^2.32.3"
 beautifulsoup4 = "^4.12.3"
 selenium = "^4.22.0"
 renumics-spotlight = "^1.6.9"
+streamlit = "^1.36.0"
 
 [build-system]
 requires = ["poetry-core"]
