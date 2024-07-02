@@ -415,7 +415,7 @@ def upsert_docs(index_type: str,
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
     if chunker['rag'] == 'Standard':
-        if index_type != "RAGatouille":
+        if index_type == "Pinecone" or index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
@@ -443,7 +443,7 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Parent-Child':
-        if index_type != "RAGatouille":
+        if index_type == "Pinecone" or index_type == "ChromaDB":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -468,7 +468,7 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Summary':
-        if index_type != "RAGatouille":
+        if index_type == "Pinecone" or index_type == "ChromaDB":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -668,7 +668,6 @@ def get_or_create_spotlight_viewer(df:pd.DataFrame,port:int=9000):
     # TODO if you try to close spotlight and reuse a port, you get an error that the port is unavailable
     # TODO The viewer does not work properly with merged documents, it does not show the source column properly
     viewers = spotlight.viewers()
-    print(viewers)
     if viewers:
         for viewer in viewers[:-1]:
             viewer.close()
