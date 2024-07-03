@@ -54,7 +54,7 @@
             "llm_model": "Dedicated Endpoint",
             "model_options": {
                 "temperature": 0.2,
-                "output_level": 1000
+                "output_level": 200
             },
             "hf_endpoint": "https://yd47rkj3ry350ms7.us-east4.gcp.endpoints.huggingface.cloud/v1/"
         },

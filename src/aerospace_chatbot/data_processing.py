@@ -907,7 +907,7 @@ def archive_db(index_type:str,index_name:str,query_model:object,export_pickle:bo
 
     if export_pickle:
         # Export pickle to db directory
-        with open(os.path.join(os.getenv('LOCAL_DB_PATH'),f"archive_chromadb_{index_name}.pickle"), "wb") as f:
+        with open(os.path.join(os.getenv('LOCAL_DB_PATH'),f"archive_{index_type.lower()}_{index_name}.pickle"), "wb") as f:
             pickle.dump(df_temp, f)
     return df_temp
 
