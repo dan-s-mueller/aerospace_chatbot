@@ -11,6 +11,18 @@
             "index_type": "Pinecone",
             "query_model": "Voyage",
             "embedding_name": "voyage-large-2"
+        },
+        {
+            "id": "3",
+            "index_type": "ChromaDB",
+            "query_model": "Hugging Face",
+            "embedding_name": "Dedicated Endpoint",
+            "embedding_hf_endpoint": "https://d95tsnjp6nub114k.us-east4.gcp.endpoints.huggingface.cloud"
+        },
+        {
+            "id": "4",
+            "index_type": "RAGatouille",
+            "embedding_name": "colbert-ir/colbertv2.0"
         }
     ],
     "llms": [
