@@ -24,7 +24,7 @@ notebooks/playground.ipynb
 notebooks/*.csv
 notebooks/*.txt
 notebooks/*.parquet
-notebooks/*rag_response_cache*.json
+notebooks/*.json
 
 # Databases
 db/chromadb

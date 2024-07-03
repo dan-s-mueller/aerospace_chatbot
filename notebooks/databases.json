@@ -10,7 +10,12 @@
             "id": "2",
             "index_type": "Pinecone",
             "query_model": "Voyage",
-            "embedding_name": "voyage-large-2"
+            "embedding_name": "voyage-large-2-instruct"
+        },
+        {
+            "id": "3",
+            "index_type": "RAGatouille",
+            "embedding_name": "colbert-ir/colbertv2.0"
         }
     ],
     "llms": [
