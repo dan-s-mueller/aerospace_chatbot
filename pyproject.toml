@@ -34,7 +34,6 @@ langchain-core = "^0.1.36"
 langchainhub = "^0.1.15"
 langchain-community = "^0.0.29"
 langchain-openai = "^0.1.1"
-ragas = "^0.1.6"
 sphinxawesome-theme = "^5.1.1"
 sphinx-design = "^0.5.0"
 langchain-voyageai = "^0.1.0"
@@ -45,6 +44,7 @@ beautifulsoup4 = "^4.12.3"
 selenium = "^4.22.0"
 renumics-spotlight = "^1.6.9"
 streamlit = "^1.36.0"
+ragas = "^0.1.6"
 
 [build-system]
 requires = ["poetry-core"]

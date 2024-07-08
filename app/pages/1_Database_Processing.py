@@ -23,6 +23,7 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
                                       'secret_keys':True})
 
 # Read the user credentials from the config file, and authenticate the user
+# TODO remove this user authentication part. There's not really use cases for this right now.
 with open(os.path.join(paths['config_folder_path'],'users.yml')) as file:
     config = yaml.load(file, Loader=SafeLoader)
 authenticator = stauth.Authenticate(
