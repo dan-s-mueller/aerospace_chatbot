@@ -21,10 +21,7 @@ data/**/*.jsonl
 
 # Notebooks
 notebooks/playground.ipynb
-notebooks/*.csv
-notebooks/*.txt
-notebooks/*.parquet
-notebooks/*.json
+notebooks/output/*
 
 # Databases
 db/chromadb
