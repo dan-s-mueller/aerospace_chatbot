@@ -189,27 +189,27 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
 def eval_rag(index_name, df_qa):
     # Add answer correctness column, fill in if it exists
     df_qa = add_cached_column_from_file(
-        df_qa, os.path.join('output',f'ragas_result_cache_{index_name}.json', "question"), "answer_correctness"
+        df_qa, os.path.join('output',f'ragas_result_cache_{index_name}.json'), "question", "answer_correctness"
     )
 
     # Sometimes ground_truth does not provide a response. Just filter those out.
     df_qa = df_qa[df_qa['ground_truth'].apply(lambda x: isinstance(x, str))]
-    df_qa
+    # df_qa
 
     # Prepare the dataframe for evaluation
-    df_qa_eval = df_qa.copy()
+    # df_qa_eval = df_qa.copy()
 
     # Evaluate the answer correctness if not already done
     fields = ["question", "answer", "contexts", "ground_truth"]
-    for i, row in df_qa_eval.iterrows():
+    for i, row in df_qa.iterrows():
         print(i, row["question"])
         # TODO add multiple eval criteria
         if row["answer_correctness"] is None or pd.isnull(row["answer_correctness"]):
             evaluation_result = evaluate(
-                Dataset.from_pandas(df_qa_eval.iloc[i : i + 1][fields]),
+                Dataset.from_pandas(df_qa.iloc[i : i + 1][fields]),
                 [answer_correctness],
             )
-            df_qa_eval.loc[i, "answer_correctness"] = evaluation_result[
+            df_qa.loc[i, "answer_correctness"] = evaluation_result[
                 "answer_correctness"
             ]
 
@@ -221,9 +221,9 @@ def eval_rag(index_name, df_qa):
             write_dict_to_file(response_dict, os.path.join('output',f'ragas_result_cache_{index_name}.json'))
 
     # write the answer correctness to the original dataframe
-    df_qa["answer_correctness"] = df_qa_eval["answer_correctness"]
+    df_qa["answer_correctness"] = df_qa["answer_correctness"]
 
-    return df_qa_eval, df_qa
+    return df_qa
 
 def data_viz_prep(index_name,df_qa_eval,df_docs):
     """This section adds a column to df_documents containing the ids of the questions that used the document as source. """
