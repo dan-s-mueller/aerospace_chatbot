@@ -89,6 +89,47 @@
                 "search_type":"similarity",
                 "local_db_path":"/Users/danmueller/Documents/GitHub/aerospace_chatbot/db"
             }
+        },
+        {
+            "index_type": "Pinecone",
+            "index_name": "voyage-large-2-instruct-2merge-0",
+            "query_model": {
+                "query_model": "Voyage",
+                "embedding_name": "voyage-large-2-instruct"
+            },
+            "llm": {
+                "llm_source": "OpenAI",
+                "llm_model": "gpt-4o",
+                "model_options": {
+                    "temperature": 0.2,
+                    "output_level": 1000
+                }
+            },    
+            "qa_model_params": {
+                "rag_type":"Standard",
+                "k":4,
+                "search_type":"similarity",
+                "local_db_path":"/Users/danmueller/Documents/GitHub/aerospace_chatbot/db"
+            }
+        },
+        {
+            "index_type": "RAGatouille",
+            "index_name": "colbert-ir-colbertv2.0-2merge-0",
+            "query_model": {
+                "embedding_name": "colbert-ir/colbertv2.0"
+            },
+            "llm": {
+                "llm_source": "OpenAI",
+                "llm_model": "gpt-4o",
+                "model_options": {
+                    "temperature": 0.2,
+                    "output_level": 1000
+                }
+            },    
+            "qa_model_params": {
+                "k":4,
+                "local_db_path":"/Users/danmueller/Documents/GitHub/aerospace_chatbot/db"
+            }
         }
     ]
 }

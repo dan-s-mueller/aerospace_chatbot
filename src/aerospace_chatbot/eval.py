@@ -189,8 +189,14 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
                 df_qa_out.loc[df_qa_out.index[i], "source_documents"] = ', '.join(ids)
                 # df_qa_out.loc[df_qa_out.index[i], "source_documents"] = ids
 
+                # RAGatouille has a different structure than the other models
+                if index_type == "RAGatouille":
+                    query_model_name=query_model.model.checkpoint
+                else:
+                    query_model_name=query_model.model
+
                 df_qa_out.loc[df_qa_out.index[i], "answer_by"] = llm.model_name
-                df_qa_out.loc[df_qa_out.index[i], "query_model"] = query_model.model
+                df_qa_out.loc[df_qa_out.index[i], "query_model"] = query_model_name
                 df_qa_out.loc[df_qa_out.index[i], "qa_model_params"] = str(QA_model_params)
 
                 # Save the response to cache file
@@ -200,7 +206,7 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
                     "answer": response['answer'].content,
                     "source_documents": ids,
                     "answer_by": llm.model_name,
-                    "query_model": query_model.model,
+                    "query_model": query_model_name,
                     "qa_model_params": QA_model_params,
                     "index_type": index_type,
                     "index_name": index_name
@@ -221,12 +227,16 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
     df_qa_out["contexts"]=source_documents_list
 
     # Addtionaly get embeddings for questions
-    if not Path(os.path.join('output',f'question_embeddings_{index_name}.pickle')).exists():
-        question_embeddings = [
-            query_model.embed_query(question)
-            for question in df_qa_out["question"]
+    if index_type != "RAGatouille":
+        if not Path(os.path.join('output',f'question_embeddings_{testset_name}.pickle')).exists():
+            question_embeddings = [
+                query_model.embed_query(question)
+                for question in df_qa_out["question"]
         ]
-    df_qa_out["embedding"] = question_embeddings
+        df_qa_out["embedding"] = question_embeddings
+    else:
+        # TODO add RAGatouille encodings
+        df_qa_out["embedding"] = None
 
     return df_qa_out
 
