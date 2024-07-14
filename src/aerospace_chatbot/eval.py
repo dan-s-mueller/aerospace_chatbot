@@ -187,8 +187,9 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
             query_model.embed_query(question)
             for question in df_qa_out["question"]
         ]
-        with open(os.path.join('output',f'question_embeddings_{index_name}.pickle'), "wb") as f:
-            pickle.dump(question_embeddings, f)
+        # Commented out, just export the whole dataframe one level up
+        # with open(os.path.join('output',f'question_embeddings_{index_name}.pickle'), "wb") as f:
+        #     pickle.dump(question_embeddings, f)
 
     question_embeddings = pickle.load(open(os.path.join('output',f'question_embeddings_{index_name}.pickle'), "rb"))
     df_qa_out["embedding"] = question_embeddings
@@ -271,7 +272,7 @@ def data_viz_prep(index_name,df_qa_eval,df_docs):
     umap = UMAP(n_neighbors=20, min_dist=0.15, metric="cosine", random_state=42).fit(
         df_questions["embedding"].values.tolist()
     )
-    umap_questions = umap.transform(df_visualize["embedding"].values.tolist())
+    # umap_questions = umap.transform(df_visualize["embedding"].values.tolist())
 
 
     df_without_questions = df_visualize[df_visualize["question"].isna()]
