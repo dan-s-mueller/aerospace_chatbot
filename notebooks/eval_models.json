@@ -1,0 +1,94 @@
+{
+    "eval_models": [
+        {
+            "index_type": "ChromaDB",
+            "index_name": "text-embedding-3-large-2merge-0",
+            "query_model": {
+                "query_model": "OpenAI",
+                "embedding_name": "text-embedding-3-large"
+            },
+            "llm": {
+                "llm_source": "OpenAI",
+                "llm_model": "gpt-4o",
+                "model_options": {
+                    "temperature": 0.2,
+                    "output_level": 1000
+                }
+            },    
+            "QA_model_params": {
+                "rag_type":"Standard",
+                "k":4,
+                "search_type":"similarity",
+                "local_db_path":"/Users/danmueller/Documents/GitHub/aerospace_chatbot/db"
+            }
+        },
+        {
+            "index_type": "ChromaDB",
+            "index_name": "text-embedding-3-large-2merge-0",
+            "query_model": {
+                "query_model": "OpenAI",
+                "embedding_name": "text-embedding-3-large"
+            },
+            "llm": {
+                "llm_source": "OpenAI",
+                "llm_model": "gpt-4",
+                "model_options": {
+                    "temperature": 0.2,
+                    "output_level": 1000
+                }
+            },    
+            "QA_model_params": {
+                "rag_type":"Standard",
+                "k":4,
+                "search_type":"similarity",
+                "local_db_path":"/Users/danmueller/Documents/GitHub/aerospace_chatbot/db"
+            }
+        },
+        {
+            "index_type": "ChromaDB",
+            "index_name": "text-embedding-3-large-2merge-0",
+            "query_model": {
+                "query_model": "OpenAI",
+                "embedding_name": "text-embedding-3-large"
+            },
+            "llm": {
+                "llm_source": "Hugging Face",
+                "llm_model": "meta-llama/Meta-Llama-3-8B-Instruct",
+                "model_options": {
+                    "temperature": 0.2,
+                    "output_level": 1000
+                },
+                "hf_endpoint": "https://api-inference.huggingface.co/v1"
+            },    
+            "QA_model_params": {
+                "rag_type":"Standard",
+                "k":4,
+                "search_type":"similarity",
+                "local_db_path":"/Users/danmueller/Documents/GitHub/aerospace_chatbot/db"
+            }
+        },
+        {
+            "index_type": "ChromaDB",
+            "index_name": "text-embedding-3-large-2merge-0",
+            "query_model": {
+                "query_model": "OpenAI",
+                "embedding_name": "text-embedding-3-large"
+            },
+            "llm": {
+                "llm_source": "Hugging Face",
+                "llm_model": "mistralai/Mistral-7B-Instruct-v0.2",
+                "model_options": {
+                    "temperature": 0.2,
+                    "output_level": 1000
+                },
+                "hf_endpoint": "https://api-inference.huggingface.co/v1"
+            },    
+            "QA_model_params": {
+                "rag_type":"Standard",
+                "k":4,
+                "search_type":"similarity",
+                "local_db_path":"/Users/danmueller/Documents/GitHub/aerospace_chatbot/db"
+            }
+        }
+    ]
+}

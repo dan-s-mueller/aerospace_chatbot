@@ -135,10 +135,11 @@ def generate_testset(lcdocs,generator,eval_size,n_questions,fname,run_config):
     return df_testset
 
 def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_qa, df_docs):
+    df_qa_out=df_qa.copy()
     # Generate responses using RAG with input parameters
-    for i, row in df_qa.iterrows():
+    for i, row in df_qa_out.iterrows():
         if row['answer'] is None or pd.isnull(row['answer']) or row['answer']=='':
-            print(f"Processing question {i+1}/{len(df_qa)}")
+            print(f"Processing question {i+1}/{len(df_qa_out)}")
 
             # Use the QA model to query the documents
             qa_obj=queries.QA_Model(index_type,
@@ -149,42 +150,49 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
             qa_obj.query_docs(row['question'])
             response=qa_obj.result
 
-            df_qa.loc[df_qa.index[i], "answer"] = response['answer'].content
+            df_qa_out.loc[df_qa_out.index[i], "answer"] = response['answer'].content
 
             ids=[data_processing._stable_hash_meta(source_document.metadata)
                 for source_document in response['references']]
-            df_qa.loc[df_qa.index[i], "source_documents"] = ', '.join(ids)
+            df_qa_out.loc[df_qa_out.index[i], "source_documents"] = ', '.join(ids)
+
+            df_qa_out.loc[df_qa_out.index[i], "answer_by"] = llm.model_name
+            df_qa_out.loc[df_qa_out.index[i], "query_model"] = query_model.model
+            df_qa_out.loc[df_qa_out.index[i], "qa_model_params"] = str(QA_model_params)
 
             # Save the response to cache file
             response_dict = {
                 "question": row['question'],
                 "answer": response['answer'].content,
                 "source_documents": ids,
+                "answer_by": llm.model_name,
+                "query_model": query_model.model,
+                "qa_model_params": QA_model_params
             }
             write_dict_to_file(response_dict, os.path.join('output',f'rag_response_cache_{index_name}.json'))
 
     # Get the context documents content for each question
     source_documents_list = []
-    for cell in df_qa['source_documents']:
+    for cell in df_qa_out['source_documents']:
         cell_list = cell.strip('[]').split(', ')
         context=[]
         for cell in cell_list:
             context.append(df_docs[df_docs["id"] == cell]["document"].values[0])
         source_documents_list.append(context)
-    df_qa["contexts"]=source_documents_list
+    df_qa_out["contexts"]=source_documents_list
 
     # Addtionaly get embeddings for questions
     if not Path(os.path.join('output',f'question_embeddings_{index_name}.pickle')).exists():
         question_embeddings = [
             query_model.embed_query(question)
-            for question in df_qa["question"]
+            for question in df_qa_out["question"]
         ]
         with open(os.path.join('output',f'question_embeddings_{index_name}.pickle'), "wb") as f:
             pickle.dump(question_embeddings, f)
 
     question_embeddings = pickle.load(open(os.path.join('output',f'question_embeddings_{index_name}.pickle'), "rb"))
-    df_qa["embedding"] = question_embeddings
-    return df_qa
+    df_qa_out["embedding"] = question_embeddings
+    return df_qa_out
 
 def eval_rag(index_name, df_qa):
     # Add answer correctness column, fill in if it exists
