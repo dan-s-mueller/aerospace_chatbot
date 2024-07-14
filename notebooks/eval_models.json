@@ -15,7 +15,7 @@
                     "output_level": 1000
                 }
             },    
-            "QA_model_params": {
+            "qa_model_params": {
                 "rag_type":"Standard",
                 "k":4,
                 "search_type":"similarity",
@@ -37,7 +37,7 @@
                     "output_level": 1000
                 }
             },    
-            "QA_model_params": {
+            "qa_model_params": {
                 "rag_type":"Standard",
                 "k":4,
                 "search_type":"similarity",
@@ -60,7 +60,7 @@
                 },
                 "hf_endpoint": "https://api-inference.huggingface.co/v1"
             },    
-            "QA_model_params": {
+            "qa_model_params": {
                 "rag_type":"Standard",
                 "k":4,
                 "search_type":"similarity",
@@ -83,7 +83,7 @@
                 },
                 "hf_endpoint": "https://api-inference.huggingface.co/v1"
             },    
-            "QA_model_params": {
+            "qa_model_params": {
                 "rag_type":"Standard",
                 "k":4,
                 "search_type":"similarity",

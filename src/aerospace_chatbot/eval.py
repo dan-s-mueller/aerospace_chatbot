@@ -47,35 +47,50 @@ def read_dicts_from_file(filename):
         for line in f:
             yield json.loads(line)
 
-def add_cached_column_from_file(df, file_name, merge_on, column):
-    """Read a file with cached list of dicts data write it to a dataframe."""
+def add_cached_columns_from_file(df, file_name, merge_on, columns,filter=None):
+    """
+    Read a file with cached list of dicts data and write it to a dataframe.
+    filter is a dict with keys which are column headers and values which are the filters to apply to the columns.
+    """
     if Path(file_name).exists():
-        cached_answer_correctness = (
-            pd.DataFrame(list(read_dicts_from_file(file_name)))
+        df_in=pd.DataFrame(list(read_dicts_from_file(file_name)))
+        # Filter the cached file by filter if it exists.
+        if filter is not None:  
+            # filtered_data = df_in.copy()
+            for column, value in filter.items():
+                df_in = df_in[df_in[column] == value]
+            print(df_in)
+
+        cached_data = (
+            df_in
             .drop_duplicates(
                 subset=[merge_on],
-            )[[column, merge_on]]
+            )[columns + [merge_on]]
             .dropna()
             .reset_index(drop=True)
         )
         return df.merge(
-            cached_answer_correctness,
+            cached_data,
             on=merge_on,
             how="left",
-        ).reset_index(drop=True)
+        ).replace({float('nan'): None}).reset_index(drop=True)
     else:
         # Create a copy of the DataFrame
         df_out = df.copy()
 
-        # Add the new column with the name of the variable 'column'
-        df_out[column] = None
+        # Add the new columns with the names specified in the 'columns' list
+        if isinstance(columns, str):    # Handle where it's a single value, not an array of columns
+            columns = [columns]
+        for column in columns:
+            df_out[column] = None
 
-        # Reorder the columns to place the new column at the end
+        # Reorder the columns to place the new columns at the end
         columns = list(df_out.columns)
-        columns.remove(column)
-        columns.append(column)
+        for column in columns:
+            if column not in columns:
+                columns.append(column)
         df_out = df_out[columns]
-        
+
         return df_out
     
 def synthetic_dataset_loop(lcdocs,eval_size,n_questions,fname):
@@ -134,47 +149,71 @@ def generate_testset(lcdocs,generator,eval_size,n_questions,fname,run_config):
         df_testset = pd.concat([df_testset, df_testset_new])
     return df_testset
 
-def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_qa, df_docs):
+def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_qa, df_docs, testset_name):
     df_qa_out=df_qa.copy()
+
+    # Load cached version of rag responses, filter the responses by the model and parameters being evaluated
+    df_qa_out = add_cached_columns_from_file(
+        df_qa_out, 
+        os.path.join('output',f'rag_response_cache_{testset_name}.json'), "question", 
+        ["answer", "source_documents", "answer_by", "query_model", "qa_model_params","index_type","index_name"],
+        filter={"answer_by": llm.model_name,
+                "query_model": query_model.model, 
+                "qa_model_params": QA_model_params,
+                "index_type": index_type,
+                "index_name": index_name}
+    )
+
     # Generate responses using RAG with input parameters
     for i, row in df_qa_out.iterrows():
-        if row['answer'] is None or pd.isnull(row['answer']) or row['answer']=='':
-            print(f"Processing question {i+1}/{len(df_qa_out)}")
+        if (row['answer_by'] != llm.model_name) or \
+           (row['query_model'] != query_model.model) or \
+           (row['qa_model_params'] != str(QA_model_params)):    # Check if the model and parameters are the same
 
-            # Use the QA model to query the documents
-            qa_obj=queries.QA_Model(index_type,
-                            index_name,
-                            query_model,
-                            llm,
-                            **QA_model_params)
-            qa_obj.query_docs(row['question'])
-            response=qa_obj.result
+            if row['answer'] is None or pd.isnull(row['answer']) or row['answer']=='':  # Check if the answer is empty
+                print(f"Processing question {i+1}/{len(df_qa_out)}")
 
-            df_qa_out.loc[df_qa_out.index[i], "answer"] = response['answer'].content
+                # Use the QA model to query the documents
+                qa_obj=queries.QA_Model(index_type,
+                                index_name,
+                                query_model,
+                                llm,
+                                **QA_model_params)
+                qa_obj.query_docs(row['question'])
+                response=qa_obj.result
 
-            ids=[data_processing._stable_hash_meta(source_document.metadata)
-                for source_document in response['references']]
-            df_qa_out.loc[df_qa_out.index[i], "source_documents"] = ', '.join(ids)
+                df_qa_out.loc[df_qa_out.index[i], "answer"] = response['answer'].content
 
-            df_qa_out.loc[df_qa_out.index[i], "answer_by"] = llm.model_name
-            df_qa_out.loc[df_qa_out.index[i], "query_model"] = query_model.model
-            df_qa_out.loc[df_qa_out.index[i], "qa_model_params"] = str(QA_model_params)
+                ids=[data_processing._stable_hash_meta(source_document.metadata)
+                    for source_document in response['references']]
+                df_qa_out.loc[df_qa_out.index[i], "source_documents"] = ', '.join(ids)
+                # df_qa_out.loc[df_qa_out.index[i], "source_documents"] = ids
 
-            # Save the response to cache file
-            response_dict = {
-                "question": row['question'],
-                "answer": response['answer'].content,
-                "source_documents": ids,
-                "answer_by": llm.model_name,
-                "query_model": query_model.model,
-                "qa_model_params": QA_model_params
-            }
-            write_dict_to_file(response_dict, os.path.join('output',f'rag_response_cache_{index_name}.json'))
+                df_qa_out.loc[df_qa_out.index[i], "answer_by"] = llm.model_name
+                df_qa_out.loc[df_qa_out.index[i], "query_model"] = query_model.model
+                df_qa_out.loc[df_qa_out.index[i], "qa_model_params"] = str(QA_model_params)
+
+                # Save the response to cache file
+                response_dict = {
+                    "question_id": row['question_id'],
+                    "question": row['question'],
+                    "answer": response['answer'].content,
+                    "source_documents": ids,
+                    "answer_by": llm.model_name,
+                    "query_model": query_model.model,
+                    "qa_model_params": QA_model_params,
+                    "index_type": index_type,
+                    "index_name": index_name
+                }
+                write_dict_to_file(response_dict, os.path.join('output',f'rag_response_cache_{testset_name}.json'))
 
     # Get the context documents content for each question
     source_documents_list = []
     for cell in df_qa_out['source_documents']:
-        cell_list = cell.strip('[]').split(', ')
+        if isinstance(cell, str):
+            cell_list = cell.split(', ')
+        else:
+            cell_list = cell
         context=[]
         for cell in cell_list:
             context.append(df_docs[df_docs["id"] == cell]["document"].values[0])
@@ -187,26 +226,18 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
             query_model.embed_query(question)
             for question in df_qa_out["question"]
         ]
-        # Commented out, just export the whole dataframe one level up
-        # with open(os.path.join('output',f'question_embeddings_{index_name}.pickle'), "wb") as f:
-        #     pickle.dump(question_embeddings, f)
-
-    question_embeddings = pickle.load(open(os.path.join('output',f'question_embeddings_{index_name}.pickle'), "rb"))
     df_qa_out["embedding"] = question_embeddings
+
     return df_qa_out
 
 def eval_rag(index_name, df_qa):
     # Add answer correctness column, fill in if it exists
-    df_qa = add_cached_column_from_file(
+    df_qa = add_cached_columns_from_file(
         df_qa, os.path.join('output',f'ragas_result_cache_{index_name}.json'), "question", "answer_correctness"
     )
 
     # Sometimes ground_truth does not provide a response. Just filter those out.
     df_qa = df_qa[df_qa['ground_truth'].apply(lambda x: isinstance(x, str))]
-    # df_qa
-
-    # Prepare the dataframe for evaluation
-    # df_qa_eval = df_qa.copy()
 
     # Evaluate the answer correctness if not already done
     fields = ["question", "answer", "contexts", "ground_truth"]
