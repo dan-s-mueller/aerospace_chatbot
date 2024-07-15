@@ -1,7 +1,6 @@
 import data_processing
 
 import os
-import logging
 import re
 from pathlib import Path
 
@@ -241,8 +240,6 @@ class QA_Model:
             )
         
         alternative_questions=chain.invoke(invoke_dict)
-        logging.info('Generated alternative questions: '+str(alternative_questions))
-        
         return alternative_questions
 
 # Internal functions
@@ -281,7 +278,6 @@ def _define_qa_chain(llm,
     loaded_memory = RunnablePassthrough.assign(
                         chat_history=RunnableLambda(memory.load_memory_variables) 
                         | itemgetter('history'))  
-    logging.info('Loaded memory: '+str(loaded_memory))
     
     # Assemble main chain
     standalone_question = {
@@ -291,17 +287,14 @@ def _define_qa_chain(llm,
         | CONDENSE_QUESTION_PROMPT
         | llm
         | StrOutputParser()}
-    logging.info('Condense inputs as a standalong question: '+str(standalone_question))
     retrieved_documents = {
         'source_documents': itemgetter('standalone_question') 
                             | retriever,
         'question': lambda x: x['standalone_question']}
-    logging.info('Retrieved documents: '+str(retrieved_documents))
     # Now we construct the inputs for the final prompt
     final_inputs = {
         'context': lambda x: _combine_documents(x['source_documents']),
         'question': itemgetter('question')}
-    logging.info('Combined documents: '+str(final_inputs))
     # And finally, we do the part that returns the answers
     answer = {
         'answer': final_inputs 
@@ -309,7 +302,6 @@ def _define_qa_chain(llm,
                     | llm,
         'references': itemgetter('source_documents')}
     conversational_qa_chain = loaded_memory | standalone_question | retrieved_documents | answer
-    logging.info('Conversational QA chain: '+str(conversational_qa_chain))
     return conversational_qa_chain
 def _process_retriever_args(search_type='similarity',
                             k=6,
