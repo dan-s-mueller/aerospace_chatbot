@@ -88,7 +88,12 @@ if st.session_state["authentication_status"]:
             n_merge_pages=None
         
         # For each rag_type, set chunk parameters
-        if sb['rag_type']=='Standard':
+        if sb['rag_type']!='Summary':
+            if sb['rag_type']=='Parent-Child':
+                st.info('''
+                        Chunk method applies to parent document. Child documents are default split into 4 smaller chunks.
+                        If no chunk method is selected, 4 chunks will be created for each parent document.
+                        ''')
             chunk_method= st.selectbox('Chunk method', ['character_recursive','None'], 
                                        index=0,
                                        help='''https://python.langchain.com/docs/modules/data_connection/document_transformers/. 
@@ -101,13 +106,6 @@ if st.session_state["authentication_status"]:
                 chunk_overlap=None
             else:
                 raise NotImplementedError
-        elif sb['rag_type']=='Parent-Child':
-            chunk_method= st.selectbox('Chunk method', ['character_recursive'], index=0,help='https://python.langchain.com/docs/modules/data_connection/document_transformers/')
-            if chunk_method=='character_recursive':
-                chunk_size=st.number_input('Chunk size (characters)', min_value=1, step=1, value=400, help='An average paragraph is around 400 characters.')
-                chunk_overlap=st.number_input('Chunk overlap (characters)', min_value=0, step=1, value=0)
-            else:
-                raise NotImplementedError
         elif sb['rag_type']=='Summary':
             chunk_method=None
             chunk_size=None
@@ -118,6 +116,8 @@ if st.session_state["authentication_status"]:
                                                 help='Max output tokens for LLM. Concise: 50, Verbose: >1000. Limit depends on model.')
         else:  
             raise NotImplementedError
+        
+        # Json export
         export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
         if export_json:
             json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{index_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))

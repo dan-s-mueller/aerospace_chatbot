@@ -124,9 +124,9 @@ def chunk_docs(docs: List[str],
                chunk_method:str='character_recursive',
                file_out:str=None,
                n_merge_pages:int=None,
-               chunk_size:int=500,
+               chunk_size:int=400,
                chunk_overlap:int=0,
-               k_parent:int=4,
+               k_child:int=4,
                llm=None,
                show_progress:bool=False):
     """
@@ -140,7 +140,7 @@ def chunk_docs(docs: List[str],
         n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to None.
         chunk_size (int, optional): The size of each chunk in tokens. Defaults to 500. Only used if chunk_method is not None.
         chunk_overlap (int, optional): The overlap between chunks in tokens. Defaults to 0. Only used if chunk_method is not None.
-        k_parent (int, optional): The number of parent chunks to split into child chunks for 'Parent-Child' rag_type. Defaults to 4.
+        k_child (int, optional): The number of child chunks to split from parnet chunks for 'Parent-Child' rag_type. Defaults to 4.
         llm (None, optional): The language model to be used for generating summaries. Defaults to None.
         show_progress (bool, optional): Whether to show the progress bar during chunking. Defaults to False.
 
@@ -217,19 +217,19 @@ def chunk_docs(docs: List[str],
                 'splitters':text_splitter}
     elif rag_type=='Parent-Child': 
         if chunk_method=='character_recursive':
-            parent_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size*k_parent, 
+            # Settings apply to parent splitter. k_child divides parent into smaller sizes.
+            parent_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
                                                            chunk_overlap=chunk_overlap,
                                                            add_start_index=True)    # Without add_start_index, will not be a unique id
-            child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
-                                                          chunk_overlap=chunk_overlap,
-                                                          add_start_index=True)
+            parent_chunks = parent_splitter.split_documents(pages)
         elif chunk_method=='None':
-            raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
+            parent_splitter = None
+            parent_chunks = pages  # No chunking, take whole pages as documents
+            # raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
         else:
             raise NotImplementedError
         
-        # Split up parent chunks
-        parent_chunks = parent_splitter.split_documents(pages)
+        # Assign parent doc ids
         doc_ids = [str(_stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
         
         # Split up child chunks
@@ -237,6 +237,17 @@ def chunk_docs(docs: List[str],
         chunks = []
         for i, doc in enumerate(parent_chunks):
             _id = doc_ids[i]
+
+            if chunk_method=='character_recursive':
+                child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size/k_child, 
+                                                chunk_overlap=chunk_overlap,
+                                                add_start_index=True)
+            elif chunk_method=='None':
+                i_chunk_size=len(doc.page_content)/k_child
+                child_splitter=RecursiveCharacterTextSplitter(chunk_size=i_chunk_size, 
+                                                chunk_overlap=0,
+                                                add_start_index=True)
+
             _chunks = child_splitter.split_documents([doc])
             for _doc in _chunks:
                 _doc.metadata[id_key] = _id

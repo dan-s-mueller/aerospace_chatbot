@@ -258,6 +258,7 @@ def _combine_documents(docs,
     """
     doc_strings = [format_document(doc, document_prompt) for doc in docs]
     return document_separator.join(doc_strings)
+
 def _define_qa_chain(llm,
                      retriever,
                      memory):
@@ -287,20 +288,24 @@ def _define_qa_chain(llm,
         | CONDENSE_QUESTION_PROMPT
         | llm
         | StrOutputParser()}
+    
     retrieved_documents = {
         'source_documents': itemgetter('standalone_question') 
                             | retriever,
         'question': lambda x: x['standalone_question']}
+    
     # Now we construct the inputs for the final prompt
     final_inputs = {
         'context': lambda x: _combine_documents(x['source_documents']),
         'question': itemgetter('question')}
+    
     # And finally, we do the part that returns the answers
     answer = {
         'answer': final_inputs 
                     | QA_PROMPT 
                     | llm,
         'references': itemgetter('source_documents')}
+    
     conversational_qa_chain = loaded_memory | standalone_question | retrieved_documents | answer
     return conversational_qa_chain
 def _process_retriever_args(search_type='similarity',

@@ -46,7 +46,7 @@
         },
         {
             "index_type": "ChromaDB",
-            "index_name": "text-embedding-3-large-0merge-400-parent-child",
+            "index_name": "text-embedding-3-large-2merge-0-parent-child",
             "query_model": {
                 "query_model": "OpenAI",
                 "embedding_name": "text-embedding-3-large"

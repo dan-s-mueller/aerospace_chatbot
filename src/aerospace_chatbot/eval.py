@@ -197,6 +197,8 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
                 df_qa_out.loc[df_qa_out.index[i], "answer_by"] = llm.model_name
                 df_qa_out.loc[df_qa_out.index[i], "query_model"] = query_model_name
                 df_qa_out.loc[df_qa_out.index[i], "qa_model_params"] = str(QA_model_params)
+                df_qa_out.loc[df_qa_out.index[i], "index_type"] = index_type
+                df_qa_out.loc[df_qa_out.index[i], "index_name"] = index_name
 
                 # Save the response to cache file
                 response_dict = {
