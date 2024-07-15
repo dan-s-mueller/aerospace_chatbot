@@ -59,7 +59,6 @@ def add_cached_columns_from_file(df, file_name, merge_on, columns,filter=None):
             # filtered_data = df_in.copy()
             for column, value in filter.items():
                 df_in = df_in[df_in[column] == value]
-            print(df_in)
 
         cached_data = (
             df_in
