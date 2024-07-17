@@ -24,6 +24,28 @@
         },
         {
             "index_type": "ChromaDB",
+            "index_name": "text-embedding-3-small-2merge-0",
+            "query_model": {
+                "query_model": "OpenAI",
+                "embedding_name": "text-embedding-3-small"
+            },
+            "llm": {
+                "llm_source": "OpenAI",
+                "llm_model": "gpt-4o",
+                "model_options": {
+                    "temperature": 0.2,
+                    "output_level": 1000
+                }
+            },    
+            "qa_model_params": {
+                "rag_type":"Standard",
+                "k":4,
+                "search_type":"similarity",
+                "local_db_path":"/Users/danmueller/Documents/GitHub/aerospace_chatbot/db"
+            }
+        },
+        {
+            "index_type": "ChromaDB",
             "index_name": "text-embedding-3-large-2merge-0",
             "query_model": {
                 "query_model": "OpenAI",

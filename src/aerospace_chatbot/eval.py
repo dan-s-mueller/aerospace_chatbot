@@ -92,6 +92,62 @@ def add_cached_columns_from_file(df, file_name, merge_on, columns,filter=None):
 
         return df_out
     
+def lcdoc_export(index_type, index, query_model, export_pickle=False):
+    if index_type=="ChromaDB":
+        # Inspect the first db, save for synthetic test dataset
+        all_docs = index.get(include=["metadatas", "documents", "embeddings"])
+        lcdocs = [Document(page_content=doc, metadata=metadata) 
+                for doc, metadata in zip(all_docs['documents'], all_docs['metadatas'])]
+        
+        # Format docs into dataframe
+        all_docs = index.get(include=["metadatas", "documents", "embeddings"])
+        df_docs = pd.DataFrame(
+            {
+                "id": [data_processing._stable_hash_meta(metadata) for metadata in all_docs["metadatas"]],
+                "source": [metadata.get("source") for metadata in all_docs["metadatas"]],
+                "page": [metadata.get("page", -1) for metadata in all_docs["metadatas"]],
+                "document": all_docs["documents"],
+                "embedding": all_docs["embeddings"],
+            }
+        )
+        if export_pickle:
+            df_temp=data_processing.archive_db('ChromaDB',index.name,query_model,export_pickle=True)
+        
+    elif index_type=="Pinecone":
+        ids=[]
+        for id in index.list():
+            ids.extend(id)
+
+        docs=[]
+        df_docs = pd.DataFrame()
+        chunk_size=200  # Tune to whatever doesn't error out, 200 won't for serverless
+        for i in range(0, len(ids), chunk_size):
+            print(f"Fetching {i} to {i+chunk_size}")
+            vector=index.fetch(ids[i:i+chunk_size])['vectors']
+            vector_data = []
+            for key, value in vector.items():
+                vector_data.append(value)
+            docs.extend(vector_data)
+
+            df_doc_temp = pd.DataFrame()
+            df_doc_temp["id"]= [vector_elm["id"] for vector_elm in vector_data]
+            df_doc_temp["source"]= [vector_elm["metadata"]["source"] for vector_elm in vector_data]
+            df_doc_temp["page"]= [vector_elm["metadata"]["page"] for vector_elm in vector_data]
+            df_doc_temp["document"]= [vector_elm["metadata"]["page_content"] for vector_elm in vector_data]
+            df_doc_temp["embedding"]= [vector_elm["values"] for vector_elm in vector_data]
+            df_docs = pd.concat([df_docs, df_doc_temp])
+
+        lcdocs = []
+        for data in docs:
+            data=data['metadata']
+            lcdocs.append(Document(page_content=data['page_content'],
+                                metadata={'page':data['page'],'source':data['source']}))
+        if export_pickle:
+            df_temp=data_processing.archive_db('Pinecone',db['index_name'],query_model,export_pickle=True)
+    
+    return df_docs, lcdocs
+        
+
 def synthetic_dataset_loop(lcdocs,eval_size,n_questions,fname):
     """ 
     Check if testset.csv exists, use, or generate the synthetic dataset. If it doesn't exist, just loop through everything.
