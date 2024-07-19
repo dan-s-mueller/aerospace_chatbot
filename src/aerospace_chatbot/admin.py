@@ -69,6 +69,7 @@ def load_sidebar(config_file,
         databases = {db['name']: db for db in config['databases']}
         embeddings_list = {e['name']: e for e in config['embeddings']}
         llms  = {m['name']: m for m in config['llms']}
+        rag_types= config['rag_types']
 
     # Set local db path
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
@@ -109,8 +110,8 @@ def load_sidebar(config_file,
             if sb_out['index_type']=='RAGatouille':
                 sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0,help='Only Standard is available for RAGatouille.')
             else:
-                sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Summary'], index=0,help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.')
-                if sb_out['rag_type']=='Summary' or sb_out['rag_type']=='Muti-Query':
+                sb_out['rag_type']=st.sidebar.selectbox('RAG type', rag_types, index=0,help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.')
+                if sb_out['rag_type']=='Summary':
                     sb_out['rag_llm_source']=st.sidebar.selectbox('RAG LLM model', list(llms.keys()), index=0,help='Select the LLM model for RAG.')
                     if sb_out['rag_llm_source']=='OpenAI':
                         sb_out['rag_llm_model']=st.sidebar.selectbox('RAG OpenAI model', llms[sb_out['rag_llm_source']]['models'], index=0,help='Select the OpenAI model for RAG.')
@@ -149,8 +150,9 @@ def load_sidebar(config_file,
                                     elif sb_out['rag_type']=='Summary':
                                         if index.name.endswith('-summary'):
                                             name.append(index.name)
-                                    else:
-                                        name.append(index.name)
+                                    else:   # Stadard
+                                        if not index.name.endswith('-parent-child') and not index.name.endswith('-summary'):
+                                            name.append(index.name)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')

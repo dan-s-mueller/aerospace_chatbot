@@ -6,7 +6,6 @@ load_dotenv(find_dotenv(), override=True)
 
 # Get the config of the app from the environment variable, setup and run page
 nav_bar=os.getenv('AEROSPACE_CHATBOT_CONFIG')
-print(nav_bar)
 tool_dir="tools"
 
 if nav_bar=="admin":

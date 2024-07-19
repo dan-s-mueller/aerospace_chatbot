@@ -61,5 +61,6 @@
         {
             "name": "LM Studio (local)"
         }
-    ]
+    ],
+    "rag_types": ["Standard","Parent-Child","Summary"]
 }
