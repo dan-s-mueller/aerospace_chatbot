@@ -18,7 +18,7 @@ from langchain_core.documents import Document
 import pandas as pd
 
 from ragas import evaluate
-from ragas.metrics import answer_correctness
+from ragas.metrics import answer_correctness, faithfulness, context_recall
 from datasets import Dataset
 
 from renumics import spotlight
@@ -298,9 +298,11 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
     return df_qa_out
 
 def eval_rag(index_name, df_qa):
+    eval_criteria=["answer_correctness", "faithfulness", "context_recall"]
     # Add answer correctness column, fill in if it exists
     df_qa = add_cached_columns_from_file(
-        df_qa, os.path.join('output',f'ragas_result_cache_{index_name}.json'), "question", "answer_correctness"
+        df_qa, os.path.join('output',f'ragas_result_cache_{index_name}.json'), "question", 
+        eval_criteria
     )
 
     # Sometimes ground_truth does not provide a response. Just filter those out.
@@ -308,23 +310,30 @@ def eval_rag(index_name, df_qa):
 
     # Evaluate the answer correctness if not already done
     fields = ["question", "answer", "contexts", "ground_truth"]
+
     for i, row in df_qa.iterrows():
         print(i, row["question"])
-        # TODO add multiple eval criteria
-        if row["answer_correctness"] is None or pd.isnull(row["answer_correctness"]):
-            evaluation_result = evaluate(
-                Dataset.from_pandas(df_qa.iloc[i : i + 1][fields]),
-                [answer_correctness],
-            )
-            df_qa.loc[i, "answer_correctness"] = evaluation_result[
-                "answer_correctness"
-            ]
+        for eval in eval_criteria:
+            if eval=="answer_correctness":
+                eval_obj=answer_correctness
+            elif eval=="faithfulness":
+                eval_obj=faithfulness
+            elif eval=="context_recall":
+                eval_obj=context_recall
 
-            # optionally save the response to cache
-            response_dict = {
-                "question": row["question"],
-                "answer_correctness": evaluation_result["answer_correctness"],
-            }
+            if row[eval] is None or pd.isnull(row[eval]):
+                evaluation_result = evaluate(
+                    Dataset.from_pandas(df_qa.iloc[i : i + 1][fields]),
+                    [eval_obj],
+                )
+                df_qa.loc[i,eval] = evaluation_result[
+                    eval
+                ]
+
+                response_dict = {
+                    "question": row["question"],
+                    eval: evaluation_result[eval],
+                }
             write_dict_to_file(response_dict, os.path.join('output',f'ragas_result_cache_{index_name}.json'))
 
     # write the answer correctness to the original dataframe
