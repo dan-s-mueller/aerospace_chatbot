@@ -1,12 +1,13 @@
 {
     "databases": [
-        {
-            "name": "Pinecone",
-            "embedding_models": ["OpenAI", "Voyage"]
-        },
+        
         {
             "name": "ChromaDB",
             "embedding_models": ["OpenAI","Hugging Face"]
+        },
+        {
+            "name": "Pinecone",
+            "embedding_models": ["OpenAI", "Voyage"]
         },
         {
             "name": "RAGatouille",

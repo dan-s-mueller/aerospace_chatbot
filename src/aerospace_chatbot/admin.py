@@ -78,7 +78,7 @@ def load_sidebar(config_file,
     # Vector databases
     if vector_database:
         st.sidebar.title('Vector database')
-        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=1,help='Select the type of index to use.')
+        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=0,help='Select the type of index to use.')
 
         if embeddings:
             # Embeddings
@@ -626,13 +626,14 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
 
         # Local database path
         st.markdown(f"Local database path: {os.environ['LOCAL_DB_PATH']}")
-def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
+def st_setup_page(page_title: str, home_dir:str, config_file: str, sidebar_config: dict = None):
     """
     Sets up the Streamlit page with the given title and loads the sidebar configuration.
 
     Args:
         page_title (str): The title of the Streamlit page.
         home_dir (str): The path to the home directory.
+        config_file (str): The path to the configuration file.
         sidebar_config (dict, optional): The sidebar configuration. Defaults to None.
 
     Returns:
@@ -652,7 +653,6 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     load_dotenv(find_dotenv(), override=True)
 
     base_folder_path = home_dir
-    config_folder_path=os.path.join(base_folder_path, 'config')
     data_folder_path=os.path.join(base_folder_path, 'data')
 
     # Set the page title
@@ -678,9 +678,9 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     # Load sidebar
     try:
         if sidebar_config is None:
-            sb=load_sidebar(os.path.join(config_folder_path,'config.json'))
+            sb=load_sidebar(config_file)
         else:
-            sb=load_sidebar(os.path.join(config_folder_path,'config.json'),
+            sb=load_sidebar(config_file,
                             **sidebar_config)
     except SecretKeyException as e:
         # If no .env file is found, set the local db path when the warning is raised.
@@ -696,7 +696,7 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     db_folder_path=os.environ['LOCAL_DB_PATH']
 
     paths={'base_folder_path':base_folder_path,
-           'config_folder_path':config_folder_path,
+           'config_folder_path':config_file,
            'data_folder_path':data_folder_path,
            'db_folder_path':db_folder_path}
 
