@@ -41,11 +41,17 @@ def write_dict_to_file(data_dict, filename):
     with open(filename, "a") as f:
         f.write(json.dumps(data_dict) + "\n")
 
-def read_dicts_from_file(filename):
-    """Read a json line file as a generator of dictionaries - allowing to load multiple dictionaries as list."""
-    with open(filename, "r") as f:
-        for line in f:
-            yield json.loads(line)
+def read_dicts_from_file(filename):   
+    # For this to work, each dict must be on a separate line!
+    # Initialize an empty list to hold the JSON data
+    json_data = []
+
+    # Open the file and read line by line
+    with open(filename, 'r') as file:
+        for line in file:
+            # Parse each line as JSON and append to the list
+            json_data.append(json.loads(line))
+    return json_data
 
 def add_cached_columns_from_file(df, file_name, merge_on, columns,filter=None):
     """
@@ -207,13 +213,19 @@ def generate_testset(lcdocs,generator,eval_size,n_questions,fname,run_config):
 def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_qa, df_docs, testset_name):
     df_qa_out=df_qa.copy()
 
+    # RAGatouille has a different structure than the other models
+    if index_type == "RAGatouille":
+        query_model_name=query_model.model.checkpoint
+    else:
+        query_model_name=query_model.model
+
     # Load cached version of rag responses, filter the responses by the model and parameters being evaluated
     df_qa_out = add_cached_columns_from_file(
         df_qa_out, 
-        os.path.join('output',f'rag_response_cache_{testset_name}.json'), "question", 
+        os.path.join('output',f'rag_response_cache_{testset_name}.jsonl'), "question", 
         ["answer", "source_documents", "answer_by", "query_model", "qa_model_params","index_type","index_name"],
         filter={"answer_by": llm.model_name,
-                "query_model": query_model.model, 
+                "query_model": query_model_name, 
                 "qa_model_params": QA_model_params,
                 "index_type": index_type,
                 "index_name": index_name}
@@ -221,8 +233,9 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
 
     # Generate responses using RAG with input parameters
     for i, row in df_qa_out.iterrows():
+        # Loop through each row
         if (row['answer_by'] != llm.model_name) or \
-           (row['query_model'] != query_model.model) or \
+           (row['query_model'] != query_model_name) or \
            (row['qa_model_params'] != str(QA_model_params)):    # Check if the model and parameters are the same
 
             if row['answer'] is None or pd.isnull(row['answer']) or row['answer']=='':  # Check if the answer is empty
@@ -244,12 +257,6 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
                 df_qa_out.loc[df_qa_out.index[i], "source_documents"] = ', '.join(ids)
                 # df_qa_out.loc[df_qa_out.index[i], "source_documents"] = ids
 
-                # RAGatouille has a different structure than the other models
-                if index_type == "RAGatouille":
-                    query_model_name=query_model.model.checkpoint
-                else:
-                    query_model_name=query_model.model
-
                 df_qa_out.loc[df_qa_out.index[i], "answer_by"] = llm.model_name
                 df_qa_out.loc[df_qa_out.index[i], "query_model"] = query_model_name
                 df_qa_out.loc[df_qa_out.index[i], "qa_model_params"] = str(QA_model_params)
@@ -268,7 +275,7 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
                     "index_type": index_type,
                     "index_name": index_name
                 }
-                write_dict_to_file(response_dict, os.path.join('output',f'rag_response_cache_{testset_name}.json'))
+                write_dict_to_file(response_dict, os.path.join('output',f'rag_response_cache_{testset_name}.jsonl'))
 
     # Get the context documents content for each question
     source_documents_list = []

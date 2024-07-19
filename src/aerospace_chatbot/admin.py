@@ -656,10 +656,6 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     data_folder_path=os.path.join(base_folder_path, 'data')
 
     # Set the page title
-    st.set_page_config(
-        page_title=page_title,
-        layout='wide'
-    )
     st.title(page_title)
 
     # Set local database

@@ -6,9 +6,8 @@ sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin
 
 # Set up page, enable logging
-
 current_directory = os.path.dirname(os.path.abspath(__file__))
-home_dir = os.path.abspath(os.path.join(current_directory, "../"))
+home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot Homepage',
                                      home_dir)
 
