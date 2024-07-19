@@ -241,6 +241,7 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
             if row['answer'] is None or pd.isnull(row['answer']) or row['answer']=='':  # Check if the answer is empty
                 print(f"Processing question {i+1}/{len(df_qa_out)}")
 
+
                 # Use the QA model to query the documents
                 qa_obj=queries.QA_Model(index_type,
                                 index_name,
@@ -304,49 +305,53 @@ def rag_responses(index_type, index_name, query_model, llm, QA_model_params, df_
 
     return df_qa_out
 
-def eval_rag(index_name, df_qa):
-    eval_criteria=["answer_correctness", "faithfulness", "context_recall"]
+def eval_rag(df_qa, eval_criterias, testset_name):
+    df_qa_out=df_qa.copy()
+
     # Add answer correctness column, fill in if it exists
-    df_qa = add_cached_columns_from_file(
-        df_qa, os.path.join('output',f'ragas_result_cache_{index_name}.json'), "question", 
-        eval_criteria
+    df_qa_out = add_cached_columns_from_file(
+        df_qa_out, 
+        os.path.join('output',f'ragas_result_cache_{testset_name}.jsonl'), 
+        "question", 
+        eval_criterias
     )
 
     # Sometimes ground_truth does not provide a response. Just filter those out.
-    df_qa = df_qa[df_qa['ground_truth'].apply(lambda x: isinstance(x, str))]
+    df_qa_out = df_qa_out[df_qa_out['ground_truth'].apply(lambda x: isinstance(x, str))]
 
     # Evaluate the answer correctness if not already done
     fields = ["question", "answer", "contexts", "ground_truth"]
 
-    for i, row in df_qa.iterrows():
+    for i, row in df_qa_out.iterrows():
         print(i, row["question"])
-        for eval in eval_criteria:
-            if eval=="answer_correctness":
-                eval_obj=answer_correctness
-            elif eval=="faithfulness":
-                eval_obj=faithfulness
-            elif eval=="context_recall":
-                eval_obj=context_recall
+        response_dict={}
+        response_dict["question"]=row["question"]
 
-            if row[eval] is None or pd.isnull(row[eval]):
-                evaluation_result = evaluate(
-                    Dataset.from_pandas(df_qa.iloc[i : i + 1][fields]),
-                    [eval_obj],
-                )
-                df_qa.loc[i,eval] = evaluation_result[
-                    eval
-                ]
+        if any(row[eval_criteria] is None for eval_criteria in eval_criterias):
+            for eval_criteria in eval_criterias:
+                print(eval_criteria)
+                if eval_criteria=="answer_correctness":
+                    eval_obj=answer_correctness
+                elif eval_criteria=="faithfulness":
+                    eval_obj=faithfulness
+                elif eval_criteria=="context_recall":
+                    eval_obj=context_recall
 
-                response_dict = {
-                    "question": row["question"],
-                    eval: evaluation_result[eval],
-                }
-            write_dict_to_file(response_dict, os.path.join('output',f'ragas_result_cache_{index_name}.json'))
+                if row[eval_criteria] is None or pd.isnull(row[eval_criteria]):
+                    evaluation_result = evaluate(
+                        Dataset.from_pandas(df_qa_out.iloc[i : i + 1][fields]),
+                        [eval_obj],
+                    )
+                    df_qa_out.loc[i,eval_criteria] = evaluation_result[
+                        eval_criteria
+                    ]
+                    
+                response_dict[eval_criteria]=evaluation_result[eval_criteria]
+            write_dict_to_file(response_dict, os.path.join('output',f'ragas_result_cache_{testset_name}.jsonl'))
 
-    # write the answer correctness to the original dataframe
-    df_qa["answer_correctness"] = df_qa["answer_correctness"]
+    df_qa=df_qa_out
 
-    return df_qa
+    return df_qa_out
 
 def data_viz_prep(index_name,df_qa_eval,df_docs):
     """This section adds a column to df_documents containing the ids of the questions that used the document as source. """
