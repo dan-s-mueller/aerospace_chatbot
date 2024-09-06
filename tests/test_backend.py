@@ -27,6 +27,10 @@ from data_processing import chunk_docs, initialize_database, load_docs, \
 from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
 from queries import QA_Model
 
+# TODO test eval.py functionality
+# TODO add tests to check conversation history functionality
+# TODO add mock changes from streamlit changing: index_type, rag_type. or just test streamlit frontend.
+
 # Functions
 def permute_tests(test_data):
     '''
@@ -52,7 +56,8 @@ def permute_tests(test_data):
     return rows
 def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
     '''
-    Generate test cases and export them to a JSON file.
+    Generate test cases and exports them to a JSON file.
+    This function does not read the test_cases.json file first!
 
     Args:
         export (bool, optional): Whether to export the test cases to a JSON file. Defaults to True.
@@ -62,7 +67,7 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
         list: List of dictionaries representing the generated test cases.
     '''
     # Items in test_cases must match labels to select from in setup_fixture
-    # TODO throw in bad inputs for each of the 4 major types below.
+    # TODO throw in bad inputs for config, embeddings_list, llms below
 
     with open(config_file, 'r') as f:
         config = json.load(f)
@@ -751,13 +756,12 @@ def test_load_sidebar():
     Returns:
         None
     '''
-    # TODO add mock changes from streamlit changing: index_type, rag_type
 
     # Use the existing config file, to check they are set up correctly.
-    base_folder_path = os.path.abspath(os.path.dirname(__file__))
-    base_folder_path = os.path.join(base_folder_path, '..')
-    base_folder_path = os.path.normpath(base_folder_path)
-    config_file=os.path.join(base_folder_path, 'config', 'config.json')
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
 
     # Test case: Only embeddings is True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True)
@@ -910,9 +914,10 @@ def test_st_setup_page_local_db_path_only_defined(monkeypatch):
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
 
     # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file)
 
     # Assert
     assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
@@ -944,9 +949,10 @@ def test_st_setup_page_local_db_path_not_defined(monkeypatch):
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
 
     # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file)
 
     # Assert
     assert paths['db_folder_path'] == 'None'
@@ -987,9 +993,10 @@ def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
 
     # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file, sidebar_config)
 
     # Assert
     assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
@@ -1026,9 +1033,11 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
+
 
     # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file, sidebar_config)
 
     # Assert
     assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')

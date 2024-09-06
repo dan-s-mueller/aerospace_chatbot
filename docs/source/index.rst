@@ -28,6 +28,14 @@ Aerospace Chatbot
 
 ----
 
+TODO: now
+- Update to eliminate the user stuff. Replace with the run modes.
+- Review all docs to see if anything is obsolete. E.g. streamlit run command will now be obsolete.
+
+TODO: later
+- Add eval information, study
+
+
 Deployed apps
 -------------
 

@@ -5,7 +5,7 @@ import sys, os
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin
 
-# Set up page, enable logging
+# Set up page
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot Homepage',
@@ -24,6 +24,7 @@ st.markdown("https://aerospace-chatbot.readthedocs.io/en/latest/index.html")
 st.subheader("Code Repository")
 st.markdown("https://github.com/dan-s-mueller/aerospace_chatbot")
 
+# Two run modes: admin and tester. Tester has limited functionality for sharing to a broad audience. Admin has full functionality.
 user=os.getenv('AEROSPACE_CHATBOT_CONFIG')
 if user=="admin":
     st.subheader("Running Locally")
