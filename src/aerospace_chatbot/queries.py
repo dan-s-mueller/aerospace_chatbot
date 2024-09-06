@@ -41,12 +41,13 @@ class QA_Model:
         index_name (str): The name of the document index.
         query_model (str): The query model.
         llm (ChatOpenAI): The language model for generating responses.
-        rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
-        k (int, optional): The number of retriever results to consider. Defaults to 6.
-        search_type (str, optional): The type of search to perform. Defaults to 'similarity'.
-        fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50.
-        temperature (int, optional): The temperature for response generation. Defaults to 0.
-        local_db_path (str, optional): The path to the local database. Defaults to '.'.
+        rag_type (str, optional): The type of RAG model.
+        k (int, optional): The number of retriever results to consider.
+        search_type (str, optional): The type of search to perform.
+        fetch_k (int, optional): The number of documents to fetch from the retriever.
+        temperature (int, optional): The temperature for response generation.
+        local_db_path (str, optional): The path to the local database.
+        reset_query_db (bool, optional): Whether to reset the query database.
 
     Attributes:
         index_type (str): The type of document index.
@@ -89,13 +90,13 @@ class QA_Model:
             index_name (str): The name of the document index.
             query_model (object): The query model.
             llm (ChatOpenAI): The language model for generating responses.
-            rag_type (str, optional): The type of RAG model. Defaults to 'Standard'.
-            k (int, optional): The number of retriever results to consider. Defaults to 6. 
-            search_type (str, optional): The type of search to perform. Defaults to 'similarity'. Does not apply to RAGatouille.
-            fetch_k (int, optional): The number of documents to fetch from the retriever. Defaults to 50. Does not apply to RAGatouille.
-            temperature (int, optional): The temperature for response generation. Defaults to 0.
-            local_db_path (str, optional): The path to the local database. Defaults to '.'.
-            reset_query_db (bool, optional): Whether to reset the query database. Defaults to False.
+            rag_type (str, optional): The type of RAG model.
+            k (int, optional): The number of retriever results to consider.
+            search_type (str, optional): The type of search to perform.
+            fetch_k (int, optional): The number of documents to fetch from the retriever.
+            temperature (int, optional): The temperature for response generation.
+            local_db_path (str, optional): The path to the local database.
+            reset_query_db (bool, optional): Whether to reset the query database.
 
         """
         self.index_type=index_type
@@ -244,14 +245,14 @@ class QA_Model:
 
 # Internal functions
 def _combine_documents(docs, 
-                        document_prompt=DEFAULT_DOCUMENT_PROMPT, 
-                        document_separator='\n\n'):
+                       document_prompt=DEFAULT_DOCUMENT_PROMPT, 
+                       document_separator='\n\n'):
     """Combines a list of documents into a single string.
 
     Args:
         docs (list): A list of documents to be combined.
-        document_prompt (str, optional): The prompt to be added before each document. Defaults to DEFAULT_DOCUMENT_PROMPT.
-        document_separator (str, optional): The separator to be added between each document. Defaults to '\n\n'.
+        document_prompt (str, optional): The prompt to be added before each document.
+        document_separator (str, optional): The separator to be added between each document.
 
     Returns:
         str: The combined string of all the documents.
@@ -315,9 +316,9 @@ def _process_retriever_args(search_type='similarity',
     Process the retriever arguments.
 
     Args:
-        search_type (str, optional): The type of search. Defaults to 'similarity'.
-        k (int, optional): The number of documents to retrieve. Defaults to 6.
-        fetch_k (int, optional): The number of documents to fetch. Defaults to 50.
+        search_type (str, optional): The type of search.
+        k (int, optional): The number of documents to retrieve.
+        fetch_k (int, optional): The number of documents to fetch.
 
     Returns:
         dict: The search arguments for the retriever.
@@ -341,7 +342,18 @@ def _process_retriever_args(search_type='similarity',
         search_kwargs={'k':k} # See as_retriever docs for parameters
     
     return search_kwargs
-def _question_as_doc(question: str, rag_answer: dict):    
+def _question_as_doc(question: str, rag_answer: dict):
+    """
+    Creates a Document object based on the given question and RAG answer.
+
+    Args:
+        question (str): The question to be included in the page content of the Document.
+        rag_answer (dict): The RAG answer containing the references and answer content.
+
+    Returns:
+        Document: The created Document object.
+
+    """
     sources = [data.metadata for data in rag_answer['references']]
 
     return Document(

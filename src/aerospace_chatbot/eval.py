@@ -33,6 +33,8 @@ sys.path.append('../src/aerospace_chatbot')
 import queries
 import data_processing
 
+# TODO after tests are written, write docstrings
+
 # Set environment variables with .env
 load_dotenv(find_dotenv(), override=True)
 

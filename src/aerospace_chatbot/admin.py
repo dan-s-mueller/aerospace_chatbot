@@ -52,13 +52,13 @@ def load_sidebar(config_file,
 
     Args:
         config_file (str): The path to the configuration file.
-        vector_database (bool, optional): Whether to include the vector database in the sidebar. Defaults to False.
-        embeddings (bool, optional): Whether to include embeddings in the sidebar. Defaults to False.
-        rag_type (bool, optional): Whether to include RAG type in the sidebar. Defaults to False.
-        index_selected (bool, optional): Whether to include index name in the sidebar. Defaults to False.
-        llm (bool, optional): Whether to include LLM in the sidebar. Defaults to False.
-        model_options (bool, optional): Whether to include model options in the sidebar. Defaults to False.
-        secret_keys (bool, optional): Whether to include secret keys in the sidebar. Defaults to False.
+        vector_database (bool, optional): Whether to include the vector database in the sidebar.
+        embeddings (bool, optional): Whether to include embeddings in the sidebar.
+        rag_type (bool, optional): Whether to include RAG type in the sidebar.
+        index_selected (bool, optional): Whether to include index name in the sidebar.
+        llm (bool, optional): Whether to include LLM in the sidebar.
+        model_options (bool, optional): Whether to include model options in the sidebar.
+        secret_keys (bool, optional): Whether to include secret keys in the sidebar.
 
     Returns:
         dict: The sidebar configuration.
@@ -345,7 +345,7 @@ def set_llm(sb, secrets, type='prompt'):
     Args:
         sb (dict): The configuration settings for the chatbot.
         secrets (dict): The secret keys and tokens required for authentication.
-        type (str, optional): The type of LLM to set up. Defaults to 'prompt'.
+        type (str, optional): The type of LLM to set up.
 
     Returns:
         ChatOpenAI: The configured language model.
@@ -434,7 +434,7 @@ def show_pinecone_indexes(format=True):
     LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        format (bool, optional): Specifies whether to format the output. Defaults to True.
+        format (bool, optional): Specifies whether to format the output for display.
 
     Returns:
         dict or str: If format is True, returns a formatted string representation of the Pinecone status.
@@ -461,7 +461,7 @@ def show_chroma_collections(format=True):
     LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        format (bool, optional): Specifies whether to format the output. Defaults to True.
+        format (bool, optional): Specifies whether to format the output for display.
 
     Returns:
         dict or str: If format is True, returns a formatted string representation of the chroma status.
@@ -494,7 +494,7 @@ def show_ragatouille_indexes(format=True):
     LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        format (bool, optional): Specifies whether to format the indexes. Defaults to True.
+        format (bool, optional): Specifies whether to format the indexes for display.
 
     Returns:
         dict or str: If format is True, returns a formatted string representation of the ragatouille status.
@@ -528,13 +528,13 @@ def show_ragatouille_indexes(format=True):
         return ragatouille_status
 def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = False, set_secrets: bool = False):
     """
-    Expands a Streamlit expander widget to display connection status information.
+    Makes a Streamlit expander widget to display connection status information.
     LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        expanded (bool, optional): Whether the expander is initially expanded or collapsed. Only intended with account access. Defaults to True.
-        delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes. Defaults to False.
-        set_secrets (bool, optional): Whether to set the secrets. Defaults to False.
+        expanded (bool, optional): Whether the expander is initially expanded or collapsed. Only intended with account access.
+        delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes.
+        set_secrets (bool, optional): Whether to set the secrets.
     """
     # TODO add capability to add dedicated endpoints for Hugging Face models
     with st.expander("Connection Status", expanded=expanded):
@@ -636,7 +636,7 @@ def st_setup_page(page_title: str, home_dir:str, config_file: str, sidebar_confi
         page_title (str): The title of the Streamlit page.
         home_dir (str): The path to the home directory.
         config_file (str): The path to the configuration file.
-        sidebar_config (dict, optional): The sidebar configuration. Defaults to None.
+        sidebar_config (dict, optional): The sidebar configuration.
 
     Returns:
         tuple: A tuple containing the following:
