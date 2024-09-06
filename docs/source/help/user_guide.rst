@@ -3,14 +3,13 @@ User Guide
 
 How to Use
 ----------
-In order for any configuration to work, you'll need the correct dependencies installed. Refer to the :doc:`dependencies` section for more information.
+In order for any configuration to work, you'll need the correct dependencies installed. This is controlled through poetry and described on the documentation homepage.
 
 The app can be run in several configurations:
 
 - **Running Locally:** As a streamlit app in the ``app`` directory, running ``streamlit run Home.py``.
 - **Deployed Configurations :** As a docker container using the ``Dockerfile`` in the root directory.
 - **Using the Backend:** With python code following packages and dependencies in the ``src/aerospace_chatbot`` directory.
-
 
 Running Locally
 ^^^^^^^^^^^^^^^^
@@ -23,7 +22,7 @@ It is recommended to run this streamlit app locally for improved performance. Yo
     poetry install
     source .venv/bin/activate
     cd ./app
-    streamlit run Home.py
+    streamlit run app.py
 
 Deployed Configurations
 ^^^^^^^^^^^^^^^^^^^^^^^^

@@ -906,7 +906,7 @@ def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
             "embedding": response["embeddings"],
         }
     )
-def add_clusters(df:pd,n_clusters:int,label_llm:object=None,doc_per_cluster:int=5):
+def add_clusters(df,n_clusters:int,label_llm:object=None,doc_per_cluster:int=5):
     """
     Add clusters to a DataFrame based on the embeddings of its documents.
 
