@@ -84,7 +84,11 @@ extensions = [
     'sphinx.ext.autodoc',  # Core library for html generation from docstrings
     'sphinx.ext.autosummary',  # Create neat summary tables
     'sphinx.ext.napoleon',  # Support for NumPy and Google style docstrings
-    'sphinxawesome_theme.highlighting',  # Code highlighting
     'sphinx_design', # https://sphinx-design.readthedocs.io/en/latest/get_started.html
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
+
+# Configure autodoc options
+autodoc_default_options = {
+    'add_module_names': False,  # Suppress the module name in the output
+}

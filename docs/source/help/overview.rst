@@ -97,6 +97,8 @@ Secret keys are set when the streamlit Home.py page is fully loaded. The secret 
 
 The exception is for LOCAL_DB_PATH, which is set only as an environment variable. This is for portability reasons to Docker and other deployments.
 
+See :doc:`configs` for more information.
+
 How it works (frontend)
 -----------------------
 The frontend is what the user interfaces with. `Streamlit <https://streamlit.io/>`__ is used to create the frontend.

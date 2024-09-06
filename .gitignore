@@ -21,10 +21,7 @@ data/**/*.jsonl
 
 # Notebooks
 notebooks/playground.ipynb
-notebooks/*.csv
-notebooks/*.txt
-notebooks/*.parquet
-notebooks/rag_response_cache.json
+notebooks/output/*
 
 # Databases
 db/chromadb

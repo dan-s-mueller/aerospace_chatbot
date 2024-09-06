@@ -10,8 +10,8 @@ Aerospace Chatbot
             help/overview
             help/user_guide
             help/streamlit_apps
-            help/dependencies
             help/configs
+            help/eval
 
         .. toctree::
             :hidden:
@@ -28,12 +28,19 @@ Aerospace Chatbot
 
 ----
 
+TODO: now
+- Update to eliminate the user stuff. Replace with the run modes.
+- Review all docs to see if anything is obsolete. E.g. streamlit run command will now be obsolete.
+
+TODO: later
+- Add eval information, study
+
+
 Deployed apps
 -------------
 
 - `Hugging Face Organization AI-Aerospace <https://huggingface.co/ai-aerospace>`_
 - `Aerospace Chatbot: Aerospace Mechanisms Symposia <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_ams>`_.
-    - `Aerospace Chatbot: Aerospace Mechanisms Symposia, Sample Visualization <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize>`_.
 
 Project links
 -------------
@@ -86,3 +93,14 @@ API key links
 - `Pinecone <https://www.pinecone.io>`__
 - `Hugging Face Hub <https://huggingface.co/settings/tokens>`__
 - `Voyage <https://dash.voyageai.com/api-keys>`__
+
+Dependencies
+^^^^^^^^^^^^
+
+The main files in the repository required for dependencies are:
+
+- ``poetry.lock`` and ``pyproject.toml`` to define all dependencies
+
+- ``poetry install`` to install all dependencies
+
+The instructions are tailored to unix-based systems, modify as needed for Windows.

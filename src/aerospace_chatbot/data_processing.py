@@ -71,18 +71,18 @@ def load_docs(index_type:str,
         index_type (str): The type of index to use.
         docs: The documents to load.
         query_model (object): The query model to use.
-        rag_type (str, optional): The type of RAG (Retrieval-Augmented Generation) to use. Defaults to 'Standard'.
-        index_name (str, optional): The name of the index. Defaults to None.
-        n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to 0.
-        chunk_method (str, optional): The method to chunk the documents. Defaults to 'character_recursive'.
-        chunk_size (int, optional): The size of each chunk. Defaults to 500.
-        chunk_overlap (int, optional): The overlap between chunks. Defaults to 0.
-        clear (bool, optional): Whether to clear the index before loading new documents. Defaults to False.
-        file_out (str, optional): The output file path. Defaults to None.
-        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
-        local_db_path (str, optional): The local database path. Defaults to '../../db'.
-        llm (optional): The language model to use. Defaults to None.
-        show_progress (bool, optional): Whether to show progress during the loading process. Defaults to False.
+        rag_type (str, optional): The type of RAG (Retrieval-Augmented Generation) to use.
+        index_name (str, optional): The name of the index.
+        n_merge_pages (int, optional): Number of pages to to merge when loading.
+        chunk_method (str, optional): The method to chunk the documents.
+        chunk_size (int, optional): The size of each chunk.
+        chunk_overlap (int, optional): The overlap between chunks.
+        clear (bool, optional): Whether to clear the index before loading new documents.
+        file_out (str, optional): The output file path.
+        batch_size (int, optional): The batch size for upserting documents.
+        local_db_path (str, optional): The local database path.
+        llm (optional): The language model to use.
+        show_progress (bool, optional): Whether to show progress during the loading process.
 
     Returns:
         vectorstore: The updated vectorstore.
@@ -124,9 +124,9 @@ def chunk_docs(docs: List[str],
                chunk_method:str='character_recursive',
                file_out:str=None,
                n_merge_pages:int=None,
-               chunk_size:int=500,
+               chunk_size:int=400,
                chunk_overlap:int=0,
-               k_parent:int=4,
+               k_child:int=4,
                llm=None,
                show_progress:bool=False):
     """
@@ -134,15 +134,15 @@ def chunk_docs(docs: List[str],
 
     Args:
         docs (List[str]): The list of document paths to be chunked.
-        rag_type (str, optional): The type of chunking method to be used. Defaults to 'Standard'.
-        chunk_method (str, optional): The method of chunking to be used. Defaults to 'character_recursive'. None will take whole PDF pages as documents.
-        file_out (str, optional): The output file path to save the chunked documents. Defaults to None.
-        n_merge_pages (int, optional): Number of pages to to merge when loading. Defaults to None.
+        rag_type (str, optional): The type of chunking method to be used.
+        chunk_method (str, optional): The method of chunking to be used. None will take whole PDF pages as documents.
+        file_out (str, optional): The output file path to save the chunked documents.
+        n_merge_pages (int, optional): Number of pages to to merge when loading.
         chunk_size (int, optional): The size of each chunk in tokens. Defaults to 500. Only used if chunk_method is not None.
         chunk_overlap (int, optional): The overlap between chunks in tokens. Defaults to 0. Only used if chunk_method is not None.
-        k_parent (int, optional): The number of parent chunks to split into child chunks for 'Parent-Child' rag_type. Defaults to 4.
-        llm (None, optional): The language model to be used for generating summaries. Defaults to None.
-        show_progress (bool, optional): Whether to show the progress bar during chunking. Defaults to False.
+        k_child (int, optional): The number of child chunks to split from parnet chunks for 'Parent-Child' rag_type.
+        llm (None, optional): The language model to be used for generating summaries.
+        show_progress (bool, optional): Whether to show the progress bar during chunking.
 
     Returns:
         dict: A dictionary containing the chunking results based on the specified rag_type.
@@ -217,19 +217,19 @@ def chunk_docs(docs: List[str],
                 'splitters':text_splitter}
     elif rag_type=='Parent-Child': 
         if chunk_method=='character_recursive':
-            parent_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size*k_parent, 
+            # Settings apply to parent splitter. k_child divides parent into smaller sizes.
+            parent_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
                                                            chunk_overlap=chunk_overlap,
                                                            add_start_index=True)    # Without add_start_index, will not be a unique id
-            child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
-                                                          chunk_overlap=chunk_overlap,
-                                                          add_start_index=True)
+            parent_chunks = parent_splitter.split_documents(pages)
         elif chunk_method=='None':
-            raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
+            parent_splitter = None
+            parent_chunks = pages  # No chunking, take whole pages as documents
+            # raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
         else:
             raise NotImplementedError
         
-        # Split up parent chunks
-        parent_chunks = parent_splitter.split_documents(pages)
+        # Assign parent doc ids
         doc_ids = [str(_stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
         
         # Split up child chunks
@@ -237,6 +237,17 @@ def chunk_docs(docs: List[str],
         chunks = []
         for i, doc in enumerate(parent_chunks):
             _id = doc_ids[i]
+
+            if chunk_method=='character_recursive':
+                child_splitter=RecursiveCharacterTextSplitter(chunk_size=chunk_size/k_child, 
+                                                chunk_overlap=chunk_overlap,
+                                                add_start_index=True)
+            elif chunk_method=='None':
+                i_chunk_size=len(doc.page_content)/k_child
+                child_splitter=RecursiveCharacterTextSplitter(chunk_size=i_chunk_size, 
+                                                chunk_overlap=0,
+                                                add_start_index=True)
+
             _chunks = child_splitter.split_documents([doc])
             for _doc in _chunks:
                 _doc.metadata[id_key] = _id
@@ -299,10 +310,10 @@ def initialize_database(index_type: str,
         index_name (str): The name of the index.
         query_model (object): The query model to use.
         rag_type (str): The type of RAG model to use.
-        local_db_path (str, optional): The path to the local database. Defaults to None.
-        clear (bool, optional): Whether to clear the index. Defaults to False.
-        init_ragatouille (bool, optional): Whether to initialize the RAGatouille model. Defaults to False.
-        show_progress (bool, optional): Whether to show the progress bar. Defaults to False.
+        local_db_path (str, optional): The path to the local database.
+        clear (bool, optional): Whether to clear the index.
+        init_ragatouille (bool, optional): Whether to initialize the RAGatouille model.
+        show_progress (bool, optional): Whether to show the progress bar.
 
     Returns:
         vectorstore: The initialized vector store.
@@ -377,18 +388,17 @@ def upsert_docs_db(vectorstore,
     Upserts a batch of documents into a vector database. The lancghain call is identical between Pinecone and ChromaDB.
     This function handles issues with hosted database upserts or when using hugging face or other endpoint services which are less stable.
 
-    Parameters:
-    vectorstore (VectorStore): The VectorStore object representing the Pinecone or ChromaDB.
-    chunk_batch (List[Document]): A list of Document objects representing the batch of documents to be upserted.
-    chunk_batch_ids (List[str]): A list of strings representing the IDs of the documents in the batch.
+    Args:
+        vectorstore (VectorStore): The VectorStore object representing the Pinecone or ChromaDB.
+        chunk_batch (List[Document]): A list of Document objects representing the batch of documents to be upserted.
+        chunk_batch_ids (List[str]): A list of strings representing the IDs of the documents in the batch.
 
     Returns:
-    VectorStore: The updated VectorStore object after upserting the documents.
+        VectorStore: The updated VectorStore object after upserting the documents.
     """
     vectorstore.add_documents(documents=chunk_batch,
                               ids=chunk_batch_ids)
     return vectorstore
-
 def upsert_docs(index_type: str, 
                 index_name: str,
                 vectorstore: any, 
@@ -404,9 +414,9 @@ def upsert_docs(index_type: str,
         index_name (str): The name of the index.
         vectorstore (any): The vectorstore object to add documents to.
         chunker (dict): The chunker dictionary containing the documents to upsert.
-        batch_size (int, optional): The batch size for upserting documents. Defaults to 50.
-        show_progress (bool, optional): Whether to show progress during the upsert process. Defaults to False.
-        local_db_path (str, optional): The local path to the database folder. Defaults to '.'.
+        batch_size (int, optional): The batch size for upserting documents.
+        show_progress (bool, optional): Whether to show progress during the upsert process.
+        local_db_path (str, optional): The local path to the database folder.
 
     Returns:
         tuple: A tuple containing the updated vectorstore and retriever objects.
@@ -415,7 +425,7 @@ def upsert_docs(index_type: str,
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
     if chunker['rag'] == 'Standard':
-        if index_type != "RAGatouille":
+        if index_type == "Pinecone" or index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
@@ -443,7 +453,7 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Parent-Child':
-        if index_type != "RAGatouille":
+        if index_type == "Pinecone" or index_type == "ChromaDB":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -468,7 +478,7 @@ def upsert_docs(index_type: str,
         else:
             raise NotImplementedError
     elif chunker['rag'] == 'Summary':
-        if index_type != "RAGatouille":
+        if index_type == "Pinecone" or index_type == "ChromaDB":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
             
@@ -497,7 +507,6 @@ def upsert_docs(index_type: str,
     if show_progress:
         my_bar.empty()
     return vectorstore, retriever
-
 def delete_index(index_type: str, 
                  index_name: str, 
                  rag_type: str,
@@ -509,7 +518,7 @@ def delete_index(index_type: str,
         index_type (str): The type of index to delete. Valid values are "Pinecone", "ChromaDB", or "RAGatouille".
         index_name (str): The name of the index to delete.
         rag_type (str): The type of RAG (RAGatouille) to delete. Valid values are "Parent-Child" or "Summary".
-        local_db_path (str, optional): The path to the local database. Defaults to '.'.
+        local_db_path (str, optional): The path to the local database.
 
     Raises:
         NotImplementedError: If the index_type is not supported.
@@ -628,10 +637,39 @@ def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
             raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     else:
         raise NotImplementedError(f"The embedding family '{embedding_family}' is not available in config.json")
-
 def _stable_hash_meta(metadata: dict):
+    """
+    Calculates the stable hash of the given metadata dictionary.
+
+    Args:
+        metadata (dict): The dictionary containing the metadata.
+
+    Returns:
+        str: The stable hash of the metadata.
+
+    """
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
 def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,check:bool=True):
+    """
+    Generates a modified name based on the given parameters.
+
+    Args:
+        index_type (str): The type of index.
+        rag_type (str): The type of RAG.
+        index_name (str): The name of the index.
+        model_name (bool, optional): The name of the model. Defaults to None.
+        check (bool, optional): Whether to check the validity of the name. Defaults to True.
+
+    Returns:
+        str: The modified index name.
+        
+    Raises:
+        ValueError: If the Pinecone index name is longer than 45 characters.
+        ValueError: If the ChromaDB collection name is longer than 63 characters.
+        ValueError: If the ChromaDB collection name does not start and end with an alphanumeric character.
+        ValueError: If the ChromaDB collection name contains characters other than alphanumeric, underscores, or hyphens.
+        ValueError: If the ChromaDB collection name contains two consecutive periods.
+    """
     # Modify name if it's an advanded RAG type
     if rag_type == 'Parent-Child':
         index_name = index_name + "-parent-child"
@@ -665,10 +703,19 @@ def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,chec
             else:
                 return index_name
 def get_or_create_spotlight_viewer(df:pd.DataFrame,port:int=9000):
+    """
+    Get or create a Spotlight viewer for the given DataFrame.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to display in the viewer.
+        port (int, optional): The port number to use for the viewer. Defaults to 9000.
+
+    Returns:
+        spotlight.viewer: The existing or newly created Spotlight viewer.
+    """
     # TODO if you try to close spotlight and reuse a port, you get an error that the port is unavailable
     # TODO The viewer does not work properly with merged documents, it does not show the source column properly
     viewers = spotlight.viewers()
-    print(viewers)
     if viewers:
         for viewer in viewers[:-1]:
             viewer.close()
@@ -859,7 +906,7 @@ def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
             "embedding": response["embeddings"],
         }
     )
-def add_clusters(df:pd,n_clusters:int,label_llm:object=None,doc_per_cluster:int=5):
+def add_clusters(df,n_clusters:int,label_llm:object=None,doc_per_cluster:int=5):
     """
     Add clusters to a DataFrame based on the embeddings of its documents.
 
@@ -902,13 +949,12 @@ def export_to_hf_dataset(df: pd.DataFrame, dataset_name: str):
     """
     hf_dataset = Dataset.from_pandas(df)
     hf_dataset.push_to_hub(dataset_name, token=os.getenv('HUGGINGFACEHUB_API_TOKEN'))
-
 def archive_db(index_type:str,index_name:str,query_model:object,export_pickle:bool=False):
     df_temp=get_docs_df(index_type,os.getenv('LOCAL_DB_PATH'), index_name, query_model)
 
     if export_pickle:
         # Export pickle to db directory
-        with open(os.path.join(os.getenv('LOCAL_DB_PATH'),f"archive_chromadb_{index_name}.pickle"), "wb") as f:
+        with open(os.path.join(os.getenv('LOCAL_DB_PATH'),f"archive_{index_type.lower()}_{index_name}.pickle"), "wb") as f:
             pickle.dump(df_temp, f)
     return df_temp
 

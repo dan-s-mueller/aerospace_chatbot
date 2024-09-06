@@ -27,6 +27,11 @@ from data_processing import chunk_docs, initialize_database, load_docs, \
 from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
 from queries import QA_Model
 
+# TODO test eval.py functionality
+# TODO add tests to check conversation history functionality
+# TODO add mock changes from streamlit changing: index_type, rag_type. or just test streamlit frontend.
+# TODO test db_name functionv
+
 # Functions
 def permute_tests(test_data):
     '''
@@ -51,18 +56,25 @@ def permute_tests(test_data):
             idx+=1
     return rows
 def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
-    '''
-    Generate test cases and export them to a JSON file.
-
+    """
+    Generates test cases based on the provided configuration file. Exports a snapshot of this which is used in the tests.
     Args:
-        export (bool, optional): Whether to export the test cases to a JSON file. Defaults to True.
-        export_dir (str, optional): Directory to export the JSON file. Defaults to '.'.
-
+        config_file (str): The path to the configuration file.
+        export (bool, optional): Whether to export the generated test cases to a file. Defaults to True.
+        export_dir (str, optional): The directory to export the test cases file to. Defaults to '.'.
     Returns:
-        list: List of dictionaries representing the generated test cases.
-    '''
+        List[Dict[str, Union[str, List[str]]]]: A list of test cases, where each test case is a dictionary with the following keys:
+            - 'index_type' (str): The type of index.
+            - 'query_model' (str): The query model.
+            - 'embedding_name' (List[str]): The names of the embedding models.
+            - 'rag_type' (str): The type of RAG.
+            - 'llm_family' (str): The family of language model.
+            - 'llm' (List[str]): The names of the language models.
+    Raises:
+        FileNotFoundError: If the provided configuration file does not exist.
+    """
     # Items in test_cases must match labels to select from in setup_fixture
-    # TODO throw in bad inputs for each of the 4 major types below.
+    # TODO throw in bad inputs for config, embeddings_list, llms below
 
     with open(config_file, 'r') as f:
         config = json.load(f)
@@ -162,15 +174,6 @@ def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
     
     return tests
 def read_test_cases(json_path:str):
-    '''
-    Read test cases from a JSON file.
-
-    Args:
-        json_path (str): Path to the JSON file.
-
-    Returns:
-        list: List of dictionaries representing the test cases.
-    '''
     with open(json_path, 'r') as json_file:
         test_cases = json.load(json_file)
     return test_cases
@@ -254,14 +257,14 @@ def parse_test_model(type, test, setup_fixture):
 # Fixtures
 @pytest.fixture(scope='session', autouse=True)
 def setup_fixture():
-    '''
-    Sets up the necessary variables and configurations for the test.
-    The tests in this script will only work if there exists environment variables for API keys: 
-    OPENAI_API_KEY, VOYAGE_API_KEY, HUGGINGFACEHUB_API_TOKEN, and PINECONE_API_KEY.
-
+    """
+    Sets up the fixture for testing the backend.
     Returns:
-        dict: A dictionary containing the setup variables and configurations.
-    '''    
+        dict: A dictionary containing the setup configuration.
+    Raises:
+        None
+    """
+    ...
     # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
     load_dotenv(find_dotenv(),override=True)
     OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
@@ -313,6 +316,21 @@ def setup_fixture():
     return setup
 @pytest.fixture()
 def temp_dotenv(setup_fixture):
+    """
+    Creates a temporary .env file for testing purposes.
+
+    Args:
+        setup_fixture (dict): A dictionary containing setup fixture values.
+
+    Yields:
+        str: The path of the temporary .env file.
+
+    Raises:
+        None
+
+    Returns:
+        None
+    """
     dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','.env')
     if not os.path.exists(dotenv_path):
         with open(dotenv_path, 'w') as f:
@@ -649,8 +667,6 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
     except:
         pass
 
-# TODO test db_name function
-
 # Test end to end process, adding query
 def test_database_setup_and_query(test_input,setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.
@@ -751,13 +767,12 @@ def test_load_sidebar():
     Returns:
         None
     '''
-    # TODO add mock changes from streamlit changing: index_type, rag_type
 
     # Use the existing config file, to check they are set up correctly.
-    base_folder_path = os.path.abspath(os.path.dirname(__file__))
-    base_folder_path = os.path.join(base_folder_path, '..')
-    base_folder_path = os.path.normpath(base_folder_path)
-    config_file=os.path.join(base_folder_path, 'config', 'config.json')
+    home_dir = os.path.abspath(os.path.dirname(__file__))
+    home_dir = os.path.join(home_dir, '..')
+    home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
 
     # Test case: Only embeddings is True
     sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True)
@@ -910,9 +925,10 @@ def test_st_setup_page_local_db_path_only_defined(monkeypatch):
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
 
     # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file)
 
     # Assert
     assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
@@ -944,9 +960,10 @@ def test_st_setup_page_local_db_path_not_defined(monkeypatch):
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
 
     # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file)
 
     # Assert
     assert paths['db_folder_path'] == 'None'
@@ -987,9 +1004,10 @@ def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
 
     # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file, sidebar_config)
 
     # Assert
     assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
@@ -999,15 +1017,16 @@ def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
                        'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
                        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
 def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
-    '''
-    Test case for the `st_setup_page` function with all inputs in sidebar and all environment variables set using .env file.
+    """
+    Test case for the `st_setup_page` function with all environment inputs.
 
     Args:
-        monkeypatch: Monkeypatch object for modifying environment variables.
+        monkeypatch: A monkeypatch object for modifying environment variables.
+        temp_dotenv: The path to the temporary dotenv file.
 
     Returns:
         None
-    '''
+    """
 
     page_title = 'Test Page'
     sidebar_config = {
@@ -1026,9 +1045,11 @@ def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
+    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
+
 
     # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir, sidebar_config)
+    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file, sidebar_config)
 
     # Assert
     assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')

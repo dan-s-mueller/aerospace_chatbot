@@ -3,7 +3,7 @@ Streamlit Apps
 
 Structure
 ---------
-The Streamlit app is initialized from ``Home.py``. The sidebar lists other apps which are used to manage databases, chat with PDF data, and visualize the PDF data. Each of the apps, including ``Home.py`` are described below.
+The Streamlit app is initialized from ``app.py``. The sidebar lists other apps which are used to manage databases, chat with PDF data, and visualize the PDF data. Each of the apps, are described below. The available models and functionality is set by the `AEROSPACE_CHATBOT_CONFIG` environment variable.
 
 Sidebar
 ^^^^^^^

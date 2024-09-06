@@ -52,13 +52,13 @@ def load_sidebar(config_file,
 
     Args:
         config_file (str): The path to the configuration file.
-        vector_database (bool, optional): Whether to include the vector database in the sidebar. Defaults to False.
-        embeddings (bool, optional): Whether to include embeddings in the sidebar. Defaults to False.
-        rag_type (bool, optional): Whether to include RAG type in the sidebar. Defaults to False.
-        index_selected (bool, optional): Whether to include index name in the sidebar. Defaults to False.
-        llm (bool, optional): Whether to include LLM in the sidebar. Defaults to False.
-        model_options (bool, optional): Whether to include model options in the sidebar. Defaults to False.
-        secret_keys (bool, optional): Whether to include secret keys in the sidebar. Defaults to False.
+        vector_database (bool, optional): Whether to include the vector database in the sidebar.
+        embeddings (bool, optional): Whether to include embeddings in the sidebar.
+        rag_type (bool, optional): Whether to include RAG type in the sidebar.
+        index_selected (bool, optional): Whether to include index name in the sidebar.
+        llm (bool, optional): Whether to include LLM in the sidebar.
+        model_options (bool, optional): Whether to include model options in the sidebar.
+        secret_keys (bool, optional): Whether to include secret keys in the sidebar.
 
     Returns:
         dict: The sidebar configuration.
@@ -69,6 +69,7 @@ def load_sidebar(config_file,
         databases = {db['name']: db for db in config['databases']}
         embeddings_list = {e['name']: e for e in config['embeddings']}
         llms  = {m['name']: m for m in config['llms']}
+        rag_types= config['rag_types']
 
     # Set local db path
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
@@ -78,7 +79,7 @@ def load_sidebar(config_file,
     # Vector databases
     if vector_database:
         st.sidebar.title('Vector database')
-        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=1,help='Select the type of index to use.')
+        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=0,help='Select the type of index to use.')
 
         if embeddings:
             # Embeddings
@@ -109,8 +110,8 @@ def load_sidebar(config_file,
             if sb_out['index_type']=='RAGatouille':
                 sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0,help='Only Standard is available for RAGatouille.')
             else:
-                sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard','Parent-Child','Summary'], index=0,help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.')
-                if sb_out['rag_type']=='Summary' or sb_out['rag_type']=='Muti-Query':
+                sb_out['rag_type']=st.sidebar.selectbox('RAG type', rag_types, index=0,help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.')
+                if sb_out['rag_type']=='Summary':
                     sb_out['rag_llm_source']=st.sidebar.selectbox('RAG LLM model', list(llms.keys()), index=0,help='Select the LLM model for RAG.')
                     if sb_out['rag_llm_source']=='OpenAI':
                         sb_out['rag_llm_model']=st.sidebar.selectbox('RAG OpenAI model', llms[sb_out['rag_llm_source']]['models'], index=0,help='Select the OpenAI model for RAG.')
@@ -149,8 +150,9 @@ def load_sidebar(config_file,
                                     elif sb_out['rag_type']=='Summary':
                                         if index.name.endswith('-summary'):
                                             name.append(index.name)
-                                    else:
-                                        name.append(index.name)
+                                    else:   # Stadard
+                                        if not index.name.endswith('-parent-child') and not index.name.endswith('-summary'):
+                                            name.append(index.name)
                         sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
                     else:
                         st.sidebar.markdown('No collections found.',help='Check the status on Home.')
@@ -343,7 +345,7 @@ def set_llm(sb, secrets, type='prompt'):
     Args:
         sb (dict): The configuration settings for the chatbot.
         secrets (dict): The secret keys and tokens required for authentication.
-        type (str, optional): The type of LLM to set up. Defaults to 'prompt'.
+        type (str, optional): The type of LLM to set up.
 
     Returns:
         ChatOpenAI: The configured language model.
@@ -432,7 +434,7 @@ def show_pinecone_indexes(format=True):
     LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        format (bool, optional): Specifies whether to format the output. Defaults to True.
+        format (bool, optional): Specifies whether to format the output for display.
 
     Returns:
         dict or str: If format is True, returns a formatted string representation of the Pinecone status.
@@ -459,7 +461,7 @@ def show_chroma_collections(format=True):
     LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        format (bool, optional): Specifies whether to format the output. Defaults to True.
+        format (bool, optional): Specifies whether to format the output for display.
 
     Returns:
         dict or str: If format is True, returns a formatted string representation of the chroma status.
@@ -492,7 +494,7 @@ def show_ragatouille_indexes(format=True):
     LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        format (bool, optional): Specifies whether to format the indexes. Defaults to True.
+        format (bool, optional): Specifies whether to format the indexes for display.
 
     Returns:
         dict or str: If format is True, returns a formatted string representation of the ragatouille status.
@@ -526,13 +528,13 @@ def show_ragatouille_indexes(format=True):
         return ragatouille_status
 def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = False, set_secrets: bool = False):
     """
-    Expands a Streamlit expander widget to display connection status information.
+    Makes a Streamlit expander widget to display connection status information.
     LOCAL_DB_PATH environment variable used to pass the local database path.
 
     Args:
-        expanded (bool, optional): Whether the expander is initially expanded or collapsed. Only intended with account access. Defaults to True.
-        delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes. Defaults to False.
-        set_secrets (bool, optional): Whether to set the secrets. Defaults to False.
+        expanded (bool, optional): Whether the expander is initially expanded or collapsed. Only intended with account access.
+        delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes.
+        set_secrets (bool, optional): Whether to set the secrets.
     """
     # TODO add capability to add dedicated endpoints for Hugging Face models
     with st.expander("Connection Status", expanded=expanded):
@@ -626,14 +628,15 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
 
         # Local database path
         st.markdown(f"Local database path: {os.environ['LOCAL_DB_PATH']}")
-def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
+def st_setup_page(page_title: str, home_dir:str, config_file: str, sidebar_config: dict = None):
     """
     Sets up the Streamlit page with the given title and loads the sidebar configuration.
 
     Args:
         page_title (str): The title of the Streamlit page.
         home_dir (str): The path to the home directory.
-        sidebar_config (dict, optional): The sidebar configuration. Defaults to None.
+        config_file (str): The path to the configuration file.
+        sidebar_config (dict, optional): The sidebar configuration.
 
     Returns:
         tuple: A tuple containing the following:
@@ -652,14 +655,9 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     load_dotenv(find_dotenv(), override=True)
 
     base_folder_path = home_dir
-    config_folder_path=os.path.join(base_folder_path, 'config')
     data_folder_path=os.path.join(base_folder_path, 'data')
 
     # Set the page title
-    st.set_page_config(
-        page_title=page_title,
-        layout='wide'
-    )
     st.title(page_title)
 
     # Set local database
@@ -682,9 +680,9 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     # Load sidebar
     try:
         if sidebar_config is None:
-            sb=load_sidebar(os.path.join(config_folder_path,'config.json'))
+            sb=load_sidebar(config_file)
         else:
-            sb=load_sidebar(os.path.join(config_folder_path,'config.json'),
+            sb=load_sidebar(config_file,
                             **sidebar_config)
     except SecretKeyException as e:
         # If no .env file is found, set the local db path when the warning is raised.
@@ -700,7 +698,7 @@ def st_setup_page(page_title: str, home_dir:str, sidebar_config: dict = None):
     db_folder_path=os.environ['LOCAL_DB_PATH']
 
     paths={'base_folder_path':base_folder_path,
-           'config_folder_path':config_folder_path,
+           'config_folder_path':config_file,
            'data_folder_path':data_folder_path,
            'db_folder_path':db_folder_path}
 

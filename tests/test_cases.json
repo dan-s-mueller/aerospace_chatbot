@@ -5,7 +5,7 @@
         "embedding_name": "text-embedding-ada-002",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 0
     },
     {
@@ -14,7 +14,7 @@
         "embedding_name": "text-embedding-3-small",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 1
     },
     {
@@ -23,7 +23,7 @@
         "embedding_name": "text-embedding-3-large",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 2
     },
     {
@@ -32,7 +32,7 @@
         "embedding_name": "text-embedding-ada-002",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 3
     },
     {
@@ -50,7 +50,7 @@
         "embedding_name": "mixedbread-ai/mxbai-embed-large-v1",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 5
     },
     {
@@ -86,7 +86,7 @@
         "embedding_name": "text-embedding-ada-002",
         "rag_type": "Parent-Child",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 9
     },
     {
@@ -95,7 +95,7 @@
         "embedding_name": "text-embedding-ada-002",
         "rag_type": "Summary",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 10
     },
     {
@@ -104,7 +104,7 @@
         "embedding_name": "text-embedding-ada-002",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 11
     },
     {
@@ -113,7 +113,7 @@
         "embedding_name": "voyage-2",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 12
     },
     {
@@ -122,7 +122,7 @@
         "embedding_name": "voyage-large-2",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 13
     },
     {
@@ -131,7 +131,7 @@
         "embedding_name": "colbert-ir/colbertv2.0",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-3.5-turbo-0125",
+        "llm": "gpt-4o-mini",
         "id": 14
     }
 ]
