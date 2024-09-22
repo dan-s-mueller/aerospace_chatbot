@@ -12,6 +12,14 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot Homepage',
                                      home_dir,
                                      st.session_state.config_file)
 
+
+#----
+
+
+
+
+#----
+
 st.subheader("Aerospace Mechanisms Symposia (AMS)")
 st.markdown("""
 This space contains chatbots and tools for exploring data in the aerospace mechanisms symposia, using all available papers published since 2000.
