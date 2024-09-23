@@ -42,10 +42,8 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
 with st.expander('''What's under the hood?'''):
     st.markdown('''
     This chatbot will look up from all Aerospace Mechanism Symposia in the following location: https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS
-    Example questions:
-    * What are examples of latch failures which have occurred due to improper fitup?
-    * What are examples of lubricants which should be avoided for space mechanism applications?
-    * What can you tell me about the efficacy of lead naphthenate for wear protection in space mechanisms?
+    
+    A long list of example questions for the Aerospace Mechanisms chatbot, with other details is located here: https://aerospace-chatbot.readthedocs.io/en/latest/help/deployments.html
     ''')
 
 # Add reset option for query database

@@ -1,0 +1,249 @@
+Deployments
+=================
+Below are standard deployments to test the functionality of the Aerospace Chatbot. They all have limited functionality to prevent abuse and are not intended for production use.
+
+Aerospace Mechanisms
+--------------------
+For access to a demo of this chatbot, please reach out to `dsm@danmueller.pro <mailto:dsm@danmueller.pro>`__ for an invite link.
+
+This chatbot is utilizes Aerospace Mechanisms Symposia papers as input back to 2020. You can see all of the papers which are indexed to the chatbot `here <https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS>`__. 
+
+The `Aerospace Mechanisms Symposia <https://aeromechanisms.com/>`__ papers in PDF form going back to the year 1966 with a release every 1-2 years. Each symposia release has roughly 20-40 papers detailing design, test, analysis, and lessons learned for space mechanism design. The full paper index for past symposia is available `here <https://aeromechanisms.com/paper-index/>`__.
+
+The symposia papers are a valuable resource for the aerospace community, but the information is locked in PDF form and not easily searchable. This example demonstrates how to query, search, and ask a Large Language Model (LLM) questions about the content in these papers.
+
+A key feature of this tool is returning source documentation when the LLM provides an answer. This improves trust, enables verification, and allows users to read the original source material.
+
+To explore the functionality of this tool, a list of questions based on the content in the papers indexed using `Ragas synthetic testset generation <https://docs.ragas.io/en/latest/getstarted/testset_generation.html>`__ was generated and is shown below. See :doc:`eval` for details.
+
+.. dropdown:: Aerospace Mechanism Example Questions
+
+    - How much power does the four-element piezo motor consume under normal operating conditions on Earth?
+    - How did statistical analysis determine the number of scars needed on each ball for the bearing fatigue life test?
+    - How is the stress field in the Si3N4 ball and raceway affected by the presence of a ball scar within the contact patch?
+    - How important is testing in ensuring the reliability of aerospace mechanisms?
+    - How does the wear rate vary when different coatings are used in block-on-ring surface morphology testing?
+    - How did the ball-on-ball apparatus help create artificial scars on Si 3N4 balls, and how were consistency and reproducibility ensured for RCF test campaigns?
+    - What apparatus is used to create artificial scars on Si 3N4 balls, and how is it designed for consistency and reproducibility?
+    - How does the rail system design affect the power consumption of the piezo motor during operation on Earth?
+    - How were artificial scars induced on Si 3N4 balls to study their influence on bearing fatigue life, and how were the stress results from the FEMs for common ball defects validated?
+    - What design changes were made to the launch latch mechanism to address material, ergonomics, and force concerns, and how were they integrated into development and testing?
+    - How does the tripwire force aid in the deployment of the outboard hinge in the FSSA system?
+    - What are the advantages of using stepper motors in the design of the NEA Scout AMT system?
+    - What challenges were faced during AIT handling due to the brittleness of the SmCo magnets in the motor design process?
+    - How is the ductility index quantified in relation to plastic deformation in the test fasteners?
+    - How does increasing the wave generator plug size affect the stiffness of the harmonic gear assembly?
+    - How does hysteresis amplitude vary with temperature in piezo actuators from different suppliers, and its impact on capacitance vs. temperature?
+    - How was the TSX-5 spacecraft hinge mechanism validated for solar array deployment, given design constraints and weight limitations?
+    - How was the bearing assembly design influenced by launch loads and what factors were considered for its integrity during launch?
+    - How is stress field resolved in Si3N4 ball and raceway with 2D FEM when a ball scar is present, considering finite-element models and constraint equations for mesh transitions?
+    - How did the design simplicity of the paraffin-powered pinpuller for the Iridium program affect costs and user-friendliness?
+    - How is the position sensor implemented in the locking system for the Filter Wheel?
+    - What were some of the lessons learned in the development of the launch latch mechanism?
+    - How was the Y-axis acceleration limited during the qualification testing of the ISL APM EM system?
+    - How did the use of DLC coatings change the wear behavior in the tests compared to tests without any coatings or solid-film lubrication?
+    - How did the human presence contribute to the swift and successful restoration of the ISS solar array during troubleshooting and repair operations?
+    - How do SmCo magnets in a 90¬∞ pattern help center the Filter Wheel design and improve reliability with Hall effect sensors?
+    - How was the ball-on-ball apparatus used to create artificial scars on Si 3N4 balls for testing consistency and reproducibility in generating scars for RCF tests?
+    - How did the oversight of clamp resistance affect the approach to address driving load in bearing analysis for launch vibration?
+    - What changes were made to improve the locking ring in the latch mechanism for testing, focusing on deployment repeatability, stiffness, and backplane stability?
+    - How does the REACT device help with the Hold Down and Release Mechanism in the planetary exploration subsystem by AVS, addressing the extractor and hooking issues in Airbus DS clamp-bands?
+    - What are some examples of gear configurations similar to conventional gears, including spur gears, planetary gears, and harmonic drives?
+    - How does the design of the press fits allow for the introduction of considerable axial integration forces during bearing insertion?
+    - What are some key references and studies related to the design and development of space telescopes?
+    - What is the process and purpose of the continuous testing method in friction and wear testing procedures?
+    - How is spin stability achieved in the Scan Drive Mechanism (SDM) of the MWRI Instrument?
+    - How did the friction coefficients of coated blocks compare to non-coated blocks in the Block-on-Ring Tribometer tests in dry nitrogen, and what were the specific values for each coating type?
+    - How did the Zener diode circuit modeling impact motor stability and what changes were needed to fix it?
+    - What factors affect the endurance life of MoS2 coatings in different atmospheres, considering friction coefficients and wear rates in dry and moist air?
+    - How is the harness managed for elevation rotation in the gimbal design to minimize RF signal loss?
+    - How was gravity managed in the gimbal bearing prototype to reduce friction drag torque?
+    - How does the step size of the motor change with an increase in friction force?
+    - How does the actuator output torque performance change in different temperature environments during thermal testing?
+    - How are angular-contact bearings preloaded in the CRISM bearing system?
+    - What factors should be considered when assessing the life-limiting impacts of shaft couplings in a design?
+    - How did the SE6660 and PEEK test wheels perform during the extreme temperature testing?
+    - What caused the mechanism jam in the test setup, considering GSE rotation speed and race condition during compression test?
+    - How does actuator torque performance change in various temperatures during thermal testing, and what causes these variations?
+    - How does electronic system sensitivity affect overall design and mass growth?
+    - How was the lever retention spring force adjusted and monitored to ensure sufficient release force margins in the production process, considering the challenges encountered in maintaining high performance margins for both pre-load retention and operation in the design process?
+    - What risk management measures were taken to ensure the quality and effectiveness of the Nye 2001T oil in the rotating mechanisms, considering lubricant screening methods, TiC coatings, and screening tests on the new formulation?
+    - How did the design and implementation of a high torque worm drive contribute to the success of the Bolt Motor Actuator program?
+    - How is the SARA¬Æ21 rotary actuator designed and qualified for space applications?
+    - How do metal wear particles interact with lead naphthenate to create protective surface coatings in lubricated contacts?
+    - How does the hinge support contribute to the structural stability of the stowed hinge in the assembly?
+    - What is the role of the NASA STI Program Office in helping NASA maintain its important role in the advancement of aeronautics and space science?
+    - How does NEA Scout address constraints for solar sail deployment in its journey to a Near Earth Asteroid?
+    - How does water vapor affect lubricant lifespan in spacecraft bearings, based on tests with Krytox 143ACTM and Pennzane¬Æ 2001A?
+    - What components and materials were used in the spacesuit glove actuator design to address fatigue and limited force issues?
+    - How does operating in an EHD regime enhance PFPE lubricants' effectiveness, given their vulnerability to breakdown and the benefits of hybrid lubrication with MoS2 films?
+    - How did the flight motors with integral eddy current damping exceed performance predictions?
+    - How does the presence of noise impact the process of error reduction in nanometer level position control systems?
+    - How were the vacuum compatible test motors selected and modified for the specific requirements of the project at NASA MSFC?
+    - What role do the physical properties of the applied fluid lubricant play in the success of hybrid lubrication according to the research conducted at ESTL in 2018?
+    - How do the load-limiting springs in the solar flap mechanism prevent excessive load build-up in the SMA wires during operation?
+    - How can proper isolation of temperature sensors improve the measurement response of sensors embedded in a mechanism?
+    - How was Bearing Torque measured and analyzed in the life test program, considering environmental conditioning and vibration test levels for the Life Test Model?
+    - What were the two spacecraft scenarios in the SMRW wheels qualification program?
+    - How did the torque tube diameter change affect the speedbrake mechanism compliance, given stiffness and flutter constraints?
+    - What were the objectives and outcomes of the Brassboard test assembly regarding bearing performance and system mass validation?
+    - How was the issue with the black oxide coating on the Circular Splines resolved during the testing of the Harmonic Drive?
+    - How does the extraction maneuver in the Martian atmosphere play a critical role in the ARES project's airplane deployment sequence?
+    - How does the non-uniform spoke structure supporting the hub-side bearing housing impact the installed bearing outer race?
+    - What material ultimately performed the best in absorbing impact energy during testing, out of the options tested including bare aluminum, aluminum with hard anodize coating, and 304 CRES stainless steel?
+    - How is the Pancam Mast Assembly held in place to the Rover Equipment Deck before landing?
+    - How many times was the Lightband used for the successful Starshine-3 mission tested on the separation reliability fixture over the course of a month?
+    - How was the thermal cycling test conducted in the APM Life Model, and what temperature range was used?
+    - What material is used for the mirror and components in the gimbal system?
+    - How does tighter tolerances affect manufacturing costs and how can concept design help reduce costs?
+    - How does axial deformation of the hub-side bearing outer race affect bearing preload in the system, considering interference fits and structural differences between hub and motor-side bearings?
+    - What recovery time is sufficient for the spring/piston damper in SMAP Project testing, given the issues with cavitation and prolonged recovery time in the elastomeric diaphragm damper?
+    - What was the goal of the TV test campaign conducted on the EM S can Drive Equipment?
+    - What is the importance of an extensive and meaningful testing program in the development of spacecraft systems like the TSX-5 solar array deployment mechanism?
+    - What were the results of the thermal vacuum testing conducted on the focus mechanism in May 2007?
+    - How does the automated bridgewire welder reduce operator involvement in the process of loading and welding glass to metal seal headers?
+    - What caused the failure of the isolators on the dispenser during testing?
+    - What advantages does RUAG Space's low-shock separation system offer in the ESA-funded Future Launcher Preparatory Program, given the limitations of current pyrotechnic systems and the need for enhanced payload comfort and streamlined verification?
+    - What hinge is used in the passive isolation system for spacecraft subsystems, and what are its unique performance requirements?
+    - How does the burn wire mechanism help secure boom deployers during launch and sail deployment, given the 'blooming' issue in TRAC booms from thermal deformation?
+    - How does the flyweight brake help control deployment speed in the Impact Boom system?
+    - How does the translation tube in the Z-stage of the Rotor Mechanism aid interaction between EE and ACA stations, while meeting preload and clearance needs?
+    - How did the team determine motor health during the TVAC test using impedance changes in the motor coils?
+    - What factor led to more severe wear in the 'heater' end bearing compared to the 'encoder' end bearing?
+    - How was the percussion mechanism used in the design and testing of the Mars 2020 Corer?
+    - How did the replan exercise in the Phase 2 JWST proposal in October 2001 impact the observatory architecture, specifically in terms of the primary mirror diameter and number of segments?
+    - How was the PSM integrated into OSIM and what testing was conducted to ensure its performance in a thermal vacuum environment?
+    - How does the percussive cam system achieve fixed vertical travel for the hammer mechanism while reducing volume and mass, as opposed to a ball spline?
+    - What are some space mechanisms that can create dynamic forces and torques, potentially interfering with other instruments?
+    - How was motor health monitored during the TVAC test and how was the motor's internal temperature determined?
+    - What signs indicated issues with the main motor bearings in the ATMS instrument on the SNPP spacecraft, and how did the data from the bearing life test units help understand these problems?
+    - How does DIC with laser marking and conformal subsets help in health monitoring of mechanisms?
+    - What is the extent of abrasion observed in the different material pairs during the high cycle tests?
+    - What adjustments were made to address the issue of stray flux and reduced detent strength in the motor assembly related to the axial gap?
+    - How does solar sail propulsion enable interplanetary cubesats like NEA Scout to reach near earth asteroids within a specific timeframe and with limited mass constraints?
+    - How did the discovery of unexpected intermittent responses greater than 6 sigma during vibration tests impact the investigation into peak input loads on the SADA components?
+    - What method was used to measure the axial, angular, and lateral play in the bit assembly during the verification tests?
+    - What are the pros and cons of the Active Reluctance Brake design in terms of magnetic torque, energy consumption, and high excitation power for release?
+    - How does the MCF aid torque bolt-EVR interaction in DAPS actuators?
+    - How did X-rays help identify the detent interference in the pots and what manufacturing error was found through resistance analysis?
+    - How does thermal load affect "nanolurches" in latch testing, post thermal stability testing?
+    - What is the significance of increasing the wave generator plug size in harmonic drive assemblies to enhance stiffness?
+    - What is the flight heritage of maxon brushed motors on JPL Mars missions?
+    - How do DC brushless motors compare to other types of motors in terms of inertia, friction, and maintenance requirements?
+    - How does the design of mechanisms differ when intended to function in passive isolation mode compared to driven or safe modes?
+    - How are the MSPA and FSPA configurations compatible with cryo-dedicated actuators, and what are the potential applications in cryogenic environments?
+    - What are the process parameters that were found to be crucial in improving the compound layer formation in the LSBN processing of small pinions?
+    - What factors influence the design of the Sample Caching System for Mars 2020, and how do they affect material and component choices?
+    - How did the pressure change affect the compressor's mass flow rate with a 28% density change, while still meeting the minimum requirement of 60 g/hr at the new pressure?
+    - What variables are crucial for analyzing and verifying the ISS element berthing mechanism, including contact dynamic simulations and the behavior of the RTAS mating mechanism under load?
+    - What factor determined uniform material quality in manufacturing?
+    - What test validated the pivot design and final stop on the mobile part for the sphere's mechanical and thermal behavior?
+    - How does the system with a stiff hardstop differ from the system with a soft hardstop in terms of behavior and performance?
+    - What is the configuration of the BOLT test for the bearings only life test?
+    - How was the Ka band transmission performance tracked throughout the development process in relation to the RF path performance?
+    - What were the key findings regarding the motor coils during the AMT TVAC test failure analysis?
+    - What were the requirements and performance predictions for the DCATT Hexapod in testing optical wavefront control for NGST?
+    - What components are part of the mechanical design for the antenna range support structure at EMS, including the cable pulley, spring motor system, SGTRC support, wave-guides, lifting setup, transfer support, and safety devices?
+    - How does the resonant frequency of MEMS devices change in vacuum pressure, and what unexpected Q-factor characteristics were observed?
+    - How is the Gripper output positioned to prevent jamming during seal activation with detent brake and hardstop stiffness in mind?
+    - What benefits does silicon nitride provide in bearing cartridges, considering factors like lubricant life, weight, stiffness, and CTE?
+    - What was the purpose of the rock grinding tests on EM2 RAT actuators to determine motor current relationships and verify performance of EM2, FM1, and FM2 RATs?
+    - What were the outcomes of the thermal testing conducted for the deployment mechanism in the EM prototype and developmental testing matrix?
+    - How does the Come-Along Tool contribute to telerobotic in-space servicing of the Hubble Space Telescope?
+    - How did the actuator's unpowered holding torque play a role in assisting rover egress in the MER LPA?
+    - What were the key requirements for the Ka-band deployable antenna (KaPDA) and how were they addressed in the design process?
+    - How does the frequency response asymmetry manifest in the behavior of MEMS devices at pressures below 13 Pa (0.1 Torr)?
+    - How does the deployment control rod interact with the tape spring hub fixtures in the constraint mechanism and what is its role in releasing the constraint for deployment?
+    - How is NICER/SEXTANT deployed on the ISS with safety measures and alignment mechanisms?
+    - How did the new CDPR mechanism for Mars 2020 compare to the MSL crank-slider in terms of mass efficiency and design complexity?
+    - What led to the new tribometer for measuring high-speed bearing wear rates in spacecraft thermal control pumps, and how did it address the ISS pump failure in 2010?
+    - What were some of the key lessons learned during the investigation of the IRAC shutter mechanism failure in terms of design, fabrication, assembly, and testing?
+    - How can reaction wheel microvibration be managed on a high resolution EO small spacecraft?
+    - What is the purpose of the Deployment and Pointing System (DAPS) for the Neutron Star Interior Composition Explorer Telescope on the International Space Station?
+    - How does low-speed wear impact the operation of hydrodynamic bearings in canned motor pumps?
+    - What are the two methods developed for handling the effects of ionizing radiation aging in electrical components as part of the derating strategy?
+    - What issue was discovered during trial runs of the Hammering Mechanism related to the Wire Helix?
+    - What caused the scarcity of TiC-coated balls during bearing procurement due to the coating process transfer from Europe to the US?
+    - What role does the X-Ray Timing and Navigation system play in NICER/SEXTANT on the ISS, including its deployment, pointing, tracking, and pulsar-based navigation?
+    - How does the MDD use an angled coupling for rotation and protection from dust?
+    - How does DAPS support NICER/SEXTANT on the ISS?
+    - What causes shock during separation nut actuation and in what order?
+    - How was the compliance of the sync cable incorporated into the ADAMS model based on bench test data?
+    - How can a Commercial off the Shelf (COTS) motor be used for flight purposes in a space environment?
+    - What type of lubrication regime was the Pennzane lubricant tested in, and how did it perform in the boundary lubrication regime during the life testing of the scan motor/encoder mechanism?
+    - What were the limitations of the 2D separation test in predicting the flight event, and what alternative approach was recommended for accurate simulation models?
+    - How are snap-through SMA-based actuators being investigated for use in support of HALE-type UAV aircraft control by NASA?
+    - How does oil contamination impact friction in mechanical contacts and lubricant transfer observations in various test conditions?
+    - How did the team adjust processes to evaluate a motor's duty cycle post-AMT system TVAC test failures to reduce risks to flight hardware and collect data for analysis?
+    - How was the cable bundle support modified to align with the SADA rotor shaft dynamic response during testing, given the constraints on design changes and focus on vibration test profile adjustments?
+    - What does the NICER/SEXTANT instrument do on the ISS and how does it work for deployment and pointing?
+    - How is the worst-case motor current during grinding determined based on the amplifier current and true motor current relationship?
+    - How can back-emf measurements help build confidence in the integrated control system model for a motor?
+    - How is the statistical distribution of the TM velocity produced by the pushing actions calculated and what are the mean and standard deviation values?
+    - How did the engineering team address the discrepancy between component test loads and actual launch and spacecraft test environments in relation to the SADA design?
+    - How did the use of NiTi in the International Space Station's Urine Processor Distillation Assembly help to address corrosion issues?
+    - What is the role of the Compression Tube in the deployment mechanism of the SMSS?
+    - How do inefficiencies from a DC power supply affect motor performance in a control system, and how can the motor model in the integrated control system be validated?
+    - How did optimizing the needle roller design in the gimbal yokes reduce friction torque in the bearings?
+    - How are mean and standard deviation of TM velocity distribution calculated?
+    - How did gaps in mating interfaces during flight designs impact Frangibolts and parts inspection?
+    - What were the results of the bushing wear test in the developmental testing for the Mars 2020 mission gearbox designs?
+    - What factors led to the selection of a linear actuator for the lifting process in the design of the Rover Lift Mechanism (RLM)?
+    - How was torque testing performed on the rotor-mounting options during the assembly process?
+    - What explanation did the manufacturer provide for the changes in total resistance of the conductive plastic pots after thermal cycling?
+    - How did the testing reveal that flight 3 did not meet the required operational torque to friction torque ratio of 3?
+    - What prompted the need for lubricant life testing on Mars 2020 gearbox designs, and what were the results?
+    - How did the RLM's leadscrew-based linear actuator design tackle dust exposure and space constraints on Mars?
+    - What was the purpose of the bearing lubricant life testing in the Mars 2020 gearbox designs, and how did it help the project succeed?
+    - How do bushings and rolling element bearings differ in stress tolerances in a planetary gearbox?
+    - How was the issue of extensometer slipping addressed during testing?
+    - How did the addition of a thermal sleeve improve heat transfer in the compressor system?
+    - Why is it important to perform prototype testing with flight-like hardware configurations before adopting a heritage design?
+    - What impact does run-in have on bearing lubricant distribution, as observed through thermal conductance measurements?
+    - How does the centering reaction at the C-hook pickup axis change as the cable angle deviates from vertical?
+    - How are turnbuckles used in the deployment of the solar panels in the SARRS configuration?
+    - How does the need for continuous downlink affect the requirement for waveguide rotary joints in the spacecraft antenna system?
+    - What steps are needed before integrating a heritage design into a project, including trade studies, drawing reviews, test data, project requirements verification, failure mode analysis, and prototype testing with flight-like hardware configurations?
+    - What factors led to the shear disk rupture in the mechanism failure investigation, including temperature profiles, actuator torque measurements, and re-testing?
+    - How does the FD04 Frangibolt actuator work in opening the REXIS radiation cover while meeting thermal isolation and joint design needs?
+    - How does the backup system in the translation drive assembly work in case of a primary system failure and what enables disengagement of the failed drive for the backup system to take over?
+    - How were the mass and volume requirements for the Nanorover optimized for the MUSES C mission?
+    - What is the functioning principle of Pyroalliance separation nuts?
+    - How were resistive position sensors utilized in the design of the SWAN Sensor Unit's periscope mechanism for the SOHO project?
+    - What is the purpose of grip testing in evaluating the microspine flexures' gripping capabilities?
+    - How did the design of the rocker-bridge latch prevent instability in the rover's contact with the RLM during testing?
+    - How were tab actuators integrated into the aircraft system, given wire tension and actuation challenges?
+    - What design features are emphasized in the HP3 mole-type penetrator for NASA's InSight mission, focusing on carriage design, pinching prevention, compressive loads, flexure pull-out, surface preparation, epoxy quality, and gripping force for asteroid-capture or micro-gravity drilling?
+    - How does the vibration environment affect Nanorover components and what design considerations were made?
+    - How was the stiffness of the arc in the flap actuator system design achieved to minimize launch vibration loads and prevent jamming?
+    - How does the flat spring assist in the Dragon deployer's hold down and release mechanism, particularly with the latches, Dyneema string, and door opening?
+    - What was the cause of the brake failure in the Lander Petal Actuator during the Mars Exploration Rover mission?
+    - How can the principles of lean manufacturing be applied to improve assembly efficiency in volume manufacturing processes?
+    - How does the design and functional validation of the mechanism for dual-spinning CubeSats contribute to the mission of the Micro-sized Microwave Atmospheric Satellite (MicroMAS)?
+    - What testing and evaluations has the ERA arm undergone to ensure its readiness for integration on the MLM and launch in 2015?
+    - How does contamination affect VUV optics compared to optics in other wavelengths?
+    - How does the Kevlar cord size and strain value impact cutting in the MAP SARRS thermal knife, and why is a 90-degree contact angle important?
+    - How do CMMs achieve higher accuracy than camera systems and how are inspection reports generated with CMM technology?
+    - How does the run-in process affect bearing lubricant behavior in terms of thermal conductance measurements, considering lubrication variables and bearing dynamic state?
+    - How do automated inspection systems in manufacturing improve efficiency while considering lean principles and cost in New Space programs?
+    - How did lubricant degradation impact the choice of grinding bit bearings for the SRT, considering factors like contact stress and preload?
+    - How was the Damper fluid obtained for the assembly process?
+    - Who is the author of the paper "Indirect measurement of metallic adhesion force as a function of elongation under dynamic conditions"?
+    - What is the role of the Compression Tube in the deployment mechanism of the SMSS?
+    - What is the significance of the isolation frequency in vibration isolation systems for spacecraft?
+    - How was the issue of vibration failure addressed in the QWKNUT production process?
+    - What challenges arose during the Spring Motor assembly, particularly with the heritage wave spring, bearing race interference, and mirrored Heater Resistor bolt pattern?
+    - How does the DC transducer signal affect load inertia and friction in stepper motors?
+    - How were bearing loads managed for system reliability during assembly?
+    - What is the purpose of the roving vehicle in the DSS mission by Helsinki University of Technology; Automation Technology Laboratory, and how does its design combine passive and active operations?
+    - What design requirements were set for the scanner assembly in the MicroMAS spacecraft to ensure continuous operation in space for one year with a max torque of 7 mN-m?
+    - How have Diamond-Like Carbon coatings been studied and utilized in the development of space mechanisms lubrication solutions?
+    - How does the Mass Spectrometer Instrument on the Mars Organic Molecule Analyzer (MOMA) facilitate the analysis of Martian soil samples?
+    - How does elevated temperature affect the sliding lifetime of hybrid Z25/MoS2 lubrication under vacuum conditions?
+    - How did the program set out to determine if the baseline or a refurbished bearing configuration could successfully meet the margined life requirements with a lower minimum operating temperature of -55¬∞C?
+    - How should significant torque margin be applied to the spring design to account for effects between the spring, the housing, and the shaft?
+    - How does the titanium screw-nut device help balance the Mars Netlander seismometer's pendulum in a vacuum, and what improvements have been made with DLC-coated nuts based on test results in various conditions?
+    - What is the MOMA Aperture Valve's role in the ExoMars 2018 Rover mission and its contribution to analyzing Martian soil samples for organic molecules?
+    - How does DLC lubrication affect motor current in screw-nut device testing for Mars Netlander seismometer development?
+    - What is the MOMA Aperture Valve's role in the ExoMars 2018 Rover mission and how does its design aid in analyzing Martian soil samples for organic molecules?
+    - How does conformity affect Hertzian pressure in bearings with varying axial loads?

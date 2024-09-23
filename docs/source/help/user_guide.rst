@@ -27,11 +27,8 @@ It is recommended to run this streamlit app locally for improved performance. Yo
 Deployed Configurations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-A deployed version of this chatbot can be found in a hugging face container called `Aerospace Chatbot <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbots>`__. This version has a pre-configured database and is ready to use under persistent storage. Refer to the `Streamlit Apps <help/streamlit_apps>`_ section for more information.
+For deployed versions, refer to :doc:`deployments`.
 
-The dockerfile used to build that space is located `here <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbots/edit/main/Dockerfile>`_.
-
-For specific details of this deployment, refer to the readme here: `Aerospace Chatbot README <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_ams/blob/main/README.md>`__.
 
 Using the Backend
 ^^^^^^^^^^^^^^^^^
@@ -49,17 +46,6 @@ or
     pip install aerospace-chatbot
 
 Example of how to use the backend are in the ``notebooks`` directory.
-
-Example: Aerospace Mechanisms Symposia
---------------------------------------
-
-`Aerospace Chatbot, Aerospace Mecahnisms Symposia <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_ams>`__
-
-This example uses the deployed Hugging Face model, with Aerospace Mechanisms Symposia papers as input. The `Aerospace Mechanisms Symposia <https://aeromechanisms.com/>`__. There are symposia papers in PDF form going back to the year 1966 with a release every 1-2 years. Each symposia release has roughly 20-40 papers detailing design, test, analysis, and lessons learned for space mechanism design. The full paper index for past symposia is available `here <https://aeromechanisms.com/paper-index/>`__.
-
-The symposia papers are a valuable resource for the aerospace community, but the information is locked in PDF form and not easily searchable. This example demonstrates how to query, search, and ask a Large Language Model (LLM) questions about the content in these papers.
-
-A key feature of this tool is returning source documentation when the LLM provides an answer. This improves trust, enables verification, and allows users to read the original source material.
 
 Compatibility Matrix
 --------------------

@@ -3,6 +3,6 @@ Aerospace discipline-specific chatbots and AI tools.
 Help docs here: https://aerospace-chatbot.readthedocs.io/en/latest/
 
 ## Deployments
-There is a deployment of Aerospace Chatbot, loaded with all Aerospace Mecahnism Symposia papers located in [/data/AMS/](https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS).
+See https://aerospace-chatbot.readthedocs.io/en/latest/help/deployments.html for details.
 
-[Aerospace Chatbot, Aerospace Mechanisms Symposia](https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_ams)
+There is a deployment of Aerospace Chatbot, loaded with Aerospace Mecahnism Symposia papers going back to 2020 available as a demo. For access to this demo, please reach out to `dsm@danmueller.pro <mailto:dsm@danmueller.pro>`__ for an invite link.

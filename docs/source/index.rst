@@ -9,6 +9,7 @@ Aerospace Chatbot
 
             help/overview
             help/user_guide
+            help/deployments
             help/streamlit_apps
             help/configs
             help/eval
