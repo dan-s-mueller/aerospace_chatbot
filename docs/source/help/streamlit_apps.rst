@@ -76,10 +76,6 @@ To deploy Aerospace Chatbot locally, run steramlit with the following commands:
 .. note::
   The data visualization functionality will only work with local deployments for now.
 
-Hugging Face Spaces
+Demos
 ^^^^^^^^^^^^^^^^^^^
-`Hugging Face <https://huggingface.co/>`__ is an open source platform for deploying machine learning models. The Aerospace Chatbot is deployed on Hugging Face using `Spaces <https://huggingface.co/spaces>`__. Spaces are apps which containerize machine learning models and LLMs. 
-
-Aerospace Chatbot is deployed on Hugging Face spaces with pre-loaded Aerospace Mechanisms Symposia papers. By default, the papers which can be queried are those which are committed to the Aerospace Chatbot repository here: `data/AMS <https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS>`__.
-
-This app is available at `Aerospace Chatbot <https://huggingface.co/llm/rag-chatbot>`__.
+Refer to :doc:`deployments`.
