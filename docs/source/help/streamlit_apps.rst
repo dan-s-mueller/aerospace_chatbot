@@ -55,13 +55,13 @@ Visualize Data
 This app allows visualization using `Spotlight from Renumics <https://renumics.com/open-source/spotlight/>`__. A new browser will open with the visualization. The data is loaded from the database and the settings are applied from the sidebar.
 
 .. note::
-  Note that this functionality is only available for locally deployed applications for now. For a static version of this functionality, refer to this Hugging Face space: `Aerospace Chatbot AMS, Visualize <https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize>`__. This space allows users to visualize 400 character chunks of aerospace mechanism symposia papers from the years 2000-2020.
+  Note that this functionality is only available for locally deployed applications for now.
 
 Deployments
 -----------
 Local
 ^^^^^
-It is recommended for users to deploy locally if you want to test the app with your own data. The Hugging Face deployment is set up with a preconfigured database using Aerospace Mechanism Symposia data.
+It is recommended for users to deploy locally if you want to test the app with your own data.
 
 To deploy Aerospace Chatbot locally, run steramlit with the following commands:
 

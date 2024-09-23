@@ -4,7 +4,8 @@ Below are standard deployments to test the functionality of the Aerospace Chatbo
 
 Aerospace Mechanisms
 --------------------
-For access to a demo of this chatbot, please reach out to `dsm@danmueller.pro <mailto:dsm@danmueller.pro>`__ for an invite link.
+.. note::
+    For access to a demo of this chatbot, please reach out to `dsm@danmueller.pro <mailto:dsm@danmueller.pro>`__ for an invite link.
 
 This chatbot is utilizes Aerospace Mechanisms Symposia papers as input back to 2020. You can see all of the papers which are indexed to the chatbot `here <https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS>`__. 
 
