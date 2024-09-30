@@ -25,7 +25,7 @@ if user=="admin":
     st.markdown("""
     This tool was developed based on all [Aerospace Mecahnisms Symposia](https://aeromechanisms.com/past-symposia/) papers published since 2000. 
     Use of this tool using other data sources is possible but hasn't been extensively tested.
-    Each paper has had Optical Character Recognition (OCR) reportofmed using the latest release of [OCR my PDF](https://ocrmypdf.readthedocs.io/en/latest/).
+    Each paper has had Optical Character Recognition (OCR) reperformed using the latest release of [OCR my PDF](https://ocrmypdf.readthedocs.io/en/latest/).
 
     All of these papers are available in the following location: https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS
     """)
