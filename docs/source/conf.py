@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(basedir, 'tests'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Aerospace Chatbot'
-copyright = '2024, Dan Mueller'
+copyright = '2024, Dan Mueller Consulting LLC'
 author = 'Dan Mueller'
 
 # -- Options for HTML output -------------------------------------------------
