@@ -1,27 +1,23 @@
 Aerospace Chatbot
 =================
 
-        .. toctree::
-            :hidden:
-            :maxdepth: 2
-            :caption: Functionality
-            :titlesonly:
+.. toctree::
+    :hidden:
+    :caption: Get Started
+    :titlesonly:
 
-            help/overview
-            help/user_guide
-            help/deployments
-            help/streamlit_apps
-            help/configs
-            help/eval
+    help/overview
+    help/user_guide
+    help/evaluation
 
-        .. toctree::
-            :hidden:
-            :caption: API Reference
-            :glob:
-            :titlesonly:
+.. toctree::
+    :hidden:
+    :caption: API Reference
+    :glob:
+    :titlesonly:
 
-            modules/api
-            indices_and_tables
+    modules/api
+    indices_and_tables
 
 .. rst-class:: lead
 
@@ -30,7 +26,7 @@ Aerospace Chatbot
 Deployed apps
 -------------
 
-See :doc:`deployments`.
+See :doc:`help/deployments`.
 
 Project links
 -------------

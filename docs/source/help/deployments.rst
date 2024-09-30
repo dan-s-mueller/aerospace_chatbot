@@ -1,5 +1,5 @@
 Deployments
-=================
+===========
 Below are standard deployments to test the functionality of the Aerospace Chatbot. They all have limited functionality to prevent abuse and are not intended for production use.
 
 Aerospace Mechanisms
@@ -15,7 +15,7 @@ The symposia papers are a valuable resource for the aerospace community, but the
 
 A key feature of this tool is returning source documentation when the LLM provides an answer. This improves trust, enables verification, and allows users to read the original source material.
 
-To explore the functionality of this tool, a list of questions based on the content in the papers indexed using `Ragas synthetic testset generation <https://docs.ragas.io/en/latest/getstarted/testset_generation.html>`__ was generated and is shown below. See :doc:`eval` for details.
+To explore the functionality of this tool, a list of questions based on the content in the papers indexed using `Ragas synthetic testset generation <https://docs.ragas.io/en/latest/getstarted/testset_generation.html>`__ was generated and is shown below. See :doc:`evaluation` for details.
 
 .. dropdown:: Aerospace Mechanism Example Questions
 

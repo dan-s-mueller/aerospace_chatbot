@@ -103,4 +103,4 @@ How it works (frontend)
 -----------------------
 The frontend is what the user interfaces with. `Streamlit <https://streamlit.io/>`__ is used to create the frontend.
 
-Refer to :doc:`streamlit_apps`.
+Refer to :doc:`functionality`.

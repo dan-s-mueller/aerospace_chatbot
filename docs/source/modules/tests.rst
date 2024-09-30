@@ -1,9 +1,5 @@
 Tests
 =====
-.. toctree::
-   :maxdepth: 4
-
-----
 
 All test are located in the ``tests`` directory.
 

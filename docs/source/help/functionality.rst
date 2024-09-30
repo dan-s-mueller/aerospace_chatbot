@@ -1,9 +1,11 @@
-Streamlit Apps
-==============
+Functionality
+=============
+.. note::
+  Some functionality may be limited for non-locally deployed applications (e.g. demos), which by default uses `AEROSPACE_CHATBOT_CONFIG=tester`.
 
-Structure
----------
-The Streamlit app is initialized from ``app.py``. The sidebar lists other apps which are used to manage databases, chat with PDF data, and visualize the PDF data. Each of the apps, are described below. The available models and functionality is set by the `AEROSPACE_CHATBOT_CONFIG` environment variable.
+Basic Functionality
+-------------------
+The Streamlit app is initialized from ``app.py`` or via an access link to a pre-deployed container. The sidebar lists features which are used to manage databases, chat with PDF data, and visualize the PDF data. Each of the features, are described below. The available models and functionality is set by the `AEROSPACE_CHATBOT_CONFIG` environment variable.
 
 Sidebar
 ^^^^^^^
@@ -28,7 +30,8 @@ The home page has reference information as well as an overview of the keys and d
 
 Database Processing
 ^^^^^^^^^^^^^^^^^^^
-This app is restricted to users who have access. Access is controlled and described in the :doc:`configs` section.
+.. note::
+  This app is restricted use with `AEROSPACE_CHATBOT_CONFIG=admin`. See :doc:`configs` for details.
 
 This app is used to manage databases. You can add, delete, and update databases. There are options available to export intermediate files for debugging or further processing.
 
@@ -52,9 +55,8 @@ When a query is made, the responses are stored in a separate vector database. Th
 
 Sidebar Options
 """""""""""""""
-The sidebar option for the chatbot app is extensive. For demos, fewer features are available.
-
 .. note::
+  This app has restricted fucntionality when used with `AEROSPACE_CHATBOT_CONFIG=tester`. See :doc:`configs` for details.
   Secret keys are not required in demos. Inputting new secret keys will overwrite the existing ones, but are not saved.
 
 .. image:: ../images/chatbot_db_embedding_rag.png
@@ -84,30 +86,40 @@ The sidebar option for the chatbot app is extensive. For demos, fewer features a
 
 Visualize Data
 ^^^^^^^^^^^^^^
+.. note::
+  This app is restricted use with `AEROSPACE_CHATBOT_CONFIG=admin`. See :doc:`configs` for details.
+
 This app allows visualization using `Spotlight from Renumics <https://renumics.com/open-source/spotlight/>`__. A new browser will open with the visualization. The data is loaded from the database and the settings are applied from the sidebar.
 
-.. note::
-  Note that this functionality is only available for locally deployed applications for now.
+Advanced functionality
+----------------------
 
-Deployments
------------
-Local
-^^^^^
-It is recommended for users to deploy locally if you want to test the app with your own data.
+Index Types
+^^^^^^^^^^^
 
-To deploy Aerospace Chatbot locally, run steramlit with the following commands:
+RAGatouille
+"""""""""""
 
-.. code-block:: bash
+RAGatouille docs are located here:
+- `Github Repository <https://github.com/bclavie/RAGatouille>`__
+- `API docs <https://ben.clavie.eu/ragatouille/api/#ragatouille.RAGPretrainedModel.RAGPretrainedModel.index>`__
 
-    poetry config virtualenvs.in-project true
-    poetry install
-    source .venv/bin/activate
-    cd ./app
-    streamlit run Home.py
+This functionality will create an indexed database using ColBERT late-interaction retrieval. For each document chunk which is uploaded it will take approximately 1-2 seconds. To not exceed context limitations of ColBERT, each document provided will be split into 256 token chunks. 
 
-.. note::
-  The data visualization functionality will only work with local deployments for now.
+RAG Types
+^^^^^^^^^^
 
-Demos
-^^^^^^^^^^^^^^^^^^^
-Refer to :doc:`deployments`.
+Parent-Child RAG
+""""""""""""""""
+
+`Under construction`
+
+Summary RAG
+"""""""""""
+
+`Under construction`
+
+Data Visualization
+^^^^^^^^^^^^^^^^^^
+
+`Under construction`
