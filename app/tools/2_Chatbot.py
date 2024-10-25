@@ -110,7 +110,7 @@ if prompt := st.chat_input('Prompt here'):
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.ai_response
             message_placeholder.markdown(ai_response)
-            st.write("**Alternative questions:** \n\n\n"+
+            st.info("**Alternative questions:** \n\n\n"+
                      st.session_state.qa_model_obj.generate_alternative_questions(prompt))
 
             t_delta=time.time() - t_start
