@@ -2,10 +2,14 @@ import os, sys, time
 import streamlit as st
 
 from langchain_community.vectorstores import Pinecone
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+
+import nltk # Do before ragatioulle import to avoid logs
+nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
 
 sys.path.append('../../src/aerospace_chatbot')  # Add package to path
@@ -99,7 +103,6 @@ if prompt := st.chat_input('Prompt here'):
             if st.session_state.message_id>1:   # Chat after first message and initialization
                 # Update LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
-
                 st.session_state.qa_model_obj.update_model(llm)
             
             st.write('*Searching vector database, generating prompt...*')

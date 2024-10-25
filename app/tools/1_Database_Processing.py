@@ -1,7 +1,6 @@
 import os, sys, time
 import glob
 import streamlit as st
-import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 

@@ -10,7 +10,8 @@ import chromadb
 from chromadb import PersistentClient
 from pinecone import Pinecone as pinecone_client, ServerlessSpec
 from langchain_pinecone import PineconeVectorStore
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings

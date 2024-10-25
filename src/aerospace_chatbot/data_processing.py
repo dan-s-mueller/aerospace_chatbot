@@ -18,7 +18,8 @@ import json, jsonlines
 import streamlit as st
 
 from langchain_pinecone import PineconeVectorStore
-from langchain_community.vectorstores import Chroma
+# from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -34,6 +35,8 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 
+import nltk # Do before ragatioulle import to avoid logs
+nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
 
 from renumics import spotlight

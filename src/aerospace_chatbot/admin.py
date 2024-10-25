@@ -15,6 +15,9 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+
+import nltk # Do before ragatioulle import to avoid logs
+nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
 
 class SecretKeyException(Exception):
