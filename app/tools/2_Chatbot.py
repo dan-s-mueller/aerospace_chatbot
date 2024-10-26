@@ -1,4 +1,4 @@
-import os, sys, time
+import os, sys, time, ast
 import streamlit as st
 
 from langchain_community.vectorstores import Pinecone
@@ -14,7 +14,6 @@ from ragatouille import RAGPretrainedModel
 
 sys.path.append('../../src/aerospace_chatbot')  # Add package to path
 import admin, queries
-
 
 def _reset_conversation():
     """
@@ -109,6 +108,7 @@ if prompt := st.chat_input('Prompt here'):
             st.write(f"*Query added to query database: {sb['index_selected']+'-queries'}*")
             st.session_state.qa_model_obj.query_docs(prompt)
             ai_response=st.session_state.qa_model_obj.ai_response
+
             message_placeholder.markdown(ai_response)
             st.info("**Alternative questions:** \n\n\n"+
                      st.session_state.qa_model_obj.generate_alternative_questions(prompt))
@@ -116,6 +116,31 @@ if prompt := st.chat_input('Prompt here'):
             t_delta=time.time() - t_start
             status.update(label='Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)
             
+        # Create a dropdown box with hyperlinks to PDFs and their pages
+        if st.session_state.qa_model_obj.sources:
+            sources = st.session_state.qa_model_obj.sources[-1]
+            if sources:
+                with st.expander("View Source Documents",expanded=True):
+                    for source in sources:
+                        page = source.get('page')
+                        pdf_source = source.get('source')
+                        
+                        # Parse string representations of lists
+                        try:
+                            page = ast.literal_eval(page) if isinstance(page, str) else page
+                            pdf_source = ast.literal_eval(pdf_source) if isinstance(pdf_source, str) else pdf_source
+                        except (ValueError, SyntaxError):
+                            # If parsing fails, keep the original value
+                            pass
+
+                        # Extract first element if it's a list
+                        page = page[0] if isinstance(page, list) and page else page
+                        pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
+                        
+                        if pdf_source and page is not None:
+                            pdf_path = f"../data/AMS/{pdf_source}"
+                            st.markdown(f"[{pdf_source}](file://{os.path.abspath(pdf_path)}) - Page {page}")
+
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
 
 # Add reset button

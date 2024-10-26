@@ -184,20 +184,31 @@ class QA_Model:
         # Retrieve memory, invoke chain
         self.memory.load_memory_variables({})
 
-        # TODO add error checking for max token length of a given model.
-        self.result = self.conversational_qa_chain.invoke({'question': query})
+        # Add answer to response, create an array as more prompts come in
+        answer_result = self.conversational_qa_chain.invoke({'question': query})
+        if not hasattr(self, 'result') or self.result is None:
+            self.result = [answer_result]
+        else:
+            self.result.append(answer_result)
 
-        # Add sources to response
-        self.sources = '\n'.join(str(data.metadata) for data in self.result['references'])
+        # Add sources to response, create an array as more prompts come in
+        answer_sources = [data.metadata for data in self.result[-1]['references']]
+        if not hasattr(self, 'sources') or self.sources is None:
+            self.sources = [answer_sources]
+        else:
+            self.sources.append(answer_sources)
+
+        # Add answer to memory
         if self.llm.__class__.__name__=='ChatOpenAI':
-            self.ai_response = self.result['answer'].content + '\n\nSources:\n' + self.sources
+            # self.ai_response = self.result[-1]['answer'].content + '\n\nSources:\n' + '\n'.join(str(source) for source in answer_sources)
+            self.ai_response = self.result[-1]['answer'].content    # Sources captured in gui now
         else:
             raise NotImplementedError
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
         # If ChromaDB type, upsert query into query database
         if self.index_type=='ChromaDB':
-            self.query_vectorstore.add_documents([_question_as_doc(query, self.result)])
+            self.query_vectorstore.add_documents([_question_as_doc(query, self.result[-1])])
         
     def update_model(self,
                      llm:ChatOpenAI):
