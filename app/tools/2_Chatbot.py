@@ -34,7 +34,7 @@ def _reset_conversation():
     st.session_state.pdf_urls = []
     return None
 
-def extract_pages_from_pdf(url, target_page, page_range=5):
+def _extract_pages_from_pdf(url, target_page, page_range=5):
     # Download extracted relevant section of the PDF file
     response = requests.get(url)
     pdf_data = response.content
@@ -44,7 +44,7 @@ def extract_pages_from_pdf(url, target_page, page_range=5):
     extracted_doc = fitz.open()  # New PDF for extracted pages
 
     # Calculate the range of pages to extract
-    start_page = max(target_page - page_range, 0)
+    start_page = max(target_page, 0)
     end_page = min(target_page + page_range, doc.page_count - 1)
 
     # Extract specified pages
@@ -57,7 +57,7 @@ def extract_pages_from_pdf(url, target_page, page_range=5):
     doc.close()
     return extracted_pdf
 
-def get_pdf(url):
+def _get_pdf(url):
     # Download full PDF file
     response = requests.get(url)
     pdf_data = response.content
@@ -106,6 +106,8 @@ if 'messages' not in st.session_state:
 for message in st.session_state.messages:
     with st.chat_message(message['role']):
         st.markdown(message['content'])
+if 'pdf_urls' not in st.session_state:
+    st.session_state.pdf_urls = []
 
 # Define chat
 if prompt := st.chat_input('Prompt here'):
@@ -157,13 +159,14 @@ if prompt := st.chat_input('Prompt here'):
                      st.session_state.qa_model_obj.generate_alternative_questions(prompt))
 
             t_delta=time.time() - t_start
-            status.update(label='Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)
+            status.update(label=':white_check_mark: Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)
             
         # Create a dropdown box with hyperlinks to PDFs and their pages
-        if st.session_state.qa_model_obj.sources[-1]:
-            with st.expander("View Source Documents",expanded=True):
-                pdf_urls = []
+        with st.container():
+            with st.spinner('Bring you source documents...'):
+                st.write(":notebook: Source Documents")
                 for source in st.session_state.qa_model_obj.sources[-1]:
+                    st.session_state.pdf_urls=[]
                     page = source.get('page')
                     pdf_source = source.get('source')
                     
@@ -180,41 +183,25 @@ if prompt := st.chat_input('Prompt here'):
                     pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
                     
                     if pdf_source and page is not None:
-                        pdf_urls.append(f"https://storage.googleapis.com/ams-chatbot-pdfs/{pdf_source}")
-                        st.markdown(f"- [{pdf_source}](https://storage.googleapis.com/ams-chatbot-pdfs/{pdf_source}) - Page {page}")
-            # Store pdf_urls in session state
-            st.session_state.pdf_urls = pdf_urls
+                        selected_url = f"https://storage.googleapis.com/ams-chatbot-pdfs/{pdf_source}"
+                        st.session_state.pdf_urls.append(selected_url)
+                        st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
+                        # Example PDF selection and page input
+                        # selected_url = st.selectbox("Select a PDF to preview:", st.session_state.pdf_urls)
+                        # target_page = st.number_input("Enter the target page:", min_value=1, value=10) - 1
+
+                        with st.expander(":memo: View"):
+                            tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
+                            # Extract and display the pages when the user clicks
+                            full_pdf = _get_pdf(selected_url)
+                            extracted_pdf = _extract_pages_from_pdf(selected_url, page)
+                            with tab1:
+                                pdf_viewer(extracted_pdf,width=1000,height=1200,render_text=True)
+                            with tab2:
+                                pdf_viewer(full_pdf, width=1000,height=1200,render_text=True)
 
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
-
-if 'pdf_urls' in st.session_state and st.session_state.pdf_urls:
-    # Page viewer
-    with st.expander("View Source Documents", expanded=True):
-        # Example PDF selection and page input
-        selected_url = st.selectbox("Select a PDF to preview:", st.session_state.pdf_urls)
-        target_page = st.number_input("Enter the target page:", min_value=1, value=10) - 1
-
-        # Extract and display the pages when the user clicks
-        if st.button("Show Pages"):
-            full_pdf = get_pdf(selected_url)
-            extracted_pdf = extract_pages_from_pdf(selected_url, target_page)
-
-            # Display or download the PDF
-            st.download_button("Download Extracted Pages", data=extracted_pdf, file_name="extracted_pages.pdf")
-            
-            st.write("Here are your extracted pages:")
-            pdf_viewer(extracted_pdf,
-                    width=1000,
-                    height=1200,
-                    scroll_to_page=5)
-            
-            st.write("Here is the full PDF:")
-            pdf_viewer(full_pdf,
-                    width=1000,
-                    height=1200,
-                    scroll_to_page=target_page)
-
-
+        
 # Add reset button
 if st.button('Restart session'):
     _reset_conversation()
