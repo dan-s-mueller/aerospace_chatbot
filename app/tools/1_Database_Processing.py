@@ -44,7 +44,7 @@ st.markdown('PDFs found: '+str(docs))
 st.markdown('Number of PDFs found: ' + str(len(docs)))
 
 # Set database name
-index_appendix=st.text_input('Appendix for index name','ams')
+index_appendix=st.text_input('Appendix for index name','mch')
 index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
 
 # Add an expandable box for options

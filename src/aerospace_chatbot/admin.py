@@ -22,7 +22,6 @@ from ragatouille import RAGPretrainedModel
 
 import fitz  # PyMuPDF
 import requests
-from streamlit_pdf_viewer import pdf_viewer
 
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors.
