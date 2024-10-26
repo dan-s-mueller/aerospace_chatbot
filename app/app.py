@@ -9,14 +9,12 @@ nav_bar=os.getenv('AEROSPACE_CHATBOT_CONFIG')
 tool_dir="tools"
 
 if nav_bar=="admin":
-    pages=[st.Page(os.path.join(tool_dir,"0_Home.py")),
-           st.Page(os.path.join(tool_dir,"1_Database_Processing.py")),
-           st.Page(os.path.join(tool_dir,"2_Chatbot.py")),
-           st.Page(os.path.join(tool_dir,"3_Visualize_Data.py"))]
+    pages=[st.Page(os.path.join(tool_dir,"Chatbot.py")),
+           st.Page(os.path.join(tool_dir,"Database_Processing.py")),
+           st.Page(os.path.join(tool_dir,"Visualize_Data.py"))]
     st.session_state.config_file=os.path.join('../','config','config_admin.json')
 elif nav_bar=="tester":
-    pages=[st.Page(os.path.join(tool_dir,"0_Home.py")),
-           st.Page(os.path.join(tool_dir,"2_Chatbot.py"))]
+    pages=[st.Page(os.path.join(tool_dir,"Chatbot.py"))]
     st.session_state.config_file=os.path.join('../','config','config_tester.json')
 pg=st.navigation(pages)
 
