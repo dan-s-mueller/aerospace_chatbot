@@ -45,6 +45,7 @@ requests = "^2.32.3"
 beautifulsoup4 = "^4.12.3"
 selenium = "^4.22.0"
 cleanvision = "^0.3.6"
+streamlit-pdf-viewer = "^0.0.19"
 
 [build-system]
 requires = ["poetry-core"]
