@@ -1,12 +1,6 @@
 import os, sys, time
 import glob
 import streamlit as st
-import yaml
-from yaml.loader import SafeLoader
-
-from langchain_openai import OpenAIEmbeddings
-from langchain_voyageai import VoyageAIEmbeddings
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, data_processing

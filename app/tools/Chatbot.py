@@ -2,16 +2,6 @@ import os, sys, time, ast
 import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
 
-from langchain_community.vectorstores import Pinecone
-from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain_voyageai import VoyageAIEmbeddings
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-
-import nltk # Do before ragatioulle import to avoid logs
-nltk.download('punkt', quiet=True)
-from ragatouille import RAGPretrainedModel
-
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, queries
 
