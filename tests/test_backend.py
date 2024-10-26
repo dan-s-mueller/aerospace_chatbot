@@ -515,7 +515,7 @@ def test_initialize_database_pinecone(monkeypatch,setup_fixture):
 
     test_query_params={'index_type':'Pinecone',
                        'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
+                       'embedding_name': 'text-embedding-3-large'}
     query_model=parse_test_model('embedding', test_query_params, setup_fixture)
 
     # Test with environment variable local_db_path

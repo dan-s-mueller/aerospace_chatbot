@@ -101,7 +101,7 @@
     {
         "index_type": "Pinecone",
         "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
+        "embedding_name": "text-embedding-3-large",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-4o-mini",
