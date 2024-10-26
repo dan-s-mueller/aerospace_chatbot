@@ -12,7 +12,7 @@ import nltk # Do before ragatioulle import to avoid logs
 nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
 
-sys.path.append('../../src/aerospace_chatbot')  # Add package to path
+sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, queries
 
 def _reset_conversation():
@@ -43,12 +43,19 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
                                       'secret_keys':True})
 
 # Add expander with functionality details.
-with st.expander('''What's under the hood?'''):
-    st.markdown('''
-    This chatbot will look up from all Aerospace Mechanism Symposia in the following location: https://github.com/dan-s-mueller/aerospace_chatbot/tree/main/data/AMS
+with st.expander('''Helpful Information'''):
+    st.info("""
+            * [Help Docs](https://aerospace-chatbot.readthedocs.io/en/latest/index.html)
+            * [Code Repository](https://github.com/dan-s-mueller/aerospace_chatbot)
+            * For questions and problem reporting, please create an issue [here](https://github.com/dan-s-mueller/aerospace_chatbot/issues/new)
+            """)
+    st.subheader("Aerospace Mechanisms Chatbot")
+    st.markdown("""
+    This is a beta version vesion of the Aerospace Chatbot. The tool comes loaded with a subset of the [Aerospace Mecahnisms Symposia](https://aeromechanisms.com/past-symposia/) papers. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)
     
-    A long list of example questions for the Aerospace Mechanisms chatbot, with other details is located here: https://aerospace-chatbot.readthedocs.io/en/latest/help/deployments.html
-    ''')
+    To enable optimal retrieval, each paper has had Optical Character Recognition (OCR) reperformend using the latest release of [OCR my PDF](https://ocrmypdf.readthedocs.io/en/latest/).
+
+    """)
 
 # Add reset option for query database
 reset_query_db=False
