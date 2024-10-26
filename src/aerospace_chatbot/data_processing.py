@@ -1,5 +1,3 @@
-from prompts import SUMMARIZE_TEXT
-
 import os, re, shutil
 import hashlib
 from pathlib import Path
@@ -39,7 +37,6 @@ nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
 
 from renumics import spotlight
-from renumics.spotlight import dtypes as spotlight_dtypes
 
 import pandas as pd
 import numpy as np
@@ -48,8 +45,7 @@ from sklearn.cluster import KMeans
 from datasets import Dataset
 
 import admin
-from prompts import CLUSTER_LABEL
-import time
+from prompts import CLUSTER_LABEL, SUMMARIZE_TEXT
 
 def load_docs(index_type:str,
               docs:List[str],

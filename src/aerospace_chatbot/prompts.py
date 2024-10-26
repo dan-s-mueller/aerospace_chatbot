@@ -1,4 +1,3 @@
-# from langchain import hub
 from langchain.prompts.prompt import PromptTemplate
 
 # CONDENSE_QUESTION_PROMPT = hub.pull("dmueller/ams-chatbot-qa-condense-history")

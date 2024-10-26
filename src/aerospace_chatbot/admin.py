@@ -1,7 +1,3 @@
-import data_processing
-from prompts import TEST_QUERY_PROMPT
-
-import inspect
 import os
 import json
 import streamlit as st
@@ -20,8 +16,10 @@ import nltk # Do before ragatioulle import to avoid logs
 nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
 
-import fitz  # PyMuPDF
+import fitz
 import requests
+
+import data_processing
 
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors.

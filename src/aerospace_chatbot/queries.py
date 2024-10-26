@@ -1,7 +1,4 @@
-import data_processing
-
 import os
-import re
 from pathlib import Path
 
 import openai
@@ -18,7 +15,6 @@ from langchain_chroma import Chroma
 
 from langchain.memory import ConversationBufferMemory
 
-from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.storage import LocalFileStore
 

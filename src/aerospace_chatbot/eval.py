@@ -1,19 +1,8 @@
-import os, sys
+import os
 import json
 from pathlib import Path
-import pickle
 
-from ragas.testset import TestsetGenerator
-from ragas import RunConfig
 from dotenv import load_dotenv,find_dotenv
-import chromadb
-from chromadb import PersistentClient
-from pinecone import Pinecone as pinecone_client, ServerlessSpec
-from langchain_pinecone import PineconeVectorStore
-from langchain_chroma import Chroma
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_voyageai import VoyageAIEmbeddings
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_core.documents import Document
 import pandas as pd
 
@@ -21,17 +10,12 @@ from ragas import evaluate
 from ragas.metrics import answer_correctness, faithfulness, context_recall
 from datasets import Dataset
 
-from renumics import spotlight
-from renumics.spotlight import Embedding
 import pandas as pd
 
 from umap import UMAP
 import numpy as np
 
-# Import local packages
-sys.path.append('../src/aerospace_chatbot')
-import queries
-import data_processing
+import queries, data_processing
 
 # TODO after tests are written, write docstrings
 
