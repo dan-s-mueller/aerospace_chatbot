@@ -20,6 +20,10 @@ import nltk # Do before ragatioulle import to avoid logs
 nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
 
+import fitz  # PyMuPDF
+import requests
+from streamlit_pdf_viewer import pdf_viewer
+
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors.
 
@@ -706,6 +710,40 @@ def st_setup_page(page_title: str, home_dir:str, config_file: str, sidebar_confi
            'db_folder_path':db_folder_path}
 
     return paths,sb,secrets
+def extract_pages_from_pdf(url, target_page, page_range=5):
+    # Download extracted relevant section of the PDF file
+    response = requests.get(url)
+    pdf_data = response.content
+
+    # Load PDF in PyMuPDF
+    doc = fitz.open("pdf", pdf_data)
+    extracted_doc = fitz.open()  # New PDF for extracted pages
+
+    # Calculate the range of pages to extract
+    start_page = max(target_page, 0)
+    end_page = min(target_page + page_range, doc.page_count - 1)
+
+    # Extract specified pages
+    for i in range(start_page, end_page + 1):
+        extracted_doc.insert_pdf(doc, from_page=i, to_page=i)
+
+    # Save the extracted pages to a new PDF file in memory
+    extracted_pdf = extracted_doc.tobytes()
+    extracted_doc.close()
+    doc.close()
+    return extracted_pdf
+def get_pdf(url):
+    # Download full PDF file
+    response = requests.get(url)
+    pdf_data = response.content
+
+    # Load PDF in PyMuPDF
+    doc = fitz.open("pdf", pdf_data)
+
+    # Save the extracted pages to a new PDF file in memory
+    extracted_pdf = doc.tobytes()
+    doc.close()
+    return extracted_pdf
 def _format_key_status(key_status: str):
     """
     Formats the key status dictionary into a formatted string.

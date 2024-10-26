@@ -1,8 +1,8 @@
 import os, sys, time, ast
 import streamlit as st
+from streamlit_pdf_viewer import pdf_viewer
 
 from langchain_community.vectorstores import Pinecone
-# from langchain_community.vectorstores import Chroma
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
@@ -14,12 +14,6 @@ from ragatouille import RAGPretrainedModel
 
 sys.path.append('../../src/aerospace_chatbot')  # Add package to path
 import admin, queries
-
-import streamlit as st
-import fitz  # PyMuPDF
-import requests
-import base64
-from streamlit_pdf_viewer import pdf_viewer
 
 def _reset_conversation():
     """
@@ -33,42 +27,6 @@ def _reset_conversation():
     st.session_state.messages = []
     st.session_state.pdf_urls = []
     return None
-
-def _extract_pages_from_pdf(url, target_page, page_range=5):
-    # Download extracted relevant section of the PDF file
-    response = requests.get(url)
-    pdf_data = response.content
-
-    # Load PDF in PyMuPDF
-    doc = fitz.open("pdf", pdf_data)
-    extracted_doc = fitz.open()  # New PDF for extracted pages
-
-    # Calculate the range of pages to extract
-    start_page = max(target_page, 0)
-    end_page = min(target_page + page_range, doc.page_count - 1)
-
-    # Extract specified pages
-    for i in range(start_page, end_page + 1):
-        extracted_doc.insert_pdf(doc, from_page=i, to_page=i)
-
-    # Save the extracted pages to a new PDF file in memory
-    extracted_pdf = extracted_doc.tobytes()
-    extracted_doc.close()
-    doc.close()
-    return extracted_pdf
-
-def _get_pdf(url):
-    # Download full PDF file
-    response = requests.get(url)
-    pdf_data = response.content
-
-    # Load PDF in PyMuPDF
-    doc = fitz.open("pdf", pdf_data)
-
-    # Save the extracted pages to a new PDF file in memory
-    extracted_pdf = doc.tobytes()
-    doc.close()
-    return extracted_pdf
 
 # Page setup
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -93,8 +51,9 @@ with st.expander('''What's under the hood?'''):
     ''')
 
 # Add reset option for query database
-reset_query_db = st.empty()
-reset_query_db.checkbox('Reset query database?', value=False, help='This will reset the query database used for visualization.')
+reset_query_db=False
+# reset_query_db = st.empty()
+# reset_query_db.checkbox('Reset query database?', value=False, help='This will reset the query database used for visualization.')
 
 # Set up chat history
 if 'qa_model_obj' not in st.session_state:
@@ -143,7 +102,7 @@ if prompt := st.chat_input('Prompt here'):
                                                                search_type=search_type,
                                                                local_db_path=paths['db_folder_path'],
                                                                reset_query_db=reset_query_db)
-                reset_query_db.empty()  # Remove this option after initialization
+                # reset_query_db.empty()  # Remove this option after initialization
             if st.session_state.message_id>1:   # Chat after first message and initialization
                 # Update LLM
                 llm=admin.set_llm(sb,secrets,type='prompt')
@@ -186,22 +145,20 @@ if prompt := st.chat_input('Prompt here'):
                         selected_url = f"https://storage.googleapis.com/ams-chatbot-pdfs/{pdf_source}"
                         st.session_state.pdf_urls.append(selected_url)
                         st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
-                        # Example PDF selection and page input
-                        # selected_url = st.selectbox("Select a PDF to preview:", st.session_state.pdf_urls)
-                        # target_page = st.number_input("Enter the target page:", min_value=1, value=10) - 1
 
                         with st.expander(":memo: View"):
                             tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
                             # Extract and display the pages when the user clicks
-                            full_pdf = _get_pdf(selected_url)
-                            extracted_pdf = _extract_pages_from_pdf(selected_url, page)
+                            # full_pdf = admin.get_pdf(selected_url)
+                            extracted_pdf = admin.extract_pages_from_pdf(selected_url, page)
                             with tab1:
                                 pdf_viewer(extracted_pdf,width=1000,height=1200,render_text=True)
                             with tab2:
-                                pdf_viewer(full_pdf, width=1000,height=1200,render_text=True)
+                                # pdf_viewer(full_pdf, width=1000,height=1200,render_text=True)
+                                st.write("Disabled for now...see download link above!")
 
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
-        
+
 # Add reset button
 if st.button('Restart session'):
     _reset_conversation()
