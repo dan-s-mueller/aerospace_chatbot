@@ -1,4 +1,4 @@
-import os, re, shutil
+import os, re, shutil, io
 import hashlib
 from pathlib import Path
 from typing import List, Union
@@ -158,7 +158,7 @@ def chunk_docs(docs: List[str],
             progress_percentage = i / len(docs)
             my_bar.progress(progress_percentage, text=f'Reading documents...{doc}...{progress_percentage*100:.2f}%')
         
-        # Load the document
+        # Load the document. First try as if it is a path, second try as if it is a file object 
         loader = PyPDFLoader(doc)
         doc_page_data = loader.load()
 

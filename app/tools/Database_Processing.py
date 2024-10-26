@@ -1,6 +1,7 @@
 import os, sys, time
 import glob
 import streamlit as st
+import tempfile
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, data_processing
@@ -44,10 +45,8 @@ index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + i
 # Add an expandable box for options
 with st.expander("Options",expanded=True):
     clear_database = st.checkbox('Delete existing database?',value=True)
-    batch_size_max=500
-    batch_size=100
     batch_size=st.number_input('Batch size for upsert', 
-                    min_value=1, max_value=batch_size_max, step=1, value=batch_size,
+                    min_value=1, max_value=500, step=1, value=100,
                     help='''The number of documents to upsert at a time. 
                             Useful for hosted databases (e.g. Pinecone), or those that require long processing times.
                             When using hugging face embeddings without a dedicated endpoint, batch size recommmended maximum is 32.''')
@@ -137,3 +136,36 @@ if st.button('Load docs into vector database'):
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
     st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
+
+# ---
+
+with st.expander("Upload files to existing database",expanded=True):
+    st.write("Upload parameters set to standard values, hard coded for now...standard only")
+
+    uploaded_files = st.file_uploader(
+        "Choose pdf files", accept_multiple_files=True
+    )
+    temp_files=[]
+    for uploaded_file in uploaded_files:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                temp_file.write(uploaded_file.read())
+                temp_files.append(temp_file.name)
+
+    db_list = [obj.name for obj in admin.show_chroma_collections(format=False)['message']]
+    chroma_db_name = st.selectbox('Chroma', db_list)
+
+    custom_namespace="test_upload_namespace"
+
+    # TODO get query model from chroma database
+    if st.button('Upload your docs into vector database'):
+        data_processing.load_docs(sb['index_type'],
+                        temp_files,
+                        query_model,
+                        rag_type=sb['rag_type'],
+                        index_name=chroma_db_name,
+                        n_merge_pages=2,
+                        chunk_method='None',
+                        batch_size=100,
+                        local_db_path=paths['db_folder_path'],
+                        llm=llm,
+                        show_progress=True)
