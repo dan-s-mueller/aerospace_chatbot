@@ -3,6 +3,7 @@ import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
 import chromadb
+from pinecone import Pinecone as pinecone_client
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, queries, data_processing
@@ -52,39 +53,53 @@ with st.expander('''Helpful Information'''):
 
 with st.expander("Upload files to existing database",expanded=True):
     if sb['rag_type']=="Standard":
-        st.write("Upload parameters set to standard values, hard coded for now...standard only")
+        if sb['index_type']=='Pinecone':
+            st.write("Upload parameters set to standard values, hard coded for now...standard only")
 
-        uploaded_files = st.file_uploader(
-            "Choose pdf files", accept_multiple_files=True
-        )
-        temp_files=[]
-        for uploaded_file in uploaded_files:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-                    temp_file.write(uploaded_file.read())
-                    temp_files.append(temp_file.name)
+            uploaded_files = st.file_uploader(
+                "Choose pdf files", accept_multiple_files=True
+            )
+            temp_files=[]
+            for uploaded_file in uploaded_files:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                        temp_file.write(uploaded_file.read())
+                        temp_files.append(temp_file.name)
 
-        # Retrieve the query model from the selected Chroma database
-        chroma_client = chromadb.PersistentClient(path=os.path.join(paths['db_folder_path'],'chromadb'))
-        selected_collection = chroma_client.get_collection(sb['index_selected'])
-        query_model = admin.get_query_model({'index_type':sb['index_type'],
-                                             'query_model':selected_collection.metadata['query_model'],
-                                             'embedding_name':selected_collection.metadata['embedding_model']},
-                                             {'OPENAI_API_KEY':os.getenv('OPENAI_API_KEY')})
+            # Retrieve the query model from the selected Chroma database
+            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+            selected_index = pc.Index(sb['index_selected'])
+            index_metadata = selected_index.fetch(ids=['db_metadata'])
+            index_metadata = index_metadata['vectors']['db_metadata']['metadata']
+            query_model = admin.get_query_model({'index_type':sb['index_type'],
+                                                'query_model':index_metadata['query_model'],
+                                                'embedding_name':index_metadata['embedding_model']},
+                                                {'OPENAI_API_KEY':os.getenv('OPENAI_API_KEY')})
 
-        # Upload documents to vector database selected
-        # Get subset of chunker parameters, can't store in own dict due to ChromaDB metadata limitations
-        chunk_params = {
-            key: value for key, value in selected_collection.metadata.items() 
-            if key not in ['query_model', 'embedding_model'] and value is not None    
-        }
-        if st.button('Upload your docs into vector database'):
-            data_processing.load_docs(sb['index_type'],
-                            temp_files,
-                            query_model,
-                            index_name=sb['index_selected'],
-                            local_db_path=paths['db_folder_path'],
-                            show_progress=True,
-                            **chunk_params)
+            # Generate unique identifier for user upload
+            user_upload = f"user_upload_{os.urandom(3).hex()}"
+            st.markdown(f"Your upload ID: `{user_upload}`")
+
+            # Upload documents to vector database selected
+            chunk_params = {
+                key: value for key, value in index_metadata.items() 
+                if key not in ['query_model', 'embedding_model'] and value is not None    
+            }
+            # Convert any float parameters to int to avoid type problems when chunking
+            for key, value in chunk_params.items():
+                if isinstance(value, float):
+                    chunk_params[key] = int(value)
+
+            if st.button('Upload your docs into vector database'):
+                data_processing.load_docs(sb['index_type'],
+                                temp_files,
+                                query_model,
+                                index_name=sb['index_selected'],
+                                local_db_path=paths['db_folder_path'],
+                                show_progress=True,
+                                namespace=user_upload,
+                                **chunk_params)
+        else:
+            st.error("Only Pinecone is supported for user document upload.")
     else:
         st.error("Only Standard RAG is supported for user document upload.")
 

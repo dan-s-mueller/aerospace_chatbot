@@ -1,48 +1,37 @@
-import os, re, shutil, io
+import os, re, shutil
 import hashlib
 from pathlib import Path
 from typing import List, Union
+import json, jsonlines
 import pickle
-
 from tenacity import retry, stop_after_attempt, wait_exponential
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+from datasets import Dataset
 
 from pinecone import Pinecone as pinecone_client, ServerlessSpec
-
 import chromadb
 from chromadb import PersistentClient
 
-import json, jsonlines
-
-import streamlit as st
-
 from langchain_pinecone import PineconeVectorStore
 from langchain_chroma import Chroma
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain.storage import LocalFileStore
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-
 from langchain_community.document_loaders import PyPDFLoader
-
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 
 import nltk # Do before ragatioulle import to avoid logs
 nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
-
 from renumics import spotlight
-
-import pandas as pd
-import numpy as np
-from sklearn.cluster import KMeans
-
-from datasets import Dataset
 
 import admin
 from prompts import CLUSTER_LABEL, SUMMARIZE_TEXT
@@ -61,6 +50,7 @@ def load_docs(index_type:str,
               batch_size:int=50,
               local_db_path:str='.',
               llm=None,
+              namespace=None,
               show_progress:bool=False):
     """
     Loads documents into the specified index.
@@ -80,6 +70,7 @@ def load_docs(index_type:str,
         batch_size (int, optional): The batch size for upserting documents.
         local_db_path (str, optional): The local database path.
         llm (optional): The language model to use.
+        namespace (str, optional): The namespace to use for the index when upserting.
         show_progress (bool, optional): Whether to show progress during the loading process.
 
     Returns:
@@ -116,7 +107,8 @@ def load_docs(index_type:str,
                                  chunker,
                                  batch_size=batch_size,
                                  show_progress=show_progress,
-                                 local_db_path=local_db_path)
+                                 local_db_path=local_db_path,
+                                 namespace=namespace)
     return vectorstore
 def chunk_docs(docs: List[str],
                rag_type:str='Standard',
@@ -425,8 +417,9 @@ def initialize_database(index_type: str,
 
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1,max=60))
 def upsert_docs_db(vectorstore,
-                         chunk_batch: List[Document],
-                         chunk_batch_ids: List[str]):
+                   chunk_batch: List[Document],
+                   chunk_batch_ids: List[str],
+                   namespace: str = None):
     """
     Upserts a batch of documents into a vector database. The lancghain call is identical between Pinecone and ChromaDB.
     This function handles issues with hosted database upserts or when using hugging face or other endpoint services which are less stable.
@@ -435,12 +428,17 @@ def upsert_docs_db(vectorstore,
         vectorstore (VectorStore): The VectorStore object representing the Pinecone or ChromaDB.
         chunk_batch (List[Document]): A list of Document objects representing the batch of documents to be upserted.
         chunk_batch_ids (List[str]): A list of strings representing the IDs of the documents in the batch.
-
+        namespace (str, optional): The namespace to use for the index when upserting. Only works with Pinecone, ignored otherwise.
     Returns:
         VectorStore: The updated VectorStore object after upserting the documents.
     """
-    vectorstore.add_documents(documents=chunk_batch,
-                              ids=chunk_batch_ids)
+    if namespace is not None:
+        vectorstore.add_documents(documents=chunk_batch,
+                                  ids=chunk_batch_ids,
+                                  namespace=namespace)
+    else:
+        vectorstore.add_documents(documents=chunk_batch,
+                                  ids=chunk_batch_ids)
     return vectorstore
 def upsert_docs(index_type: str, 
                 index_name: str,
@@ -448,7 +446,8 @@ def upsert_docs(index_type: str,
                 chunker: dict, 
                 batch_size: int = 50, 
                 show_progress: bool = False,
-                local_db_path: str = '.'):
+                local_db_path: str = '.',
+                namespace: str = None):
     """
     Upserts documents into the specified index.
 
@@ -460,7 +459,7 @@ def upsert_docs(index_type: str,
         batch_size (int, optional): The batch size for upserting documents.
         show_progress (bool, optional): Whether to show progress during the upsert process.
         local_db_path (str, optional): The local path to the database folder.
-
+        namespace (str, optional): The namespace to use for the index when upserting. Only works with Pinecone, ignored otherwise.
     Returns:
         tuple: A tuple containing the updated vectorstore and retriever objects.
     """
@@ -473,8 +472,13 @@ def upsert_docs(index_type: str,
                 chunk_batch = chunker['chunks'][i:i + batch_size]
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
                 
-                vectorstore = upsert_docs_db(vectorstore,
-                                             chunk_batch, chunk_batch_ids)
+                if index_type == "Pinecone":
+                    vectorstore = upsert_docs_db(vectorstore,
+                                                 chunk_batch, chunk_batch_ids,
+                                                 namespace=namespace)
+                else:
+                    vectorstore = upsert_docs_db(vectorstore,
+                                                 chunk_batch, chunk_batch_ids)
                     
                 if show_progress:
                     progress_percentage = i / len(chunker['chunks'])
