@@ -1,9 +1,11 @@
 import os, sys, time, ast
 import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
+import tempfile
+import chromadb
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
-import admin, queries
+import admin, queries, data_processing
 
 def _reset_conversation():
     """
@@ -21,7 +23,7 @@ def _reset_conversation():
 # Page setup
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
-paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
+paths,sb,secrets=admin.st_setup_page('🚀 Aerospace Chatbot',
                                      home_dir,
                                      st.session_state.config_file,
                                      {'vector_database':True,
@@ -46,6 +48,45 @@ with st.expander('''Helpful Information'''):
     To enable optimal retrieval, each paper has had Optical Character Recognition (OCR) reperformend using the latest release of [OCR my PDF](https://ocrmypdf.readthedocs.io/en/latest/).
 
     """)
+
+
+with st.expander("Upload files to existing database",expanded=True):
+    if sb['rag_type']=="Standard":
+        st.write("Upload parameters set to standard values, hard coded for now...standard only")
+
+        uploaded_files = st.file_uploader(
+            "Choose pdf files", accept_multiple_files=True
+        )
+        temp_files=[]
+        for uploaded_file in uploaded_files:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                    temp_file.write(uploaded_file.read())
+                    temp_files.append(temp_file.name)
+
+        # Retrieve the query model from the selected Chroma database
+        chroma_client = chromadb.PersistentClient(path=os.path.join(paths['db_folder_path'],'chromadb'))
+        selected_collection = chroma_client.get_collection(sb['index_selected'])
+        query_model = admin.get_query_model({'index_type':sb['index_type'],
+                                             'query_model':selected_collection.metadata['query_model'],
+                                             'embedding_name':selected_collection.metadata['embedding_model']},
+                                             {'OPENAI_API_KEY':os.getenv('OPENAI_API_KEY')})
+
+        # Upload documents to vector database selected
+        # Get subset of chunker parameters, can't store in own dict due to ChromaDB metadata limitations
+        chunk_params = {
+            key: value for key, value in selected_collection.metadata.items() 
+            if key not in ['query_model', 'embedding_model'] and value is not None    
+        }
+        if st.button('Upload your docs into vector database'):
+            data_processing.load_docs(sb['index_type'],
+                            temp_files,
+                            query_model,
+                            index_name=sb['index_selected'],
+                            local_db_path=paths['db_folder_path'],
+                            show_progress=True,
+                            **chunk_params)
+    else:
+        st.error("Only Standard RAG is supported for user document upload.")
 
 # Add reset option for query database
 reset_query_db=False

@@ -9,7 +9,7 @@ import admin, data_processing
 # Page setup
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
-paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
+paths,sb,secrets=admin.st_setup_page('📓 Database Processing',
                                      home_dir,
                                      st.session_state.config_file,
                                      {'vector_database':True,
@@ -148,49 +148,3 @@ if st.button('Load docs into vector database'):
     end_time = time.time()  # Stop the timer
     elapsed_time = end_time - start_time 
     st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
-
-# ---
-
-with st.expander("Upload files to existing database",expanded=True):
-    st.write("Upload parameters set to standard values, hard coded for now...standard only")
-
-    uploaded_files = st.file_uploader(
-        "Choose pdf files", accept_multiple_files=True
-    )
-    temp_files=[]
-    for uploaded_file in uploaded_files:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-                temp_file.write(uploaded_file.read())
-                temp_files.append(temp_file.name)
-
-    db_list = [obj.name for obj in admin.show_chroma_collections(format=False)['message']]
-    chroma_db_name = st.selectbox('Chroma', db_list)
-
-    # Retrieve the query model from the selected Chroma database
-    import chromadb
-    # chroma_client = chromadb.PersistentClient(path=paths['db_folder_path'])
-    chroma_client = chromadb.PersistentClient(path=os.path.join(paths['db_folder_path'],'chromadb'))
-    selected_collection = chroma_client.get_collection(chroma_db_name)
-    # print(collection_metadata)
-    
-    # if 'query_model' in collection_metadata:
-    #     query_model = collection_metadata['query_model']
-    #     st.write(f"Query model used by the selected database: {query_model}")
-    # else:
-    #     st.warning("Query model information not found in the database metadata. Using default query model.")
-    #     query_model = admin.get_query_model(sb, secrets)
-
-
-    # TODO get query model from chroma database
-    if st.button('Upload your docs into vector database'):
-        data_processing.load_docs(sb['index_type'],
-                        temp_files,
-                        query_model,
-                        rag_type=sb['rag_type'],
-                        index_name=chroma_db_name,
-                        n_merge_pages=2,
-                        chunk_method='None',
-                        batch_size=100,
-                        local_db_path=paths['db_folder_path'],
-                        llm=llm,
-                        show_progress=True)

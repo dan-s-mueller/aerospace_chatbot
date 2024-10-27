@@ -210,7 +210,7 @@ def chunk_docs(docs: List[str],
                     writer.write(doc_out)
         if show_progress:
             my_bar.empty()
-        return {'rag':'Standard',
+        return {'rag_type':'Standard',
                 'pages':pages,
                 'chunks':chunks, 
                 'splitters':text_splitter,
@@ -258,7 +258,7 @@ def chunk_docs(docs: List[str],
 
         if show_progress:
             my_bar.empty()
-        return {'rag':'Parent-Child',
+        return {'rag_type':'Parent-Child',
                 'pages':{'doc_ids':doc_ids,'parent_chunks':parent_chunks},
                 'chunks':chunks,
                 'splitters':{'parent_splitter':parent_splitter,'child_splitter':child_splitter},
@@ -296,7 +296,7 @@ def chunk_docs(docs: List[str],
         ]
         if show_progress:
             my_bar.empty()
-        return {'rag':'Summary',
+        return {'rag_type':'Summary',
                 'pages':{'doc_ids':doc_ids,'docs':pages},
                 'summaries':summary_docs,
                 'llm':llm,
@@ -338,13 +338,23 @@ def initialize_database(index_type: str,
     if show_progress:
         progress_text = "Database initialization..."
         my_bar = st.progress(0, text=progress_text)
+    # Embedding model type passed on, save to index metadata. This is weirdly not stored otherwise in ChromaDB or Pinecone.
+    # Save chunker metadata
     if chunker is not None:
-        chunk_params = {
+        # Cannot add objects as metadata, don't add full docs
+        index_metadata = {
             key: value for key, value in chunker.items() 
-            if key not in ['pages', 'chunks', 'summaries'] and value is not None
+            if key not in ['pages', 'chunks', 'summaries', 'splitters', 'llm'] and value is not None    
         }
-    else:
-        chunk_params = None
+    if isinstance(query_model, OpenAIEmbeddings):
+        index_metadata['query_model']= "OpenAI"
+        index_metadata['embedding_model'] = query_model.model
+    elif isinstance(query_model, VoyageAIEmbeddings):
+        index_metadata['query_model'] = "Voyage"
+        index_metadata['embedding_model'] = query_model.model
+    elif isinstance(query_model, HuggingFaceInferenceAPIEmbeddings):
+        index_metadata['query_model'] = "Hugging Face"
+        index_metadata['embedding_model'] = query_model.model_name
 
     if index_type == "Pinecone":
         if chunker is not None:
@@ -370,11 +380,11 @@ def initialize_database(index_type: str,
     elif index_type == "ChromaDB":
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
-        persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
-        vectorstore = Chroma(client=persistent_client,
-                             collection_name=index_name,
+        persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))    
+        vectorstore = Chroma(collection_name=index_name,
                              embedding_function=query_model,
-                             collection_metadata=chunk_params)
+                             collection_metadata=index_metadata,
+                             client=persistent_client)
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')   
@@ -445,7 +455,7 @@ def upsert_docs(index_type: str,
     if show_progress:
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
-    if chunker['rag'] == 'Standard':
+    if chunker['rag_type'] == 'Standard':
         if index_type == "Pinecone" or index_type == "ChromaDB":
             for i in range(0, len(chunker['chunks']), batch_size):
                 chunk_batch = chunker['chunks'][i:i + batch_size]
@@ -473,7 +483,7 @@ def upsert_docs(index_type: str,
             retriever = vectorstore.as_langchain_retriever()
         else:
             raise NotImplementedError
-    elif chunker['rag'] == 'Parent-Child':
+    elif chunker['rag_type'] == 'Parent-Child':
         if index_type == "Pinecone" or index_type == "ChromaDB":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)
@@ -498,7 +508,7 @@ def upsert_docs(index_type: str,
             raise Exception('RAGAtouille only supports standard RAG.')
         else:
             raise NotImplementedError
-    elif chunker['rag'] == 'Summary':
+    elif chunker['rag_type'] == 'Summary':
         if index_type == "Pinecone" or index_type == "ChromaDB":
             lfs_path = Path(local_db_path).resolve() / 'local_file_store' / index_name
             store = LocalFileStore(lfs_path)

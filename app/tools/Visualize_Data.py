@@ -10,7 +10,7 @@ import admin, data_processing
 # Page setup
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
-paths,sb,secrets=admin.st_setup_page('Visualize Data',
+paths,sb,secrets=admin.st_setup_page('📈 Visualize Data',
                                      home_dir,
                                      st.session_state.config_file,
                                      {'vector_database':True,
