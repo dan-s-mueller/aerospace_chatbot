@@ -27,16 +27,18 @@ if 'viewer' not in st.session_state:
 
 # Set the query model
 if sb["index_type"]=='RAGatouille':
-    raise Exception('Only index type ChromaDB is supported for this function.')
-elif sb["index_type"]=='Pinecone':
-    raise Exception('Only index type ChromaDB is supported for this function.')
+    raise Exception('RAGatouille not supported for this function.')
+# elif sb["index_type"]=='Pinecone':
+#     raise Exception('Only index type ChromaDB is supported for this function.')
 elif sb['query_model']=='OpenAI' or sb['query_model']=='Voyage':
     if sb['query_model']=='OpenAI':
         query_model=OpenAIEmbeddings(model=sb['embedding_name'],openai_api_key=secrets['OPENAI_API_KEY'])
     elif sb['query_model']=='Voyage':
         query_model=VoyageAIEmbeddings(model='voyage-2', voyage_api_key=secrets['VOYAGE_API_KEY'])
+else:
+    raise Exception('Unsupported query model for visualization.')
 
-st.info('Visualization is only functional with ChromaDB index type.')
+# st.info('Visualization is only functional with ChromaDB index type.')
 
 llm=admin.set_llm(sb,secrets)    # Set the LLM
 query_model = admin.get_query_model(sb, secrets)    # Set query model
@@ -66,6 +68,7 @@ if st.button('Visualize'):
     with st.status('Processing visualization...',expanded=True):
         st.markdown('Generating visualization data...')
         df = data_processing.get_docs_questions_df(
+            sb['index_type'],
             paths['db_folder_path'],
             sb['index_selected'],
             paths['db_folder_path'],
@@ -89,7 +92,7 @@ if st.button('Visualize'):
 
     if spotlight_viewer or st.session_state.viewer is not None: 
         st.markdown(f"Spotlight running on: {'http://'+'localhost'+':'+str(port)}")
-        st.info('Functionality only works with locally deployed versions. A version of Streamlit with a pre-loaded dataset is located here: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize')
+        st.info('Functionality only works with locally deployed versions.')
         st.session_state.viewer = data_processing.get_or_create_spotlight_viewer(df,port=port)
     else:
-        st.info('Functionality only works with locally deployed versions. A version of Streamlit with a pre-loaded dataset is located here: https://huggingface.co/spaces/ai-aerospace/aerospace_chatbot_visualize')
+        st.info('Functionality only works with locally deployed versions.')

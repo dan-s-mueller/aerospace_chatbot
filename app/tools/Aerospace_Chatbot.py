@@ -186,14 +186,16 @@ if prompt := st.chat_input('Prompt here'):
 
                         with st.expander(":memo: View"):
                             tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
-                            # Extract and display the pages when the user clicks
-                            # full_pdf = admin.get_pdf(selected_url)
-                            extracted_pdf = admin.extract_pages_from_pdf(selected_url, page)
-                            with tab1:
-                                pdf_viewer(extracted_pdf,width=1000,height=1200,render_text=True)
-                            with tab2:
-                                # pdf_viewer(full_pdf, width=1000,height=1200,render_text=True)
-                                st.write("Disabled for now...see download link above!")
+                            try:
+                                # Extract and display the pages when the user clicks
+                                extracted_pdf = admin.extract_pages_from_pdf(selected_url, page)
+                                with tab1:
+                                    pdf_viewer(extracted_pdf,width=1000,height=1200,render_text=True)
+                                with tab2:
+                                    # pdf_viewer(full_pdf, width=1000,height=1200,render_text=True)
+                                    st.write("Disabled for now...see download link above!")
+                            except Exception as e:
+                                st.warning("Unable to load PDF preview. The file may no longer exist or be inaccessible. Contact support if this issue persists.")
 
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
 

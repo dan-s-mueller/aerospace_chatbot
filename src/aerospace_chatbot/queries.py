@@ -117,7 +117,8 @@ class QA_Model:
         self.retriever=None
 
         # Define retriever search parameters
-        search_kwargs = _process_retriever_args(self.search_type,
+        search_kwargs = _process_retriever_args(self.index_type,
+                                                self.search_type,
                                                 self.k,
                                                 self.fetch_k)
 
@@ -131,7 +132,7 @@ class QA_Model:
                                                              init_ragatouille=False)  
         
         # Iniialize a database to capture queries in a temp database
-        if self.index_type=='ChromaDB':
+        if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
             self.query_vectorstore=data_processing.initialize_database(self.index_type,
                                                                  self.index_name+'-queries',
                                                                  self.query_model,
@@ -202,7 +203,7 @@ class QA_Model:
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
         # If ChromaDB type, upsert query into query database
-        if self.index_type=='ChromaDB':
+        if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
             self.query_vectorstore.add_documents([_question_as_doc(query, self.result[-1])])
         
     def update_model(self,
@@ -316,13 +317,15 @@ def _define_qa_chain(llm,
     
     conversational_qa_chain = loaded_memory | standalone_question | retrieved_documents | answer
     return conversational_qa_chain
-def _process_retriever_args(search_type='similarity',
+def _process_retriever_args(index_type,
+                            search_type='similarity',
                             k=6,
                             fetch_k=50):
     """
     Process the retriever arguments.
 
     Args:
+        index_type (str): The type of index.
         search_type (str, optional): The type of search.
         k (int, optional): The number of documents to retrieve.
         fetch_k (int, optional): The number of documents to fetch.
@@ -330,25 +333,23 @@ def _process_retriever_args(search_type='similarity',
     Returns:
         dict: The search arguments for the retriever.
     """
-    # TODO add functionality for filter if required
-    # # Implement filter
-    # if filter_arg:
-    #     filter_list = list(set(item['source'] for item in sources[-1]))
-    #     filter_items=[]
-    #     for item in filter_list:
-    #         filter_item={'source': item}
-    #         filter_items.append(filter_item)
-    #     filter={'$or':filter_items}
-    # else:
-    #     filter=None
+    # Set up filter
+    if index_type=='Pinecone':
+        filter_kwargs={"type": {"$ne": "db_metadata"}}    # Filters out metadata vector
+    else:
+        filter_kwargs=None
+    # filter={'$or':filter_items}
 
     # Implement filtering and number of documents to return
     if search_type=='mmr':
         search_kwargs={'k':k,'fetch_k':fetch_k} # See as_retriever docs for parameters
     else:
         search_kwargs={'k':k} # See as_retriever docs for parameters
+
+    retriever_kwargs={'filter':filter_kwargs,
+                       **search_kwargs}
     
-    return search_kwargs
+    return retriever_kwargs
 def _question_as_doc(question: str, rag_answer: dict):
     """
     Creates a Document object based on the given question and RAG answer.

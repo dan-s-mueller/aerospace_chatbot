@@ -338,7 +338,7 @@ def initialize_database(index_type: str,
     if show_progress:
         progress_text = "Database initialization..."
         my_bar = st.progress(0, text=progress_text)
-    # Embedding model type passed on, save to index metadata. This is weirdly not stored otherwise in ChromaDB or Pinecone.
+    # Embedding model type passed on, save to index metadata.
     # Save chunker metadata
     if chunker is not None:
         # Cannot add objects as metadata, don't add full docs
@@ -346,6 +346,8 @@ def initialize_database(index_type: str,
             key: value for key, value in chunker.items() 
             if key not in ['pages', 'chunks', 'summaries', 'splitters', 'llm'] and value is not None    
         }
+    else:
+        index_metadata={}
     if isinstance(query_model, OpenAIEmbeddings):
         index_metadata['query_model']= "OpenAI"
         index_metadata['embedding_model'] = query_model.model
@@ -357,8 +359,6 @@ def initialize_database(index_type: str,
         index_metadata['embedding_model'] = query_model.model_name
 
     if index_type == "Pinecone":
-        if chunker is not None:
-            print("Warning: The 'chunker' parameter is ignored. It only works with ChromaDB.")
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
@@ -374,10 +374,18 @@ def initialize_database(index_type: str,
                                         embedding=query_model,
                                         text_key='page_content',
                                         pinecone_api_key=os.getenv('PINECONE_API_KEY'))
+        # Add metadata vector to Pinecone index
+        metadata_vector = [1e-5] * _embedding_size(query_model)  # Empty embedding vector
+        index.upsert(vectors=[{
+            'id': 'db_metadata',
+            'values': metadata_vector,
+            'metadata': index_metadata
+        }])
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
+        # Metadata stored directionly in the vectorstore
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))    
@@ -390,7 +398,7 @@ def initialize_database(index_type: str,
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')   
     elif index_type == "RAGatouille":
         if chunker is not None:
-            print("Warning: The 'chunker' parameter is ignored. It only works with ChromaDB.")
+            print("Warning: The 'chunker' parameter is ignored. It only works with ChromaDB and Pinecone.")
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         if init_ragatouille:    
@@ -570,10 +578,6 @@ def delete_index(index_type: str,
     elif index_type == "ChromaDB":  
         try:
             persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))
-            # indices = persistent_client.list_collections()
-            # for idx in indices:
-            #     if index_name in idx.name:
-                    # persistent_client.delete_collection(name=idx.name)
             persistent_client.delete_collection(name=index_name)
         except Exception as e:
             pass
@@ -777,12 +781,12 @@ def get_or_create_spotlight_viewer(df:pd.DataFrame,port:int=9000):
                                 no_ssl=True)
 
     return new_viewer
-def get_docs_questions_df(
-        docs_db_directory: Path,
-        docs_db_collection: str,
-        questions_db_directory: Path,
-        questions_db_collection: str,
-        query_model:object):
+def get_docs_questions_df(index_type:str,
+                          docs_db_directory: Path,
+                          docs_db_collection: str,
+                          questions_db_directory: Path,
+                          questions_db_collection: str,
+                          query_model:object):
     """
     Retrieves and combines documents and questions dataframes.
 
@@ -796,12 +800,12 @@ def get_docs_questions_df(
     Returns:
         pd.DataFrame: The combined dataframe containing documents and questions data.
     """
-    # TODO there's definitely a way to not have to pass query_model, since it should be possible to pull from the db, try to remove this in future versions
-    # TODO extend this functionality to Pinecone
-
     # Check if there exists a query database
-    chroma_collections = [collection.name for collection in admin.show_chroma_collections(format=False)['message']]
-    matching_collection = [collection for collection in chroma_collections if collection == questions_db_collection]
+    if index_type=='ChromaDB':
+        collections = [collection.name for collection in admin.show_chroma_collections(format=False)['message']]
+    elif index_type=='Pinecone':
+        collections = [collection for collection in admin.show_pinecone_indexes(format=False)['message']]
+    matching_collection = [collection for collection in collections if collection == questions_db_collection]
     if len(matching_collection) > 1:
         raise Exception('Matching collection not found or multiple matching collections found.')
     try:
@@ -812,10 +816,12 @@ def get_docs_questions_df(
         st.stop()
     st.markdown(f"Query database found: {questions_db_collection}")
 
-    docs_df = get_docs_df('ChromaDB',docs_db_directory, docs_db_collection, query_model)
+    docs_df = get_docs_df(index_type,docs_db_directory, docs_db_collection, query_model)
     docs_df["type"] = "doc"
+    st.markdown(f"Retrieved docs from: {docs_db_collection}")
     questions_df = get_questions_df(questions_db_directory, questions_db_collection, query_model)
     questions_df["type"] = "question"
+    st.markdown(f"Retrieved questions from: {questions_db_collection}")
 
     questions_df["num_sources"] = questions_df["sources"].apply(len)
     questions_df["first_source"] = questions_df["sources"].apply(
@@ -842,7 +848,7 @@ def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_mod
     Retrieves documents from a database and returns them as a pandas DataFrame.
 
     Args:
-        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB").
+        index_type (str): The type of index to use. Only ChromaDB and Pinecone are supported.
         local_db_path (Path): The local path to the Chroma database.
         index_name (str): The name of the collection in the Chroma database.
         query_model (object): The embedding function used for querying the database.
