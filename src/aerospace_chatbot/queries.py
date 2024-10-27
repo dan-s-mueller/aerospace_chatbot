@@ -195,13 +195,10 @@ class QA_Model:
             self.sources.append(answer_sources)
 
         # Add answer to memory
-        if self.llm.__class__.__name__=='ChatOpenAI':
-            # self.ai_response = self.result[-1]['answer'].content + '\n\nSources:\n' + '\n'.join(str(source) for source in answer_sources)
-            self.ai_response = self.result[-1]['answer'].content    # Sources captured in gui now
-        elif self.llm.__class__.__name__=='ChatAnthropic':
+        if self.llm.__class__.__name__=='ChatOpenAI' or self.llm.__class__.__name__=='ChatAnthropic':
             self.ai_response = self.result[-1]['answer'].content
         else:
-            raise NotImplementedError
+            raise NotImplementedError   # To catch any weird stuff I might add later and break the chatbot
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
         # If ChromaDB type, upsert query into query database

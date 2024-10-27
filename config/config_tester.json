@@ -1,8 +1,8 @@
 {
     "databases": [
         {
-            "name": "ChromaDB",
-            "embedding_models": ["OpenAI"]
+            "name": "Pinecone",
+            "embedding_models": ["OpenAI", "Voyage"]
         }
     ],
     "embeddings": [
