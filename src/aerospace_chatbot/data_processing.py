@@ -323,7 +323,7 @@ def initialize_database(index_type: str,
         query_model (object): The query model to use.
         rag_type (str): The type of RAG model to use.
         local_db_path (str, optional): The path to the local database.
-        clear (bool, optional): Whether to clear the index.
+        clear (bool, optional): Whether to clear the index. Metadata will be added to the index.
         init_ragatouille (bool, optional): Whether to initialize the RAGatouille model.
         show_progress (bool, optional): Whether to show the progress bar.
         chunker (dict, optional): The chunker dictionary containing the documents to upsert. Used only for metadata, and only with ChromaDB.
@@ -334,29 +334,28 @@ def initialize_database(index_type: str,
     Raises:
         NotImplementedError: If the specified index type is not implemented.
     """
-
     if show_progress:
         progress_text = "Database initialization..."
         my_bar = st.progress(0, text=progress_text)
-    # Embedding model type passed on, save to index metadata.
-    # Save chunker metadata
-    if chunker is not None:
-        # Cannot add objects as metadata, don't add full docs
-        index_metadata = {
-            key: value for key, value in chunker.items() 
-            if key not in ['pages', 'chunks', 'summaries', 'splitters', 'llm'] and value is not None    
-        }
-    else:
-        index_metadata={}
-    if isinstance(query_model, OpenAIEmbeddings):
-        index_metadata['query_model']= "OpenAI"
-        index_metadata['embedding_model'] = query_model.model
-    elif isinstance(query_model, VoyageAIEmbeddings):
-        index_metadata['query_model'] = "Voyage"
-        index_metadata['embedding_model'] = query_model.model
-    elif isinstance(query_model, HuggingFaceInferenceAPIEmbeddings):
-        index_metadata['query_model'] = "Hugging Face"
-        index_metadata['embedding_model'] = query_model.model_name
+    if clear:   # Update metadata if new index  
+        # Save chunker metadata
+        if chunker is not None:
+            # Cannot add objects as metadata, don't add full docs
+            index_metadata = {
+                key: value for key, value in chunker.items() 
+                if key not in ['pages', 'chunks', 'summaries', 'splitters', 'llm'] and value is not None    
+            }
+        else:
+            index_metadata={}
+        if isinstance(query_model, OpenAIEmbeddings):
+            index_metadata['query_model']= "OpenAI"
+            index_metadata['embedding_model'] = query_model.model
+        elif isinstance(query_model, VoyageAIEmbeddings):
+            index_metadata['query_model'] = "Voyage"
+            index_metadata['embedding_model'] = query_model.model
+        elif isinstance(query_model, HuggingFaceInferenceAPIEmbeddings):
+            index_metadata['query_model'] = "Hugging Face"
+            index_metadata['embedding_model'] = query_model.model_name
 
     if index_type == "Pinecone":
         if clear:
@@ -374,25 +373,30 @@ def initialize_database(index_type: str,
                                         embedding=query_model,
                                         text_key='page_content',
                                         pinecone_api_key=os.getenv('PINECONE_API_KEY'))
-        # Add metadata vector to Pinecone index
-        metadata_vector = [1e-5] * _embedding_size(query_model)  # Empty embedding vector
-        index.upsert(vectors=[{
-            'id': 'db_metadata',
-            'values': metadata_vector,
-            'metadata': index_metadata
-        }])
+        if clear:   # Update metadata if new index
+            metadata_vector = [1e-5] * _embedding_size(query_model)  # Empty embedding vector
+            index.upsert(vectors=[{
+                'id': 'db_metadata',
+                'values': metadata_vector,
+                'metadata': index_metadata
+            }])
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
-        # Metadata stored directionly in the vectorstore
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))    
-        vectorstore = Chroma(collection_name=index_name,
-                             embedding_function=query_model,
-                             collection_metadata=index_metadata,
-                             client=persistent_client)
+
+        if clear:   # Update metadata if new index
+            vectorstore = Chroma(collection_name=index_name,
+                                embedding_function=query_model,
+                                collection_metadata=index_metadata,
+                                client=persistent_client)
+        else:
+            vectorstore = Chroma(collection_name=index_name,
+                                embedding_function=query_model,
+                                client=persistent_client)
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')   

@@ -6,7 +6,9 @@ from dotenv import load_dotenv,find_dotenv
 import openai
 from pinecone import Pinecone
 import chromadb
+
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
@@ -203,6 +205,8 @@ def load_sidebar(config_file,
             sb_out['llm_source']=st.sidebar.selectbox('LLM model', list(llms.keys()), index=0,help='Select the LLM model for the application.')
             if sb_out['llm_source']=='OpenAI':
                 sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0,help='Select the OpenAI model for the application.')
+            elif sb_out['llm_source']=='Anthropic':
+                sb_out['llm_model']=st.sidebar.selectbox('Anthropic model', llms[sb_out['llm_source']]['models'], index=0,help='Select the Anthropic model for the application.')
             elif sb_out['llm_source']=='Hugging Face':
                 sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', 
                                                         llms['Hugging Face']['models'], 
@@ -288,6 +292,13 @@ def set_secrets(sb):
             raise SecretKeyException('OpenAI API Key is required.','OPENAI_API_KEY_MISSING')
     openai.api_key = secrets['OPENAI_API_KEY']
 
+    secrets['ANTHROPIC_API_KEY'] = os.getenv('ANTHROPIC_API_KEY')
+    if not secrets['ANTHROPIC_API_KEY'] and 'keys' in sb and 'ANTHROPIC_API_KEY' in sb['keys']:
+        secrets['ANTHROPIC_API_KEY'] = sb['keys']['ANTHROPIC_API_KEY']
+        os.environ['ANTHROPIC_API_KEY'] = secrets['ANTHROPIC_API_KEY']
+        if os.environ['ANTHROPIC_API_KEY']=='':
+            raise SecretKeyException('Anthropic API Key is required.','ANTHROPIC_API_KEY_MISSING')
+
     secrets['VOYAGE_API_KEY'] = os.getenv('VOYAGE_API_KEY')
     if not secrets['VOYAGE_API_KEY'] and 'keys' in sb and 'VOYAGE_API_KEY' in sb['keys']:
         secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
@@ -352,7 +363,7 @@ def set_llm(sb, secrets, type='prompt'):
         type (str, optional): The type of LLM to set up.
 
     Returns:
-        ChatOpenAI: The configured language model.
+        ChatAnthropic or ChatOpenAI: The configured language model.
 
     Raises:
         ValueError: If an invalid LLM source is specified.
@@ -365,6 +376,12 @@ def set_llm(sb, secrets, type='prompt'):
                              openai_api_key=secrets['OPENAI_API_KEY'],
                              max_tokens=sb['model_options']['output_level'],
                              tags=[sb['llm_model']])
+        if sb['llm_source'] == 'Anthropic':
+            llm = ChatAnthropic(model=sb['llm_model'],
+                                temperature=sb['model_options']['temperature'],
+                                api_key=secrets['ANTHROPIC_API_KEY'],
+                                max_tokens=sb['model_options']['output_level'],
+                                tags=[sb['llm_model']])
         elif sb['llm_source'] == 'Hugging Face':
             llm = ChatOpenAI(base_url=sb['hf_endpoint'],
                              model=sb['llm_model'],

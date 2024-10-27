@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Union
 
 import openai
 import pinecone
@@ -9,7 +10,7 @@ import chromadb
 from langchain_core.documents import Document
 
 from langchain_openai import ChatOpenAI
-
+from langchain_anthropic import ChatAnthropic
 from langchain_pinecone import Pinecone
 from langchain_chroma import Chroma
 
@@ -70,7 +71,7 @@ class QA_Model:
                  index_type:str,
                  index_name:str,
                  query_model:object,
-                 llm:ChatOpenAI,
+                 llm:Union[ChatAnthropic, ChatOpenAI],
                  rag_type:str='Standard',
                  k:int=6,
                  search_type:str='similarity',
@@ -85,7 +86,7 @@ class QA_Model:
             index_type (str): The type of document index.
             index_name (str): The name of the document index.
             query_model (object): The query model.
-            llm (ChatOpenAI): The language model for generating responses.
+            llm (ChatAnthropic or ChatOpenAI): The language model for generating responses.
             rag_type (str, optional): The type of RAG model.
             k (int, optional): The number of retriever results to consider.
             search_type (str, optional): The type of search to perform.
@@ -128,10 +129,9 @@ class QA_Model:
                                                              self.query_model,
                                                              self.rag_type,
                                                              local_db_path=self.local_db_path,
-                                                             clear=False,
                                                              init_ragatouille=False)  
         
-        # Iniialize a database to capture queries in a temp database
+        # Iniialize a database to capture queries in a temp database. If an existing database exists with questions, it'll just use it.
         if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
             self.query_vectorstore=data_processing.initialize_database(self.index_type,
                                                                  self.index_name+'-queries',
@@ -198,6 +198,8 @@ class QA_Model:
         if self.llm.__class__.__name__=='ChatOpenAI':
             # self.ai_response = self.result[-1]['answer'].content + '\n\nSources:\n' + '\n'.join(str(source) for source in answer_sources)
             self.ai_response = self.result[-1]['answer'].content    # Sources captured in gui now
+        elif self.llm.__class__.__name__=='ChatAnthropic':
+            self.ai_response = self.result[-1]['answer'].content
         else:
             raise NotImplementedError
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
@@ -207,12 +209,12 @@ class QA_Model:
             self.query_vectorstore.add_documents([_question_as_doc(query, self.result[-1])])
         
     def update_model(self,
-                     llm:ChatOpenAI):
+                     llm: Union[ChatAnthropic, ChatOpenAI]):
         """
         Updates with a new LLM.
 
         Args:
-            llm (ChatOpenAI): The language model for generating responses.
+            llm (ChatAnthropic or ChatOpenAI): The language model for generating responses.
 
         Returns:
             None

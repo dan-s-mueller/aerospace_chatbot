@@ -44,7 +44,7 @@ index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + i
 
 # Add an expandable box for options
 with st.expander("Options",expanded=True):
-    clear_database = st.checkbox('Delete existing database?',value=True)
+    clear_database = st.checkbox('Delete existing database?',value=True,help='If checked, the existing database will be deleted. New databases will have metadata added to the index for chunking and embedding model.')
     batch_size=st.number_input('Batch size for upsert', 
                     min_value=1, max_value=1000, step=1, value=500,
                     help='''The number of documents to upsert at a time. 
