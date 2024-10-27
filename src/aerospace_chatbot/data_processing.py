@@ -432,13 +432,13 @@ def upsert_docs_db(vectorstore,
     Returns:
         VectorStore: The updated VectorStore object after upserting the documents.
     """
-    if namespace is not None:
+    if namespace is None:
+        vectorstore.add_documents(documents=chunk_batch,
+                                  ids=chunk_batch_ids)
+    else:
         vectorstore.add_documents(documents=chunk_batch,
                                   ids=chunk_batch_ids,
                                   namespace=namespace)
-    else:
-        vectorstore.add_documents(documents=chunk_batch,
-                                  ids=chunk_batch_ids)
     return vectorstore
 def upsert_docs(index_type: str, 
                 index_name: str,
@@ -473,9 +473,13 @@ def upsert_docs(index_type: str,
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
                 
                 if index_type == "Pinecone":
+                    if namespace is None:
+                        upsert_namespace = 'default'
+                    else:
+                        upsert_namespace = namespace
                     vectorstore = upsert_docs_db(vectorstore,
                                                  chunk_batch, chunk_batch_ids,
-                                                 namespace=namespace)
+                                                 namespace=upsert_namespace)
                 else:
                     vectorstore = upsert_docs_db(vectorstore,
                                                  chunk_batch, chunk_batch_ids)

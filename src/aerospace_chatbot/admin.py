@@ -376,7 +376,7 @@ def set_llm(sb, secrets, type='prompt'):
                              openai_api_key=secrets['OPENAI_API_KEY'],
                              max_tokens=sb['model_options']['output_level'],
                              tags=[sb['llm_model']])
-        if sb['llm_source'] == 'Anthropic':
+        elif sb['llm_source'] == 'Anthropic':
             llm = ChatAnthropic(model=sb['llm_model'],
                                 temperature=sb['model_options']['temperature'],
                                 api_key=secrets['ANTHROPIC_API_KEY'],

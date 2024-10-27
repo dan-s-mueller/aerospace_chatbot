@@ -78,6 +78,7 @@ class QA_Model:
                  fetch_k:int=50,
                  temperature:int=0,
                  local_db_path:str='.',
+                 user_doc_namespace:str=None,
                  reset_query_db:bool=False):
         """
         Initializes a new instance of the QA_Model class.
@@ -93,6 +94,7 @@ class QA_Model:
             fetch_k (int, optional): The number of documents to fetch from the retriever.
             temperature (int, optional): The temperature for response generation.
             local_db_path (str, optional): The path to the local database.
+            user_doc_namespace (str, optional): The namespace for user documents.
             reset_query_db (bool, optional): Whether to reset the query database.
 
         """
@@ -106,6 +108,7 @@ class QA_Model:
         self.fetch_k=fetch_k
         self.temperature=temperature
         self.local_db_path=local_db_path
+        self.user_doc_namespace=user_doc_namespace
 
         self.memory=None
         self.result=None
@@ -116,12 +119,6 @@ class QA_Model:
         self.doc_vectorstore=None
         self.query_vectorstore=None
         self.retriever=None
-
-        # Define retriever search parameters
-        search_kwargs = _process_retriever_args(self.index_type,
-                                                self.search_type,
-                                                self.k,
-                                                self.fetch_k)
 
         # Read in from the vector database
         self.doc_vectorstore=data_processing.initialize_database(self.index_type,
@@ -141,6 +138,11 @@ class QA_Model:
                                                                  clear=reset_query_db)
 
         # Initialize retriever
+        search_kwargs = _process_retriever_args(self.index_type,
+                                                self.search_type,
+                                                self.k,
+                                                self.fetch_k,
+                                                self.user_doc_namespace)
         if self.rag_type=='Standard':  
             if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
                 self.retriever=self.doc_vectorstore.as_retriever(search_type=self.search_type,
@@ -319,7 +321,8 @@ def _define_qa_chain(llm,
 def _process_retriever_args(index_type,
                             search_type='similarity',
                             k=6,
-                            fetch_k=50):
+                            fetch_k=50,
+                            user_doc_namespace=None):
     """
     Process the retriever arguments.
 
@@ -328,13 +331,29 @@ def _process_retriever_args(index_type,
         search_type (str, optional): The type of search.
         k (int, optional): The number of documents to retrieve.
         fetch_k (int, optional): The number of documents to fetch.
-
+        user_doc_namespace (str, optional): The namespace for user documents.
     Returns:
         dict: The search arguments for the retriever.
     """
     # Set up filter
     if index_type=='Pinecone':
-        filter_kwargs={"type": {"$ne": "db_metadata"}}    # Filters out metadata vector
+        if user_doc_namespace:
+            # Searches over default and user_doc_namespace namespaces, excludes the db_metadata vector
+            filter_kwargs = {
+                "$and": [
+                    {"source_namespace": {"$in": ["default", user_doc_namespace]}},  # Include specific namespaces
+                    {"type": {"$ne": "db_metadata"}}  # Exclude db_metadata vector
+                ]
+            }
+        else:
+            # Uses default namespace tag "default" so that user namespaces combined with the default is possible. 
+            # Excludes the db_metadata vector.
+            filter_kwargs = {
+                "$and": [
+                    {"source_namespace": {"$in": "default"}},  # Include default only
+                    {"type": {"$ne": "db_metadata"}}  # Exclude db_metadata vector
+                ]
+            }
     else:
         filter_kwargs=None
     # filter={'$or':filter_items}
