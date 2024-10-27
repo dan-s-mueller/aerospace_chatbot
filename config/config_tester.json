@@ -16,11 +16,17 @@
         {
             "name": "OpenAI",
             "models": [
-                "gpt-4o-mini",
                 "gpt-4o",
+                "gpt-4o-mini",
                 "gpt-4"
             ]
-        }
+        },
+        {
+            "name": "Anthropic",
+            "models": [
+                "claude-3-5-sonnet-latest"
+            ]
+        },
     ],
     "rag_types": ["Standard"]
 }
