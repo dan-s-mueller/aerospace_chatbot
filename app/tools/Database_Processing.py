@@ -19,7 +19,7 @@ paths,sb,secrets=admin.st_setup_page('Aerospace Chatbot',
 
 # Add section for connection status and vector database cleanup
 st.subheader('Connection status and vector database cleanup')
-admin.st_connection_status_expander(expanded=True,delete_buttons=True)
+admin.st_connection_status_expander(expanded=False,delete_buttons=True)
 
 # Add section for creating and loading into a vector database
 st.subheader('Create and load into a vector database')
@@ -46,13 +46,13 @@ index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + i
 with st.expander("Options",expanded=True):
     clear_database = st.checkbox('Delete existing database?',value=True)
     batch_size=st.number_input('Batch size for upsert', 
-                    min_value=1, max_value=500, step=1, value=100,
+                    min_value=1, max_value=1000, step=1, value=500,
                     help='''The number of documents to upsert at a time. 
                             Useful for hosted databases (e.g. Pinecone), or those that require long processing times.
                             When using hugging face embeddings without a dedicated endpoint, batch size recommmended maximum is 32.''')
     
     # Merge pages before processing
-    merge_pages=st.checkbox('Merge pages before processing?',value=False,
+    merge_pages=st.checkbox('Merge pages before processing?',value=True,
                             help='If checked, pages will be merged before processing.')
     if merge_pages:
         n_merge_pages=st.number_input('Number of pages to merge', min_value=2, step=1, value=2, 
@@ -69,7 +69,7 @@ with st.expander("Options",expanded=True):
                     Chunk method applies to parent document. Child documents are default split into 4 smaller chunks.
                     If no chunk method is selected, 4 chunks will be created for each parent document.
                     ''')
-        chunk_method= st.selectbox('Chunk method', ['character_recursive','None'], 
+        chunk_method= st.selectbox('Chunk method', ['None','character_recursive'],
                                     index=0,
                                     help='''https://python.langchain.com/docs/modules/data_connection/document_transformers/. 
                                             None will take whole PDF pages as documents in the database.''')
@@ -93,11 +93,12 @@ with st.expander("Options",expanded=True):
         raise NotImplementedError
     
     # Json export
-    export_json = st.checkbox('Export jsonl?', value=True,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
+    export_json = st.checkbox('Export jsonl?', value=False,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
     if export_json:
         json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{index_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
         json_file=os.path.join(paths['base_folder_path'],json_file)
-
+    else:
+        json_file=None
     
 
 # Check the index name, give error before running if it is invalid
@@ -154,7 +155,20 @@ with st.expander("Upload files to existing database",expanded=True):
     db_list = [obj.name for obj in admin.show_chroma_collections(format=False)['message']]
     chroma_db_name = st.selectbox('Chroma', db_list)
 
-    custom_namespace="test_upload_namespace"
+    # Retrieve the query model from the selected Chroma database
+    import chromadb
+    # chroma_client = chromadb.PersistentClient(path=paths['db_folder_path'])
+    chroma_client = chromadb.PersistentClient(path=os.path.join(paths['db_folder_path'],'chromadb'))
+    selected_collection = chroma_client.get_collection(chroma_db_name)
+    # print(collection_metadata)
+    
+    # if 'query_model' in collection_metadata:
+    #     query_model = collection_metadata['query_model']
+    #     st.write(f"Query model used by the selected database: {query_model}")
+    # else:
+    #     st.warning("Query model information not found in the database metadata. Using default query model.")
+    #     query_model = admin.get_query_model(sb, secrets)
+
 
     # TODO get query model from chroma database
     if st.button('Upload your docs into vector database'):

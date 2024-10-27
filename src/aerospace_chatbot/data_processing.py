@@ -108,7 +108,8 @@ def load_docs(index_type:str,
                                       clear=clear, 
                                       local_db_path=local_db_path,
                                       init_ragatouille=True,
-                                      show_progress=show_progress)
+                                      show_progress=show_progress,
+                                      chunker=chunker)
     vectorstore, _ = upsert_docs(index_type,
                                  index_name,
                                  vectorstore,
@@ -212,7 +213,11 @@ def chunk_docs(docs: List[str],
         return {'rag':'Standard',
                 'pages':pages,
                 'chunks':chunks, 
-                'splitters':text_splitter}
+                'splitters':text_splitter,
+                'n_merge_pages':n_merge_pages,
+                'chunk_method':chunk_method,
+                'chunk_size':chunk_size,
+                'chunk_overlap':chunk_overlap}
     elif rag_type=='Parent-Child': 
         if chunk_method=='character_recursive':
             # Settings apply to parent splitter. k_child divides parent into smaller sizes.
@@ -256,7 +261,11 @@ def chunk_docs(docs: List[str],
         return {'rag':'Parent-Child',
                 'pages':{'doc_ids':doc_ids,'parent_chunks':parent_chunks},
                 'chunks':chunks,
-                'splitters':{'parent_splitter':parent_splitter,'child_splitter':child_splitter}}
+                'splitters':{'parent_splitter':parent_splitter,'child_splitter':child_splitter},
+                'n_merge_pages':n_merge_pages,
+                'chunk_method':chunk_method,
+                'chunk_size':chunk_size,
+                'chunk_overlap':chunk_overlap}
     elif rag_type == 'Summary':
         if show_progress:
             my_bar.empty()
@@ -290,7 +299,11 @@ def chunk_docs(docs: List[str],
         return {'rag':'Summary',
                 'pages':{'doc_ids':doc_ids,'docs':pages},
                 'summaries':summary_docs,
-                'llm':llm}
+                'llm':llm,
+                'n_merge_pages':n_merge_pages,
+                'chunk_method':chunk_method,
+                'chunk_size':chunk_size,
+                'chunk_overlap':chunk_overlap}
     else:
         raise NotImplementedError
 def initialize_database(index_type: str, 
@@ -300,7 +313,8 @@ def initialize_database(index_type: str,
                         local_db_path: str = None, 
                         clear: bool = False,
                         init_ragatouille: bool = False,
-                        show_progress: bool = False):
+                        show_progress: bool = False,
+                        chunker: dict = None):
     """Initializes the database based on the specified parameters.
 
     Args:
@@ -312,6 +326,7 @@ def initialize_database(index_type: str,
         clear (bool, optional): Whether to clear the index.
         init_ragatouille (bool, optional): Whether to initialize the RAGatouille model.
         show_progress (bool, optional): Whether to show the progress bar.
+        chunker (dict, optional): The chunker dictionary containing the documents to upsert. Used only for metadata, and only with ChromaDB.
 
     Returns:
         vectorstore: The initialized vector store.
@@ -323,20 +338,26 @@ def initialize_database(index_type: str,
     if show_progress:
         progress_text = "Database initialization..."
         my_bar = st.progress(0, text=progress_text)
+    if chunker is not None:
+        chunk_params = {
+            key: value for key, value in chunker.items() 
+            if key not in ['pages', 'chunks', 'summaries'] and value is not None
+        }
+    else:
+        chunk_params = None
 
     if index_type == "Pinecone":
-
+        if chunker is not None:
+            print("Warning: The 'chunker' parameter is ignored. It only works with ChromaDB.")
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-        
         try:
             pc.describe_index(index_name)
         except:
             pc.create_index(index_name,
                             dimension=_embedding_size(query_model),
                             spec=ServerlessSpec(cloud="aws", region="us-east-1"))
-        
         index = pc.Index(index_name)
         vectorstore=PineconeVectorStore(index,
                                         index_name=index_name, 
@@ -347,17 +368,19 @@ def initialize_database(index_type: str,
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     elif index_type == "ChromaDB":
-        # TODO add in collection metadata
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
         vectorstore = Chroma(client=persistent_client,
-                                collection_name=index_name,
-                                embedding_function=query_model) 
+                             collection_name=index_name,
+                             embedding_function=query_model,
+                             collection_metadata=chunk_params)
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')   
     elif index_type == "RAGatouille":
+        if chunker is not None:
+            print("Warning: The 'chunker' parameter is ignored. It only works with ChromaDB.")
         if clear:
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         if init_ragatouille:    
