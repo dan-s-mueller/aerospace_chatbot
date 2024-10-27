@@ -106,10 +106,21 @@ try:
     # Set LLM if relevant
     if sb['rag_type']=='Summary':
         llm=admin.set_llm(sb,secrets,type='rag')
-        index_name=data_processing.db_name(sb['index_type'],sb['rag_type'],index_name,model_name=llm.model_name)
+        index_name=data_processing.db_name(sb['index_type'],
+                                           sb['rag_type'],
+                                           index_name,
+                                           model_name=llm.model_name,
+                                           n_merge_pages=n_merge_pages,
+                                           chunk_size=chunk_size,
+                                           chunk_overlap=chunk_overlap)
     else:
         llm=None
-        index_name=data_processing.db_name(sb['index_type'],sb['rag_type'],index_name)
+        index_name=data_processing.db_name(sb['index_type'],
+                                           sb['rag_type'],
+                                           index_name,
+                                           n_merge_pages=n_merge_pages,
+                                           chunk_size=chunk_size,
+                                           chunk_overlap=chunk_overlap)
     st.markdown(f'Index name: {index_name}')
 except ValueError as e:
     st.warning(str(e))

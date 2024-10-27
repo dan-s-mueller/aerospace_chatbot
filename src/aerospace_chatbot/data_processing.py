@@ -670,7 +670,14 @@ def _stable_hash_meta(metadata: dict):
 
     """
     return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,check:bool=True):
+def db_name(index_type:str,
+            rag_type:str,
+            index_name:str,
+            model_name:bool=None,
+            n_merge_pages:int=None,
+            chunk_size:int=None,
+            chunk_overlap:int=None,
+            check:bool=True):
     """
     Generates a modified name based on the given parameters.
 
@@ -678,7 +685,10 @@ def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,chec
         index_type (str): The type of index.
         rag_type (str): The type of RAG.
         index_name (str): The name of the index.
-        model_name (bool, optional): The name of the model. Defaults to None.
+        model_name (bool, optional): The name of the model. Defaults to None. Only for summary RAG.
+        n_merge_pages (int, optional): The number of pages to merge. Defaults to None.
+        chunk_size (int, optional): The size of the chunks. Defaults to None.
+        chunk_overlap (int, optional): The overlap of the chunks. Defaults to None.
         check (bool, optional): Whether to check the validity of the name. Defaults to True.
 
     Returns:
@@ -704,7 +714,15 @@ def db_name(index_type:str,rag_type:str,index_name:str,model_name:bool=None,chec
         index_name = index_name + "-" + model_name_temp + "-summary"
     else:
         index_name = index_name
-    
+
+    # Add chunk parameters if they exist
+    if n_merge_pages is not None:
+        index_name = index_name + f"-{n_merge_pages}nm"
+    if chunk_size is not None:
+        index_name = index_name + f"-{chunk_size}"
+    if chunk_overlap is not None:
+        index_name = index_name + f"-{chunk_overlap}"
+
     # Check if the name is valid
     if check:
         if index_type=="Pinecone":

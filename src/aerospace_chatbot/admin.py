@@ -755,7 +755,7 @@ def _format_key_status(key_status: str):
     for key, value in key_status.items():
         status = value['status']
         if status:
-            formatted_status += f"- {key}: :heavy_check_mark:\n"
+            formatted_status += f"- {key}: :white_check_mark:\n"
         else:
             formatted_status += f"- {key}: :x:\n"
     return formatted_status
@@ -774,7 +774,7 @@ def _format_pinecone_status(pinecone_status):
         for index in pinecone_status['message']:
             name = index['name']
             state = index['status']['state']
-            status = ":heavy_check_mark:"
+            status = ":white_check_mark:"
             index_description += f"- {name}: {state} ({status})\n"
         markdown_string = f"**Pinecone Indexes**\n{index_description}"
     else:
@@ -795,7 +795,7 @@ def _format_chroma_status(chroma_status):
     if chroma_status['status']:
         for index in chroma_status['message']:
             name = index.name
-            status = ":heavy_check_mark:"
+            status = ":white_check_mark:"
             collection_description += f"- {name}: ({status})\n"
         markdown_string = f"**ChromaDB Collections**\n{collection_description}"
     else:
@@ -817,7 +817,7 @@ def _format_ragatouille_status(ragatouille_status):
     if ragatouille_status['status']:
         for index in ragatouille_status['message']:
             name = index
-            status = ":heavy_check_mark:"
+            status = ":white_check_mark:"
             index_description += f"- {name}: ({status})\n"
         markdown_string = f"**Ragatouille Indexes**\n{index_description}"
     else:
