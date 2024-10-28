@@ -77,7 +77,6 @@ with st.expander("Upload files to existing database",expanded=True):
 
             # Generate unique identifier for user upload
             user_upload = f"user_upload_{os.urandom(3).hex()}"
-            st.markdown(f"Your upload ID: `{user_upload}`")
 
             # Upload documents to vector database selected
             chunk_params = {
@@ -98,6 +97,7 @@ with st.expander("Upload files to existing database",expanded=True):
                                 show_progress=True,
                                 namespace=user_upload,
                                 **chunk_params)
+                st.markdown(f"Your upload ID: `{user_upload}`")
         else:
             st.error("Only Pinecone is supported for user document upload.")
     else:
