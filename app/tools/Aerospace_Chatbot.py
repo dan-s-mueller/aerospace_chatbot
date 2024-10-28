@@ -82,46 +82,45 @@ with st.expander("Upload files to existing database",expanded=True):
                     temp_file.write(uploaded_file.read())
                 temp_files.append(temp_path)
 
-            # Retrieve the query model from the selected Chroma database
-            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-            selected_index = pc.Index(sb['index_selected'])
-            index_metadata = selected_index.fetch(ids=['db_metadata'])
-            index_metadata = index_metadata['vectors']['db_metadata']['metadata']
-            query_model = admin.get_query_model({'index_type':sb['index_type'],
-                                                'query_model':index_metadata['query_model'],
-                                                'embedding_name':index_metadata['embedding_model']},
-                                                {'OPENAI_API_KEY':os.getenv('OPENAI_API_KEY')})
-
-            # Upload documents to vector database selected
-            chunk_params = {
-                key: value for key, value in index_metadata.items() 
-                if key not in ['query_model', 'embedding_model'] and value is not None    
-            }
-            # Convert any float parameters to int to avoid type problems when chunking
-            for key, value in chunk_params.items():
-                if isinstance(value, float):
-                    chunk_params[key] = int(value)
-
             if st.button('Upload your docs into vector database'):
-                # Generate unique identifier for user upload
-                st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
-                st.markdown(f"Uploading user documents to namespace: {st.session_state.user_upload}")
-                data_processing.load_docs(sb['index_type'],
-                                temp_files,
-                                query_model,
-                                index_name=sb['index_selected'],
-                                local_db_path=paths['db_folder_path'],
-                                show_progress=True,
-                                namespace=st.session_state.user_upload,
-                                **chunk_params)
-                # In the new namespace, take the existing documents in the null namespace and add them to the new namespace
-                # st.markdown(f"Merging user document with  existing documents: {st.session_state.user_upload}")
-                # data_processing.copy_pinecone_vectors(selected_index,
-                #                                       None,
-                #                                       st.session_state.user_upload,
-                #                                       show_progress=True)
+                with st.spinner('Uploading and merging your documents with the database...'):
+                    # Retrieve the query model from the selected Chroma database
+                    pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+                    selected_index = pc.Index(sb['index_selected'])
+                    index_metadata = selected_index.fetch(ids=['db_metadata'])
+                    index_metadata = index_metadata['vectors']['db_metadata']['metadata']
+                    query_model = admin.get_query_model({'index_type':sb['index_type'],
+                                                        'query_model':index_metadata['query_model'],
+                                                        'embedding_name':index_metadata['embedding_model']},
+                                                        {'OPENAI_API_KEY':os.getenv('OPENAI_API_KEY')})
+                    # Upload documents to vector database selected
+                    chunk_params = {
+                        key: value for key, value in index_metadata.items() 
+                        if key not in ['query_model', 'embedding_model'] and value is not None    
+                    }
+                    # Convert any float parameters to int to avoid type problems when chunking
+                    for key, value in chunk_params.items():
+                        if isinstance(value, float):
+                            chunk_params[key] = int(value)
+                    # Generate unique identifier for user upload
+                    st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
+                    st.markdown(f"*Uploading user documents to namespace...*")
+                    data_processing.load_docs(sb['index_type'],
+                                    temp_files,
+                                    query_model,
+                                    index_name=sb['index_selected'],
+                                    local_db_path=paths['db_folder_path'],
+                                    show_progress=True,
+                                    namespace=st.session_state.user_upload,
+                                    **chunk_params)
+                    # In the new namespace, take the existing documents in the null namespace and add them to the new namespace
+                    st.markdown(f"*Merging user document with  existing documents...*")
+                    data_processing.copy_pinecone_vectors(selected_index,
+                                                        None,
+                                                        st.session_state.user_upload,
+                                                        show_progress=True)
             if st.session_state.user_upload:
-                st.markdown(f"Your upload ID: `{st.session_state.user_upload}`. This will be used for this chat session to also include your documents.")
+                st.markdown(f":white_check_mark: Merged! Your upload ID: `{st.session_state.user_upload}`. This will be used for this chat session to also include your documents. When you restart the chat, you'll have to re-upload your documents.")
         else:
             st.error("Only Pinecone is supported for user document upload.")
     else:
@@ -160,7 +159,7 @@ if prompt := st.chat_input('Prompt here'):
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
                                                                local_db_path=paths['db_folder_path'],
-                                                               user_doc_namespace=st.session_state.user_upload,
+                                                               namespace=st.session_state.user_upload,
                                                                reset_query_db=reset_query_db)
                 # reset_query_db.empty()  # Remove this option after initialization
             if st.session_state.message_id>1:   # Chat after first message and initialization

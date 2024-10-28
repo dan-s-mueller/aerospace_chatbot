@@ -44,7 +44,7 @@ class QA_Model:
                  fetch_k:int=50,
                  temperature:int=0,
                  local_db_path:str='.',
-                 user_doc_namespace:str=None,
+                 namespace:str=None,
                  reset_query_db:bool=False):
         """
         Initializes a new instance of the QA_Model class.
@@ -60,7 +60,7 @@ class QA_Model:
             fetch_k (int, optional): The number of documents to fetch from the retriever.
             temperature (int, optional): The temperature for response generation.
             local_db_path (str, optional): The path to the local database.
-            user_doc_namespace (str, optional): The namespace for user documents.
+            namespace (str, optional): The namespace for user documents.
             reset_query_db (bool, optional): Whether to reset the query database.
         """
         self.index_type=index_type
@@ -73,14 +73,13 @@ class QA_Model:
         self.fetch_k=fetch_k
         self.temperature=temperature
         self.local_db_path=local_db_path
-        self.user_doc_namespace=user_doc_namespace
+        self.namespace=namespace
 
         self.memory=None
         self.result=None
         self.sources=None
         self.ai_response=None
         self.conversational_qa_chain=None
-
         self.doc_vectorstore=None
         self.query_vectorstore=None
         self.retriever=None
@@ -91,7 +90,8 @@ class QA_Model:
                                                                  self.query_model,
                                                                  self.rag_type,
                                                                  local_db_path=self.local_db_path,
-                                                                 init_ragatouille=False)
+                                                                 init_ragatouille=False,
+                                                                 namespace=self.namespace)
         
         # Iniialize a database to capture queries in a temp database. If an existing database exists with questions, it'll just use it.
         if self.index_type=='ChromaDB' or self.index_type=='Pinecone':
@@ -108,17 +108,9 @@ class QA_Model:
                                                 self.k,
                                                 self.fetch_k)
         if self.rag_type=='Standard': 
-            if self.index_type=='Pinecone':
-                if self.user_doc_namespace:
-                    self.retriever=self.doc_vectorstore.as_retriever(search_type=self.search_type,
-                                                                     search_kwargs=search_kwargs,
-                                                                     namespace=self.user_doc_namespace)
-                else:
-                    self.retriever=self.doc_vectorstore.as_retriever(search_type=self.search_type,
-                                                                     search_kwargs=search_kwargs) 
-            if self.index_type=='ChromaDB':
+            if self.index_type=='Pinecone' or self.index_type=='ChromaDB':
                 self.retriever=self.doc_vectorstore.as_retriever(search_type=self.search_type,
-                                                                 search_kwargs=search_kwargs)
+                                                                    search_kwargs=search_kwargs) 
             elif self.index_type=='RAGatouille':
                 self.retriever=self.doc_vectorstore.as_langchain_retriever(k=search_kwargs['k'])  
         elif self.rag_type=='Parent-Child' or self.rag_type=='Summary':

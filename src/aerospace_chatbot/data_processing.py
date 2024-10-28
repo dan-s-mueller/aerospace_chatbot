@@ -306,7 +306,8 @@ def initialize_database(index_type: str,
                         clear: bool = False,
                         init_ragatouille: bool = False,
                         show_progress: bool = False,
-                        chunker: dict = None):
+                        chunker: dict = None,
+                        namespace: str = None):
     """Initializes the database based on the specified parameters.
 
     Args:
@@ -319,7 +320,7 @@ def initialize_database(index_type: str,
         init_ragatouille (bool, optional): Whether to initialize the RAGatouille model.
         show_progress (bool, optional): Whether to show the progress bar.
         chunker (dict, optional): The chunker dictionary containing the documents to upsert. Used only for metadata, and only with ChromaDB.
-
+        namespace (str, optional): The namespace to use for the index when upserting. Only works with Pinecone, ignored otherwise.
     Returns:
         vectorstore: The initialized vector store.
 
@@ -364,7 +365,8 @@ def initialize_database(index_type: str,
                                         index_name=index_name, 
                                         embedding=query_model,
                                         text_key='page_content',
-                                        pinecone_api_key=os.getenv('PINECONE_API_KEY'))
+                                        pinecone_api_key=os.getenv('PINECONE_API_KEY'),
+                                        namespace=namespace)
         if clear:   # Update metadata if new index
             metadata_vector = [1e-5] * _embedding_size(query_model)  # Empty embedding vector. In queries.py, this is filtered out.
             index.upsert(vectors=[{
@@ -636,6 +638,8 @@ def copy_pinecone_vectors(index, source_namespace, target_namespace, batch_size:
         if show_progress:
             progress_percentage = i / len(ids)
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+    if show_progress:
+        my_bar.empty()
 def _sanitize_raw_page_data(page):
     """
     Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
