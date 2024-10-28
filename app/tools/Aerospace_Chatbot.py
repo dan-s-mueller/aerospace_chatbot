@@ -35,6 +35,22 @@ paths,sb,secrets=admin.st_setup_page('🚀 Aerospace Chatbot',
                                       'model_options':True,
                                       'secret_keys':True})
 
+# Set up chat history
+if 'user_upload' not in st.session_state:
+    st.session_state.user_upload = None
+if 'qa_model_obj' not in st.session_state:
+    st.session_state.qa_model_obj = []
+if 'message_id' not in st.session_state:
+    st.session_state.message_id = 0
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
+for message in st.session_state.messages:
+    with st.chat_message(message['role']):
+        st.markdown(message['content'])
+if 'pdf_urls' not in st.session_state:
+    st.session_state.pdf_urls = []
+reset_query_db=False    # Add reset option for query database
+
 # Add expander with functionality details.
 with st.expander('''Helpful Information'''):
     st.info("""
@@ -59,11 +75,12 @@ with st.expander("Upload files to existing database",expanded=True):
             uploaded_files = st.file_uploader(
                 "Choose pdf files", accept_multiple_files=True
             )
-            temp_files=[]
+            temp_files = []
             for uploaded_file in uploaded_files:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-                        temp_file.write(uploaded_file.read())
-                        temp_files.append(temp_file.name)
+                temp_path = os.path.join(tempfile.gettempdir(), uploaded_file.name)
+                with open(temp_path, 'wb') as temp_file:
+                    temp_file.write(uploaded_file.read())
+                temp_files.append(temp_path)
 
             # Retrieve the query model from the selected Chroma database
             pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
@@ -74,9 +91,6 @@ with st.expander("Upload files to existing database",expanded=True):
                                                 'query_model':index_metadata['query_model'],
                                                 'embedding_name':index_metadata['embedding_model']},
                                                 {'OPENAI_API_KEY':os.getenv('OPENAI_API_KEY')})
-
-            # Generate unique identifier for user upload
-            user_upload = f"user_upload_{os.urandom(3).hex()}"
 
             # Upload documents to vector database selected
             chunk_params = {
@@ -89,37 +103,29 @@ with st.expander("Upload files to existing database",expanded=True):
                     chunk_params[key] = int(value)
 
             if st.button('Upload your docs into vector database'):
+                # Generate unique identifier for user upload
+                st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
+                st.markdown(f"Uploading user documents to namespace: {st.session_state.user_upload}")
                 data_processing.load_docs(sb['index_type'],
                                 temp_files,
                                 query_model,
                                 index_name=sb['index_selected'],
                                 local_db_path=paths['db_folder_path'],
                                 show_progress=True,
-                                namespace=user_upload,
+                                namespace=st.session_state.user_upload,
                                 **chunk_params)
-                st.markdown(f"Your upload ID: `{user_upload}`")
+                # In the new namespace, take the existing documents in the null namespace and add them to the new namespace
+                # st.markdown(f"Merging user document with  existing documents: {st.session_state.user_upload}")
+                # data_processing.copy_pinecone_vectors(selected_index,
+                #                                       None,
+                #                                       st.session_state.user_upload,
+                #                                       show_progress=True)
+            if st.session_state.user_upload:
+                st.markdown(f"Your upload ID: `{st.session_state.user_upload}`. This will be used for this chat session to also include your documents.")
         else:
             st.error("Only Pinecone is supported for user document upload.")
     else:
         st.error("Only Standard RAG is supported for user document upload.")
-
-# Add reset option for query database
-reset_query_db=False
-# reset_query_db = st.empty()
-# reset_query_db.checkbox('Reset query database?', value=False, help='This will reset the query database used for visualization.')
-
-# Set up chat history
-if 'qa_model_obj' not in st.session_state:
-    st.session_state.qa_model_obj = []
-if 'message_id' not in st.session_state:
-    st.session_state.message_id = 0
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
-for message in st.session_state.messages:
-    with st.chat_message(message['role']):
-        st.markdown(message['content'])
-if 'pdf_urls' not in st.session_state:
-    st.session_state.pdf_urls = []
 
 # Define chat
 if prompt := st.chat_input('Prompt here'):
@@ -154,6 +160,7 @@ if prompt := st.chat_input('Prompt here'):
                                                                k=sb['model_options']['k'],
                                                                search_type=search_type,
                                                                local_db_path=paths['db_folder_path'],
+                                                               user_doc_namespace=st.session_state.user_upload,
                                                                reset_query_db=reset_query_db)
                 # reset_query_db.empty()  # Remove this option after initialization
             if st.session_state.message_id>1:   # Chat after first message and initialization
@@ -210,7 +217,7 @@ if prompt := st.chat_input('Prompt here'):
                                     # pdf_viewer(full_pdf, width=1000,height=1200,render_text=True)
                                     st.write("Disabled for now...see download link above!")
                             except Exception as e:
-                                st.warning("Unable to load PDF preview. The file may no longer exist or be inaccessible. Contact support if this issue persists.")
+                                st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. Contact support if this issue persists. User file uploads not yet supported.")
 
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
 

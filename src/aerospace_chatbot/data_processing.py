@@ -366,7 +366,7 @@ def initialize_database(index_type: str,
                                         text_key='page_content',
                                         pinecone_api_key=os.getenv('PINECONE_API_KEY'))
         if clear:   # Update metadata if new index
-            metadata_vector = [1e-5] * _embedding_size(query_model)  # Empty embedding vector
+            metadata_vector = [1e-5] * _embedding_size(query_model)  # Empty embedding vector. In queries.py, this is filtered out.
             index.upsert(vectors=[{
                 'id': 'db_metadata',
                 'values': metadata_vector,
@@ -473,13 +473,9 @@ def upsert_docs(index_type: str,
                 chunk_batch_ids = [_stable_hash_meta(chunk.metadata) for chunk in chunk_batch]   # add ID which is the hash of metadata
                 
                 if index_type == "Pinecone":
-                    if namespace is None:
-                        upsert_namespace = 'default'
-                    else:
-                        upsert_namespace = namespace
                     vectorstore = upsert_docs_db(vectorstore,
                                                  chunk_batch, chunk_batch_ids,
-                                                 namespace=upsert_namespace)
+                                                 namespace=namespace)
                 else:
                     vectorstore = upsert_docs_db(vectorstore,
                                                  chunk_batch, chunk_batch_ids)
@@ -607,6 +603,39 @@ def delete_index(index_type: str,
             pass
     else:
         raise NotImplementedError
+def copy_pinecone_vectors(index, source_namespace, target_namespace, batch_size:int=100, show_progress:bool=False):
+    """
+    Copies vectors from a source Pinecone namespace to a target namespace.
+    """
+    if show_progress:
+        progress_text = "Document merging in progress..."
+        my_bar = st.progress(0, text=progress_text)
+    
+    # Obtain list of ids
+    ids=[]
+    for id in index.list():
+        ids.extend(id)
+    # Fetch vectors from IDs in chunks (to not overload the API)
+    for i in range(0, len(ids), batch_size):
+        # Fetch vectors
+        fetch_response=index.fetch(ids[i:i+batch_size], 
+                                  namespace=source_namespace)
+
+        # Transform the fetched vectors into the correct format for upsert
+        vectors_to_upsert = []
+        for id, vector_data in fetch_response['vectors'].items():
+            vectors_to_upsert.append({
+                'id': id,
+                'values': vector_data['values'],
+                'metadata': vector_data['metadata']
+            })
+
+        # Upsert vectors
+        index.upsert(vectors=vectors_to_upsert, 
+                    namespace=target_namespace)
+        if show_progress:
+            progress_percentage = i / len(ids)
+            my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
 def _sanitize_raw_page_data(page):
     """
     Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
@@ -898,7 +927,6 @@ def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_mod
                 "document": response["documents"],
                 "embedding": response["embeddings"],
             })  
-
     elif index_type=='Pinecone':
         # Connect to index
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
@@ -925,8 +953,7 @@ def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_mod
                 "metadata": [{'page':data['metadata']['page'],'source':data['metadata']['source']} for data in docs],
                 "document": [data['metadata']['page_content'] for data in docs],
                 "embedding": [data['values'] for data in docs],
-            })  
-        # raise NotImplementedError('Only ChromaDB is supported for now')
+            }) 
 
     # Add parent-doc or original-doc
     if rag_type!='Standard':
