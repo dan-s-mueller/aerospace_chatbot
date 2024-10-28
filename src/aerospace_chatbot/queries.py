@@ -335,27 +335,33 @@ def _process_retriever_args(index_type,
     Returns:
         dict: The search arguments for the retriever.
     """
+    
     # Set up filter
     if index_type=='Pinecone':
         if user_doc_namespace:
-            # Searches over default and user_doc_namespace namespaces, excludes the db_metadata vector
+            # filter_kwargs = {
+            #     "$and": [
+            #         {"source_namespace": {"$in": ["default", user_doc_namespace]}},  # Include specific namespaces
+            #         {"type": {"$ne": "db_metadata"}}  # Exclude db_metadata vector
+            #     ]
+            # }
             filter_kwargs = {
                 "$and": [
-                    {"source_namespace": {"$in": ["default", user_doc_namespace]}},  # Include specific namespaces
+                    {"source_namespace": {"$in": ["default", 'user_upload_736f2c']}},  # Include specific namespaces
                     {"type": {"$ne": "db_metadata"}}  # Exclude db_metadata vector
                 ]
             }
         else:
-            # Uses default namespace tag "default" so that user namespaces combined with the default is possible. 
-            # Excludes the db_metadata vector.
+            # filter_kwargs={"type": {"$ne": "db_metadata"}}    # Filters out metadata vector
             filter_kwargs = {
                 "$and": [
-                    {"source_namespace": {"$in": ["default"]}},  # Include default only
+                    {"source_namespace": {"$in": ["default", 'user_upload_736f2c']}},  # Include specific namespaces
                     {"type": {"$ne": "db_metadata"}}  # Exclude db_metadata vector
                 ]
             }
     else:
         filter_kwargs=None
+    # filter={'$or':filter_items}
 
     # Implement filtering and number of documents to return
     if search_type=='mmr':
