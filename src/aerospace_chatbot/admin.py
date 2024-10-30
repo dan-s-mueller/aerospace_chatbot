@@ -75,12 +75,18 @@ class SidebarManager:
         """Load and parse config file"""
         with open(config_file, 'r') as f:
             config = json.load(f)
-            return {
+            parsed_config = {
                 'databases': {db['name']: db for db in config['databases']},
                 'embeddings': {e['name']: e for e in config['embeddings']},
                 'llms': {m['name']: m for m in config['llms']},
                 'rag_types': config['rag_types']
             }
+            
+            # Add disabled_controls if they exist in the config
+            if 'disabled_controls' in config:
+                parsed_config['disabled_controls'] = config['disabled_controls']
+                
+            return parsed_config
     
     def initialize_session_state(self):
         """Initialize session state for all sidebar elements"""
@@ -94,10 +100,20 @@ class SidebarManager:
                 'api_keys': ['openai_key', 'hf_key', 'voyage_key', 'pinecone_key']
             }
             
-            for group in elements.values():
-                for element in group:
+            # Get disabled controls from config if they exist
+            disabled_controls = {}
+            if 'disabled_controls' in self.config:
+                disabled_controls = self.config['disabled_controls']
+            
+            for group, group_elements in elements.items():
+                for element in group_elements:
+                    disabled = False
+                    # Check if this element should be disabled based on config
+                    if group in disabled_controls and element in disabled_controls[group]:
+                        disabled = True
+                    
                     if f'{element}_disabled' not in st.session_state:
-                        st.session_state[f'{element}_disabled'] = False
+                        st.session_state[f'{element}_disabled'] = disabled
                     if f'{element}_value' not in st.session_state:
                         st.session_state[f'{element}_value'] = None
             
@@ -367,6 +383,9 @@ class SidebarManager:
         """Render the complete sidebar based on enabled options"""
         try:
             if vector_database:
+                if index_selected and embeddings and rag_type:
+                    self._render_index_selection()
+                
                 self._render_vector_database()
                 
                 if embeddings:
@@ -374,9 +393,6 @@ class SidebarManager:
                 
                 if rag_type:
                     self._render_rag_type()
-                
-                if index_selected and embeddings and rag_type:
-                    self._render_index_selection()
                 
                 if llm:
                     self._render_llm()
@@ -833,81 +849,6 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
 
         # Local database path
         st.markdown(f"Local database path: `{os.environ['LOCAL_DB_PATH']}`")
-# def st_setup_page(page_title: str, home_dir:str, config_file: str, sidebar_config: dict = None):
-#     """
-#     Sets up the Streamlit page with the given title and loads the sidebar configuration.
-
-#     Args:
-#         page_title (str): The title of the Streamlit page.
-#         home_dir (str): The path to the home directory.
-#         config_file (str): The path to the configuration file.
-#         sidebar_config (dict, optional): The sidebar configuration.
-
-#     Returns:
-#         tuple: A tuple containing the following:
-#             - paths (dict): A dictionary containing the following directory paths:
-#                 - base_folder_path (str): The path to the root folder.
-#                 - config_folder_path (str): The path to the config folder.
-#                 - data_folder_path (str): The path to the data folder.
-#                 - db_folder_path (str): The path to the database folder.
-#             - sb (dict): The sidebar configuration.
-#             - secrets (dict): A dictionary containing the set API keys.
-
-#     Raises:
-#         SecretKeyException: If there is an issue with the secret keys.
-
-#     """
-#     # load_dotenv(find_dotenv(), override=True)
-
-#     # base_folder_path = home_dir
-#     # data_folder_path=os.path.join(base_folder_path, 'data')
-
-#     # # Set the page title
-#     # st.title(page_title)
-
-#     # Set local database
-#     # Only show the text input if no value has been entered yet
-#     if not os.environ.get('LOCAL_DB_PATH'):
-#         local_db_path_input = st.empty()  # Create a placeholder for the text input
-#         warn_db_path=st.warning('Local Database Path is required to initialize. Use an absolute path.')
-#         local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. chroma).')
-#         if local_db_path:
-#             os.environ['LOCAL_DB_PATH'] = local_db_path
-#         else:
-#             st.stop()
-#     if os.environ.get('LOCAL_DB_PATH'): # If a value has been entered, update the environment variable and clear the text input
-#         try:
-#             local_db_path_input.empty()  # This will remove the text input from the page if it exists
-#             warn_db_path.empty()
-#         except:
-#             pass    # If the text input has already been removed, do nothing
-
-#     # # Load sidebar
-#     # try:
-#     #     if sidebar_config is None:
-#     #         sb=load_sidebar(config_file)
-#     #     else:
-#     #         sb=load_sidebar(config_file,
-#     #                         **sidebar_config)
-#     # except SecretKeyException as e:
-#     #     # If no .env file is found, set the local db path when the warning is raised.
-#     #     st.warning(f"{e}")
-#     #     st.stop()
-#     # try:
-#     #     secrets=set_secrets(sb) # Take secrets from .env file first, otherwise from sidebar
-#     # except SecretKeyException as e:
-#     #     st.warning(f"{e}")
-#     #     st.stop()
-
-#     # # Set db folder path based on env variable
-#     # db_folder_path=os.environ['LOCAL_DB_PATH']
-
-#     # paths={'base_folder_path':base_folder_path,
-#     #        'config_folder_path':config_file,
-#     #        'data_folder_path':data_folder_path,
-#     #        'db_folder_path':db_folder_path}
-
-#     return paths,sb,secrets
 def extract_pages_from_pdf(url, target_page, page_range=5):
     try:
         # Download extracted relevant section of the PDF file

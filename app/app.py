@@ -14,7 +14,7 @@ if nav_bar=="admin":
            st.Page(os.path.join(tool_dir,"Visualize_Data.py"),icon='📈')]
     st.session_state.config_file=os.path.join('../','config','config_admin.json')
 elif nav_bar=="tester":
-    pages=[st.Page(os.path.join(tool_dir,"Chatbot.py"),icon='🧑‍🔬')]
+    pages=[st.Page(os.path.join(tool_dir,"Aerospace_Chatbot.py"),icon='🚀')]
     st.session_state.config_file=os.path.join('../','config','config_tester.json')
 pg=st.navigation(pages)
 

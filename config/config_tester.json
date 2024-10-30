@@ -8,8 +8,7 @@
     "embeddings": [
         {
             "name": "OpenAI",
-            "embedding_models": ["text-embedding-3-large"
-            ]
+            "embedding_models": ["text-embedding-3-large"]
         }
     ],
     "llms": [
@@ -28,5 +27,11 @@
             ]
         }
     ],
-    "rag_types": ["Standard"]
+    "rag_types": ["Standard"],
+    "disabled_controls": {
+        "embeddings": ["query_model", "embedding_name", "embedding_endpoint"],
+        "rag": ["rag_type", "rag_llm_source", "rag_llm_model", "rag_endpoint"],
+        "llm": ["llm_source", "llm_model", "llm_endpoint"],
+        "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"]
+    }
 }
