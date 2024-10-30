@@ -2,7 +2,6 @@ import os, sys, time, ast
 import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
-import chromadb
 from pinecone import Pinecone as pinecone_client
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
@@ -22,18 +21,36 @@ def _reset_conversation():
     return None
 
 # Page setup
+st.title('🚀 Aerospace Chatbot')
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
-paths,sb,secrets=admin.st_setup_page('🚀 Aerospace Chatbot',
-                                     home_dir,
-                                     st.session_state.config_file,
-                                     {'vector_database':True,
-                                      'embeddings':True,
-                                      'rag_type':True,
-                                      'index_selected':True,
-                                      'llm':True,
-                                      'model_options':True,
-                                      'secret_keys':True})
+
+# Initialize SidebarManager
+sidebar_manager = admin.SidebarManager(st.session_state.config_file)
+
+# Configure sidebar options
+sidebar_config = {
+    'vector_database': True,
+    'embeddings': True,
+    'rag_type': True,
+    'index_selected': True,
+    'llm': True,
+    'model_options': True,
+    'secret_keys': True
+}
+
+# Get paths, sidebar values, and secrets
+paths = sidebar_manager.get_paths(home_dir)
+sb = sidebar_manager.render_sidebar(**sidebar_config)
+secrets = sidebar_manager.get_secrets()
+
+# Disable sidebar elements after first message
+if 'message_id' in st.session_state and st.session_state.message_id > 0:
+    sidebar_manager.disable_group('index')
+    sidebar_manager.disable_group('embeddings')
+    sidebar_manager.disable_group('rag')
+    sidebar_manager.disable_group('llm')
+    sidebar_manager.disable_group('model_options')
 
 # Set up chat history
 if 'user_upload' not in st.session_state:

@@ -1,7 +1,6 @@
 import os, sys, time
 import glob
 import streamlit as st
-import tempfile
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, data_processing

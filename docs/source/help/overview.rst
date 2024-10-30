@@ -93,7 +93,7 @@ For locally deployed applications, `Renumics Spotlight <https://renumics.com/ope
 Secret Keys
 ^^^^^^^^^^^
 
-Secret keys are set when the streamlit Home.py page is fully loaded. The secret keys are committed to environment variables. You can see the secret keys used on the homepage under the "Connection Status" expander. On each stremalit page, these secret keys are also accessible via the secrets variable output via ``admin.st_setup_page``.
+Secret keys are set when the streamlit app loads.
 
 The exception is for LOCAL_DB_PATH, which is set only as an environment variable. This is for portability reasons to Docker and other deployments.
 
