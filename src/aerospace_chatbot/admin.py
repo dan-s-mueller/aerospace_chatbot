@@ -378,30 +378,48 @@ class SidebarManager:
             st.warning(f"{e}")
             st.stop()
 
+    def _ensure_dependencies(self):
+        """Pre-initialize all required dependencies before rendering GUI"""
+        # Handle core dependencies first
+        if 'index_type' not in self.sb_out:
+            self.sb_out['index_type'] = self.config['databases'].keys().__iter__().__next__()
+        
+        if 'embedding_name' not in self.sb_out:
+            query_model = self.config['databases'][self.sb_out['index_type']]['embedding_models'][0]
+            self.sb_out['query_model'] = query_model
+            self.sb_out['embedding_name'] = (
+                query_model if self.sb_out['index_type'] == 'RAGatouille'
+                else self.config['embeddings'][query_model]['embedding_models'][0]
+            )
+        
+        if 'rag_type' not in self.sb_out:
+            self.sb_out['rag_type'] = (
+                'Standard' if self.sb_out['index_type'] == 'RAGatouille'
+                else self.config['rag_types'][0]
+            )
+
     def render_sidebar(self, vector_database=False, embeddings=False, rag_type=False,
                       index_selected=False, llm=False, model_options=False, secret_keys=False):
         """Render the complete sidebar based on enabled options"""
         try:
+            # Initialize all dependencies before rendering anything
+            self._ensure_dependencies()
+            # Now render GUI elements in any order
+            if index_selected:
+                self._render_index_selection()
+            if llm:
+                self._render_llm()
+            if rag_type:
+                self._render_rag_type()    
+            if model_options:
+                self._render_model_options()
             if vector_database:
-                if index_selected and embeddings and rag_type:
-                    self._render_index_selection()
-                
                 self._render_vector_database()
-                
-                if embeddings:
-                    self._render_embeddings()
-                
-                if rag_type:
-                    self._render_rag_type()
-                
-                if llm:
-                    self._render_llm()
-                
-                if model_options:
-                    self._render_model_options()
-            
+            if embeddings:
+                self._render_embeddings()
             if secret_keys:
                 self._render_secret_keys()
+                
         except DatabaseException as e:
             st.error(f"No index available, create a new one with the sidebar parameters you've selected: {e}")
             st.stop()
