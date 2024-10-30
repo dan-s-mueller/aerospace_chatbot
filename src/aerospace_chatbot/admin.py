@@ -796,7 +796,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                     else:
                         rag_type = "Standard"
                     data_processing.delete_index('Pinecone', pinecone_index_name, rag_type, local_db_path=db_folder_path)
-                    st.markdown(f"Index {pinecone_index_name} has been deleted.")
+                    st.markdown(f"Index `{pinecone_index_name}` has been deleted.")
         except:
             pass
 
@@ -814,7 +814,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                     else:
                         rag_type = "Standard"
                     data_processing.delete_index('ChromaDB', chroma_db_name, rag_type, local_db_path=db_folder_path)
-                    st.markdown(f"Database {chroma_db_name} has been deleted.")
+                    st.markdown(f"Database `{chroma_db_name}` has been deleted.")
         except:
             pass
         
@@ -827,12 +827,12 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
                 ragatouille_name = st.selectbox('RAGatouille database to delete', ragatouille_indexes)
                 if st.button('Delete RAGatouille database', help='This is permanent!'):
                     data_processing.delete_index('RAGatouille', ragatouille_name, "Standard", local_db_path=db_folder_path)
-                    st.markdown(f"Index {ragatouille_name} has been deleted.")
+                    st.markdown(f"Index `{ragatouille_name}` has been deleted.")
         except:
             pass
 
         # Local database path
-        st.markdown(f"Local database path: {os.environ['LOCAL_DB_PATH']}")
+        st.markdown(f"Local database path: `{os.environ['LOCAL_DB_PATH']}`")
 # def st_setup_page(page_title: str, home_dir:str, config_file: str, sidebar_config: dict = None):
 #     """
 #     Sets up the Streamlit page with the given title and loads the sidebar configuration.
@@ -1000,7 +1000,7 @@ def _format_pinecone_status(pinecone_status):
             name = index['name']
             state = index['status']['state']
             status = ":white_check_mark:"
-            index_description += f"- {name}: {state} ({status})\n"
+            index_description += f"- `{name}`: {state} ({status})\n"
         markdown_string = f"**Pinecone Indexes**\n{index_description}"
     else:
         message = pinecone_status['message']
@@ -1021,7 +1021,7 @@ def _format_chroma_status(chroma_status):
         for index in chroma_status['message']:
             name = index.name
             status = ":white_check_mark:"
-            collection_description += f"- {name}: ({status})\n"
+            collection_description += f"- `{name}`: ({status})\n"
         markdown_string = f"**ChromaDB Collections**\n{collection_description}"
     else:
         message = chroma_status['message']
@@ -1043,7 +1043,7 @@ def _format_ragatouille_status(ragatouille_status):
         for index in ragatouille_status['message']:
             name = index
             status = ":white_check_mark:"
-            index_description += f"- {name}: ({status})\n"
+            index_description += f"- `{name}`: ({status})\n"
         markdown_string = f"**Ragatouille Indexes**\n{index_description}"
     else:
         message = ragatouille_status['message']

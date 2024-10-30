@@ -6,17 +6,27 @@ sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, data_processing
 
 # Page setup
+st.title('📓 Database Processing')
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
-paths,sb,secrets=admin.st_setup_page('📓 Database Processing',
-                                     home_dir,
-                                     st.session_state.config_file,
-                                     {'vector_database':True,
-                                      'embeddings':True,
-                                      'rag_type':True,
-                                      'secret_keys':True})
 
-# Add section for connection status and vector database cleanup
+# Initialize SidebarManager
+sidebar_manager = admin.SidebarManager(st.session_state.config_file)
+
+# Configure sidebar options
+sidebar_config = {
+    'vector_database': True,
+    'embeddings': True,
+    'rag_type': True,
+    'secret_keys': True
+}
+
+# Get paths, sidebar values, and secrets
+paths = sidebar_manager.get_paths(home_dir)
+sb = sidebar_manager.render_sidebar(**sidebar_config)
+secrets = sidebar_manager.get_secrets()
+
+# Page setup
 st.subheader('Connection status and vector database cleanup')
 admin.st_connection_status_expander(expanded=False,delete_buttons=True)
 
@@ -33,9 +43,14 @@ data_folder = st.text_input('Enter a directory relative to the base directory',
 if not os.path.isdir(data_folder):
     st.error('The entered directory does not exist')
 docs = glob.glob(os.path.join(data_folder,'*.pdf'))   # Only get the PDFs in the directory
-# TODO update so that you can select the files to upload
-st.markdown('PDFs found: '+str(docs))
-st.markdown('Number of PDFs found: ' + str(len(docs)))
+markdown_text = f"**Number of PDFs found:** {len(docs)}\n"
+if len(docs) > 0:
+    markdown_text += "**PDFs found:**\n"
+    for doc in docs:
+        # Get just the filename from the full path
+        filename = os.path.basename(doc)
+        markdown_text += f"- `{filename}`\n"
+st.markdown(markdown_text)
 
 # Set database name
 index_appendix=st.text_input('Appendix for index name','mch')
@@ -120,7 +135,7 @@ try:
                                            n_merge_pages=n_merge_pages,
                                            chunk_size=chunk_size,
                                            chunk_overlap=chunk_overlap)
-    st.markdown(f'Index name: {index_name}')
+    st.markdown(f'Index name: `{index_name}`')
 except ValueError as e:
     st.warning(str(e))
     st.stop()

@@ -3,7 +3,6 @@ import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
 from pinecone import Pinecone as pinecone_client
-
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, queries, data_processing
 

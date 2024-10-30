@@ -5,17 +5,6 @@
             "index_type": "ChromaDB",
             "query_model": "OpenAI",
             "embedding_name": "text-embedding-3-large"
-        },
-        {
-            "id": "2",
-            "index_type": "Pinecone",
-            "query_model": "Voyage",
-            "embedding_name": "voyage-large-2-instruct"
-        },
-        {
-            "id": "3",
-            "index_type": "RAGatouille",
-            "embedding_name": "colbert-ir/colbertv2.0"
         }
     ],
     "llms": [
@@ -23,45 +12,6 @@
             "id": "1",
             "llm_source": "OpenAI",
             "llm_model": "gpt-4o",
-            "model_options": {
-                "temperature": 0.2,
-                "output_level": 1000
-            }
-        },
-        {
-            "id": "2",
-            "llm_source": "Hugging Face",
-            "llm_model": "meta-llama/Meta-Llama-3-8B-Instruct",
-            "model_options": {
-                "temperature": 0.2,
-                "output_level": 1000
-            },
-            "hf_endpoint": "https://api-inference.huggingface.co/v1"
-        },
-        {
-            "id": "3",
-            "llm_source": "Hugging Face",
-            "llm_model": "mistralai/Mistral-7B-Instruct-v0.2",
-            "model_options": {
-                "temperature": 0.2,
-                "output_level": 1000
-            },
-            "hf_endpoint": "https://api-inference.huggingface.co/v1"
-        },
-        {
-            "id": "4",
-            "llm_source": "Hugging Face",
-            "llm_model": "Dedicated Endpoint",
-            "model_options": {
-                "temperature": 0.2,
-                "output_level": 200
-            },
-            "hf_endpoint": "https://yd47rkj3ry350ms7.us-east4.gcp.endpoints.huggingface.cloud/v1/"
-        },
-        {
-            "id": "5",
-            "llm_source": "OpenAI",
-            "llm_model": "gpt-3.5-turbo-0125",
             "model_options": {
                 "temperature": 0.2,
                 "output_level": 1000
@@ -74,12 +24,6 @@
             "n_merge_pages":2,
             "chunk_method": "None",
             "chunk_size": 0
-        },
-        {
-            "id": "2",
-            "n_merge_pages":0,
-            "chunk_method": "character_recursive",
-            "chunk_size": 400
         }
     ]
 }
