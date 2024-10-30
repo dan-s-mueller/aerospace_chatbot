@@ -45,230 +45,242 @@ class DatabaseException(Exception):
     def __init__(self, message, id):
         super().__init__(message)
         self.id = id
-def load_sidebar(config_file,
-                 vector_database=False,
-                 embeddings=False,
-                 rag_type=False,
-                 index_selected=False,
-                 llm=False,
-                 model_options=False,
-                 secret_keys=False):
-    """
-    Loads the sidebar configuration for the chatbot.
 
-    Args:
-        config_file (str): The path to the configuration file.
-        vector_database (bool, optional): Whether to include the vector database in the sidebar.
-        embeddings (bool, optional): Whether to include embeddings in the sidebar.
-        rag_type (bool, optional): Whether to include RAG type in the sidebar.
-        index_selected (bool, optional): Whether to include index name in the sidebar.
-        llm (bool, optional): Whether to include LLM in the sidebar.
-        model_options (bool, optional): Whether to include model options in the sidebar.
-        secret_keys (bool, optional): Whether to include secret keys in the sidebar.
-
-    Returns:
-        dict: The sidebar configuration.
-    """
-    sb_out={}
+def _load_config(config_file):
+    """Helper function to load and parse config file"""
     with open(config_file, 'r') as f:
         config = json.load(f)
-        databases = {db['name']: db for db in config['databases']}
-        embeddings_list = {e['name']: e for e in config['embeddings']}
-        llms  = {m['name']: m for m in config['llms']}
-        rag_types= config['rag_types']
+        return {
+            'databases': {db['name']: db for db in config['databases']},
+            'embeddings': {e['name']: e for e in config['embeddings']},
+            'llms': {m['name']: m for m in config['llms']},
+            'rag_types': config['rag_types']
+        }
 
-    # Set local db path
+def _get_available_indexes(index_type, embedding_name, rag_type):
+    """Helper function to get available indexes based on current settings"""
+    name = []
+    base_name = embedding_name.replace('/', '-').lower()
+    
+    if index_type == 'ChromaDB':
+        indices = show_chroma_collections(format=False)
+        if not indices['status']:
+            return []
+        
+        for index in indices['message']:
+            if not index.name.startswith(base_name) or index.name.endswith('-queries'):
+                continue
+                
+            if (rag_type == 'Parent-Child' and index.name.endswith('-parent-child')) or \
+               (rag_type == 'Summary' and index.name.endswith('-summary')) or \
+               (rag_type == 'Standard' and not index.name.endswith(('-parent-child', '-summary'))):
+                name.append(index.name)
+                
+    elif index_type == 'Pinecone':
+        indices = show_pinecone_indexes(format=False)
+        if not indices['status']:
+            return []
+            
+        for index in indices['message']:
+            if not index['name'].startswith(base_name) or index['name'].endswith('-queries'):
+                continue
+                
+            if (rag_type == 'Parent-Child' and index['name'].endswith('-parent-child')) or \
+               (rag_type == 'Summary' and index['name'].endswith('-summary')) or \
+               (rag_type == 'Standard' and not index['name'].endswith(('-parent-child', '-summary'))):
+                name.append(index['name'])
+                
+    elif index_type == 'RAGatouille':
+        indices = show_ragatouille_indexes(format=False)
+        if not indices['status']:
+            return []
+            
+        for index in indices['message']:
+            if index.startswith(base_name):
+                name.append(index)
+    
+    return name
+
+def load_sidebar(config_file, vector_database=False, embeddings=False, rag_type=False, 
+                index_selected=False, llm=False, model_options=False, secret_keys=False):
+    """Loads the sidebar configuration for the chatbot."""
+    
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
-        # This is the case where the .env file is not in the directory
-        raise SecretKeyException('Local Database Path is required. Use an absolute path for local, or /data for hugging face spaces.','LOCAL_DB_PATH_MISSING')
+        raise SecretKeyException('Local Database Path is required.', 'LOCAL_DB_PATH_MISSING')
 
-    # Vector databases
+    if not vector_database and any([embeddings, rag_type, index_selected, llm, model_options]):
+        raise ValueError('Vector database must be enabled to use these options.')
+
+    sb_out = {}
+    config = _load_config(config_file)
+
     if vector_database:
-        st.sidebar.title('Vector database')
-        sb_out['index_type']=st.sidebar.selectbox('Index type', list(databases.keys()), index=0,help='Select the type of index to use.')
-
+        # 1. Basic Configuration (hidden from UI initially)
+        sb_out['index_type'] = list(config['databases'].keys())[0]
+        
         if embeddings:
-            # Embeddings
-            st.sidebar.title('Embeddings',help='See embedding leaderboard here for performance overview: https://huggingface.co/spaces/mteb/leaderboard')
-            if sb_out['index_type']=='RAGatouille':    # Default to selecting hugging face model for RAGatouille, otherwise select alternates
-                sb_out['query_model']=st.sidebar.selectbox('Hugging face rag models', 
-                                                        databases[sb_out['index_type']]['embedding_models'], 
-                                                        index=0,
-                                                        help="Models listed are compatible with the selected index type.")
-                sb_out['embedding_name']=sb_out['query_model']
+            if sb_out['index_type'] == 'RAGatouille':
+                sb_out['query_model'] = sb_out['embedding_name'] = config['databases'][sb_out['index_type']]['embedding_models'][0]
             else:
-                sb_out['query_model']=st.sidebar.selectbox('Embedding model family', 
-                                                        databases[sb_out['index_type']]['embedding_models'], 
-                                                        index=0,
-                                                        help="Model provider.")
-                sb_out['embedding_name']=st.sidebar.selectbox('Embedding model', 
-                                                        embeddings_list[sb_out['query_model']]['embedding_models'], 
-                                                        index=0,
-                                                        help="Models listed are compatible with the selected index type.")
-                if sb_out['embedding_name']=="Dedicated Endpoint":
-                    sb_out['embedding_hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
-                                                        help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
-                else:
-                    sb_out['embedding_hf_endpoint']=None
+                sb_out['query_model'] = config['databases'][sb_out['index_type']]['embedding_models'][0]
+                sb_out['embedding_name'] = config['embeddings'][sb_out['query_model']]['embedding_models'][0]
+        
         if rag_type:
-            # RAG Type
-            st.sidebar.title('RAG Type')
-            if sb_out['index_type']=='RAGatouille':
-                sb_out['rag_type']=st.sidebar.selectbox('RAG type', ['Standard'], index=0,help='Only Standard is available for RAGatouille.')
-            else:
-                sb_out['rag_type']=st.sidebar.selectbox('RAG type', rag_types, index=0,help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.')
-                if sb_out['rag_type']=='Summary':
-                    sb_out['rag_llm_source']=st.sidebar.selectbox('RAG LLM model', list(llms.keys()), index=0,help='Select the LLM model for RAG.')
-                    if sb_out['rag_llm_source']=='OpenAI':
-                        sb_out['rag_llm_model']=st.sidebar.selectbox('RAG OpenAI model', llms[sb_out['rag_llm_source']]['models'], index=0,help='Select the OpenAI model for RAG.')
-                    if sb_out['rag_llm_source']=='Hugging Face':
-                        sb_out['rag_llm_model']=st.sidebar.selectbox('RAG Hugging Face model', 
-                                                                llms['Hugging Face']['models'], 
-                                                                index=0,
-                                                                help='Select the Hugging Face model for RAG.')
-                        if sb_out['rag_llm_model']=="Dedicated Endpoint":
-                            sb_out['rag_hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
-                                                                help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
-                            sb_out['rag_hf_endpoint']=sb_out['rag_hf_endpoint']+'/v1/'
-                        else:
-                            sb_out['rag_hf_endpoint']='https://api-inference.huggingface.co/v1'
-                    elif sb_out['rag_llm_source']=='LM Studio (local)':
-                        sb_out['rag_llm_model']=st.sidebar.text_input('Local host URL',
-                                                                'http://localhost:1234/v1',
-                                                                help='See LM studio configuration for local host URL.')
-                        st.sidebar.warning('You must load a model in LM studio first for this to work.')
-        if index_selected:
-            if embeddings and rag_type:
-                # Index Name 
-                st.sidebar.title('Index Selected')  
-                name=[]
-                # For each index type, list indices available for the base name
-                if sb_out['index_type']=='ChromaDB':
-                    indices=show_chroma_collections(format=False)
-                    if indices['status']:
-                        for index in indices['message']:
-                            # Be compatible with embedding types already used. Pinecone only supports lowercase.
-                            if index.name.startswith((sb_out['embedding_name'].replace('/', '-')).lower()):    
-                                if not index.name.endswith('-queries'): # Don't list query database as selectable
-                                    if sb_out['rag_type']=='Parent-Child':
-                                        if index.name.endswith('-parent-child'):
-                                            name.append(index.name)
-                                    elif sb_out['rag_type']=='Summary':
-                                        if index.name.endswith('-summary'):
-                                            name.append(index.name)
-                                    else:   # Stadard
-                                        if not index.name.endswith('-parent-child') and not index.name.endswith('-summary'):
-                                            name.append(index.name)
-                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
-                    else:
-                        st.sidebar.markdown('No collections found.',help='Check the status on Home.')
-                elif sb_out['index_type']=='Pinecone':
-                    indices=show_pinecone_indexes(format=False)
-                    if indices['status']:
-                        for index in indices['message']:
-                            # if index['status']['state']=='Ready':
-                            #     name.append(index['name'])
-                            if index['name'].startswith((sb_out['embedding_name'].replace('/', '-')).lower()):    
-                                if not index['name'].endswith('-queries'): # Don't list query database as selectable
-                                    if sb_out['rag_type']=='Parent-Child':
-                                        if index['name'].endswith('-parent-child'):
-                                            name.append(index['name'])
-                                    elif sb_out['rag_type']=='Summary':
-                                        if index['name'].endswith('-summary'):
-                                            name.append(index['name'])
-                                    else:
-                                        name.append(index['name'])
-                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
-                elif sb_out['index_type']=='RAGatouille':
-                    indices=show_ragatouille_indexes(format=False)
-                    if len(indices)>0:
-                        for index in indices['message']:
-                            # Be compatible with embedding types already used. Pinecone only supports lowercase.
-                            if index.startswith((sb_out['embedding_name'].replace('/', '-')).lower()):    
-                                name.append(index)
-                        sb_out['index_selected']=st.sidebar.selectbox('Index selected',name,index=0,help='Select the index to use for the application.')
-                    else:
-                        st.sidebar.markdown('No collections found.',help='Check the status on Home.')
-                else:
-                    raise NotImplementedError
-                try:
-                    if not name:
-                        raise DatabaseException('No collections found for the selected index type/embedding. Create a new database, or select another index type/embedding.','NO_COMPATIBLE_COLLECTIONS')
-                except DatabaseException as e:
-                    st.warning(f"{e}")
-                    st.stop()
-            else:
-                raise ValueError('Embeddings must be enabled to select an index name.')
-        if llm:
-            # LLM
-            st.sidebar.title('LLM',help='See LLM leaderboard here for performance overview: https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard')
-            sb_out['llm_source']=st.sidebar.selectbox('LLM model', list(llms.keys()), index=0,help='Select the LLM model for the application.')
-            if sb_out['llm_source']=='OpenAI':
-                sb_out['llm_model']=st.sidebar.selectbox('OpenAI model', llms[sb_out['llm_source']]['models'], index=0,help='Select the OpenAI model for the application.')
-            elif sb_out['llm_source']=='Anthropic':
-                sb_out['llm_model']=st.sidebar.selectbox('Anthropic model', llms[sb_out['llm_source']]['models'], index=0,help='Select the Anthropic model for the application.')
-            elif sb_out['llm_source']=='Hugging Face':
-                sb_out['llm_model']=st.sidebar.selectbox('Hugging Face model', 
-                                                        llms['Hugging Face']['models'], 
-                                                        index=0,
-                                                        help='Select the Hugging Face model for the application.')
-                sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
+            sb_out['rag_type'] = 'Standard' if sb_out['index_type'] == 'RAGatouille' else config['rag_types'][0]
 
-                if sb_out['llm_model']=="Dedicated Endpoint":
-                    sb_out['hf_endpoint']=st.sidebar.text_input('Dedicated endpoint URL','',
-                                                        help='See Hugging Face configuration for endpoint. https://huggingface.co/inference-endpoints/dedicated')
-                    sb_out['hf_endpoint']=sb_out['hf_endpoint']+'/v1/'
+        # 2. UI Elements (in desired order)
+        
+        # Index Selection (First)
+        if index_selected and embeddings and rag_type:
+            st.sidebar.title('Index Selected')
+            available_indexes = _get_available_indexes(sb_out['index_type'], sb_out['embedding_name'], sb_out['rag_type'])
+            if not available_indexes:
+                raise DatabaseException('No compatible collections found.', 'NO_COMPATIBLE_COLLECTIONS')
+            sb_out['index_selected'] = st.sidebar.selectbox('Index selected', available_indexes, 
+                                                          help='Select the index to use for the application.')
+
+        # Vector Database Selection
+        st.sidebar.title('Vector Database Type')
+        sb_out['index_type'] = st.sidebar.selectbox('Index type', list(config['databases'].keys()), 
+                                                   help='Select the type of index to use.')
+
+        # Embeddings Configuration
+        if embeddings:
+            st.sidebar.title('Embeddings', help='See embedding leaderboard here for performance overview: https://huggingface.co/spaces/mteb/leaderboard')
+            if sb_out['index_type'] == 'RAGatouille':
+                sb_out['query_model'] = st.sidebar.selectbox('Hugging face rag models', 
+                                                           config['databases'][sb_out['index_type']]['embedding_models'], 
+                                                           help="Models listed are compatible with the selected index type.")
+                sb_out['embedding_name'] = sb_out['query_model']
+            else:
+                sb_out['query_model'] = st.sidebar.selectbox('Embedding model family', 
+                                                           config['databases'][sb_out['index_type']]['embedding_models'], 
+                                                           help="Model provider.")
+                sb_out['embedding_name'] = st.sidebar.selectbox('Embedding model', 
+                                                              config['embeddings'][sb_out['query_model']]['embedding_models'], 
+                                                              help="Models listed are compatible with the selected index type.")
+                if sb_out['embedding_name'] == "Dedicated Endpoint":
+                    sb_out['embedding_hf_endpoint'] = st.sidebar.text_input('Dedicated endpoint URL', '',
+                                                                          help='See Hugging Face configuration for endpoint.')
                 else:
-                    sb_out['hf_endpoint']='https://api-inference.huggingface.co/v1'
-            elif sb_out['llm_source']=='LM Studio (local)':
-                sb_out['llm_model']=st.sidebar.text_input('Local host URL',
-                                                        'http://localhost:1234/v1',
-                                                        help='See LM studio configuration for local host URL.')
+                    sb_out['embedding_hf_endpoint'] = None
+
+        # RAG Type Configuration
+        if rag_type:
+            st.sidebar.title('RAG Type')
+            if sb_out['index_type'] == 'RAGatouille':
+                sb_out['rag_type'] = st.sidebar.selectbox('RAG type', ['Standard'], 
+                                                        help='Only Standard is available for RAGatouille.')
+            else:
+                sb_out['rag_type'] = st.sidebar.selectbox('RAG type', config['rag_types'], 
+                                                        help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.')
+                if sb_out['rag_type'] == 'Summary':
+                    sb_out['rag_llm_source'] = st.sidebar.selectbox('RAG LLM model', list(config['llms'].keys()), 
+                                                                  help='Select the LLM model for RAG.')
+                    if sb_out['rag_llm_source'] == 'OpenAI':
+                        sb_out['rag_llm_model'] = st.sidebar.selectbox('RAG OpenAI model', 
+                                                                     config['llms'][sb_out['rag_llm_source']]['models'], 
+                                                                     help='Select the OpenAI model for RAG.')
+                    elif sb_out['rag_llm_source'] == 'Hugging Face':
+                        sb_out['rag_llm_model'] = st.sidebar.selectbox('RAG Hugging Face model', 
+                                                                     config['llms']['Hugging Face']['models'], 
+                                                                     help='Select the Hugging Face model for RAG.')
+                        if sb_out['rag_llm_model'] == "Dedicated Endpoint":
+                            sb_out['rag_hf_endpoint'] = st.sidebar.text_input('Dedicated endpoint URL', '',
+                                                                           help='See Hugging Face configuration for endpoint.')
+                            sb_out['rag_hf_endpoint'] = sb_out['rag_hf_endpoint'] + '/v1/'
+                        else:
+                            sb_out['rag_hf_endpoint'] = 'https://api-inference.huggingface.co/v1'
+                    elif sb_out['rag_llm_source'] == 'LM Studio (local)':
+                        sb_out['rag_llm_model'] = st.sidebar.text_input('Local host URL',
+                                                                     'http://localhost:1234/v1',
+                                                                     help='See LM studio configuration for local host URL.')
+                        st.sidebar.warning('You must load a model in LM studio first for this to work.')
+
+        # LLM Configuration
+        if llm:
+            st.sidebar.title('LLM', help='See LLM leaderboard here for performance overview: https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard')
+            sb_out['llm_source'] = st.sidebar.selectbox('LLM model', list(config['llms'].keys()), 
+                                                      help='Select the LLM model for the application.')
+            
+            if sb_out['llm_source'] == 'OpenAI':
+                sb_out['llm_model'] = st.sidebar.selectbox('OpenAI model', 
+                                                         config['llms'][sb_out['llm_source']]['models'], 
+                                                         help='Select the OpenAI model for the application.')
+            elif sb_out['llm_source'] == 'Anthropic':
+                sb_out['llm_model'] = st.sidebar.selectbox('Anthropic model', 
+                                                         config['llms'][sb_out['llm_source']]['models'], 
+                                                         help='Select the Anthropic model for the application.')
+            elif sb_out['llm_source'] == 'Hugging Face':
+                sb_out['llm_model'] = st.sidebar.selectbox('Hugging Face model', 
+                                                         config['llms']['Hugging Face']['models'], 
+                                                         help='Select the Hugging Face model for the application.')
+                sb_out['hf_endpoint'] = 'https://api-inference.huggingface.co/v1'
+
+                if sb_out['llm_model'] == "Dedicated Endpoint":
+                    sb_out['hf_endpoint'] = st.sidebar.text_input('Dedicated endpoint URL', '',
+                                                               help='See Hugging Face configuration for endpoint.')
+                    sb_out['hf_endpoint'] = sb_out['hf_endpoint'] + '/v1/'
+            elif sb_out['llm_source'] == 'LM Studio (local)':
+                sb_out['llm_model'] = st.sidebar.text_input('Local host URL',
+                                                         'http://localhost:1234/v1',
+                                                         help='See LM studio configuration for local host URL.')
                 st.sidebar.warning('You must load a model in LM studio first for this to work.')
+
+        # Model Options
         if model_options:
-            # Add input fields in the sidebar
             st.sidebar.title('LLM Options')
-            temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
+            temperature = st.sidebar.slider('Temperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,
+                                         help='Temperature for LLM.')
             output_level = st.sidebar.number_input('Max output tokens', min_value=50, step=10, value=1000,
                                                 help='Max output tokens for LLM. Concise: 50, Verbose: 1000. Limit depends on model.')
-            # Set different options for if ragatouille is used, since it has fewer parameters to select
-            if 'index_type' in sb_out:
-                st.sidebar.title('Retrieval Options')
-                k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4,help='Number of items to retrieve per query.')
-                if sb_out['index_type']!='RAGatouille':
-                    search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], index=0,help='Select the search type for the application.')
-                    sb_out['model_options']={'output_level':output_level,
-                                            'k':k,
-                                            'search_type':search_type,
-                                            'temperature':temperature}
-                else:
-                    sb_out['model_options']={'output_level':output_level,
-                                             'k':k,
-                                            'search_type':None,
-                                            'temperature':temperature}
-    else:
-        if embeddings or rag_type or index_selected or llm or model_options:
-            # Must have vector database for any of this functionality.
-            raise ValueError('Vector database must be enabled to use these options.')
-
-    # Secret keys, which does not rely on vector_database
-    if secret_keys:
-        sb_out['keys']={}
-        # Add a section for secret keys
-        st.sidebar.title('Secret keys',help='See Home page under Connection Status for status of keys.')
-        st.sidebar.markdown('If .env file is in directory, will use that first.')
-        if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI':
-            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',help='OpenAI API Key: https://platform.openai.com/api-keys')
-        elif 'query_model' in sb_out and sb_out['query_model'] == 'OpenAI':
-            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',help='OpenAI API Key: https://platform.openai.com/api-keys')
-        if 'llm_source' in sb_out and sb_out['llm_source']=='Hugging Face':
-            sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password',help='Hugging Face API Key: https://huggingface.co/settings/tokens')
-        if 'query_model' in sb_out and sb_out['query_model']=='Voyage':
-            sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password',help='Voyage API Key: https://dash.voyageai.com/api-keys')
-        if 'index_type' in sb_out and sb_out['index_type']=='Pinecone':
-            sb_out['keys']['PINECONE_API_KEY']=st.sidebar.text_input('Pinecone API Key',type='password',help='Pinecone API Key: https://www.pinecone.io/')
             
+            st.sidebar.title('Retrieval Options')
+            k = st.sidebar.number_input('Number of items per prompt', min_value=1, step=1, value=4,
+                                     help='Number of items to retrieve per query.')
+            
+            if sb_out['index_type'] != 'RAGatouille':
+                search_type = st.sidebar.selectbox('Search Type', ['similarity', 'mmr'], 
+                                                help='Select the search type for the application.')
+                sb_out['model_options'] = {
+                    'output_level': output_level,
+                    'k': k,
+                    'search_type': search_type,
+                    'temperature': temperature
+                }
+            else:
+                sb_out['model_options'] = {
+                    'output_level': output_level,
+                    'k': k,
+                    'search_type': None,
+                    'temperature': temperature
+                }
+
+    # Secret Keys Configuration
+    if secret_keys:
+        sb_out['keys'] = {}
+        st.sidebar.title('Secret keys', help='See Home page under Connection Status for status of keys.')
+        st.sidebar.markdown('If .env file is in directory, will use that first.')
+        
+        if 'llm_source' in sb_out and sb_out['llm_source'] == 'OpenAI' or \
+           'query_model' in sb_out and sb_out['query_model'] == 'OpenAI':
+            sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input('OpenAI API Key', type='password',
+                                                                   help='OpenAI API Key: https://platform.openai.com/api-keys')
+        
+        if 'llm_source' in sb_out and sb_out['llm_source'] == 'Hugging Face':
+            sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input('Hugging Face API Key', type='password',
+                                                                             help='Hugging Face API Key: https://huggingface.co/settings/tokens')
+        
+        if 'query_model' in sb_out and sb_out['query_model'] == 'Voyage':
+            sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input('Voyage API Key', type='password',
+                                                                   help='Voyage API Key: https://dash.voyageai.com/api-keys')
+        
+        if 'index_type' in sb_out and sb_out['index_type'] == 'Pinecone':
+            sb_out['keys']['PINECONE_API_KEY'] = st.sidebar.text_input('Pinecone API Key', type='password',
+                                                                     help='Pinecone API Key: https://www.pinecone.io/')
+
     return sb_out
+
 def set_secrets(sb):
     """
     Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar.
