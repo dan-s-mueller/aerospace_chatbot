@@ -17,7 +17,8 @@
     "embeddings": [
         {
             "name": "OpenAI",
-            "embedding_models": ["text-embedding-3-large"]
+            "embedding_models": ["text-embedding-3-large",
+                                 "text-embedding-3-small"]
         },
         {
             "name": "Voyage",

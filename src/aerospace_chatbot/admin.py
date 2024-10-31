@@ -55,39 +55,6 @@ class SidebarManager:
         self.sb_out = {}
         self.initialize_session_state()
     
-    def _check_local_db_path(self):
-        """Check and set local database path if not already set"""
-        if not os.environ.get('LOCAL_DB_PATH'):
-            local_db_path_input = st.empty()
-            warn_db_path = st.warning('Local Database Path is required to initialize. Use an absolute path.')
-            local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. chroma).')
-            
-            if local_db_path:
-                os.environ['LOCAL_DB_PATH'] = local_db_path
-            else:
-                st.stop()
-                
-            # Clean up UI elements
-            local_db_path_input.empty()
-            warn_db_path.empty()
-    
-    def _load_config(self, config_file):
-        """Load and parse config file"""
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-            parsed_config = {
-                'databases': {db['name']: db for db in config['databases']},
-                'embeddings': {e['name']: e for e in config['embeddings']},
-                'llms': {m['name']: m for m in config['llms']},
-                'rag_types': config['rag_types']
-            }
-            
-            # Add disabled_controls if they exist in the config
-            if 'disabled_controls' in config:
-                parsed_config['disabled_controls'] = config['disabled_controls']
-                
-            return parsed_config
-    
     def initialize_session_state(self):
         """Initialize session state for all sidebar elements"""
         if 'sidebar_state_initialized' not in st.session_state:
@@ -97,7 +64,7 @@ class SidebarManager:
                 'rag': ['rag_type', 'rag_llm_source', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_source', 'llm_model', 'llm_endpoint'],
                 'model_options': ['temperature', 'output_level', 'k', 'search_type'],
-                'api_keys': ['openai_key', 'hf_key', 'voyage_key', 'pinecone_key']
+                'api_keys': ['openai_key', 'anthropic_key', 'hf_key', 'voyage_key', 'pinecone_key']
             }
             
             # Get disabled controls from config if they exist
@@ -118,7 +85,121 @@ class SidebarManager:
                         st.session_state[f'{element}_value'] = None
             
             st.session_state.sidebar_state_initialized = True
-    
+    def render_sidebar(self):
+        """Render the complete sidebar based on enabled options"""
+        try:
+            # Initialize all dependencies before rendering anything
+            self._ensure_dependencies()
+
+            # Now render GUI elements in any order
+            self._render_index_selection()
+            self._render_llm()
+            self._render_rag_type()    
+            self._render_model_options()
+            self._render_vector_database()
+            self._render_embeddings()
+            self._render_secret_keys()
+                
+        except DatabaseException as e:
+            st.error(f"No index available, create a new one with the sidebar parameters you've selected: {e}")
+            st.stop()
+        return self.sb_out
+    def get_paths(self, home_dir):
+        """Get application paths"""
+        paths = {
+            'base_folder_path': home_dir,
+            'db_folder_path': os.path.join(home_dir, os.getenv('LOCAL_DB_PATH')),
+            'data_folder_path': os.path.join(home_dir, 'data')
+        }
+        
+        # Check if paths exist
+        for path_name, path in paths.items():
+            if not os.path.exists(path):
+                raise DatabaseException(f"Path {path_name} does not exist: {path}")
+                
+        return paths
+    def get_secrets(self):
+        """Load and return secrets from environment"""
+        load_dotenv(find_dotenv())
+        return {
+            'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
+            'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY'),
+            'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
+            'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY'),
+            'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY')
+        }
+    def _check_local_db_path(self):
+        """Check and set local database path if not already set"""
+        if not os.environ.get('LOCAL_DB_PATH'):
+            local_db_path_input = st.empty()
+            warn_db_path = st.warning('Local Database Path is required to initialize. Use an absolute path.')
+            local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. chroma).')
+            
+            if local_db_path:
+                os.environ['LOCAL_DB_PATH'] = local_db_path
+            else:
+                st.stop()
+                
+            # Clean up UI elements
+            local_db_path_input.empty()
+            warn_db_path.empty()
+    def _load_config(self, config_file):
+        """Load and parse config file"""
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+            
+            # Validate the raw config before parsing
+            self._validate_config(config)
+            
+            parsed_config = {
+                'databases': {db['name']: db for db in config['databases']},
+                'embeddings': {e['name']: e for e in config['embeddings']},
+                'llms': {m['name']: m for m in config['llms']},
+                'rag_types': config['rag_types']
+            }
+            
+            # Add disabled_controls if they exist in the config
+            if 'disabled_controls' in config:
+                parsed_config['disabled_controls'] = config['disabled_controls']
+                
+            return parsed_config
+    def _validate_config(self, config):
+        """Validate the configuration file structure."""
+        required_sections = ['databases', 'embeddings', 'llms', 'rag_types']
+        
+        # Check for required sections
+        for section in required_sections:
+            if section not in config:
+                raise KeyError(f"Missing required section '{section}' in config file")
+            
+            # Check if sections are not empty
+            if not config[section]:
+                raise ValueError(f"Required section '{section}' is empty in config file")
+        
+        # Additional validation for specific sections
+        if not isinstance(config['rag_types'], (list, dict)):
+            raise ValueError("'rag_types' must be a list or dictionary")
+        
+        return None
+    def _ensure_dependencies(self):
+        """Pre-initialize all required dependencies before rendering GUI"""
+        # Handle core dependencies first
+        if 'index_type' not in self.sb_out:
+            self.sb_out['index_type'] = self.config['databases'].keys().__iter__().__next__()
+        
+        if 'embedding_name' not in self.sb_out:
+            query_model = self.config['databases'][self.sb_out['index_type']]['embedding_models'][0]    # Default to first embedding model in config
+            self.sb_out['query_model'] = query_model
+            self.sb_out['embedding_name'] = (
+                query_model if self.sb_out['index_type'] == 'RAGatouille'
+                else self.config['embeddings'][query_model]['embedding_models'][0]  # Default to first embedding model in config
+            )
+        
+        if 'rag_type' not in self.sb_out:
+            self.sb_out['rag_type'] = (
+                'Standard' if self.sb_out['index_type'] == 'RAGatouille'
+                else self.config['rag_types'][0]
+            )
     def _render_index_selection(self):
         """Render index selection section"""
         st.sidebar.title('Index Selected')
@@ -242,6 +323,13 @@ class SidebarManager:
                 self.config['llms'][self.sb_out[source]]['models'],
                 disabled=st.session_state[f"{model}_disabled"],
                 help='Select the OpenAI model for the application.'
+            )
+        elif self.sb_out[source] == 'Anthropic':
+            self.sb_out[model] = st.sidebar.selectbox(
+                'Anthropic model',
+                self.config['llms'][self.sb_out[source]]['models'],
+                disabled=st.session_state[f"{model}_disabled"],
+                help='Select the Anthropic model for the application.'
             )
         elif self.sb_out[source] == 'Hugging Face':
             self.sb_out[model] = st.sidebar.selectbox(
@@ -377,72 +465,6 @@ class SidebarManager:
         except SecretKeyException as e:
             st.warning(f"{e}")
             st.stop()
-
-    def _ensure_dependencies(self):
-        """Pre-initialize all required dependencies before rendering GUI"""
-        # Handle core dependencies first
-        if 'index_type' not in self.sb_out:
-            self.sb_out['index_type'] = self.config['databases'].keys().__iter__().__next__()
-        
-        if 'embedding_name' not in self.sb_out:
-            query_model = self.config['databases'][self.sb_out['index_type']]['embedding_models'][0]
-            self.sb_out['query_model'] = query_model
-            self.sb_out['embedding_name'] = (
-                query_model if self.sb_out['index_type'] == 'RAGatouille'
-                else self.config['embeddings'][query_model]['embedding_models'][0]
-            )
-        
-        if 'rag_type' not in self.sb_out:
-            self.sb_out['rag_type'] = (
-                'Standard' if self.sb_out['index_type'] == 'RAGatouille'
-                else self.config['rag_types'][0]
-            )
-
-    def render_sidebar(self, vector_database=False, embeddings=False, rag_type=False,
-                      index_selected=False, llm=False, model_options=False, secret_keys=False):
-        """Render the complete sidebar based on enabled options"""
-        try:
-            # Initialize all dependencies before rendering anything
-            self._ensure_dependencies()
-            # Now render GUI elements in any order
-            if index_selected:
-                self._render_index_selection()
-            if llm:
-                self._render_llm()
-            if rag_type:
-                self._render_rag_type()    
-            if model_options:
-                self._render_model_options()
-            if vector_database:
-                self._render_vector_database()
-            if embeddings:
-                self._render_embeddings()
-            if secret_keys:
-                self._render_secret_keys()
-                
-        except DatabaseException as e:
-            st.error(f"No index available, create a new one with the sidebar parameters you've selected: {e}")
-            st.stop()
-        return self.sb_out
-
-    def get_paths(self, home_dir):
-        """Get application paths"""
-        return {
-            'base_folder_path': home_dir,
-            'db_folder_path': os.path.join(home_dir, os.getenv('LOCAL_DB_PATH')),
-            'data_folder_path': os.path.join(home_dir, 'data')
-        }
-
-    def get_secrets(self):
-        """Load and return secrets from environment"""
-        load_dotenv(find_dotenv())
-        return {
-            'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
-            'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
-            'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY'),
-            'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
-            'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY')
-        }
 
 def set_secrets(sb):
     """

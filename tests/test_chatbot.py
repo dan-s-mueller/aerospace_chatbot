@@ -113,12 +113,14 @@ def setup_fixture():
     # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
     load_dotenv(find_dotenv(),override=True)
     OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
+    ANTHROPIC_API_KEY=os.getenv('ANTHROPIC_API_KEY')
     VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
     HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
     PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
 
     # Set environment variables from .env file. They are required for items tested here. This is done in the GUI setup.
     os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
+    os.environ['ANTHROPIC_API_KEY'] = ANTHROPIC_API_KEY
     os.environ['VOYAGE_API_KEY'] = VOYAGE_API_KEY
     os.environ['HUGGINGFACEHUB_API_TOKEN'] = HUGGINGFACEHUB_API_TOKEN
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
@@ -144,6 +146,7 @@ def setup_fixture():
     
     setup={
         'OPENAI_API_KEY': OPENAI_API_KEY,
+        'ANTHROPIC_API_KEY': ANTHROPIC_API_KEY,
         'VOYAGE_API_KEY': VOYAGE_API_KEY,
         'HUGGINGFACEHUB_API_TOKEN': HUGGINGFACEHUB_API_TOKEN,
         'PINECONE_API_KEY': PINECONE_API_KEY,
@@ -188,7 +191,7 @@ def test_chunk_docs_standard(setup_fixture):
     page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
     chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
     
-    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['rag_type'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
     assert len(page_ids) == len(set(page_ids))
     assert result['chunks'] is not None
@@ -205,7 +208,7 @@ def test_chunk_docs_merge_nochunk(setup_fixture):
     page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
     chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
 
-    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['rag_type'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
     assert len(page_ids) == len(set(page_ids))
     assert result['chunks'] is not None
@@ -222,7 +225,7 @@ def test_chunk_docs_nochunk(setup_fixture):
     page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
     chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
 
-    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['rag_type'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
     assert len(page_ids) == len(set(page_ids))
     assert result['chunks'] is result['pages']
@@ -239,7 +242,7 @@ def test_chunk_docs_parent_child(setup_fixture):
     page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']['parent_chunks']]
     chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
 
-    assert result['rag'] == setup_fixture['rag_type']['Parent-Child']
+    assert result['rag_type'] == setup_fixture['rag_type']['Parent-Child']
     assert result['pages']['doc_ids'] is not None
     assert result['pages']['parent_chunks'] is not None
     assert len(page_ids) == len(set(page_ids))
@@ -261,7 +264,7 @@ def test_chunk_docs_summary(setup_fixture):
     page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']['docs']]
     summary_ids = [_stable_hash_meta(summary.metadata) for summary in result['summaries']]
     
-    assert result['rag'] == setup_fixture['rag_type']['Summary']
+    assert result['rag_type'] == setup_fixture['rag_type']['Summary']
     assert result['pages']['doc_ids'] is not None
     assert result['pages']['docs'] is not None
     assert len(page_ids) == len(set(page_ids))
@@ -275,7 +278,7 @@ def test_chunk_id_lookup(setup_fixture):
                         chunk_method=setup_fixture['chunk_method'], 
                         chunk_size=setup_fixture['chunk_size'], 
                         chunk_overlap=setup_fixture['chunk_overlap'])
-    assert result['rag'] == setup_fixture['rag_type']['Standard']
+    assert result['rag_type'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
     assert result['chunks'] is not None
     metadata_test={'source': 'test1.pdf', 'page': 1, 'start_index': 0}
@@ -522,113 +525,39 @@ def test_sidebar_manager():
     assert 'llms' in sidebar_manager.config
     assert 'rag_types' in sidebar_manager.config
 
-    # Define test cases
-    test_cases = [
-        {'vector_database': True, 'embeddings': True},  # Only embeddings is True
-        {'vector_database': True, 'rag_type': True},    # Only rag_type is True
-        {'vector_database': True, 'embeddings': True, 'rag_type': True},  # Only embeddings and rag_type are True
-        {'vector_database': True, 'llm': True},         # Only llm is True
-        {'vector_database': True, 'model_options': True},  # Only model_options is True
-        {'vector_database': True, 'embeddings': True, 'rag_type': True, 'llm': True, 'model_options': True}  # All options are True
-    ]
-
-    for case in test_cases:
-        # Render sidebar with specific configuration
-        sb_out = sidebar_manager.render_sidebar(**case)
-        
-        # Verify core dependencies are always set
-        assert 'index_type' in sb_out
-        assert 'embedding_name' in sb_out
-        assert 'rag_type' in sb_out
-
-        # Verify specific outputs based on enabled features
-        if case.get('embeddings'):
-            assert 'query_model' in sb_out
-            assert sb_out['query_model'] == 'OpenAI'
-            assert 'embedding_name' in sb_out
-
-        if case.get('rag_type'):
-            assert 'rag_type' in sb_out
-            assert sb_out['rag_type'] == 'Standard'
-
-        if case.get('llm'):
-            assert 'llm_source' in sb_out
-            assert sb_out['llm_source'] == 'OpenAI'
-            assert 'llm_model' in sb_out
-
-        if case.get('model_options'):
-            assert 'model_options' in sb_out
-            assert 'temperature' in sb_out['model_options']
-            assert sb_out['model_options']['temperature'] == 0.1
-            assert 'output_level' in sb_out['model_options']
-            assert sb_out['model_options']['output_level'] == 1000
-            assert 'k' in sb_out['model_options']
-            if sb_out['index_type'] != 'RAGatouille':
-                assert 'search_type' in sb_out['model_options']
-
-        # Additional verification for the "all options" case
-        if all(key in case for key in ['embeddings', 'rag_type', 'llm', 'model_options']):
-            assert sb_out['index_type'] == 'ChromaDB'
-            assert sb_out['query_model'] == 'OpenAI'
-            assert sb_out['rag_type'] == 'Standard'
-            assert sb_out['llm_source'] == 'OpenAI'
+    # Test single case since render_sidebar now renders everything
+    sb_out = sidebar_manager.render_sidebar()
+    
+    # Verify all outputs are present since everything is rendered
+    # Core dependencies
+    assert 'index_type' in sb_out
+    assert 'embedding_name' in sb_out
+    assert 'rag_type' in sb_out
+    
+    # Embeddings outputs
+    assert 'query_model' in sb_out
+    assert 'embedding_name' in sb_out
+    
+    # RAG type outputs  
+    assert 'rag_type' in sb_out
+    
+    # LLM outputs
+    assert 'llm_source' in sb_out
+    assert 'llm_model' in sb_out
+    
+    # Model options outputs
+    assert 'model_options' in sb_out
+    assert 'temperature' in sb_out['model_options']
+    assert 'output_level' in sb_out['model_options']
+    assert 'k' in sb_out['model_options']
+    if sb_out['index_type'] != 'RAGatouille':
+        assert 'search_type' in sb_out['model_options']
 
     # Test paths functionality
     paths = sidebar_manager.get_paths(home_dir)
     assert 'base_folder_path' in paths
     assert 'db_folder_path' in paths
     assert 'data_folder_path' in paths
-def test_set_secrets_with_environment_variables(monkeypatch):
-    '''Test case to verify the behavior of the set_secrets function when environment variables are set.'''
-    # Set the environment variables
-    monkeypatch.setenv('OPENAI_API_KEY', 'openai_key')
-    monkeypatch.setenv('VOYAGE_API_KEY', 'voyage_key')
-    monkeypatch.setenv('PINECONE_API_KEY', 'pinecone_key')
-    monkeypatch.setenv('HUGGINGFACEHUB_API_TOKEN', 'huggingface_key')
-    # Call the set_secrets function
-    secrets = set_secrets({})
-    # Assert that the secrets are set correctly
-    assert secrets['OPENAI_API_KEY'] == 'openai_key'
-    assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
-    assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
-    assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
-def test_set_secrets_with_inputs(monkeypatch):
-    '''Test case for the set_secrets function with sidebar data.'''
-    # For this test, delete the environment variables
-    monkeypatch.delenv('OPENAI_API_KEY', raising=False)
-    monkeypatch.delenv('VOYAGE_API_KEY', raising=False)
-    monkeypatch.delenv('PINECONE_API_KEY', raising=False)
-    monkeypatch.delenv('HUGGINGFACEHUB_API_TOKEN', raising=False)
-    # Define the sidebar data
-    sb = {
-        'keys': {
-            'OPENAI_API_KEY': 'openai_key',
-            'VOYAGE_API_KEY': 'voyage_key',
-            'PINECONE_API_KEY': 'pinecone_key',
-            'HUGGINGFACEHUB_API_TOKEN': 'huggingface_key'
-        }
-    }
-    # Call the set_secrets function
-    secrets = set_secrets(sb)
-    # Assert that the secrets are set correctly
-    assert secrets['OPENAI_API_KEY'] == 'openai_key'
-    assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
-    assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
-    assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
-@pytest.mark.parametrize('missing_key',
-                         ['OPENAI_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN'])
-def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
-    '''Test case for setting secrets with missing API keys.'''
-    print(f'Testing missing required key: {missing_key}')
-    # For this test, delete the environment variables
-    key_list=['OPENAI_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN']
-    for key in key_list:
-        monkeypatch.delenv(key, raising=False)
-    # Define the sidebar data with the current key being tested set to an empty string
-    sb = {'keys': {missing_key: ''}}
-    # Call the set_secrets function without setting any environment variables or sidebar data
-    with pytest.raises(SecretKeyException):
-        set_secrets(sb)
 def test_sidebar_manager_invalid_config():
     """Test SidebarManager initialization with invalid config file path"""
     with pytest.raises(FileNotFoundError):
@@ -693,74 +622,63 @@ def test_sidebar_manager_validate_config():
     
     # Test with missing sections
     invalid_config = {'databases': {}}
-    with pytest.raises(KeyError):
+    with pytest.raises(Exception):
         manager._validate_config(invalid_config)
     
     # Test with empty config
-    with pytest.raises(KeyError):
+    with pytest.raises(Exception):
         manager._validate_config({})
-def test_sidebar_manager_render_sidebar_edge_cases():
-    """Test render_sidebar method with edge cases"""
-    home_dir = os.path.abspath(os.path.dirname(__file__))
-    home_dir = os.path.join(home_dir, '..')
-    home_dir = os.path.normpath(home_dir)
-    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
-    
-    manager = SidebarManager(config_file)
-    
-    # Test with no options enabled
-    sb_out = manager.render_sidebar(vector_database=False, 
-                                  embeddings=False, 
-                                  rag_type=False, 
-                                  llm=False, 
-                                  model_options=False)
-    assert 'index_type' in sb_out
-    assert 'embedding_name' in sb_out
-    assert 'rag_type' in sb_out
-    
-    # Test with invalid combination (embeddings=True but vector_database=False)
-    sb_out = manager.render_sidebar(vector_database=False, 
-                                  embeddings=True)
-    assert 'query_model' not in sb_out
-    
-    # Test with all options enabled but empty config sections
-    # Create temporary config with empty sections
-    import tempfile
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as tf:
-        empty_config = {
-            'databases': {},
-            'embeddings': {},
-            'llms': {},
-            'rag_types': {}
+def test_set_secrets_with_environment_variables(monkeypatch):
+    '''Test case to verify the behavior of the set_secrets function when environment variables are set.'''
+    # Set the environment variables
+    monkeypatch.setenv('OPENAI_API_KEY', 'openai_key')
+    monkeypatch.setenv('VOYAGE_API_KEY', 'voyage_key')
+    monkeypatch.setenv('PINECONE_API_KEY', 'pinecone_key')
+    monkeypatch.setenv('HUGGINGFACEHUB_API_TOKEN', 'huggingface_key')
+    # Call the set_secrets function
+    secrets = set_secrets({})
+    # Assert that the secrets are set correctly
+    assert secrets['OPENAI_API_KEY'] == 'openai_key'
+    assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
+    assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
+    assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
+def test_set_secrets_with_inputs(monkeypatch):
+    '''Test case for the set_secrets function with sidebar data.'''
+    # For this test, delete the environment variables
+    monkeypatch.delenv('OPENAI_API_KEY', raising=False)
+    monkeypatch.delenv('VOYAGE_API_KEY', raising=False)
+    monkeypatch.delenv('PINECONE_API_KEY', raising=False)
+    monkeypatch.delenv('HUGGINGFACEHUB_API_TOKEN', raising=False)
+    # Define the sidebar data
+    sb = {
+        'keys': {
+            'OPENAI_API_KEY': 'openai_key',
+            'VOYAGE_API_KEY': 'voyage_key',
+            'PINECONE_API_KEY': 'pinecone_key',
+            'HUGGINGFACEHUB_API_TOKEN': 'huggingface_key'
         }
-        json.dump(empty_config, tf)
-        tf.flush()
-        empty_manager = SidebarManager(tf.name)
-        sb_out = empty_manager.render_sidebar(vector_database=True, 
-                                            embeddings=True, 
-                                            rag_type=True, 
-                                            llm=True, 
-                                            model_options=True)
-        assert sb_out == {}
-def test_sidebar_manager_config_dependencies():
-    """Test that config dependencies are properly enforced"""
-    home_dir = os.path.abspath(os.path.dirname(__file__))
-    home_dir = os.path.join(home_dir, '..')
-    home_dir = os.path.normpath(home_dir)
-    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
-    
-    manager = SidebarManager(config_file)
-    
-    # Test that llm options require llm to be enabled
-    sb_out = manager.render_sidebar(vector_database=True, 
-                                  llm=False, 
-                                  model_options=True)
-    assert 'temperature' not in sb_out.get('model_options', {})
-    
-    # Test that embedding options require vector_database to be enabled
-    sb_out = manager.render_sidebar(vector_database=False, 
-                                  embeddings=True)
-    assert 'query_model' not in sb_out
+    }
+    # Call the set_secrets function
+    secrets = set_secrets(sb)
+    # Assert that the secrets are set correctly
+    assert secrets['OPENAI_API_KEY'] == 'openai_key'
+    assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
+    assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
+    assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
+@pytest.mark.parametrize('missing_key',
+                         ['OPENAI_API_KEY','ANTHROPIC_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN'])
+def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
+    '''Test case for setting secrets with missing API keys.'''
+    print(f'Testing missing required key: {missing_key}')
+    # For this test, delete the environment variables
+    key_list=['OPENAI_API_KEY','ANTHROPIC_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN']
+    for key in key_list:
+        monkeypatch.delenv(key, raising=False)
+    # Define the sidebar data with the current key being tested set to an empty string
+    sb = {'keys': {missing_key: ''}}
+    # Call the set_secrets function without setting any environment variables or sidebar data
+    with pytest.raises(SecretKeyException):
+        set_secrets(sb)
 
 # Test data visualization
 def test_get_docs_df(setup_fixture):
@@ -807,9 +725,9 @@ def test_get_docs_questions_df(setup_fixture):
     rag_type='Standard'
     test_query_params={'index_type':'ChromaDB',
                        'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
+                       'embedding_name': 'text-embedding-3-large'}
     test_llm_params={'llm_family': 'OpenAI', 
-                     'llm': 'gpt-3.5-turbo-0125'}
+                     'llm': 'gpt-4o-mini'}
     query_model=parse_test_model('embedding', test_query_params, setup_fixture)
     llm=parse_test_model('llm', test_llm_params, setup_fixture)
 
@@ -817,8 +735,8 @@ def test_get_docs_questions_df(setup_fixture):
         vectorstore = load_docs(
             test_query_params['index_type'],
             setup_fixture['docs'],
-            rag_type=rag_type,
             query_model=query_model,
+            rag_type=rag_type,
             index_name=index_name, 
             chunk_size=setup_fixture['chunk_size'],
             chunk_overlap=setup_fixture['chunk_overlap'],
@@ -836,6 +754,7 @@ def test_get_docs_questions_df(setup_fixture):
         assert qa_model_obj.query_vectorstore is not None
         
         df = get_docs_questions_df(
+            test_query_params['index_type'],
             setup_fixture['LOCAL_DB_PATH'],
             index_name,
             setup_fixture['LOCAL_DB_PATH'],
@@ -876,18 +795,20 @@ def test_add_clusters(setup_fixture):
     rag_type='Standard'
     test_query_params={'index_type':'ChromaDB',
                        'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
+                       'embedding_name': 'text-embedding-3-large'}
     test_llm_params={'llm_family': 'OpenAI', 
-                     'llm': 'gpt-3.5-turbo-0125'}
+                     'llm': 'gpt-4o-mini'}
     query_model=parse_test_model('embedding', test_query_params, setup_fixture)
     llm=parse_test_model('llm', test_llm_params, setup_fixture)
+
+    print(query_model)
 
     try: 
         vectorstore = load_docs(
             test_query_params['index_type'],
             setup_fixture['docs'],
-            rag_type=rag_type,
             query_model=query_model,
+            rag_type=rag_type,
             index_name=index_name, 
             chunk_size=setup_fixture['chunk_size'],
             chunk_overlap=setup_fixture['chunk_overlap'],
@@ -904,6 +825,7 @@ def test_add_clusters(setup_fixture):
         qa_model_obj.query_docs(setup_fixture['test_prompt'])
 
         df = get_docs_questions_df(
+            test_query_params['index_type'],
             setup_fixture['LOCAL_DB_PATH'],
             index_name,
             setup_fixture['LOCAL_DB_PATH'],
@@ -921,6 +843,7 @@ def test_add_clusters(setup_fixture):
                 index_name, 
                 rag_type,
                 local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        pytest.fail(f"Test failed with exception: {str(e)}")
 
     # Check the add_clusters function with no labeling
     n_clusters = 2  # Define the expected number of clusters

@@ -15,20 +15,9 @@ home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 # Initialize SidebarManager
 sidebar_manager = admin.SidebarManager(st.session_state.config_file)
 
-# Configure sidebar options
-sidebar_config = {
-    'vector_database': True,
-    'embeddings': True,
-    'rag_type': True,
-    'index_selected': True,
-    'llm': True,
-    'model_options': True,
-    'secret_keys': True
-}
-
 # Get paths, sidebar values, and secrets
 paths = sidebar_manager.get_paths(home_dir)
-sb = sidebar_manager.render_sidebar(**sidebar_config)
+sb = sidebar_manager.render_sidebar()
 secrets = sidebar_manager.get_secrets()
 
 # Set up session state variables
