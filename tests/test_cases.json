@@ -2,15 +2,6 @@
     {
         "index_type": "ChromaDB",
         "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
-        "rag_type": "Standard",
-        "llm_family": "OpenAI",
-        "llm": "gpt-4o-mini",
-        "id": 0
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
         "embedding_name": "text-embedding-3-small",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
@@ -23,26 +14,8 @@
         "embedding_name": "text-embedding-3-large",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
-        "llm": "gpt-4o-mini",
-        "id": 2
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
-        "rag_type": "Standard",
-        "llm_family": "OpenAI",
-        "llm": "gpt-4o-mini",
-        "id": 3
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
-        "rag_type": "Standard",
-        "llm_family": "OpenAI",
         "llm": "gpt-4o",
-        "id": 4
+        "id": 2
     },
     {
         "index_type": "ChromaDB",
@@ -51,70 +24,43 @@
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-4o-mini",
+        "id": 3
+    },
+    {
+        "index_type": "ChromaDB",
+        "query_model": "OpenAI",
+        "embedding_name": "text-embedding-3-small",
+        "rag_type": "Standard",
+        "llm_family": "Hugging Face",
+        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
+        "id": 4
+    },
+    {
+        "index_type": "ChromaDB",
+        "query_model": "OpenAI",
+        "embedding_name": "text-embedding-3-small",
+        "rag_type": "Parent-Child",
+        "llm_family": "OpenAI",
+        "llm": "gpt-4o-mini",
         "id": 5
     },
     {
         "index_type": "ChromaDB",
         "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
-        "rag_type": "Standard",
-        "llm_family": "Hugging Face",
-        "llm": "mistralai/Mistral-7B-Instruct-v0.2",
-        "id": 6
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
-        "rag_type": "Standard",
-        "llm_family": "Hugging Face",
-        "llm": "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        "id": 7
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
-        "rag_type": "Standard",
-        "llm_family": "Hugging Face",
-        "llm": "google/gemma-1.1-7b-it",
-        "id": 8
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
-        "rag_type": "Parent-Child",
-        "llm_family": "OpenAI",
-        "llm": "gpt-4o-mini",
-        "id": 9
-    },
-    {
-        "index_type": "ChromaDB",
-        "query_model": "OpenAI",
-        "embedding_name": "text-embedding-ada-002",
+        "embedding_name": "text-embedding-3-small",
         "rag_type": "Summary",
         "llm_family": "OpenAI",
         "llm": "gpt-4o-mini",
-        "id": 10
+        "id": 6
     },
     {
         "index_type": "Pinecone",
         "query_model": "OpenAI",
         "embedding_name": "text-embedding-3-large",
         "rag_type": "Standard",
-        "llm_family": "OpenAI",
-        "llm": "gpt-4o-mini",
-        "id": 11
-    },
-    {
-        "index_type": "Pinecone",
-        "query_model": "Voyage",
-        "embedding_name": "voyage-2",
-        "rag_type": "Standard",
-        "llm_family": "OpenAI",
-        "llm": "gpt-4o-mini",
-        "id": 12
+        "llm_family": "Anthropic",
+        "llm": "claude-3-5-sonnet-latest",
+        "id": 7
     },
     {
         "index_type": "Pinecone",
@@ -123,7 +69,7 @@
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-4o-mini",
-        "id": 13
+        "id": 8
     },
     {
         "index_type": "RAGatouille",
@@ -132,6 +78,6 @@
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-4o-mini",
-        "id": 14
+        "id": 9
     }
 ]

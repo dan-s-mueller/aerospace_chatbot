@@ -444,50 +444,6 @@ class SidebarManager:
             'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY')
         }
 
-def _get_available_indexes(index_type, embedding_name, rag_type):
-    """Helper function to get available indexes based on current settings"""
-    name = []
-    base_name = embedding_name.replace('/', '-').lower()
-    
-    if index_type == 'ChromaDB':
-        indices = show_chroma_collections(format=False)
-        if not indices['status']:
-            return []
-        
-        for index in indices['message']:
-            if not index.name.startswith(base_name) or index.name.endswith('-queries'):
-                continue
-                
-            if (rag_type == 'Parent-Child' and index.name.endswith('-parent-child')) or \
-               (rag_type == 'Summary' and index.name.endswith('-summary')) or \
-               (rag_type == 'Standard' and not index.name.endswith(('-parent-child', '-summary'))):
-                name.append(index.name)
-                
-    elif index_type == 'Pinecone':
-        indices = show_pinecone_indexes(format=False)
-        if not indices['status']:
-            return []
-            
-        for index in indices['message']:
-            if not index['name'].startswith(base_name) or index['name'].endswith('-queries'):
-                continue
-                
-            if (rag_type == 'Parent-Child' and index['name'].endswith('-parent-child')) or \
-               (rag_type == 'Summary' and index['name'].endswith('-summary')) or \
-               (rag_type == 'Standard' and not index['name'].endswith(('-parent-child', '-summary'))):
-                name.append(index['name'])
-                
-    elif index_type == 'RAGatouille':
-        indices = show_ragatouille_indexes(format=False)
-        if not indices['status']:
-            return []
-            
-        for index in indices['message']:
-            if index.startswith(base_name):
-                name.append(index)
-    
-    return name
-
 def set_secrets(sb):
     """
     Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar.
@@ -902,6 +858,7 @@ def extract_pages_from_pdf(url, target_page, page_range=5):
         print(f"Unexpected error: {e}")
         return None
 def get_pdf(url):
+    """Downloads the full PDF file from the given URL. """
     try:
         # Download full PDF file
         response = requests.get(url)
@@ -925,6 +882,49 @@ def get_pdf(url):
     except Exception as e:
         print(f"Unexpected error: {e}")
         return None
+def _get_available_indexes(index_type, embedding_name, rag_type):
+    """Helper function to get available indexes based on current settings"""
+    name = []
+    base_name = embedding_name.replace('/', '-').lower()
+    
+    if index_type == 'ChromaDB':
+        indices = show_chroma_collections(format=False)
+        if not indices['status']:
+            return []
+        
+        for index in indices['message']:
+            if not index.name.startswith(base_name) or index.name.endswith('-queries'):
+                continue
+                
+            if (rag_type == 'Parent-Child' and index.name.endswith('-parent-child')) or \
+               (rag_type == 'Summary' and index.name.endswith('-summary')) or \
+               (rag_type == 'Standard' and not index.name.endswith(('-parent-child', '-summary'))):
+                name.append(index.name)
+                
+    elif index_type == 'Pinecone':
+        indices = show_pinecone_indexes(format=False)
+        if not indices['status']:
+            return []
+            
+        for index in indices['message']:
+            if not index['name'].startswith(base_name) or index['name'].endswith('-queries'):
+                continue
+                
+            if (rag_type == 'Parent-Child' and index['name'].endswith('-parent-child')) or \
+               (rag_type == 'Summary' and index['name'].endswith('-summary')) or \
+               (rag_type == 'Standard' and not index['name'].endswith(('-parent-child', '-summary'))):
+                name.append(index['name'])
+                
+    elif index_type == 'RAGatouille':
+        indices = show_ragatouille_indexes(format=False)
+        if not indices['status']:
+            return []
+            
+        for index in indices['message']:
+            if index.startswith(base_name):
+                name.append(index)
+    
+    return name
 def _format_key_status(key_status: str):
     """
     Formats the key status dictionary into a formatted string.

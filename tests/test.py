@@ -6,6 +6,7 @@ from dotenv import load_dotenv,find_dotenv
 
 from langchain_openai import OpenAIEmbeddings
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 from langchain_pinecone import PineconeVectorStore
 from langchain_chroma import Chroma
@@ -19,7 +20,6 @@ nltk.download('punkt', quiet=True)
 from ragatouille import RAGPretrainedModel
 
 import chromadb
-from chromadb import ClientAPI
 
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,25 +27,14 @@ sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 from data_processing import chunk_docs, initialize_database, load_docs, \
       delete_index, _stable_hash_meta, get_docs_df, get_questions_df, \
       add_clusters, get_docs_questions_df
-from admin import load_sidebar, set_secrets, st_setup_page, SecretKeyException
+from admin import SidebarManager, set_secrets, SecretKeyException, DatabaseException
 from queries import QA_Model
 
-# TODO test eval.py functionality
 # TODO add tests to check conversation history functionality
-# TODO add mock changes from streamlit changing: index_type, rag_type. or just test streamlit frontend.
-# TODO test db_name functionv
 
 # Functions
 def permute_tests(test_data):
-    '''
-    Generate permutations of test cases.
-
-    Args:
-        test_data (list): List of dictionaries containing test case data.
-
-    Returns:
-        list: List of dictionaries representing permuted test cases.
-    '''
+    '''Generate permutations of test cases.'''
     rows = []
     idx=0
     for row_data in test_data:
@@ -58,124 +47,6 @@ def permute_tests(test_data):
             rows.append(row)
             idx+=1
     return rows
-def generate_test_cases(config_file:str,export:bool=True,export_dir:str='.'):
-    """
-    Generates test cases based on the provided configuration file. Exports a snapshot of this which is used in the tests.
-    Args:
-        config_file (str): The path to the configuration file.
-        export (bool, optional): Whether to export the generated test cases to a file. Defaults to True.
-        export_dir (str, optional): The directory to export the test cases file to. Defaults to '.'.
-    Returns:
-        List[Dict[str, Union[str, List[str]]]]: A list of test cases, where each test case is a dictionary with the following keys:
-            - 'index_type' (str): The type of index.
-            - 'query_model' (str): The query model.
-            - 'embedding_name' (List[str]): The names of the embedding models.
-            - 'rag_type' (str): The type of RAG.
-            - 'llm_family' (str): The family of language model.
-            - 'llm' (List[str]): The names of the language models.
-    Raises:
-        FileNotFoundError: If the provided configuration file does not exist.
-    """
-    # Items in test_cases must match labels to select from in setup_fixture
-    # TODO throw in bad inputs for config, embeddings_list, llms below
-
-    with open(config_file, 'r') as f:
-        config = json.load(f)
-        embeddings_list = {e['name']: e for e in config['embeddings']}
-        llms  = {m['name']: m for m in config['llms']}
-
-    test_cases = [
-        {
-            # Tests ChromaDB setups, standard RAG , openai embeddings
-            'index_type' : ['ChromaDB'],
-            'query_model' : ['OpenAI'],
-            'embedding_name' : embeddings_list['OpenAI']['embedding_models'],
-            'rag_type' : ['Standard'],
-            'llm_family' : ['OpenAI'],
-            'llm' : [llms['OpenAI']['models'][0]]
-        },
-        {
-            # Tests standard RAG , openai llms
-            'index_type' : ['ChromaDB'],
-            'query_model' : ['OpenAI'],
-            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
-            'rag_type' : ['Standard'],
-            'llm_family' : ['OpenAI'],
-            'llm' : llms['OpenAI']['models']
-        },
-        {
-            # Tests standard RAG , hugging face embeddings
-            'index_type' : ['ChromaDB'],
-            'query_model' : ['Hugging Face'],
-            'embedding_name' : embeddings_list['Hugging Face']['embedding_models'],
-            'rag_type' : ['Standard'],
-            'llm_family' : ['OpenAI'],
-            'llm' : [llms['OpenAI']['models'][0]]
-        },
-        {
-            # Tests standard RAG , all hugging face llms
-            'index_type' : ['ChromaDB'],
-            'query_model' : ['OpenAI'],
-            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
-            'rag_type' : ['Standard'],
-            'llm_family' : ['Hugging Face'],
-            'llm' : llms['Hugging Face']['models']
-        },
-        {
-            # Tests parent-child rag, openai models
-            'index_type' : ['ChromaDB'],
-            'query_model' : ['OpenAI'],
-            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
-            'rag_type' : ['Parent-Child'],
-            'llm_family' : ['OpenAI'],
-            'llm' : [llms['OpenAI']['models'][0]]
-        },
-        {
-            # Tests advanced RAG (summary), openai models
-            'index_type' : ['ChromaDB'],
-            'query_model' : ['OpenAI'],
-            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
-            'rag_type' : ['Summary'],
-            'llm_family' : ['OpenAI'],
-            'llm' : [llms['OpenAI']['models'][0]]
-        },
-        {
-            # Tests Pinecone setups, openai embedding type
-            'index_type' : ['Pinecone'],
-            'query_model' : ['OpenAI'],
-            'embedding_name' : [embeddings_list['OpenAI']['embedding_models'][0]],
-            'rag_type' : ['Standard'],
-            'llm_family' : ['OpenAI'],
-            'llm' : [llms['OpenAI']['models'][0]]
-        },
-        {
-            # Tests Pinecone setups, voyage embedding types
-            'index_type' : ['Pinecone'],
-            'query_model' : ['Voyage'],
-            'embedding_name' : embeddings_list['Voyage']['embedding_models'],
-            'rag_type' : ['Standard'],
-            'llm_family' : ['OpenAI'],
-            'llm' : [llms['OpenAI']['models'][0]]
-        },
-        {
-            # Tests RAGatouille setup
-            'index_type' : ['RAGatouille'],
-            'query_model' : ['RAGatouille'],
-            'embedding_name' : ['colbert-ir/colbertv2.0'],  # Hard coded, tied to RAGatouille
-            'rag_type' : ['Standard'],
-            'llm_family' : ['OpenAI'],
-            'llm' : [llms['OpenAI']['models'][0]]
-        }
-    ]
-
-    tests = permute_tests(test_cases)
-    
-    if export:
-        file_path = os.path.join(export_dir,'test_cases.json')
-        with open(file_path, 'w') as json_file:
-            json.dump(tests, json_file, indent=4)
-    
-    return tests
 def read_test_cases(json_path:str):
     with open(json_path, 'r') as json_file:
         test_cases = json.load(json_file)
@@ -183,25 +54,13 @@ def read_test_cases(json_path:str):
 def pytest_generate_tests(metafunc):
     '''
     Use pytest_generate_tests to dynamically generate tests.
-    Tests generates tests from a static file (test_cases.json). You must run generate_test_cases() first.
-
-    Args:
-        metafunc: The metafunc object provided by pytest.
+    Tests generates tests from a static file (test_cases.json). See test_cases.json for more details.
     '''
     if 'test_input' in metafunc.fixturenames:
         tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)),'test_cases.json'))
         metafunc.parametrize('test_input', tests)
 def parse_test_case(setup,test_case):
-    ''' 
-    Parse test case to be used in the test functions.
-
-    Args:
-        setup (dict): The setup variables and configurations.
-        test_case (dict): The test case data.
-
-    Returns:
-        tuple: A tuple containing the parsed test case and a string representation of the test case.
-    '''
+    ''' Parse test case to be used in the test functions.'''
     parsed_test = {
         'id': test_case['id'],
         'index_type': setup['index_type'][test_case['index_type']],
@@ -215,20 +74,7 @@ def parse_test_case(setup,test_case):
 
     return parsed_test, print_str
 def parse_test_model(type, test, setup_fixture):
-    """
-    Parses the test model based on the given type and test parameters.
-
-    Args:
-        type (str): The type of the test model ('embedding' or 'llm').
-        test (dict): The test parameters.
-        setup_fixture (dict): The setup fixture containing API keys.
-
-    Returns:
-        object: The parsed test model.
-
-    Raises:
-        NotImplementedError: If the query model or LLM is not implemented.
-    """
+    """Parses the test model based on the given type and test parameters."""
     if type == 'embedding':
         # Parse out embedding
         if test['index_type'] == 'RAGatouille':
@@ -249,6 +95,8 @@ def parse_test_model(type, test, setup_fixture):
         # Parse out llm
         if test['llm_family'] == 'OpenAI':
             llm = ChatOpenAI(model_name=test['llm'], openai_api_key=setup_fixture['OPENAI_API_KEY'], max_tokens=500)
+        elif test['llm_family'] == 'Anthropic':
+            llm = ChatAnthropic(model=test['llm'], anthropic_api_key=setup_fixture['ANTHROPIC_API_KEY'], max_tokens=500)
         elif test['llm_family'] == 'Hugging Face':
             llm = ChatOpenAI(base_url='https://api-inference.huggingface.co/v1', model=test['llm'], api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'], max_tokens=500)
         else:
@@ -260,13 +108,7 @@ def parse_test_model(type, test, setup_fixture):
 # Fixtures
 @pytest.fixture(scope='session', autouse=True)
 def setup_fixture():
-    """
-    Sets up the fixture for testing the backend.
-    Returns:
-        dict: A dictionary containing the setup configuration.
-    Raises:
-        None
-    """
+    """Sets up the fixture for testing the backend."""
     ...
     # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
     load_dotenv(find_dotenv(),override=True)
@@ -319,21 +161,7 @@ def setup_fixture():
     return setup
 @pytest.fixture()
 def temp_dotenv(setup_fixture):
-    """
-    Creates a temporary .env file for testing purposes.
-
-    Args:
-        setup_fixture (dict): A dictionary containing setup fixture values.
-
-    Yields:
-        str: The path of the temporary .env file.
-
-    Raises:
-        None
-
-    Returns:
-        None
-    """
+    """Creates a temporary .env file for testing purposes."""
     dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','.env')
     if not os.path.exists(dotenv_path):
         with open(dotenv_path, 'w') as f:
@@ -350,12 +178,7 @@ def temp_dotenv(setup_fixture):
 ### Begin tests
 # Test chunk docs
 def test_chunk_docs_standard(setup_fixture):
-    '''
-    Test the chunk_docs function with standard RAG.
-
-    Args:
-        setup_fixture (dict): The setup variables and configurations.
-    '''
+    '''Test the chunk_docs function with standard RAG.'''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -372,15 +195,7 @@ def test_chunk_docs_standard(setup_fixture):
     assert len(chunk_ids) == len(set(chunk_ids))
     assert result['splitters'] is not None
 def test_chunk_docs_merge_nochunk(setup_fixture):
-    """
-    Test case for the `chunk_docs` function with no chunking and merging.
-
-    Args:
-        setup_fixture (dict): A dictionary containing the setup fixture data.
-
-    Returns:
-        None
-    """
+    """Test case for the `chunk_docs` function with no chunking and merging."""
 
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
@@ -397,12 +212,7 @@ def test_chunk_docs_merge_nochunk(setup_fixture):
     assert chunk_ids==page_ids
     assert result['splitters'] is None
 def test_chunk_docs_nochunk(setup_fixture):
-    '''
-    Test the chunk_docs function with no chunking.
-
-    Args:
-        setup_fixture (dict): The setup variables and configurations.
-    '''
+    '''Test the chunk_docs function with no chunking.'''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
                         chunk_method='None', 
@@ -419,12 +229,7 @@ def test_chunk_docs_nochunk(setup_fixture):
     assert len(chunk_ids) == len(set(chunk_ids))
     assert result['splitters'] is None
 def test_chunk_docs_parent_child(setup_fixture):
-    '''
-    Test the chunk_docs function with parent-child RAG.
-
-    Args:
-        setup_fixture (dict): The setup variables and configurations.
-    '''
+    '''Test the chunk_docs function with parent-child RAG.'''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Parent-Child'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -443,12 +248,7 @@ def test_chunk_docs_parent_child(setup_fixture):
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
 def test_chunk_docs_summary(setup_fixture):
-    '''
-    Test the chunk_docs function with summary RAG.
-
-    Args:
-        setup_fixture (dict): The setup variables and configurations.
-    '''
+    '''Test the chunk_docs function with summary RAG.'''
     llm=parse_test_model('llm', {'llm_family': 'OpenAI', 'llm': 'gpt-3.5-turbo-0125'}, setup_fixture)
 
     result = chunk_docs(setup_fixture['docs'], 
@@ -469,15 +269,7 @@ def test_chunk_docs_summary(setup_fixture):
     assert len(summary_ids) == len(set(summary_ids))
     assert result['llm'] == llm
 def test_chunk_id_lookup(setup_fixture):
-    '''
-    Test case for chunk_id_lookup function.
-
-    Args:
-        setup_fixture (dict): A dictionary containing setup fixtures.
-
-    Returns:
-        None
-    '''
+    '''Test case for chunk_id_lookup function.'''
     result = chunk_docs(setup_fixture['docs'], 
                         rag_type=setup_fixture['rag_type']['Standard'], 
                         chunk_method=setup_fixture['chunk_method'], 
@@ -494,19 +286,7 @@ def test_chunk_id_lookup(setup_fixture):
 
 # Test initialize database with a test query
 def test_initialize_database_pinecone(monkeypatch,setup_fixture):
-    '''
-    Test the initialization of a Pinecone database.
-
-    Args:
-        monkeypatch: The monkeypatch fixture.
-        setup_fixture (dict): The setup fixture containing the necessary parameters.
-
-    Returns:
-        PineconeVectorStore: The initialized Pinecone vector store.
-
-    Raises:
-        AssertionError: If the initialized vector store is not an instance of PineconeVectorStore.
-    '''
+    '''Test the initialization of a Pinecone database.'''
     index_name = 'test-index'
     rag_type = 'Standard'
     clear = True
@@ -552,20 +332,7 @@ def test_initialize_database_pinecone(monkeypatch,setup_fixture):
     except:
         pass
 def test_initialize_database_chromadb(monkeypatch,setup_fixture):
-    '''
-    Test the initialization of a Chroma database.
-
-    Args:
-        monkeypatch: The monkeypatch fixture.
-        setup_fixture (dict): A dictionary containing setup fixtures.
-
-    Returns:
-        None
-
-    Raises:
-        AssertionError: If the vectorstore is not an instance of Chroma.
-
-    '''
+    ''' Test the initialization of a Chroma database.'''
     index_name = 'test-index'
     rag_type = 'Standard'
     clear = True
@@ -611,20 +378,7 @@ def test_initialize_database_chromadb(monkeypatch,setup_fixture):
     except:
         pass
 def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
-    '''
-    Test the initialization of a database for RAGatouille.
-
-    Args:
-        monkeypatch: The monkeypatch fixture.
-        setup_fixture (dict): A dictionary containing the setup fixture.
-
-    Returns:
-        None
-
-    Raises:
-        AssertionError: If the vectorstore is not an instance of RAGPretrainedModel.
-
-    '''
+    '''Test the initialization of a database for RAGatouille.'''
     index_name = 'test-index'
     rag_type = 'Standard'
     clear = True
@@ -672,18 +426,7 @@ def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
 
 # Test end to end process, adding query
 def test_database_setup_and_query(test_input,setup_fixture):
-    '''Tests the entire process of initializing a database, upserting documents, and deleting a database.
-
-    Args:
-        setup_fixture (dict): The setup fixture containing the necessary configuration for the test.
-        test_input (str): The test input.
-
-    Raises:
-        Exception: If there is an error during the test.
-
-    Returns:
-        None
-    '''
+    '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
     test, print_str = parse_test_case(setup_fixture,test_input)
     index_name='test'+str(test['id'])
     print(f'Starting test: {print_str}')
@@ -763,75 +506,80 @@ def test_database_setup_and_query(test_input,setup_fixture):
         raise e
         
 # Test sidebar loading and secret keys
-def test_load_sidebar():
-    '''
-    This function tests the functionality of the load_sidebar function by passing different combinations of arguments and checking the returned sidebar configuration.
-
-    Returns:
-        None
-    '''
-
-    # Use the existing config file, to check they are set up correctly.
+def test_sidebar_manager():
+    """Test the SidebarManager class functionality."""
+    # Setup
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
-    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
+    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
 
-    # Test case: Only embeddings is True
-    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True)
-    assert 'query_model' in sidebar_config
-    assert sidebar_config['query_model'] == 'OpenAI'
+    # Test initialization
+    sidebar_manager = SidebarManager(config_file)
+    assert sidebar_manager.config is not None
+    assert 'databases' in sidebar_manager.config
+    assert 'embeddings' in sidebar_manager.config
+    assert 'llms' in sidebar_manager.config
+    assert 'rag_types' in sidebar_manager.config
 
-    # Test case: Only rag_type is True
-    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, rag_type=True)
-    assert 'rag_type' in sidebar_config
-    assert sidebar_config['rag_type'] == 'Standard'  
+    # Define test cases
+    test_cases = [
+        {'vector_database': True, 'embeddings': True},  # Only embeddings is True
+        {'vector_database': True, 'rag_type': True},    # Only rag_type is True
+        {'vector_database': True, 'embeddings': True, 'rag_type': True},  # Only embeddings and rag_type are True
+        {'vector_database': True, 'llm': True},         # Only llm is True
+        {'vector_database': True, 'model_options': True},  # Only model_options is True
+        {'vector_database': True, 'embeddings': True, 'rag_type': True, 'llm': True, 'model_options': True}  # All options are True
+    ]
 
-    # Test case: Only embeddings and rag_type are True
-    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, embeddings=True, rag_type=True)
-    assert 'query_model' in sidebar_config
-    assert sidebar_config['query_model'] == 'OpenAI'
+    for case in test_cases:
+        # Render sidebar with specific configuration
+        sb_out = sidebar_manager.render_sidebar(**case)
+        
+        # Verify core dependencies are always set
+        assert 'index_type' in sb_out
+        assert 'embedding_name' in sb_out
+        assert 'rag_type' in sb_out
 
-    # Test case: Only llm is True
-    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, llm=True)
-    assert 'llm_source' in sidebar_config
-    assert sidebar_config['llm_source'] == 'OpenAI'
+        # Verify specific outputs based on enabled features
+        if case.get('embeddings'):
+            assert 'query_model' in sb_out
+            assert sb_out['query_model'] == 'OpenAI'
+            assert 'embedding_name' in sb_out
 
-    # Test case: Only model_options is True
-    sidebar_config = load_sidebar(config_file=config_file, vector_database=True, model_options=True)
-    assert 'temperature' in sidebar_config['model_options']
-    assert sidebar_config['model_options']['temperature'] == 0.1
-    assert 'output_level' in sidebar_config['model_options']
-    assert sidebar_config['model_options']['output_level'] == 1000
+        if case.get('rag_type'):
+            assert 'rag_type' in sb_out
+            assert sb_out['rag_type'] == 'Standard'
 
-    # Test case: All options are True
-    sidebar_config = load_sidebar(config_file=config_file, vector_database=True,
-                                  embeddings=True, rag_type=True, llm=True, model_options=True)
-    assert 'index_type' in sidebar_config
-    assert sidebar_config['index_type'] == 'ChromaDB'
-    assert 'query_model' in sidebar_config
-    assert sidebar_config['query_model'] == 'OpenAI'
-    assert 'rag_type' in sidebar_config
-    assert sidebar_config['rag_type'] == 'Standard' 
-    assert 'llm_source' in sidebar_config
-    assert sidebar_config['llm_source'] == 'OpenAI'
-    assert 'temperature' in sidebar_config['model_options']
-    assert sidebar_config['model_options']['temperature'] == 0.1
-    assert 'output_level' in sidebar_config['model_options']
-    assert sidebar_config['model_options']['output_level'] == 1000
+        if case.get('llm'):
+            assert 'llm_source' in sb_out
+            assert sb_out['llm_source'] == 'OpenAI'
+            assert 'llm_model' in sb_out
+
+        if case.get('model_options'):
+            assert 'model_options' in sb_out
+            assert 'temperature' in sb_out['model_options']
+            assert sb_out['model_options']['temperature'] == 0.1
+            assert 'output_level' in sb_out['model_options']
+            assert sb_out['model_options']['output_level'] == 1000
+            assert 'k' in sb_out['model_options']
+            if sb_out['index_type'] != 'RAGatouille':
+                assert 'search_type' in sb_out['model_options']
+
+        # Additional verification for the "all options" case
+        if all(key in case for key in ['embeddings', 'rag_type', 'llm', 'model_options']):
+            assert sb_out['index_type'] == 'ChromaDB'
+            assert sb_out['query_model'] == 'OpenAI'
+            assert sb_out['rag_type'] == 'Standard'
+            assert sb_out['llm_source'] == 'OpenAI'
+
+    # Test paths functionality
+    paths = sidebar_manager.get_paths(home_dir)
+    assert 'base_folder_path' in paths
+    assert 'db_folder_path' in paths
+    assert 'data_folder_path' in paths
 def test_set_secrets_with_environment_variables(monkeypatch):
-    '''
-    Test case to verify the behavior of the set_secrets function when environment variables are set.
-
-    Args:
-        monkeypatch: A pytest fixture that allows modifying environment variables during testing.
-
-    Returns:
-        None
-
-    Raises:
-        AssertionError: If the secrets are not set correctly.
-    '''
+    '''Test case to verify the behavior of the set_secrets function when environment variables are set.'''
     # Set the environment variables
     monkeypatch.setenv('OPENAI_API_KEY', 'openai_key')
     monkeypatch.setenv('VOYAGE_API_KEY', 'voyage_key')
@@ -845,18 +593,7 @@ def test_set_secrets_with_environment_variables(monkeypatch):
     assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
     assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
 def test_set_secrets_with_inputs(monkeypatch):
-    '''
-    Test case for the set_secrets function with sidebar data.
-
-    Args:
-        monkeypatch: A pytest fixture that allows modifying environment variables.
-
-    Returns:
-        None
-
-    Raises:
-        AssertionError: If the secrets are not set correctly.
-    '''
+    '''Test case for the set_secrets function with sidebar data.'''
     # For this test, delete the environment variables
     monkeypatch.delenv('OPENAI_API_KEY', raising=False)
     monkeypatch.delenv('VOYAGE_API_KEY', raising=False)
@@ -881,19 +618,7 @@ def test_set_secrets_with_inputs(monkeypatch):
 @pytest.mark.parametrize('missing_key',
                          ['OPENAI_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN'])
 def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
-    '''
-    Test case for setting secrets with missing API keys.
-
-    Args:
-        monkeypatch: A pytest fixture for patching values during testing.
-        missing_key: The missing API key to be tested.
-
-    Raises:
-        SecretKeyException: If the set_secrets function raises an exception.
-
-    Returns:
-        None
-    '''
+    '''Test case for setting secrets with missing API keys.'''
     print(f'Testing missing required key: {missing_key}')
     # For this test, delete the environment variables
     key_list=['OPENAI_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN']
@@ -904,175 +629,142 @@ def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
     # Call the set_secrets function without setting any environment variables or sidebar data
     with pytest.raises(SecretKeyException):
         set_secrets(sb)
-
-# Test streamlit setup
-def test_st_setup_page_local_db_path_only_defined(monkeypatch):
-    '''
-    Test case for the `st_setup_page` function when only the local db path is defined.
-
-    Args:
-        monkeypatch: A pytest fixture that allows modifying environment variables during testing.
-
-    Returns:
-        None
-    '''
-    page_title = 'Test Page'
-
-    # Clear all environment variables
-    for var in list(os.environ.keys()):
-        monkeypatch.delenv(var, raising=False)
-    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
-    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
-    monkeypatch.setenv('LOCAL_DB_PATH', os.path.abspath(os.path.dirname(__file__))) # Set the local db path to this directory
-
+def test_sidebar_manager_invalid_config():
+    """Test SidebarManager initialization with invalid config file path"""
+    with pytest.raises(FileNotFoundError):
+        SidebarManager('nonexistent_config.json')
+def test_sidebar_manager_malformed_config():
+    """Test SidebarManager with malformed config file"""
+    # Create a temporary malformed config file
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as tf:
+        tf.write('{"invalid": "json"')
+        tf.flush()
+        with pytest.raises(json.JSONDecodeError):
+            SidebarManager(tf.name)
+def test_sidebar_manager_missing_required_sections():
+    """Test SidebarManager with config missing required sections"""
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as tf:
+        # Create config missing 'databases' section
+        json.dump({'embeddings': {}, 'llms': {}, 'rag_types': {}}, tf)
+        tf.flush()
+        with pytest.raises(KeyError):
+            SidebarManager(tf.name)
+def test_sidebar_manager_get_paths():
+    """Test get_paths method with various inputs"""
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
-    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
-
-    # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file)
-
-    # Assert
-    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
-    assert sb == {}
-    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': None,
-                       'OPENAI_API_KEY': None,
-                       'PINECONE_API_KEY': None,
-                       'VOYAGE_API_KEY': None}
-def test_st_setup_page_local_db_path_not_defined(monkeypatch):
-    '''
-    Test case to verify the behavior of st_setup_page function when LOCAL_DB_PATH is not defined.
-
-    Args:
-        monkeypatch: Monkeypatch object for modifying environment variables.
-
-    Returns:
-        None
-    '''
-
-    page_title = 'Test Page'
-
-    # Clear all environment variables
-    for var in list(os.environ.keys()):
-        monkeypatch.delenv(var, raising=False)
-    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
-    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
-    monkeypatch.setenv('LOCAL_DB_PATH', None) # Set to none
-
+    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
+    
+    manager = SidebarManager(config_file)
+    
+    # Test with valid path
+    paths = manager.get_paths(home_dir)
+    assert os.path.exists(paths['base_folder_path'])
+    assert os.path.exists(paths['db_folder_path'])
+    assert os.path.exists(paths['data_folder_path'])
+    
+    # Test with invalid path
+    with pytest.raises(Exception):
+        manager.get_paths('/nonexistent/path')
+    
+    # Test with empty path
+    with pytest.raises(Exception):
+        manager.get_paths('')
+def test_sidebar_manager_validate_config():
+    """Test _validate_config method with various inputs"""
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
-    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
-
-    # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file)
-
-    # Assert
-    assert paths['db_folder_path'] == 'None'
-    assert sb == {}
-    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': None,
-                       'OPENAI_API_KEY': None,
-                       'PINECONE_API_KEY': None,
-                       'VOYAGE_API_KEY': None}
-def test_st_setup_page_local_db_path_w_all_man_input(monkeypatch):
-    '''
-    Test case for the st_setup_page function with all inputs in sidebar and manual input for environment variables.
-
-    Args:
-        monkeypatch: A pytest fixture that allows modifying environment variables and other attributes during testing.
-
-    Returns:
-        None
-    '''
-
-    page_title = 'Test Page'
-    sidebar_config = {
-        'vector_database': True,
-        'embeddings': True,
-        'rag_type': True,
-        'llm': True,
-        'model_options': True
+    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
+    
+    manager = SidebarManager(config_file)
+    
+    # Test with valid config
+    valid_config = {
+        'databases': {'test': {}},
+        'embeddings': {'test': {}},
+        'llms': {'test': {}},
+        'rag_types': {'test': {}}
     }
-
-    # Set all environment variables, simulate manual input no .env
-    monkeypatch.setenv('OPENAI_API_KEY', os.getenv('OPENAI_API_KEY'))
-    monkeypatch.setenv('VOYAGE_API_KEY', os.getenv('VOYAGE_API_KEY'))
-    monkeypatch.setenv('PINECONE_API_KEY', os.getenv('PINECONE_API_KEY'))
-    monkeypatch.setenv('HUGGINGFACEHUB_API_TOKEN', os.getenv('HUGGINGFACEHUB_API_TOKEN'))
-    monkeypatch.setattr('admin.load_dotenv', lambda *args, **kwargs: None)
-    monkeypatch.setattr('admin.find_dotenv', lambda *args, **kwargs: '')  # Assuming an empty string simulates not finding a .env file
-    monkeypatch.setenv('LOCAL_DB_PATH', os.path.abspath(os.path.dirname(__file__))) # Set the local db path to this directory
-
+    assert manager._validate_config(valid_config) is None
+    
+    # Test with missing sections
+    invalid_config = {'databases': {}}
+    with pytest.raises(KeyError):
+        manager._validate_config(invalid_config)
+    
+    # Test with empty config
+    with pytest.raises(KeyError):
+        manager._validate_config({})
+def test_sidebar_manager_render_sidebar_edge_cases():
+    """Test render_sidebar method with edge cases"""
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
-    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
-
-    # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file, sidebar_config)
-
-    # Assert
-    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
-    assert isinstance(sb, dict) and sb != {}    # Test that it's not an empty dictionary
-    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
-                       'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
-                       'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
-                       'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
-def test_st_setup_page_local_db_path_w_all_env_input(monkeypatch,temp_dotenv):
-    """
-    Test case for the `st_setup_page` function with all environment inputs.
-
-    Args:
-        monkeypatch: A monkeypatch object for modifying environment variables.
-        temp_dotenv: The path to the temporary dotenv file.
-
-    Returns:
-        None
-    """
-
-    page_title = 'Test Page'
-    sidebar_config = {
-        'vector_database': True,
-        'embeddings': True,
-        'rag_type': True,
-        'llm': True,
-        'model_options': True
-    }
-
-    # Clear all environment variables, simulate .env load in st_setup_page and pre-set local_db_path
-    for var in list(os.environ.keys()):
-        monkeypatch.delenv(var, raising=False)
-    dotenv_path = temp_dotenv
-
+    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
+    
+    manager = SidebarManager(config_file)
+    
+    # Test with no options enabled
+    sb_out = manager.render_sidebar(vector_database=False, 
+                                  embeddings=False, 
+                                  rag_type=False, 
+                                  llm=False, 
+                                  model_options=False)
+    assert 'index_type' in sb_out
+    assert 'embedding_name' in sb_out
+    assert 'rag_type' in sb_out
+    
+    # Test with invalid combination (embeddings=True but vector_database=False)
+    sb_out = manager.render_sidebar(vector_database=False, 
+                                  embeddings=True)
+    assert 'query_model' not in sb_out
+    
+    # Test with all options enabled but empty config sections
+    # Create temporary config with empty sections
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as tf:
+        empty_config = {
+            'databases': {},
+            'embeddings': {},
+            'llms': {},
+            'rag_types': {}
+        }
+        json.dump(empty_config, tf)
+        tf.flush()
+        empty_manager = SidebarManager(tf.name)
+        sb_out = empty_manager.render_sidebar(vector_database=True, 
+                                            embeddings=True, 
+                                            rag_type=True, 
+                                            llm=True, 
+                                            model_options=True)
+        assert sb_out == {}
+def test_sidebar_manager_config_dependencies():
+    """Test that config dependencies are properly enforced"""
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
     home_dir = os.path.normpath(home_dir)
-    config_file=os.path.join(home_dir, 'config', 'config_admin.json')   # config_tester.json is a subset of config_admin, no need to test.
-
-
-    # Act
-    paths, sb, secrets = st_setup_page(page_title, home_dir, config_file, sidebar_config)
-
-    # Assert
-    assert paths['db_folder_path'] == os.getenv('LOCAL_DB_PATH')
-    assert isinstance(sb, dict) and sb != {}    # Test that it's not an empty dictionary
-    assert secrets == {'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
-                       'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
-                       'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
-                       'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY')}
+    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
+    
+    manager = SidebarManager(config_file)
+    
+    # Test that llm options require llm to be enabled
+    sb_out = manager.render_sidebar(vector_database=True, 
+                                  llm=False, 
+                                  model_options=True)
+    assert 'temperature' not in sb_out.get('model_options', {})
+    
+    # Test that embedding options require vector_database to be enabled
+    sb_out = manager.render_sidebar(vector_database=False, 
+                                  embeddings=True)
+    assert 'query_model' not in sb_out
 
 # Test data visualization
 def test_get_docs_df(setup_fixture):
-    """
-    Test case for the get_docs_df function.
-
-    Args:
-        setup_fixture (dict): The setup fixture containing necessary parameters.
-
-    Returns:
-        None
-    """
+    """Test case for the get_docs_df function."""
     index_name = 'test-index'
     test_query_params={'index_type':'ChromaDB',
                        'query_model': 'OpenAI', 
@@ -1091,15 +783,7 @@ def test_get_docs_df(setup_fixture):
     assert "document" in df.columns
     assert "embedding" in df.columns
 def test_get_questions_df(setup_fixture):
-    """
-    Test case for the get_questions_df function.
-
-    Args:
-        setup_fixture (dict): The setup fixture containing necessary data for the test.
-
-    Returns:
-        None
-    """
+    """Test case for the get_questions_df function."""
     index_name = 'test-index'
     test_query_params={'index_type':'ChromaDB',
                        'query_model': 'OpenAI', 
@@ -1117,18 +801,7 @@ def test_get_questions_df(setup_fixture):
     assert "sources" in df.columns
     assert "embedding" in df.columns
 def test_get_docs_questions_df(setup_fixture):
-    """
-    Test function for the get_docs_questions_df() method.
-
-    Args:
-        setup_fixture: The setup fixture containing necessary parameters for the test.
-
-    Raises:
-        Exception: If there is an error, the function will raise an exception.
-
-    Returns:
-        None
-    """
+    """Test function for the get_docs_questions_df() method."""
     
     index_name='test-vizualisation'
     rag_type='Standard'
@@ -1197,15 +870,7 @@ def test_get_docs_questions_df(setup_fixture):
                 local_db_path=setup_fixture['LOCAL_DB_PATH'])
         raise e
 def test_add_clusters(setup_fixture):
-    """
-    Test function for the add_clusters function.
-
-    Args:
-        setup_fixture (dict): A dictionary containing setup fixtures for the test.
-
-    Returns:
-        None
-    """
+    """Test function for the add_clusters function."""
     
     index_name='test-vizualisation'
     rag_type='Standard'
