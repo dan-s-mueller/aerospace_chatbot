@@ -45,11 +45,12 @@ secrets = sidebar_manager.get_secrets()
 
 # Disable sidebar elements after first message
 if 'message_id' in st.session_state and st.session_state.message_id > 0:
-    sidebar_manager.disable_group('index')
-    sidebar_manager.disable_group('embeddings')
-    sidebar_manager.disable_group('rag')
-    sidebar_manager.disable_group('llm')
-    sidebar_manager.disable_group('model_options')
+    # Disable individual sidebar elements
+    st.session_state['index_disabled'] = True
+    st.session_state['embeddings_disabled'] = True
+    st.session_state['rag_disabled'] = True
+    st.session_state['llm_disabled'] = True
+    st.session_state['model_options_disabled'] = True
 
 # Set up chat history
 if 'user_upload' not in st.session_state:
@@ -217,7 +218,7 @@ if prompt := st.chat_input('Prompt here'):
                     pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
                     
                     if pdf_source and page is not None:
-                        selected_url = f"https://storage.googleapis.com/ams-chatbot-pdfs/{pdf_source}"
+                        selected_url = f"https://storage.googleapis.com/aerospace_mechanisms_chatbot_demo/{pdf_source}"
                         st.session_state.pdf_urls.append(selected_url)
                         st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
 
