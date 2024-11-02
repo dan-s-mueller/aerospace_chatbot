@@ -134,8 +134,9 @@ def lcdoc_export(index_type, index, query_model, export_pickle=False):
             data=data['metadata']
             lcdocs.append(Document(page_content=data['page_content'],
                                 metadata={'page':data['page'],'source':data['source']}))
-        if export_pickle:
-            df_temp=data_processing.archive_db('Pinecone',db['index_name'],query_model,export_pickle=True)
+        # if export_pickle:
+            # TODO get index name, db not passed
+            # df_temp=data_processing.archive_db('Pinecone',db['index_name'],query_model,export_pickle=True)
     
     return df_docs, lcdocs
         

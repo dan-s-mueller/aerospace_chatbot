@@ -3,58 +3,55 @@ import json
 import streamlit as st
 from dotenv import load_dotenv,find_dotenv
 
-import openai
-from pinecone import Pinecone
-import chromadb
+# Base imports needed immediately
+def _import_llm_deps():
+    from langchain_openai import ChatOpenAI
+    from langchain_anthropic import ChatAnthropic
+    return ChatOpenAI, ChatAnthropic
 
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
+def _import_embedding_deps():
+    from langchain_openai import OpenAIEmbeddings
+    from langchain_voyageai import VoyageAIEmbeddings
+    from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+    from ragatouille import RAGPretrainedModel
+    return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings, RAGPretrainedModel
 
-from langchain_openai import OpenAIEmbeddings
-from langchain_voyageai import VoyageAIEmbeddings
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+def _import_db_deps():
+    import openai
+    from pinecone import Pinecone
+    import chromadb
+    return openai, Pinecone, chromadb
 
-import nltk # Do before ragatioulle import to avoid logs
-nltk.download('punkt', quiet=True)
-from ragatouille import RAGPretrainedModel
+# def _import_rag_deps():
+#     import nltk
+#     nltk.download('punkt', quiet=True)
+#     from ragatouille import RAGPretrainedModel
+#     return RAGPretrainedModel
 
-import fitz
-import requests
+def _import_pdf_deps():
+    import fitz
+    import requests
+    return fitz, requests
 
 import data_processing
 
 class SecretKeyException(Exception):
-    """Exception raised for secret key related errors.
-
-    Attributes:
-        message -- explanation of the error
-        id -- unique identifier for the error
-    """
-
+    """Exception raised for secret key related errors. """
     def __init__(self, message, id):
         super().__init__(message)
         self.id = id
 class DatabaseException(Exception):
-    """Exception raised for database related errors.
-
-    Attributes:
-        message -- explanation of the error
-        id -- unique identifier for the error
-    """
-
+    """Exception raised for database related errors. """
     def __init__(self, message, id):
         super().__init__(message)
         self.id = id
-
 class SidebarManager:
-    """Manages the creation, state, and layout of the Streamlit sidebar"""
-    
+    """Manages the creation, state, and layout of the Streamlit sidebar""" 
     def __init__(self, config_file):
         self._check_local_db_path()
         self.config = self._load_config(config_file)
         self.sb_out = {}
         self.initialize_session_state()
-    
     def initialize_session_state(self):
         """Initialize session state for all sidebar elements"""
         if 'sidebar_state_initialized' not in st.session_state:
@@ -466,11 +463,13 @@ class SidebarManager:
             st.stop()
 
 def set_secrets(sb):
-    """
-    Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar.
-    """
-    secrets={}
-
+    """Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar."""
+    secrets = {}
+    
+    # Import dependencies lazily
+    openai, _, _ = _import_db_deps()
+    
+    # OpenAI
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
     if not secrets['OPENAI_API_KEY'] and 'keys' in sb and 'OPENAI_API_KEY' in sb['keys']:
         secrets['OPENAI_API_KEY'] = sb['keys']['OPENAI_API_KEY']
@@ -479,6 +478,7 @@ def set_secrets(sb):
             raise SecretKeyException('OpenAI API Key is required.','OPENAI_API_KEY_MISSING')
     openai.api_key = secrets['OPENAI_API_KEY']
 
+    # Anthropic
     secrets['ANTHROPIC_API_KEY'] = os.getenv('ANTHROPIC_API_KEY')
     if not secrets['ANTHROPIC_API_KEY'] and 'keys' in sb and 'ANTHROPIC_API_KEY' in sb['keys']:
         secrets['ANTHROPIC_API_KEY'] = sb['keys']['ANTHROPIC_API_KEY']
@@ -486,6 +486,7 @@ def set_secrets(sb):
         if os.environ['ANTHROPIC_API_KEY']=='':
             raise SecretKeyException('Anthropic API Key is required.','ANTHROPIC_API_KEY_MISSING')
 
+    # Voyage
     secrets['VOYAGE_API_KEY'] = os.getenv('VOYAGE_API_KEY')
     if not secrets['VOYAGE_API_KEY'] and 'keys' in sb and 'VOYAGE_API_KEY' in sb['keys']:
         secrets['VOYAGE_API_KEY'] = sb['keys']['VOYAGE_API_KEY']
@@ -493,6 +494,7 @@ def set_secrets(sb):
         if os.environ['VOYAGE_API_KEY']=='':
             raise SecretKeyException('Voyage API Key is required.','VOYAGE_API_KEY_MISSING')
 
+    # Pinecone
     secrets['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
     if not secrets['PINECONE_API_KEY'] and 'keys' in sb and 'PINECONE_API_KEY' in sb['keys']:
         secrets['PINECONE_API_KEY'] = sb['keys']['PINECONE_API_KEY']
@@ -500,12 +502,14 @@ def set_secrets(sb):
         if os.environ['PINECONE_API_KEY']=='':
             raise SecretKeyException('Pinecone API Key is required.','PINECONE_API_KEY_MISSING')
 
+    # Hugging Face
     secrets['HUGGINGFACEHUB_API_TOKEN'] = os.getenv('HUGGINGFACEHUB_API_TOKEN')
     if not secrets['HUGGINGFACEHUB_API_TOKEN'] and 'keys' in sb and 'HUGGINGFACEHUB_API_TOKEN' in sb['keys']:
         secrets['HUGGINGFACEHUB_API_TOKEN'] = sb['keys']['HUGGINGFACEHUB_API_TOKEN']
         os.environ['HUGGINGFACEHUB_API_TOKEN'] = secrets['HUGGINGFACEHUB_API_TOKEN']
         if os.environ['HUGGINGFACEHUB_API_TOKEN']=='':
             raise SecretKeyException('Hugging Face API Key is required.','HUGGINGFACE_API_KEY_MISSING')
+    
     return secrets
 def test_key_status():
     """
@@ -538,9 +542,9 @@ def test_key_status():
 
     return _format_key_status(key_status)
 def set_llm(sb, secrets, type='prompt'):
-    """
-    Sets up and returns a language model (LLM) based on the provided parameters.
-    """
+    """Sets up and returns a language model (LLM) based on the provided parameters."""
+    ChatOpenAI, ChatAnthropic = _import_llm_deps()
+    
     if type == 'prompt':  # use for prompting in chat applications
         if sb['llm_source'] == 'OpenAI':
             llm = ChatOpenAI(model_name=sb['llm_model'],
@@ -590,9 +594,9 @@ def set_llm(sb, secrets, type='prompt'):
             raise ValueError("Invalid LLM source specified.")
     return llm
 def get_query_model(sb, secrets):
-    """
-    Returns the query model based on the provided parameters.
-    """
+    """Returns the query model based on the provided parameters."""
+    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings, RAGPretrainedModel = _import_embedding_deps()
+
     if sb['index_type'] == 'RAGatouille':
         query_model = RAGPretrainedModel.from_pretrained(sb['embedding_name'],
                                                          index_root=os.path.join(os.getenv('LOCAL_DB_PATH'),'.ragatouille'))
@@ -612,43 +616,51 @@ def get_query_model(sb, secrets):
         raise NotImplementedError('Query model not recognized.')
     return query_model
 @st.cache_data(ttl=300)  # Cache for 5 minutes
+def _cached_pinecone_status(api_key):
+    """Helper function to cache the processed Pinecone status."""
+    _, Pinecone, _ = _import_db_deps()
+    
+    if not api_key:
+        return {'status': False, 'message': 'Pinecone API Key is not set.'}
+    
+    try:
+        pc = Pinecone(api_key=api_key)
+        indexes = pc.list_indexes()
+        if len(indexes) == 0:
+            return {'status': False, 'message': 'No indexes found'}
+        # Convert indexes to a list of names to avoid caching Pinecone objects
+        index_names = [idx.name for idx in indexes]
+        return {'status': True, 'message': index_names}
+    except Exception as e:
+        return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
+
 def show_pinecone_indexes(format=True):
-    """
-    Retrieves the list of Pinecone indexes and their status.
-    LOCAL_DB_PATH environment variable used to pass the local database path.
-    """
-    if os.getenv('PINECONE_API_KEY') is None or os.getenv('PINECONE_API_KEY')=='':
-        pinecone_status = {'status': False, 'message': 'Pinecone API Key is not set.'}
-    else:
-        pc=Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
-        indexes=pc.list_indexes()
-        if len(indexes)==0:
-            pinecone_status = {'status': False, 'message': 'No indexes found'}
-        else:
-            pinecone_status = {'status': True, 'message': indexes}
+    """Retrieves the list of Pinecone indexes and their status."""
+    pinecone_status = _cached_pinecone_status(os.getenv('PINECONE_API_KEY'))
     
     if format:
         return _format_pinecone_status(pinecone_status)
-    else:
-        return pinecone_status
+    return pinecone_status
 def show_chroma_collections(format=True):
     """
     Retrieves the list of chroma collections from the local database.
     LOCAL_DB_PATH environment variable used to pass the local database path.
     """
+    _, _, chromadb = _import_db_deps()
+    
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
     else:
-        db_folder_path=os.getenv('LOCAL_DB_PATH')
+        db_folder_path = os.getenv('LOCAL_DB_PATH')
         try:
             persistent_client = chromadb.PersistentClient(path=os.path.join(db_folder_path,'chromadb'))
+            collections=persistent_client.list_collections()
+            if len(collections)==0:
+                chroma_status = {'status': False, 'message': 'No collections found'}
+            else:   
+                chroma_status = {'status': True, 'message': collections}
         except:
             raise ValueError("Chroma vector database needs to be reset, or the database path is incorrect. Clear cache, or reset path. You may have specified a path which is read only or has no collections.")
-        collections=persistent_client.list_collections()
-        if len(collections)==0:
-            chroma_status = {'status': False, 'message': 'No collections found'}
-        else:   
-            chroma_status = {'status': True, 'message': collections}
     if format:
         return _format_chroma_status(chroma_status)
     else:
@@ -778,10 +790,12 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         st.markdown(f"Local database path: `{os.environ['LOCAL_DB_PATH']}`")
 def extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts the specified pages from a PDF file."""
+    fitz, requests = _import_pdf_deps()
+    
     try:
         # Download extracted relevant section of the PDF file
         response = requests.get(url)
-        response.raise_for_status()  # Raises an HTTPError for bad responses
+        response.raise_for_status()
         pdf_data = response.content
 
         # Load PDF in PyMuPDF
@@ -813,6 +827,8 @@ def extract_pages_from_pdf(url, target_page, page_range=5):
         return None
 def get_pdf(url):
     """Downloads the full PDF file from the given URL. """
+    fitz, requests = _import_pdf_deps()
+    
     try:
         # Download full PDF file
         response = requests.get(url)
@@ -861,13 +877,13 @@ def _get_available_indexes(index_type, embedding_name, rag_type):
             return []
             
         for index in indices['message']:
-            if not index['name'].startswith(base_name) or index['name'].endswith('-queries'):
+            if not index.startswith(base_name) or index.endswith('-queries'):
                 continue
                 
-            if (rag_type == 'Parent-Child' and index['name'].endswith('-parent-child')) or \
-               (rag_type == 'Summary' and index['name'].endswith('-summary')) or \
-               (rag_type == 'Standard' and not index['name'].endswith(('-parent-child', '-summary'))):
-                name.append(index['name'])
+            if (rag_type == 'Parent-Child' and index.endswith('-parent-child')) or \
+               (rag_type == 'Summary' and index.endswith('-summary')) or \
+               (rag_type == 'Standard' and not index.endswith(('-parent-child', '-summary'))):
+                name.append(index)
                 
     elif index_type == 'RAGatouille':
         indices = show_ragatouille_indexes(format=False)
@@ -895,13 +911,11 @@ def _format_pinecone_status(pinecone_status):
     """
     Formats the Pinecone status into a markdown string.
     """
-    index_description=''
+    index_description = ''
     if pinecone_status['status']:
         for index in pinecone_status['message']:
-            name = index['name']
-            state = index['status']['state']
             status = ":white_check_mark:"
-            index_description += f"- `{name}`: {state} ({status})\n"
+            index_description += f"- `{index}`: ({status})\n"
         markdown_string = f"**Pinecone Indexes**\n{index_description}"
     else:
         message = pinecone_status['message']

@@ -11,28 +11,34 @@ import numpy as np
 from sklearn.cluster import KMeans
 from datasets import Dataset
 
-from pinecone import Pinecone as pinecone_client, ServerlessSpec
-import chromadb
-from chromadb import PersistentClient
+# Base imports needed immediately
+def _import_db_deps():
+    from pinecone import Pinecone as pinecone_client, ServerlessSpec
+    import chromadb
+    from chromadb import PersistentClient
+    return pinecone_client, chromadb, PersistentClient, ServerlessSpec
 
-from langchain_pinecone import PineconeVectorStore
-from langchain_chroma import Chroma
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.storage import LocalFileStore
+def _import_langchain_deps():
+    from langchain_pinecone import PineconeVectorStore
+    from langchain_chroma import Chroma
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain.retrievers.multi_vector import MultiVectorRetriever
+    from langchain.storage import LocalFileStore
+    return PineconeVectorStore, Chroma, RecursiveCharacterTextSplitter, MultiVectorRetriever, LocalFileStore
 
-from langchain_openai import OpenAIEmbeddings
-from langchain_voyageai import VoyageAIEmbeddings
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_core.documents import Document
-from langchain_core.output_parsers import StrOutputParser
+def _import_embedding_deps():
+    from langchain_openai import OpenAIEmbeddings
+    from langchain_voyageai import VoyageAIEmbeddings
+    from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+    return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
 
-import nltk # Do before ragatioulle import to avoid logs
-nltk.download('punkt', quiet=True)
-from ragatouille import RAGPretrainedModel
+def _import_doc_deps():
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain_core.documents import Document
+    from langchain_core.output_parsers import StrOutputParser
+    return PyPDFLoader, Document, StrOutputParser
+
 from renumics import spotlight
-
 import admin
 from prompts import CLUSTER_LABEL, SUMMARIZE_TEXT
 
@@ -88,30 +94,7 @@ def load_docs(index_type:str,
               llm=None,
               namespace=None,
               show_progress:bool=False):
-    """
-    Loads documents into the specified index.
-
-    Args:
-        index_type (str): The type of index to use.
-        docs: The documents to load.
-        query_model (object): The query model to use.
-        rag_type (str, optional): The type of RAG (Retrieval-Augmented Generation) to use.
-        index_name (str, optional): The name of the index.
-        n_merge_pages (int, optional): Number of pages to to merge when loading.
-        chunk_method (str, optional): The method to chunk the documents.
-        chunk_size (int, optional): The size of each chunk.
-        chunk_overlap (int, optional): The overlap between chunks.
-        clear (bool, optional): Whether to clear the index before loading new documents.
-        file_out (str, optional): The output file path.
-        batch_size (int, optional): The batch size for upserting documents.
-        local_db_path (str, optional): The local database path.
-        llm (optional): The language model to use.
-        namespace (str, optional): The namespace to use for the index when upserting.
-        show_progress (bool, optional): Whether to show progress during the loading process.
-
-    Returns:
-        vectorstore: The updated vectorstore.
-    """
+    """Loads documents into the specified index."""
     # Check for illegal things
     if not clear and (rag_type == 'Parent-Child' or rag_type == 'Summary'):
         raise ValueError('Parent-Child databases must be cleared before loading new documents.')
@@ -156,24 +139,11 @@ def chunk_docs(docs: List[str],
                k_child:int=4,
                llm=None,
                show_progress:bool=False):
-    """
-    Chunk the given list of documents into smaller chunks based on the specified parameters.
-
-    Args:
-        docs (List[str]): The list of document paths to be chunked.
-        rag_type (str, optional): The type of chunking method to be used.
-        chunk_method (str, optional): The method of chunking to be used. None will take whole PDF pages as documents.
-        file_out (str, optional): The output file path to save the chunked documents.
-        n_merge_pages (int, optional): Number of pages to to merge when loading.
-        chunk_size (int, optional): The size of each chunk in tokens. Defaults to 500. Only used if chunk_method is not None.
-        chunk_overlap (int, optional): The overlap between chunks in tokens. Defaults to 0. Only used if chunk_method is not None.
-        k_child (int, optional): The number of child chunks to split from parnet chunks for 'Parent-Child' rag_type.
-        llm (None, optional): The language model to be used for generating summaries.
-        show_progress (bool, optional): Whether to show the progress bar during chunking.
-
-    Returns:
-        dict: A dictionary containing the chunking results based on the specified rag_type.
-    """
+    """Chunk the given list of documents into smaller chunks based on the specified parameters."""
+    # Import dependencies
+    PyPDFLoader, Document, StrOutputParser = _import_doc_deps()
+    _, _, RecursiveCharacterTextSplitter, _, _ = _import_langchain_deps()
+    
     if show_progress:
         progress_text = 'Reading documents...'
         my_bar = st.progress(0, text=progress_text)
@@ -345,25 +315,11 @@ def initialize_database(index_type: str,
                         show_progress: bool = False,
                         chunker: dict = None,
                         namespace: str = None):
-    """Initializes the database based on the specified parameters.
-
-    Args:
-        index_type (str): The type of index to use (e.g., "Pinecone", "ChromaDB", "RAGatouille").
-        index_name (str): The name of the index.
-        query_model (object): The query model to use.
-        rag_type (str): The type of RAG model to use.
-        local_db_path (str, optional): The path to the local database.
-        clear (bool, optional): Whether to clear the index. Metadata will be added to the index.
-        init_ragatouille (bool, optional): Whether to initialize the RAGatouille model.
-        show_progress (bool, optional): Whether to show the progress bar.
-        chunker (dict, optional): The chunker dictionary containing the documents to upsert. Used only for metadata, and only with ChromaDB.
-        namespace (str, optional): The namespace to use for the index when upserting. Only works with Pinecone, ignored otherwise.
-    Returns:
-        vectorstore: The initialized vector store.
-
-    Raises:
-        NotImplementedError: If the specified index type is not implemented.
-    """
+    """Initialize database with caching for faster subsequent loads"""
+    pinecone_client, chromadb, PersistentClient, ServerlessSpec = _import_db_deps()
+    PineconeVectorStore, Chroma, _, _, _ = _import_langchain_deps()
+    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = _import_embedding_deps()
+    
     if show_progress:
         progress_text = "Database initialization..."
         my_bar = st.progress(0, text=progress_text)
@@ -440,10 +396,8 @@ def initialize_database(index_type: str,
             # Used if the index is not already set, initializes root folder and embedding model
             vectorstore = query_model
         else:   
-            # Used if the index is already set, loads the index directly
-            vectorstore = RAGPretrainedModel.from_index(index_path=os.path.join(local_db_path,
-                                                                                '.ragatouille/colbert/indexes',
-                                                                                index_name))
+            # Used if the index is already set, loads the index directly using lazy loading
+            vectorstore = _init_ragatouille(index_name, local_db_path)
         if show_progress:
             progress_percentage = 1
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
@@ -456,20 +410,12 @@ def initialize_database(index_type: str,
 
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1,max=60))
 def upsert_docs_db(vectorstore,
-                   chunk_batch: List[Document],
-                   chunk_batch_ids: List[str],
-                   namespace: str = None):
+                   chunk_batch,
+                   chunk_batch_ids,
+                   namespace):
     """
     Upserts a batch of documents into a vector database. The lancghain call is identical between Pinecone and ChromaDB.
     This function handles issues with hosted database upserts or when using hugging face or other endpoint services which are less stable.
-
-    Args:
-        vectorstore (VectorStore): The VectorStore object representing the Pinecone or ChromaDB.
-        chunk_batch (List[Document]): A list of Document objects representing the batch of documents to be upserted.
-        chunk_batch_ids (List[str]): A list of strings representing the IDs of the documents in the batch.
-        namespace (str, optional): The namespace to use for the index when upserting. Only works with Pinecone, ignored otherwise.
-    Returns:
-        VectorStore: The updated VectorStore object after upserting the documents.
     """
     if namespace is None:
         vectorstore.add_documents(documents=chunk_batch,
@@ -479,29 +425,17 @@ def upsert_docs_db(vectorstore,
                                   ids=chunk_batch_ids,
                                   namespace=namespace)
     return vectorstore
-def upsert_docs(index_type: str, 
-                index_name: str,
-                vectorstore: any, 
-                chunker: dict, 
-                batch_size: int = 50, 
-                show_progress: bool = False,
-                local_db_path: str = '.',
-                namespace: str = None):
-    """
-    Upserts documents into the specified index.
-
-    Args:
-        index_type (str): The type of index to upsert the documents into.
-        index_name (str): The name of the index.
-        vectorstore (any): The vectorstore object to add documents to.
-        chunker (dict): The chunker dictionary containing the documents to upsert.
-        batch_size (int, optional): The batch size for upserting documents.
-        show_progress (bool, optional): Whether to show progress during the upsert process.
-        local_db_path (str, optional): The local path to the database folder.
-        namespace (str, optional): The namespace to use for the index when upserting. Only works with Pinecone, ignored otherwise.
-    Returns:
-        tuple: A tuple containing the updated vectorstore and retriever objects.
-    """
+def upsert_docs(index_type, 
+                index_name,
+                vectorstore, 
+                chunker, 
+                batch_size = 50, 
+                show_progress = False,
+                local_db_path = '.',
+                namespace = None):
+    """Upserts documents into the specified index."""
+    _, _, MultiVectorRetriever, LocalFileStore, Path = _import_langchain_deps()
+    
     if show_progress:
         progress_text = "Upsert in progress..."
         my_bar = st.progress(0, text=progress_text)
@@ -597,19 +531,9 @@ def delete_index(index_type: str,
                  index_name: str, 
                  rag_type: str,
                  local_db_path: str = '.'):
-    """
-    Deletes an index based on the specified index type.
+    """Deletes an index based on the specified index type."""
+    pinecone_client, chromadb, _ , _ = _import_db_deps()
 
-    Args:
-        index_type (str): The type of index to delete. Valid values are "Pinecone", "ChromaDB", or "RAGatouille".
-        index_name (str): The name of the index to delete.
-        rag_type (str): The type of RAG (RAGatouille) to delete. Valid values are "Parent-Child" or "Summary".
-        local_db_path (str, optional): The path to the local database.
-
-    Raises:
-        NotImplementedError: If the index_type is not supported.
-
-    """
     if index_type == "Pinecone":
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         try:
@@ -706,23 +630,12 @@ def _sanitize_raw_page_data(page):
         return None
     else:
         return page
-def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
-                                           VoyageAIEmbeddings,
-                                           HuggingFaceInferenceAPIEmbeddings]):
-    """
-    Returns the size of the embedding for a given embedding model.
+def _embedding_size(embedding_family):
+    """Returns the size of the embedding for a given embedding model."""
+    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = _import_embedding_deps()
 
-    Args:
-        embedding_family (object): The embedding model to get the size for.
-
-    Returns:
-        int: The size of the embedding.
-
-    Raises:
-        NotImplementedError: If the embedding model is not supported.
-    """
     # https://platform.openai.com/docs/models/embeddings
-    if isinstance(embedding_family,OpenAIEmbeddings):
+    if isinstance(embedding_family, OpenAIEmbeddings):
         name=embedding_family.model
         if name=="text-embedding-ada-002":
             return 1536
@@ -733,7 +646,7 @@ def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
         else:
             raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # https://docs.voyageai.com/embeddings/
-    elif isinstance(embedding_family,VoyageAIEmbeddings):
+    elif isinstance(embedding_family, VoyageAIEmbeddings):
         name=embedding_family.model
         if name=="voyage-2":
             return 1024 
@@ -744,7 +657,7 @@ def _embedding_size(embedding_family:Union[OpenAIEmbeddings,
         else:
             raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
     # See model pages for embedding sizes
-    elif isinstance(embedding_family,HuggingFaceInferenceAPIEmbeddings):
+    elif isinstance(embedding_family, HuggingFaceInferenceAPIEmbeddings):
         name=embedding_family.model_name
         if name=="sentence-transformers/all-MiniLM-L6-v2":
             return 384
@@ -926,24 +839,10 @@ def get_docs_questions_df(index_type:str,
     df = pd.concat([docs_df, questions_df], ignore_index=True)
     return df
 def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_model: object):
-    """
-    Retrieves documents from a database and returns them as a pandas DataFrame.
-
-    Args:
-        index_type (str): The type of index to use. Only ChromaDB and Pinecone are supported.
-        local_db_path (Path): The local path to the Chroma database.
-        index_name (str): The name of the collection in the Chroma database.
-        query_model (object): The embedding function used for querying the database.
-
-    Returns:
-        pd.DataFrame: A DataFrame containing the retrieved documents, along with their metadata and embeddings.
-            The DataFrame has the following columns:
-            - id: The ID of the document.
-            - source: The source of the document.
-            - page: The page number of the document (default: -1 if not available).
-            - document: The content of the document.
-            - embedding: The embedding of the document.
-    """
+    """Retrieves documents from a database and returns them as a pandas DataFrame."""
+    pinecone_client, chromadb, _, _ = _import_db_deps()
+    _ , Chroma, _, _, _ = _import_langchain_deps()
+    
     # Find rag_type
     if index_name.endswith('-parent-child'):
         rag_type = 'Parent-Child'
@@ -1012,6 +911,7 @@ def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_mod
             df_out['original-doc'] = json_data_list
 
     return df_out
+
 def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
     """
     Retrieves questions and related information from a Chroma database and returns them as a pandas DataFrame.
@@ -1024,6 +924,9 @@ def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
     Returns:
         pd.DataFrame: A DataFrame containing the retrieved questions, answers, sources, and embeddings.
     """
+    _, chromadb, _, _ = _import_db_deps()
+    _, Chroma, _, _, _ = _import_langchain_deps()
+    
     persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
     vectorstore = Chroma(client=persistent_client,
                             collection_name=index_name,
@@ -1069,7 +972,6 @@ def add_clusters(df,n_clusters:int,label_llm:object=None,doc_per_cluster:int=5):
             summary.append(llm_chain.invoke(chunks))
             print(summary[-1].content)
         df["Cluster_Label"] = [summary[i].content for i in df["Cluster"]]
-    
     return df
 def export_to_hf_dataset(df: pd.DataFrame, dataset_name: str):
     """
@@ -1094,3 +996,12 @@ def archive_db(index_type:str,index_name:str,query_model:object,export_pickle:bo
     return df_temp
 
 # TODO add function to unarchive db (create chroma db and associated local filestore from pickle file)
+
+@st.cache_resource
+def _init_ragatouille(index_name: str, local_db_path: str):
+    """Lazy load and initialize RAGatouille"""
+    import nltk
+    nltk.download('punkt', quiet=True)
+    from ragatouille import RAGPretrainedModel
+    return RAGPretrainedModel.from_index(
+        index_path=os.path.join(local_db_path, '.ragatouille/colbert/indexes', index_name)    )
