@@ -9,7 +9,7 @@ homepage = "https://github.com/dan-s-mueller/aerospace_chatbot/tree/main"
 repository = "https://github.com/dan-s-mueller/aerospace_chatbot/tree/main"
 
 [tool.poetry.dependencies]
-python = ">3.9.7,<3.12"
+python = ">=3.10,<3.12"
 python-dotenv = "^1.0.0"
 ipywidgets = "^8.1.1"
 watchdog = "^3.0.0"
@@ -50,7 +50,6 @@ langchain-anthropic = "^0.2.3"
 boto3 = "^1.35.50"
 pypdf2 = "^3.0.1"
 google-cloud-storage = "^2.18.2"
-line-profiler = "^4.1.3"
 
 [build-system]
 requires = ["poetry-core"]
