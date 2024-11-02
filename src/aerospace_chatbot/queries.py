@@ -1,83 +1,117 @@
 import os
 from pathlib import Path
 from typing import Union
+import streamlit as st
 
-import openai
-import pinecone
-from pinecone import Pinecone as pinecone_client
-import chromadb
-
+# Only import the essential Document class and prompts
 from langchain_core.documents import Document
+from prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT, 
+                    DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS,
+                    GENERATE_SIMILAR_QUESTIONS_W_CONTEXT)
 
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_pinecone import Pinecone
-from langchain_chroma import Chroma
+# Lazy import data_processing only when needed
+@st.cache_resource
+def get_data_processing():
+    import data_processing
+    return data_processing
 
-from langchain.memory import ConversationBufferMemory
+class DependencyCache:
+    _instance = None
 
-from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.storage import LocalFileStore
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
-from operator import itemgetter
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
-from langchain.schema import format_document
-from langchain_core.messages import get_buffer_string
+    @staticmethod
+    @st.cache_resource
+    def get_llm_deps():
+        """Load LLM dependencies only when needed"""
+        from langchain_openai import ChatOpenAI
+        from langchain_anthropic import ChatAnthropic
+        return (ChatOpenAI, ChatAnthropic)
 
-import data_processing
-from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT, DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS, GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
+    @staticmethod
+    @st.cache_resource
+    def get_embedding_deps():
+        """Load embedding dependencies only when needed"""
+        from langchain_pinecone import Pinecone
+        from langchain_chroma import Chroma
+        return (Pinecone, Chroma)
 
-# Class and functions
+    @staticmethod
+    @st.cache_resource
+    def get_vector_store_deps():
+        """Load vector store dependencies only when needed"""
+        import openai
+        import pinecone
+        from pinecone import Pinecone as pinecone_client
+        import chromadb
+        return (openai, pinecone, pinecone_client, chromadb)
+
+    @staticmethod
+    @st.cache_resource
+    def get_core_deps():
+        """Load core dependencies only when needed"""
+        from langchain.memory import ConversationBufferMemory
+        from langchain.retrievers.multi_vector import MultiVectorRetriever
+        from langchain.storage import LocalFileStore
+        return (ConversationBufferMemory, MultiVectorRetriever, LocalFileStore)
+
+    @staticmethod
+    @st.cache_resource
+    def get_chain_deps():
+        """Load chain dependencies only when needed"""
+        from operator import itemgetter
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+        from langchain.schema import format_document
+        from langchain_core.messages import get_buffer_string
+        return (itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough,
+                format_document, get_buffer_string)
+
 class QA_Model:
-    """
-    Represents a Question-Answering Model.
-    """
+    """Represents a Question-Answering Model."""
+    
     def __init__(self, 
-                 index_type:str,
-                 index_name:str,
-                 query_model:object,
-                 llm:Union[ChatAnthropic, ChatOpenAI],
-                 rag_type:str='Standard',
-                 k:int=6,
-                 search_type:str='similarity',
-                 fetch_k:int=50,
-                 temperature:int=0,
-                 local_db_path:str='.',
-                 namespace:str=None,
-                 reset_query_db:bool=False):
+                 index_type,
+                 index_name,
+                 query_model,
+                 llm,
+                 rag_type='Standard',
+                 k=6,
+                 search_type='similarity',
+                 fetch_k=50,
+                 temperature=0,
+                 local_db_path='.',
+                 namespace=None,
+                 reset_query_db=False):
         """
         Initializes a new instance of the QA_Model class.
-
-        Args:
-            index_type (str): The type of document index.
-            index_name (str): The name of the document index.
-            query_model (object): The query model.
-            llm (ChatAnthropic or ChatOpenAI): The language model for generating responses.
-            rag_type (str, optional): The type of RAG model.
-            k (int, optional): The number of retriever results to consider.
-            search_type (str, optional): The type of search to perform.
-            fetch_k (int, optional): The number of documents to fetch from the retriever.
-            temperature (int, optional): The temperature for response generation.
-            local_db_path (str, optional): The path to the local database.
-            namespace (str, optional): The namespace for user documents.
-            reset_query_db (bool, optional): Whether to reset the query database.
         """
-        # Directly assign instance attributes
-        self.index_type = index_type
-        self.index_name = index_name
-        self.query_model = query_model
-        self.llm = llm
-        self.rag_type = rag_type
-        self.k = k
-        self.search_type = search_type
-        self.fetch_k = fetch_k
-        self.temperature = temperature
-        self.local_db_path = local_db_path
-        self.namespace = namespace
+        # Initialize dependency cache
+        self._deps = DependencyCache.get_instance()
+        
+        # Store initialization parameters
+        self._store_init_params(locals())
         
         # Initialize state attributes
         self._initialize_state()
+        
+        # Lazy load setup
+        self._lazy_setup(reset_query_db)
+
+    def _store_init_params(self, params):
+        """Store initialization parameters for lazy loading"""
+        for key, value in params.items():
+            if key != 'self':
+                setattr(self, key, value)
+
+    def _lazy_setup(self, reset_query_db):
+        """Lazy load all dependencies and setup"""
+        # Load dependencies only when needed
+        self._initialize_dependencies()
         
         # Set up vector stores and retriever
         self._setup_vectorstores(reset_query_db)
@@ -86,6 +120,44 @@ class QA_Model:
         # Initialize memory and chain
         self._setup_memory_and_chain()
 
+    def _setup_vectorstores(self, reset_query_db):
+        """Initialize document and query vectorstores."""
+        data_processing = get_data_processing()
+        
+        # Document vectorstore
+        self.doc_vectorstore = data_processing.initialize_database(
+            self.index_type, self.index_name, self.query_model, 
+            self.rag_type, local_db_path=self.local_db_path,
+            init_ragatouille=False, namespace=self.namespace
+        )
+        
+        # Query vectorstore (if applicable)
+        if self.index_type in ['ChromaDB', 'Pinecone']:
+            self.query_vectorstore = data_processing.initialize_database(
+                self.index_type, f"{self.index_name}-queries",
+                self.query_model, 'Standard',
+                local_db_path=self.local_db_path,
+                clear=reset_query_db
+            )
+    def _initialize_dependencies(self):
+        """Initialize all required dependencies"""
+        # Get LLM dependencies
+        self.ChatOpenAI, self.ChatAnthropic = self._deps.get_llm_deps()
+        
+        # Get vector store dependencies
+        self.openai, self.pinecone, self.pinecone_client, self.chromadb = self._deps.get_vector_store_deps()
+        
+        # Get embedding/store dependencies
+        self.Pinecone, self.Chroma = self._deps.get_embedding_deps()
+        
+        # Get core dependencies
+        (self.ConversationBufferMemory, self.MultiVectorRetriever, 
+         self.LocalFileStore) = self._deps.get_core_deps()
+         
+        # Get chain dependencies
+        (self.itemgetter, self.StrOutputParser, self.RunnableLambda,
+         self.RunnablePassthrough, self.format_document, 
+         self.get_buffer_string) = self._deps.get_chain_deps()
     def query_docs(self,query): 
         """Executes a query and retrieves the relevant documents."""       
         # Retrieve memory, invoke chain
@@ -116,7 +188,7 @@ class QA_Model:
         if self.index_type in ['ChromaDB', 'Pinecone']:
             self.query_vectorstore.add_documents([self._question_as_doc(query, self.result[-1])])
     def update_model(self,
-                     llm: Union[ChatAnthropic, ChatOpenAI]):
+                     llm):
         """Updates with a new LLM."""
         # TODO add in updated retrieval parameters
         self.llm=llm
@@ -136,9 +208,8 @@ class QA_Model:
         chain = (
                 prompt_template
                 | self.llm
-                | StrOutputParser()
+                | self.StrOutputParser()
             )
-        
         alternative_questions=chain.invoke(invoke_dict)
         return alternative_questions
     def _initialize_state(self):
@@ -151,25 +222,6 @@ class QA_Model:
         self.doc_vectorstore = None
         self.query_vectorstore = None
         self.retriever = None
-
-    def _setup_vectorstores(self, reset_query_db):
-        """Initialize document and query vectorstores."""
-        # Document vectorstore
-        self.doc_vectorstore = data_processing.initialize_database(
-            self.index_type, self.index_name, self.query_model, 
-            self.rag_type, local_db_path=self.local_db_path,
-            init_ragatouille=False, namespace=self.namespace
-        )
-        
-        # Query vectorstore (if applicable)
-        if self.index_type in ['ChromaDB', 'Pinecone']:
-            self.query_vectorstore = data_processing.initialize_database(
-                self.index_type, f"{self.index_name}-queries",
-                self.query_model, 'Standard',
-                local_db_path=self.local_db_path,
-                clear=reset_query_db
-            )
-
     def _setup_retriever(self):
         """Initialize the appropriate retriever based on RAG type."""
         search_kwargs = self._process_retriever_args(
@@ -182,7 +234,6 @@ class QA_Model:
             self._setup_multivector_retriever(search_kwargs)
         else:
             raise NotImplementedError(f"RAG type {self.rag_type} not supported")
-
     def _setup_standard_retriever(self, search_kwargs):
         """Set up standard retriever based on index type."""
         if self.index_type in ['Pinecone', 'ChromaDB']:
@@ -194,23 +245,21 @@ class QA_Model:
             self.retriever = self.doc_vectorstore.as_langchain_retriever(
                 k=search_kwargs['k']
             )
-
     def _setup_multivector_retriever(self, search_kwargs):
         """Set up multi-vector retriever for Parent-Child or Summary RAG types."""
-        self.lfs = LocalFileStore(
+        self.lfs = self.LocalFileStore(
             Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name
         )
-        self.retriever = MultiVectorRetriever(
+        self.retriever = self.MultiVectorRetriever(
             vectorstore=self.doc_vectorstore,
             byte_store=self.lfs,
             id_key="doc_id",
             search_type=self.search_type,
             search_kwargs=search_kwargs
         )
-
     def _setup_memory_and_chain(self):
         """Initialize memory and conversational QA chain."""
-        self.memory = ConversationBufferMemory(
+        self.memory = self.ConversationBufferMemory(
             return_messages=True, 
             output_key='answer', 
             input_key='question'
@@ -219,39 +268,41 @@ class QA_Model:
     def _define_qa_chain(self):
         """Defines the conversational QA chain."""
         # This adds a 'memory' key to the input object
-        loaded_memory = RunnablePassthrough.assign(
-            chat_history=RunnableLambda(self.memory.load_memory_variables) 
-            | itemgetter('history'))  
+        loaded_memory = self.RunnablePassthrough.assign(
+            chat_history=self.RunnableLambda(self.memory.load_memory_variables) 
+            | self.itemgetter('history'))  
         
         # Assemble main chain
         standalone_question = {
             'standalone_question': {
                 'question': lambda x: x['question'],
-                'chat_history': lambda x: get_buffer_string(x['chat_history'])}
+                'chat_history': lambda x: self.get_buffer_string(x['chat_history'])}
             | CONDENSE_QUESTION_PROMPT
             | self.llm
-            | StrOutputParser()}
+            | self.StrOutputParser()}
         
         retrieved_documents = {
-            'source_documents': itemgetter('standalone_question') 
+            'source_documents': self.itemgetter('standalone_question') 
                                 | self.retriever,
             'question': lambda x: x['standalone_question']}
         
         final_inputs = {
             'context': lambda x: self._combine_documents(x['source_documents']),
-            'question': itemgetter('question')}
+            'question': self.itemgetter('question')}
         
         answer = {
             'answer': final_inputs 
                         | QA_PROMPT 
                         | self.llm,
-            'references': itemgetter('source_documents')}
+            'references': self.itemgetter('source_documents')}
         
         return loaded_memory | standalone_question | retrieved_documents | answer
-    @staticmethod
-    def _combine_documents(docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator='\n\n'):
-        """Combines a list of documents into a single string."""
-        doc_strings = [format_document(doc, document_prompt) for doc in docs]
+    def _combine_documents(self, docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator='\n\n'):
+        """Combines a list of documents into a single string using the format_document function."""
+        # Format each document using the cached format_document function
+        doc_strings = [self.format_document(doc, document_prompt) for doc in docs]
+        
+        # Join the formatted strings with the separator
         return document_separator.join(doc_strings)
 
     @staticmethod

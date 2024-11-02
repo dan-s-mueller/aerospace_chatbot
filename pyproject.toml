@@ -48,6 +48,7 @@ renumics-spotlight = "^1.6.11"
 watchdog = ">=2.1.5,<6.0.0"
 cleanlab = "^2.7.0"
 cleanvision = "^0.3.6"
+austin-dist = "^3.7.0"
 
 [build-system]
 requires = ["poetry-core"]

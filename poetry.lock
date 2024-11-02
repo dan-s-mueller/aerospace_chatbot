@@ -327,6 +327,27 @@ files = [
 test = ["tox"]
 
 [[package]]
+name = "austin-dist"
+version = "3.7.0"
+description = "Austin - Frame Stack Sampler for CPython"
+optional = false
+python-versions = "*"
+files = [
+    {file = "austin_dist-3.7.0-1-py2.py3-none-macosx_11_0_x86_64.whl", hash = "sha256:92a98e436336355473e8f5145aaea9fa524c97b4cd5336719ebb8a07c963ca79"},
+    {file = "austin_dist-3.7.0-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:72ac1883dfc7e750a25434d72722bca5faf45c95d0a84c22ea8d97152c51a1e7"},
+    {file = "austin_dist-3.7.0-py2.py3-none-macosx_11_0_x86_64.whl", hash = "sha256:61d16d9a8e81dccc31e1cae2137885d0d7257ecad673b77b0e69de16cda7a2f0"},
+    {file = "austin_dist-3.7.0-py2.py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e73d3cad0b5c8d51e5b2130dd61cfa0ea8f9c01013ab6f536fb5199a17547b96"},
+    {file = "austin_dist-3.7.0-py2.py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1cd9a7f7f22cc9a9f961ff11f27a18ac5c03a35fc564b1de68a84eb8191d559d"},
+    {file = "austin_dist-3.7.0-py2.py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:9ea01bdc2b3ffcee67da9a4514cc2b40a526c2cc3a753516010e99acb0744f30"},
+    {file = "austin_dist-3.7.0-py2.py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:402ab2ea7ce8f2f431102d37b5ea0289c9c6868eb1a8ba3b0f09fd1df3280add"},
+    {file = "austin_dist-3.7.0-py2.py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:a125130171389b0b7baab7168787893bce0972db88b8b5e9811b41b774bea5e2"},
+    {file = "austin_dist-3.7.0-py2.py3-none-musllinux_1_1_armv7l.whl", hash = "sha256:a853294017a480cf92226382077a0e90e3719ffe6aa4c76b1d9a3a6d3346ae7d"},
+    {file = "austin_dist-3.7.0-py2.py3-none-musllinux_1_1_ppc64le.whl", hash = "sha256:26a816a6df008ea652dca67e9fba3d91ed27d0d65d813eabe7bfec9becf540c4"},
+    {file = "austin_dist-3.7.0-py2.py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:2ef2976d4f188fa6fa316c710bb64a79feb7ff5662154b893face916bf0a9c81"},
+    {file = "austin_dist-3.7.0-py2.py3-none-win_amd64.whl", hash = "sha256:760dabaff27022d238091c1d9de9234c881359d0f98295ae8c0428ffc33868c8"},
+]
+
+[[package]]
 name = "av"
 version = "13.1.0"
 description = "Pythonic bindings for FFmpeg's libraries."
@@ -8915,4 +8936,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11.0,<3.12.0"
-content-hash = "392a90aef567dab66fc5fd880c40910fe76beb0391e2159bdd1145395ec7e51a"
+content-hash = "b1b1f7c9e0f48a822a6fa08ea375bb614cf912c16550fa8fdf6cb0f44405f92f"

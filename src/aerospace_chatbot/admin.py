@@ -166,8 +166,9 @@ class SidebarManager:
             warn_db_path.empty()
     def _load_config(self):
         """Load configuration"""
-        self._config = _load_config_cached(self._config_file)
-        self._validate_config(self._config)
+        config = _load_config_cached(self._config_file)
+        self._validate_config(config)
+        self._config = config
     def _validate_config(self, config):
         """Validate the configuration file structure."""
         required_sections = ['databases', 'embeddings', 'llms', 'rag_types']
