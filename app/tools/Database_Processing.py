@@ -1,23 +1,24 @@
 import os, sys, time
 import glob
 import streamlit as st
-import tempfile
 
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, data_processing
 
 # Page setup
+st.title('📓 Database Processing')
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
-paths,sb,secrets=admin.st_setup_page('📓 Database Processing',
-                                     home_dir,
-                                     st.session_state.config_file,
-                                     {'vector_database':True,
-                                      'embeddings':True,
-                                      'rag_type':True,
-                                      'secret_keys':True})
 
-# Add section for connection status and vector database cleanup
+# Initialize SidebarManager
+sidebar_manager = admin.SidebarManager(st.session_state.config_file)
+
+# Get paths, sidebar values, and secrets
+paths = sidebar_manager.get_paths(home_dir)
+sb = sidebar_manager.render_sidebar()
+secrets = sidebar_manager.get_secrets()
+
+# Page setup
 st.subheader('Connection status and vector database cleanup')
 admin.st_connection_status_expander(expanded=False,delete_buttons=True)
 
@@ -28,15 +29,31 @@ st.subheader('Create and load into a vector database')
 query_model = admin.get_query_model(sb, secrets)
 
 # Find docs
-data_folder = st.text_input('Enter a directory relative to the base directory',
-                            os.path.join(paths['data_folder_path'],'AMS'),
-                            help='Enter a directory, must be an absolute path.')
-if not os.path.isdir(data_folder):
-    st.error('The entered directory does not exist')
-docs = glob.glob(os.path.join(data_folder,'*.pdf'))   # Only get the PDFs in the directory
-# TODO update so that you can select the files to upload
-st.markdown('PDFs found: '+str(docs))
-st.markdown('Number of PDFs found: ' + str(len(docs)))
+try:
+    buckets = data_processing.list_available_buckets()
+    
+    if not buckets:
+        st.warning("No GCS buckets found. Please ensure you have access to at least one bucket in your GCS project.")
+        st.stop()
+        
+    bucket_name = st.selectbox('Select GCS bucket',
+                             options=buckets,
+                             help='Select a Google Cloud Storage bucket containing PDFs')
+
+    docs = data_processing.list_bucket_pdfs(bucket_name)
+    markdown_text = f"**Number of PDFs found:** {len(docs)}\n"
+    if len(docs) > 0:
+        markdown_text += "**PDFs found:**\n"
+        for doc in docs:
+            # Get just the filename from the GCS path
+            filename = doc.split('/')[-1]
+            markdown_text += f"- `{filename}`\n"
+    else:
+        st.info(f"No PDF files found in bucket '{bucket_name}'")
+    st.markdown(markdown_text)
+        
+except Exception as e:
+    st.error(f'Error accessing GCS: {str(e)}. Please check your credentials and permissions. You may need to log into your Google Cloud account (`gcloud auth login`), or access to the bucket.')
 
 # Set database name
 index_appendix=st.text_input('Appendix for index name','mch')
@@ -92,13 +109,13 @@ with st.expander("Options",expanded=True):
     else:  
         raise NotImplementedError
     
-    # Json export
-    export_json = st.checkbox('Export jsonl?', value=False,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
-    if export_json:
-        json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{index_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
-        json_file=os.path.join(paths['base_folder_path'],json_file)
-    else:
-        json_file=None
+    # # Json export
+    # export_json = st.checkbox('Export jsonl?', value=False,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
+    # if export_json:
+    #     json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{index_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
+    #     json_file=os.path.join(paths['base_folder_path'],json_file)
+    # else:
+    #     json_file=None
     
 
 # Check the index name, give error before running if it is invalid
@@ -121,7 +138,7 @@ try:
                                            n_merge_pages=n_merge_pages,
                                            chunk_size=chunk_size,
                                            chunk_overlap=chunk_overlap)
-    st.markdown(f'Index name: {index_name}')
+    st.markdown(f'Index name: `{index_name}`')
 except ValueError as e:
     st.warning(str(e))
     st.stop()
@@ -138,8 +155,7 @@ if st.button('Load docs into vector database'):
                         n_merge_pages=n_merge_pages,
                         chunk_method=chunk_method,
                         chunk_size=chunk_size,
-                        chunk_overlap=chunk_overlap,                  
-                        file_out=json_file,
+                        chunk_overlap=chunk_overlap,    
                         clear=clear_database,
                         batch_size=batch_size,
                         local_db_path=paths['db_folder_path'],

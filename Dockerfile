@@ -22,14 +22,12 @@ WORKDIR $HOME
 RUN mkdir $HOME/app 
 RUN mkdir $HOME/config
 RUN mkdir $HOME/db
-RUN mkdir $HOME/data
 RUN mkdir $HOME/src
 
 # Give all users read/write permissions to the app code directories
 RUN chmod 777 $HOME/app
 RUN chmod 777 $HOME/config
 RUN chmod 777 $HOME/db
-RUN chmod 777 $HOME/data
 RUN chmod 777 $HOME/src
 
 # Set environment variables
@@ -42,7 +40,6 @@ RUN pip3 install -r requirements.txt
 COPY --chown=user:user ./app $HOME/app
 COPY --chown=user:user ./config $HOME/config
 COPY --chown=user:user ./db $HOME/db
-COPY --chown=user:user ./data/AMS/*.pdf $HOME/data
 COPY --chown=user:user ./src $HOME/src
 
 # Set up run env variables.

@@ -8,18 +8,17 @@ sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, data_processing
 
 # Page setup
+st.title('📈 Visualize Data')
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
-paths,sb,secrets=admin.st_setup_page('📈 Visualize Data',
-                                     home_dir,
-                                     st.session_state.config_file,
-                                     {'vector_database':True,
-                                      'embeddings':True,
-                                      'rag_type':True,
-                                      'index_selected':True,
-                                      'llm':True,
-                                      'model_options':True,
-                                      'secret_keys':True})
+
+# Initialize SidebarManager
+sidebar_manager = admin.SidebarManager(st.session_state.config_file)
+
+# Get paths, sidebar values, and secrets
+paths = sidebar_manager.get_paths(home_dir)
+sb = sidebar_manager.render_sidebar()
+secrets = sidebar_manager.get_secrets()
 
 # Set up session state variables
 if 'viewer' not in st.session_state:
@@ -46,7 +45,7 @@ query_model = admin.get_query_model(sb, secrets)    # Set query model
 # Add options
 export_file=st.checkbox('Export local dataset file?',value=False,help='Export the data, including embeddings to a parquet file')
 if export_file:
-    file_name=st.text_input('Enter the file name',value=f"{os.path.join(paths['data_folder_path'],sb['index_selected']+'.parquet')}")
+    file_name=st.text_input('Enter the file name',value=f"{os.path.join(paths['db_folder_path'],sb['index_selected']+'.parquet')}")
 hf_dataset=st.checkbox('Export dataset to Hugging Face?',value=False,help='Export the data, including embeddings to a Hugging Face dataset.')
 
 if hf_dataset:

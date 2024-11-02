@@ -36,6 +36,42 @@ from renumics import spotlight
 import admin
 from prompts import CLUSTER_LABEL, SUMMARIZE_TEXT
 
+from google.cloud import storage
+
+def list_bucket_pdfs(bucket_name: str) -> List[str]:
+    """Lists all PDF files in a Google Cloud Storage bucket."""
+    try:
+        # Initialize the GCS client
+        storage_client = storage.Client()
+        
+        # Get the bucket
+        bucket = storage_client.bucket(bucket_name)
+        
+        # List all blobs (files) in the bucket
+        blobs = bucket.list_blobs()
+        
+        # Filter for PDF files and create full GCS paths
+        pdf_files = [
+            f"gs://{bucket_name}/{blob.name}" 
+            for blob in blobs 
+            if blob.name.lower().endswith('.pdf')
+        ]
+        
+        return pdf_files
+    except Exception as e:
+        raise Exception(f"Error accessing GCS bucket: {str(e)}")
+def list_available_buckets() -> List[str]:
+    """Lists all available buckets in the GCS project."""
+    try:
+        # Initialize the GCS client
+        storage_client = storage.Client()
+        
+        # List all buckets
+        buckets = [bucket.name for bucket in storage_client.list_buckets()]
+        
+        return buckets
+    except Exception as e:
+        raise Exception(f"Error accessing GCS buckets: {str(e)}")
 def load_docs(index_type:str,
               docs:List[str],
               query_model:object,
