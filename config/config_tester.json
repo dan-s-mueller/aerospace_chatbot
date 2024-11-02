@@ -2,7 +2,7 @@
     "databases": [
         {
             "name": "Pinecone",
-            "embedding_models": ["OpenAI", "Voyage"]
+            "embedding_models": ["OpenAI"]
         }
     ],
     "embeddings": [
