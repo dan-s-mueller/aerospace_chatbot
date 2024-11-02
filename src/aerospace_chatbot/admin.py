@@ -3,8 +3,33 @@ import json
 import streamlit as st
 from dotenv import load_dotenv, find_dotenv
 
+def get_cache_decorator():
+    """Returns appropriate cache decorator based on environment"""
+    try:
+        import streamlit as st
+        return st.cache_resource
+    except:
+        # Return no-op decorator when not in Streamlit
+        return lambda *args, **kwargs: (lambda func: func)
+
+# Replace @st.cache_resource with dynamic decorator
+cache_resource = get_cache_decorator()
+
+def get_cache_data_decorator():
+    """Returns appropriate cache_data decorator based on environment"""
+    try:
+        import streamlit as st
+        return st.cache_data
+    except:
+        # Return no-op decorator when not in Streamlit
+        return lambda *args, **kwargs: (lambda func: func)
+
+# Replace @st.cache_data with dynamic decorator
+cache_data = get_cache_data_decorator()
+
 # Create a singleton cache for dependencies
 class DependencyCache:
+    """A class to cache dependencies."""
     _instance = None
     _llm_deps = None
     _embedding_deps = None
@@ -19,14 +44,14 @@ class DependencyCache:
         return cls._instance
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_llm_deps():
         from langchain_openai import ChatOpenAI
         from langchain_anthropic import ChatAnthropic
         return (ChatOpenAI, ChatAnthropic)
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_embedding_deps():
         from langchain_openai import OpenAIEmbeddings
         from langchain_voyageai import VoyageAIEmbeddings
@@ -36,7 +61,7 @@ class DependencyCache:
                 HuggingFaceInferenceAPIEmbeddings, RAGPretrainedModel)
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_db_deps():
         import openai
         from pinecone import Pinecone
@@ -44,14 +69,14 @@ class DependencyCache:
         return (openai, Pinecone, chromadb)
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_pdf_deps():
         import fitz
         import requests
         return (fitz, requests)
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_data_processing():
         import data_processing
         return data_processing
@@ -166,7 +191,7 @@ class SidebarManager:
             warn_db_path.empty()
     def _load_config(self):
         """Load configuration"""
-        config = _load_config_cached(self._config_file)
+        config = self._load_config_cached(self._config_file)
         self._validate_config(config)
         self._config = config
     def _validate_config(self, config):
@@ -471,6 +496,18 @@ class SidebarManager:
         except SecretKeyException as e:
             st.warning(f"{e}")
             st.stop()
+    @staticmethod
+    def _load_config_cached(config_file):
+        """Load and cache config file"""
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+            return {
+                'databases': {db['name']: db for db in config['databases']},
+                'embeddings': {e['name']: e for e in config['embeddings']},
+                'llms': {m['name']: m for m in config['llms']},
+                'rag_types': config['rag_types'],
+                'disabled_controls': config.get('disabled_controls', {})
+            }
 
 def set_secrets(sb):
     """Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar."""
@@ -627,26 +664,6 @@ def get_query_model(sb, secrets):
     else:
         raise NotImplementedError('Query model not recognized.')
     return query_model
-@st.cache_data(ttl=300)  # Cache for 5 minutes
-def _cached_pinecone_status(api_key):
-    """Helper function to cache the processed Pinecone status."""
-    deps = DependencyCache.get_instance()
-    _, Pinecone, _ = deps.get_db_deps()
-    
-    if not api_key:
-        return {'status': False, 'message': 'Pinecone API Key is not set.'}
-    
-    try:
-        pc = Pinecone(api_key=api_key)
-        indexes = pc.list_indexes()
-        if len(indexes) == 0:
-            return {'status': False, 'message': 'No indexes found'}
-        # Convert indexes to a list of names to avoid caching Pinecone objects
-        index_names = [idx.name for idx in indexes]
-        return {'status': True, 'message': index_names}
-    except Exception as e:
-        return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
-
 def show_pinecone_indexes(format=True):
     """Retrieves the list of Pinecone indexes and their status."""
     pinecone_status = _cached_pinecone_status(os.getenv('PINECONE_API_KEY'))
@@ -914,6 +931,25 @@ def _get_available_indexes(index_type, embedding_name, rag_type):
                 name.append(index)
     
     return name
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+def _cached_pinecone_status(api_key):
+    """Helper function to cache the processed Pinecone status."""
+    deps = DependencyCache.get_instance()
+    _, Pinecone, _ = deps.get_db_deps()
+    
+    if not api_key:
+        return {'status': False, 'message': 'Pinecone API Key is not set.'}
+    
+    try:
+        pc = Pinecone(api_key=api_key)
+        indexes = pc.list_indexes()
+        if len(indexes) == 0:
+            return {'status': False, 'message': 'No indexes found'}
+        # Convert indexes to a list of names to avoid caching Pinecone objects
+        index_names = [idx.name for idx in indexes]
+        return {'status': True, 'message': index_names}
+    except Exception as e:
+        return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
 def _format_key_status(key_status: str):
     """
     Formats the key status dictionary into a formatted string.
@@ -970,16 +1006,3 @@ def _format_ragatouille_status(ragatouille_status):
         message = ragatouille_status['message']
         markdown_string = f"**Ragatouille Indexes**\n- {message} :x:"
     return markdown_string
-
-@st.cache_data(ttl=300)
-def _load_config_cached(config_file):
-    """Load and cache config file"""
-    with open(config_file, 'r') as f:
-        config = json.load(f)
-        return {
-            'databases': {db['name']: db for db in config['databases']},
-            'embeddings': {e['name']: e for e in config['embeddings']},
-            'llms': {m['name']: m for m in config['llms']},
-            'rag_types': config['rag_types'],
-            'disabled_controls': config.get('disabled_controls', {})
-        }

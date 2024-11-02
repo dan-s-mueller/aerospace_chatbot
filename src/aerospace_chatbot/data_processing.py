@@ -5,44 +5,92 @@ from typing import List, Union
 import json, jsonlines
 import pickle
 from tenacity import retry, stop_after_attempt, wait_exponential
-import streamlit as st
-import pandas as pd
-import numpy as np
-from sklearn.cluster import KMeans
-from datasets import Dataset
-
-# Base imports needed immediately
-def _import_db_deps():
-    from pinecone import Pinecone as pinecone_client, ServerlessSpec
-    import chromadb
-    from chromadb import PersistentClient
-    return pinecone_client, chromadb, PersistentClient, ServerlessSpec
-
-def _import_langchain_deps():
-    from langchain_pinecone import PineconeVectorStore
-    from langchain_chroma import Chroma
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
-    from langchain.retrievers.multi_vector import MultiVectorRetriever
-    from langchain.storage import LocalFileStore
-    return PineconeVectorStore, Chroma, RecursiveCharacterTextSplitter, MultiVectorRetriever, LocalFileStore
-
-def _import_embedding_deps():
-    from langchain_openai import OpenAIEmbeddings
-    from langchain_voyageai import VoyageAIEmbeddings
-    from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-    return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
-
-def _import_doc_deps():
-    from langchain_community.document_loaders import PyPDFLoader
-    from langchain_core.documents import Document
-    from langchain_core.output_parsers import StrOutputParser
-    return PyPDFLoader, Document, StrOutputParser
-
-from renumics import spotlight
-import admin
+from google.cloud import storage
 from prompts import CLUSTER_LABEL, SUMMARIZE_TEXT
 
-from google.cloud import storage
+def get_cache_decorator():
+    """Returns appropriate cache decorator based on environment"""
+    try:
+        import streamlit as st
+        return st.cache_resource
+    except:
+        # Return no-op decorator when not in Streamlit
+        return lambda *args, **kwargs: (lambda func: func)
+
+# Replace @st.cache_resource with dynamic decorator
+cache_resource = get_cache_decorator()
+
+class DependencyCache:
+    """A class to cache dependencies."""
+    _instance = None
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @staticmethod
+    @cache_resource
+    def get_db_deps():
+        """Load database dependencies only when needed"""
+        from pinecone import Pinecone as pinecone_client, ServerlessSpec
+        import chromadb
+        from chromadb import PersistentClient
+        return pinecone_client, chromadb, PersistentClient, ServerlessSpec
+
+    @staticmethod
+    @cache_resource
+    def get_langchain_deps():
+        """Load langchain dependencies only when needed"""
+        from langchain_pinecone import PineconeVectorStore
+        from langchain_chroma import Chroma
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        from langchain.retrievers.multi_vector import MultiVectorRetriever
+        from langchain.storage import LocalFileStore
+        return PineconeVectorStore, Chroma, RecursiveCharacterTextSplitter, MultiVectorRetriever, LocalFileStore
+
+    @staticmethod
+    @cache_resource
+    def get_embedding_deps():
+        """Load embedding dependencies only when needed"""
+        from langchain_openai import OpenAIEmbeddings
+        from langchain_voyageai import VoyageAIEmbeddings
+        from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+        return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
+
+    @staticmethod
+    @cache_resource
+    def get_doc_deps():
+        """Load document dependencies only when needed"""
+        from langchain_community.document_loaders import PyPDFLoader
+        from langchain_core.documents import Document
+        from langchain_core.output_parsers import StrOutputParser
+        return PyPDFLoader, Document, StrOutputParser
+
+    @staticmethod
+    @cache_resource
+    def get_spotlight():
+        """Load Spotlight only when needed"""
+        from renumics import spotlight
+        return spotlight
+
+    @staticmethod
+    @cache_resource
+    def get_analysis_deps():
+        """Load analysis dependencies only when needed"""
+        import pandas as pd
+        import numpy as np
+        from sklearn.cluster import KMeans
+        from datasets import Dataset
+        return pd, np, KMeans, Dataset
+
+    @staticmethod
+    @cache_resource
+    def get_admin():
+        """Load admin module only when needed"""
+        import admin
+        return admin
 
 def list_bucket_pdfs(bucket_name: str) -> List[str]:
     """Lists all PDF files in a Google Cloud Storage bucket."""
@@ -139,10 +187,11 @@ def chunk_docs(docs: List[str],
                k_child:int=4,
                llm=None,
                show_progress:bool=False):
-    """Chunk the given list of documents into smaller chunks based on the specified parameters."""
-    # Import dependencies
-    PyPDFLoader, Document, StrOutputParser = _import_doc_deps()
-    _, _, RecursiveCharacterTextSplitter, _, _ = _import_langchain_deps()
+    """Chunk the given list of documents into smaller chunks."""
+    deps = DependencyCache.get_instance()
+    _, _, RecursiveCharacterTextSplitter, _, _ = deps.get_langchain_deps()
+    _, SUMMARIZE_TEXT = deps.get_prompts()
+    PyPDFLoader, Document, StrOutputParser = deps.get_doc_deps()
     
     if show_progress:
         progress_text = 'Reading documents...'
@@ -304,7 +353,7 @@ def chunk_docs(docs: List[str],
                 'chunk_overlap':chunk_overlap}
     else:
         raise NotImplementedError
-@st.cache_resource
+@cache_resource
 def initialize_database(index_type: str, 
                         index_name: str, 
                         query_model: object,
@@ -316,9 +365,10 @@ def initialize_database(index_type: str,
                         chunker: dict = None,
                         namespace: str = None):
     """Initialize database with caching for faster subsequent loads"""
-    pinecone_client, chromadb, PersistentClient, ServerlessSpec = _import_db_deps()
-    PineconeVectorStore, Chroma, _, _, _ = _import_langchain_deps()
-    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = _import_embedding_deps()
+    deps = DependencyCache.get_instance()
+    pinecone_client, chromadb, PersistentClient, ServerlessSpec = deps.get_db_deps()
+    PineconeVectorStore, Chroma, _, _, _ = deps.get_langchain_deps()
+    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = deps.get_embedding_deps()
     
     if show_progress:
         progress_text = "Database initialization..."
@@ -434,7 +484,8 @@ def upsert_docs(index_type,
                 local_db_path = '.',
                 namespace = None):
     """Upserts documents into the specified index."""
-    _, _, MultiVectorRetriever, LocalFileStore, Path = _import_langchain_deps()
+    deps = DependencyCache.get_instance()
+    _, _, _, MultiVectorRetriever, LocalFileStore = deps.get_langchain_deps()
     
     if show_progress:
         progress_text = "Upsert in progress..."
@@ -532,8 +583,9 @@ def delete_index(index_type: str,
                  rag_type: str,
                  local_db_path: str = '.'):
     """Deletes an index based on the specified index type."""
-    pinecone_client, chromadb, _ , _ = _import_db_deps()
-
+    deps = DependencyCache.get_instance()
+    pinecone_client, chromadb, _, _ = deps.get_db_deps()
+    
     if index_type == "Pinecone":
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         try:
@@ -601,84 +653,6 @@ def copy_pinecone_vectors(index, source_namespace, target_namespace, batch_size:
             my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
     if show_progress:
         my_bar.empty()
-def _sanitize_raw_page_data(page):
-    """
-    Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
-    If pages are merged, this must happen before the merging occurs.
-
-    Args:
-        page (Page): The raw page data to be sanitized.
-
-    Returns:
-        Page or None: The sanitized page data if it contains meaningful content, otherwise None.
-    """
-    
-    # Yank out some things you'll never care about
-    page.metadata['source'] = os.path.basename(page.metadata['source'])   # Strip path
-    page.metadata['page'] = int(page.metadata['page']) + 1   # Pages are 0 based, update
-    page.page_content = re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
-    page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
-    page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
-
-    # Test if there is meaningful content
-    text = page.page_content
-    num_words = len(text.split())
-    if len(text) == 0:
-        return None
-    alphanumeric_pct = sum(c.isalnum() for c in text) / len(text)
-    if num_words < 5 or alphanumeric_pct < 0.3:
-        return None
-    else:
-        return page
-def _embedding_size(embedding_family):
-    """Returns the size of the embedding for a given embedding model."""
-    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = _import_embedding_deps()
-
-    # https://platform.openai.com/docs/models/embeddings
-    if isinstance(embedding_family, OpenAIEmbeddings):
-        name=embedding_family.model
-        if name=="text-embedding-ada-002":
-            return 1536
-        elif name=="text-embedding-3-small":
-            return 1536
-        elif name=="text-embedding-3-large":
-            return 3072
-        else:
-            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
-    # https://docs.voyageai.com/embeddings/
-    elif isinstance(embedding_family, VoyageAIEmbeddings):
-        name=embedding_family.model
-        if name=="voyage-2":
-            return 1024 
-        elif name=="voyage-large-2":
-            return 1536
-        elif name=="voyage-large-2-instruct":
-            return 1024
-        else:
-            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
-    # See model pages for embedding sizes
-    elif isinstance(embedding_family, HuggingFaceInferenceAPIEmbeddings):
-        name=embedding_family.model_name
-        if name=="sentence-transformers/all-MiniLM-L6-v2":
-            return 384
-        elif name=="mixedbread-ai/mxbai-embed-large-v1":
-            return 1024
-        else:
-            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
-    else:
-        raise NotImplementedError(f"The embedding family '{embedding_family}' is not available in config.json")
-def _stable_hash_meta(metadata: dict):
-    """
-    Calculates the stable hash of the given metadata dictionary.
-
-    Args:
-        metadata (dict): The dictionary containing the metadata.
-
-    Returns:
-        str: The stable hash of the metadata.
-
-    """
-    return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
 def db_name(index_type:str,
             rag_type:str,
             index_name:str,
@@ -687,29 +661,7 @@ def db_name(index_type:str,
             chunk_size:int=None,
             chunk_overlap:int=None,
             check:bool=True):
-    """
-    Generates a modified name based on the given parameters.
-
-    Args:
-        index_type (str): The type of index.
-        rag_type (str): The type of RAG.
-        index_name (str): The name of the index.
-        model_name (bool, optional): The name of the model. Defaults to None. Only for summary RAG.
-        n_merge_pages (int, optional): The number of pages to merge. Defaults to None.
-        chunk_size (int, optional): The size of the chunks. Defaults to None.
-        chunk_overlap (int, optional): The overlap of the chunks. Defaults to None.
-        check (bool, optional): Whether to check the validity of the name. Defaults to True.
-
-    Returns:
-        str: The modified index name.
-        
-    Raises:
-        ValueError: If the Pinecone index name is longer than 45 characters.
-        ValueError: If the ChromaDB collection name is longer than 63 characters.
-        ValueError: If the ChromaDB collection name does not start and end with an alphanumeric character.
-        ValueError: If the ChromaDB collection name contains characters other than alphanumeric, underscores, or hyphens.
-        ValueError: If the ChromaDB collection name contains two consecutive periods.
-    """
+    """Generates a modified name based on the given parameters."""
     # Modify name if it's an advanded RAG type
     if rag_type == 'Parent-Child':
         index_name = index_name + "-parent-child"
@@ -750,17 +702,11 @@ def db_name(index_type:str,
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {index_name}")
             else:
                 return index_name
-def get_or_create_spotlight_viewer(df:pd.DataFrame,port:int=9000):
-    """
-    Get or create a Spotlight viewer for the given DataFrame.
-
-    Args:
-        df (pd.DataFrame): The DataFrame to display in the viewer.
-        port (int, optional): The port number to use for the viewer. Defaults to 9000.
-
-    Returns:
-        spotlight.viewer: The existing or newly created Spotlight viewer.
-    """
+def get_or_create_spotlight_viewer(df, port=9000):
+    """Get or create a Spotlight viewer for the given DataFrame."""
+    deps = DependencyCache.get_instance()
+    spotlight = deps.get_spotlight()
+    
     # TODO if you try to close spotlight and reuse a port, you get an error that the port is unavailable
     # TODO The viewer does not work properly with merged documents, it does not show the source column properly
     viewers = spotlight.viewers()
@@ -782,19 +728,11 @@ def get_docs_questions_df(index_type:str,
                           questions_db_directory: Path,
                           questions_db_collection: str,
                           query_model:object):
-    """
-    Retrieves and combines documents and questions dataframes.
-
-    Args:
-        docs_db_directory (Path): The directory of the documents database.
-        docs_db_collection (str): The name of the documents database collection.
-        questions_db_directory (Path): The directory of the questions database.
-        questions_db_collection (str): The name of the questions database collection.
-        query_model (object): The query model object.
-
-    Returns:
-        pd.DataFrame: The combined dataframe containing documents and questions data.
-    """
+    """Retrieves and combines documents and questions dataframes."""
+    deps = DependencyCache.get_instance()
+    admin = deps.get_admin()
+    pd, _, _, _ = deps.get_analysis_deps()
+    
     # Check if there exists a query database
     if index_type=='ChromaDB':
         collections = [collection.name for collection in admin.show_chroma_collections(format=False)['message']]
@@ -840,8 +778,10 @@ def get_docs_questions_df(index_type:str,
     return df
 def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_model: object):
     """Retrieves documents from a database and returns them as a pandas DataFrame."""
-    pinecone_client, chromadb, _, _ = _import_db_deps()
-    _ , Chroma, _, _, _ = _import_langchain_deps()
+    deps = DependencyCache.get_instance()
+    pinecone_client, chromadb, _, _ = deps.get_db_deps()
+    _, Chroma, _, _, _ = deps.get_langchain_deps()
+    pd, _, _, _ = deps.get_analysis_deps()
     
     # Find rag_type
     if index_name.endswith('-parent-child'):
@@ -913,19 +853,11 @@ def get_docs_df(index_type: str, local_db_path: Path, index_name: str, query_mod
     return df_out
 
 def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
-    """
-    Retrieves questions and related information from a Chroma database and returns them as a pandas DataFrame.
-
-    Args:
-        local_db_path (Path): The local path to the Chroma database.
-        index_name (str): The name of the collection in the Chroma database.
-        query_model (object): The embedding function used for querying the Chroma database.
-
-    Returns:
-        pd.DataFrame: A DataFrame containing the retrieved questions, answers, sources, and embeddings.
-    """
-    _, chromadb, _, _ = _import_db_deps()
-    _, Chroma, _, _, _ = _import_langchain_deps()
+    """Retrieves questions and related information from a Chroma database."""
+    deps = DependencyCache.get_instance()
+    _, chromadb, _, _ = deps.get_db_deps()
+    _, Chroma, _, _, _ = deps.get_langchain_deps()
+    pd, _, _, _ = deps.get_analysis_deps()
     
     persistent_client = chromadb.PersistentClient(path=os.path.join(local_db_path,'chromadb'))            
     vectorstore = Chroma(client=persistent_client,
@@ -944,49 +876,39 @@ def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
             "embedding": response["embeddings"],
         }
     )
-def add_clusters(df,n_clusters:int,label_llm:object=None,doc_per_cluster:int=5):
-    """
-    Add clusters to a DataFrame based on the embeddings of its documents.
-
-    Args:
-        df (pd.DataFrame): The DataFrame containing the documents and their embeddings.
-        n_clusters (int): The number of clusters to create.
-        label_llm (object, optional): The label language model to use for generating cluster labels. Defaults to None.
-        doc_per_cluster (int, optional): The number of documents to sample per cluster for label generation. Defaults to 5.
-
-    Returns:
-        pd.DataFrame: The DataFrame with the added cluster information.
-    """
+def add_clusters(df, n_clusters:int, label_llm:object=None, doc_per_cluster:int=5):
+    """Add clusters to a DataFrame based on the embeddings of its documents."""
+    deps = DependencyCache.get_instance()
+    pd, np, KMeans, _ = deps.get_analysis_deps()
+    CLUSTER_LABEL, _ = deps.get_prompts()
+    
     matrix = np.vstack(df.embedding.values)
     kmeans = KMeans(n_clusters=n_clusters, init="k-means++", random_state=42)
     kmeans.fit(matrix)
     labels = kmeans.labels_
     df["Cluster"] = labels
 
-    summary=[]
+    summary = []
     if label_llm is not None:
         for i in range(n_clusters):
             print(f"Cluster {i} Theme:")
-            chunks =  df[df.Cluster == i].document.sample(doc_per_cluster, random_state=42)
+            chunks = df[df.Cluster == i].document.sample(doc_per_cluster, random_state=42)
             llm_chain = CLUSTER_LABEL | label_llm
             summary.append(llm_chain.invoke(chunks))
             print(summary[-1].content)
         df["Cluster_Label"] = [summary[i].content for i in df["Cluster"]]
     return df
-def export_to_hf_dataset(df: pd.DataFrame, dataset_name: str):
-    """
-    Export a pandas DataFrame to a Hugging Face dataset and push it to the Hugging Face Hub.
+def export_to_hf_dataset(df, dataset_name):
+    """Export a pandas DataFrame to a Hugging Face dataset and push it to the Hugging Face Hub."""
+    deps = DependencyCache.get_instance()
+    _, _, _, Dataset = deps.get_analysis_deps()
 
-    Args:
-        df (pd.DataFrame): The pandas DataFrame to be exported.
-        dataset_name (str): The name of the dataset to be created in the Hugging Face Hub.
-
-    Returns:
-        None
-    """
     hf_dataset = Dataset.from_pandas(df)
     hf_dataset.push_to_hub(dataset_name, token=os.getenv('HUGGINGFACEHUB_API_TOKEN'))
 def archive_db(index_type:str,index_name:str,query_model:object,export_pickle:bool=False):
+    """Archives a database by exporting it to a pickle file."""
+    # TODO add function to unarchive db (create chroma db and associated local filestore from pickle file)
+
     df_temp=get_docs_df(index_type,os.getenv('LOCAL_DB_PATH'), index_name, query_model)
 
     if export_pickle:
@@ -994,10 +916,71 @@ def archive_db(index_type:str,index_name:str,query_model:object,export_pickle:bo
         with open(os.path.join(os.getenv('LOCAL_DB_PATH'),f"archive_{index_type.lower()}_{index_name}.pickle"), "wb") as f:
             pickle.dump(df_temp, f)
     return df_temp
+def _sanitize_raw_page_data(page):
+    """
+    Sanitizes the raw page data by removing unnecessary information and checking for meaningful content.
+    If pages are merged, this must happen before the merging occurs.
+    """
+    
+    # Yank out some things you'll never care about
+    page.metadata['source'] = os.path.basename(page.metadata['source'])   # Strip path
+    page.metadata['page'] = int(page.metadata['page']) + 1   # Pages are 0 based, update
+    page.page_content = re.sub(r"(\w+)-\n(\w+)", r"\1\2", page.page_content)   # Merge hyphenated words
+    page.page_content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", page.page_content.strip())  # Fix newlines in the middle of sentences
+    page.page_content = re.sub(r"\n\s*\n", "\n\n", page.page_content)   # Remove multiple newlines
 
-# TODO add function to unarchive db (create chroma db and associated local filestore from pickle file)
-
-@st.cache_resource
+    # Test if there is meaningful content
+    text = page.page_content
+    num_words = len(text.split())
+    if len(text) == 0:
+        return None
+    alphanumeric_pct = sum(c.isalnum() for c in text) / len(text)
+    if num_words < 5 or alphanumeric_pct < 0.3:
+        return None
+    else:
+        return page
+def _embedding_size(embedding_family):
+    """Returns the size of the embedding for a given embedding model."""
+    deps = DependencyCache.get_instance()
+    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = deps.get_embedding_deps()
+    
+    # https://platform.openai.com/docs/models/embeddings
+    if isinstance(embedding_family, OpenAIEmbeddings):
+        name=embedding_family.model
+        if name=="text-embedding-ada-002":
+            return 1536
+        elif name=="text-embedding-3-small":
+            return 1536
+        elif name=="text-embedding-3-large":
+            return 3072
+        else:
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
+    # https://docs.voyageai.com/embeddings/
+    elif isinstance(embedding_family, VoyageAIEmbeddings):
+        name=embedding_family.model
+        if name=="voyage-2":
+            return 1024 
+        elif name=="voyage-large-2":
+            return 1536
+        elif name=="voyage-large-2-instruct":
+            return 1024
+        else:
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
+    # See model pages for embedding sizes
+    elif isinstance(embedding_family, HuggingFaceInferenceAPIEmbeddings):
+        name=embedding_family.model_name
+        if name=="sentence-transformers/all-MiniLM-L6-v2":
+            return 384
+        elif name=="mixedbread-ai/mxbai-embed-large-v1":
+            return 1024
+        else:
+            raise NotImplementedError(f"The embedding model '{name}' is not available in config.json")
+    else:
+        raise NotImplementedError(f"The embedding family '{embedding_family}' is not available in config.json")
+def _stable_hash_meta(metadata: dict):
+    """Calculates the stable hash of the given metadata dictionary."""
+    return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
+@cache_resource
 def _init_ragatouille(index_name: str, local_db_path: str):
     """Lazy load and initialize RAGatouille"""
     import nltk

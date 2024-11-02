@@ -1,7 +1,4 @@
-import os
 from pathlib import Path
-from typing import Union
-import streamlit as st
 
 # Only import the essential Document class and prompts
 from langchain_core.documents import Document
@@ -9,13 +6,26 @@ from prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT,
                     DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS,
                     GENERATE_SIMILAR_QUESTIONS_W_CONTEXT)
 
-# Lazy import data_processing only when needed
-@st.cache_resource
+def get_cache_decorator():
+    """Returns appropriate cache decorator based on environment"""
+    try:
+        import streamlit as st
+        return st.cache_resource
+    except:
+        # Return no-op decorator when not in Streamlit
+        return lambda *args, **kwargs: (lambda func: func)
+
+# Replace @st.cache_resource with dynamic decorator
+cache_resource = get_cache_decorator()
+
+# Replace the existing @st.cache_resource decorator
+@cache_resource
 def get_data_processing():
     import data_processing
     return data_processing
 
 class DependencyCache:
+    """A class to cache dependencies."""
     _instance = None
 
     @classmethod
@@ -25,7 +35,7 @@ class DependencyCache:
         return cls._instance
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_llm_deps():
         """Load LLM dependencies only when needed"""
         from langchain_openai import ChatOpenAI
@@ -33,7 +43,7 @@ class DependencyCache:
         return (ChatOpenAI, ChatAnthropic)
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_embedding_deps():
         """Load embedding dependencies only when needed"""
         from langchain_pinecone import Pinecone
@@ -41,7 +51,7 @@ class DependencyCache:
         return (Pinecone, Chroma)
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_vector_store_deps():
         """Load vector store dependencies only when needed"""
         import openai
@@ -51,7 +61,7 @@ class DependencyCache:
         return (openai, pinecone, pinecone_client, chromadb)
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_core_deps():
         """Load core dependencies only when needed"""
         from langchain.memory import ConversationBufferMemory
@@ -60,7 +70,7 @@ class DependencyCache:
         return (ConversationBufferMemory, MultiVectorRetriever, LocalFileStore)
 
     @staticmethod
-    @st.cache_resource
+    @cache_resource
     def get_chain_deps():
         """Load chain dependencies only when needed"""
         from operator import itemgetter
@@ -322,6 +332,7 @@ class QA_Model:
     @staticmethod
     def _question_as_doc(question: str, rag_answer: dict):
         """Creates a Document object based on the given question and RAG answer."""
+        data_processing = get_data_processing()
         sources = [data.metadata for data in rag_answer['references']]
         return Document(
             page_content=question,
