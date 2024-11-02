@@ -14,65 +14,90 @@ from pinecone import Pinecone as pinecone_client
 sys.path.append('../src/aerospace_chatbot')   # Add package to path
 import admin, queries, data_processing
 
-def handle_file_upload(sb, paths):
-    """Handle file upload functionality for the chatbot. """
-    if sb['rag_type']=="Standard":
-        if sb['index_type']=='Pinecone':
-            st.write("Upload parameters set to standard values, hard coded for now...standard only")
+def handle_file_upload(sb, secrets, paths):
+    """Handle file upload functionality for the chatbot."""
+    if not _validate_upload_settings(sb):
+        return
 
-            uploaded_files = st.file_uploader(
-                "Choose pdf files", accept_multiple_files=True
-            )
-            temp_files = []
-            for uploaded_file in uploaded_files:
-                temp_path = os.path.join(tempfile.gettempdir(), uploaded_file.name)
-                with open(temp_path, 'wb') as temp_file:
-                    temp_file.write(uploaded_file.read())
-                temp_files.append(temp_path)
+    uploaded_files = st.file_uploader("Choose pdf files", accept_multiple_files=True)
+    if not uploaded_files:
+        return
 
-            if st.button('Upload your docs into vector database'):
-                with st.spinner('Uploading and merging your documents with the database...'):
-                    # Retrieve the query model from the selected Chroma database
-                    pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-                    selected_index = pc.Index(sb['index_selected'])
-                    index_metadata = selected_index.fetch(ids=['db_metadata'])
-                    index_metadata = index_metadata['vectors']['db_metadata']['metadata']
-                    query_model = admin.get_query_model({'index_type':sb['index_type'],
-                                                        'query_model':index_metadata['query_model'],
-                                                        'embedding_name':index_metadata['embedding_model']},
-                                                        {'OPENAI_API_KEY':os.getenv('OPENAI_API_KEY')})
-                    # Upload documents to vector database selected
-                    chunk_params = {
-                        key: value for key, value in index_metadata.items() 
-                        if key not in ['query_model', 'embedding_model'] and value is not None    
-                    }
-                    # Convert any float parameters to int to avoid type problems when chunking
-                    for key, value in chunk_params.items():
-                        if isinstance(value, float):
-                            chunk_params[key] = int(value)
-                    # Generate unique identifier for user upload
-                    st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
-                    st.markdown(f"*Uploading user documents to namespace...*")
-                    data_processing.load_docs(sb['index_type'],
-                                    temp_files,
-                                    query_model,
-                                    index_name=sb['index_selected'],
-                                    local_db_path=paths['db_folder_path'],
-                                    show_progress=True,
-                                    namespace=st.session_state.user_upload,
-                                    **chunk_params)
-                    # In the new namespace, take the existing documents in the null namespace and add them to the new namespace
-                    st.markdown(f"*Merging user document with  existing documents...*")
-                    data_processing.copy_pinecone_vectors(selected_index,
-                                                        None,
-                                                        st.session_state.user_upload,
-                                                        show_progress=True)
-            if st.session_state.user_upload:
-                st.markdown(f":white_check_mark: Merged! Your upload ID: `{st.session_state.user_upload}`. This will be used for this chat session to also include your documents. When you restart the chat, you'll have to re-upload your documents.")
-        else:
-            st.error("Only Pinecone is supported for user document upload.")
-    else:
+    temp_files = _save_uploads_to_temp(uploaded_files)
+    
+    if st.button('Upload your docs into vector database'):
+        with st.spinner('Uploading and merging your documents with the database...'):
+            _process_uploads(sb, secrets, paths, temp_files)
+
+    if st.session_state.user_upload:
+        st.markdown(
+            f":white_check_mark: Merged! Your upload ID: `{st.session_state.user_upload}`. "
+            "This will be used for this chat session to also include your documents. "
+            "When you restart the chat, you'll have to re-upload your documents."
+        )
+def _validate_upload_settings(sb):
+    """Validate RAG type and index type settings."""
+    if sb['rag_type'] != "Standard":
         st.error("Only Standard RAG is supported for user document upload.")
+        return False
+    if sb['index_type'] != 'Pinecone':
+        st.error("Only Pinecone is supported for user document upload.")
+        return False
+    
+    st.write("Upload parameters set to standard values, hard coded for now...standard only")
+    return True
+def _save_uploads_to_temp(uploaded_files):
+    """Save uploaded files to temporary directory."""
+    temp_files = []
+    for uploaded_file in uploaded_files:
+        temp_path = os.path.join(tempfile.gettempdir(), uploaded_file.name)
+        with open(temp_path, 'wb') as temp_file:
+            temp_file.write(uploaded_file.read())
+        temp_files.append(temp_path)
+    return temp_files
+def _process_uploads(sb, secrets, paths, temp_files):
+    """Process uploaded files and merge them into the vector database."""
+    # Initialize Pinecone and get index metadata
+    pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+    selected_index = pc.Index(sb['index_selected'])
+    index_metadata = selected_index.fetch(ids=['db_metadata'])['vectors']['db_metadata']['metadata']
+    
+    # Get query model
+    query_model = admin.get_query_model({
+        'index_type': sb['index_type'],
+        'query_model': index_metadata['query_model'],
+        'embedding_name': index_metadata['embedding_model']
+    }, secrets)
+    
+    # Prepare chunking parameters
+    chunk_params = {
+        key: int(value) if isinstance(value, float) else value
+        for key, value in index_metadata.items()
+        if key not in ['query_model', 'embedding_model'] and value is not None
+    }
+    
+    # Generate unique identifier and process documents
+    st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
+    
+    st.markdown("*Uploading user documents to namespace...*")
+    data_processing.load_docs(
+        sb['index_type'],
+        temp_files,
+        query_model,
+        index_name=sb['index_selected'],
+        local_db_path=paths['db_folder_path'],
+        show_progress=True,
+        namespace=st.session_state.user_upload,
+        **chunk_params
+    )
+    
+    st.markdown("*Merging user document with existing documents...*")
+    data_processing.copy_pinecone_vectors(
+        selected_index,
+        None,
+        st.session_state.user_upload,
+        show_progress=True
+    )
 def _reset_conversation():
     """
     Resets the conversation by clearing the session state variables related to the chatbot.
@@ -141,7 +166,7 @@ with st.expander('''Helpful Information'''):
 
 if st.session_state.message_id == 0:
     with st.expander("Upload files to existing database",expanded=True):
-        handle_file_upload(sb, paths)
+        handle_file_upload(sb, secrets, paths)
 
 # Define chat
 if prompt := st.chat_input('Prompt here'):

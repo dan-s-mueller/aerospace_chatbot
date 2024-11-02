@@ -37,19 +37,15 @@ A very practical overview of how this works is also `here <https://towardsdatasc
 Sequence of operations
 ^^^^^^^^^^^^^^^^^^^^^^
 
-1. PDF files uploaded to repository
-"""""""""""""""""""""""""""""""""""
-In the `/data` folder, PDF files are uploaded.
-
-2. PDF files are converted to text and "chunked"
+1. PDF files are converted to text and "chunked"
 """"""""""""""""""""""""""""""""""""""""""""""""
 PDf files are read page-by-page and the text is extracted. Currently, no table or images are pulled, but this could be done in the future.
 
-3. Chunks are converted to embeddings
+2. Chunks are converted to embeddings
 """""""""""""""""""""""""""""""""""""
 Embeddings are multi-dimensional vectors which capture the meaning of the text. These are generated using a pre-trained model. Models which are used are captured in the config file. Refer to :doc:`configs` for more information.
 
-4. Chunks are uploaded to a database
+3. Chunks are uploaded to a database
 """"""""""""""""""""""""""""""""""""
 Document chunks are uploaded to a database as embeddings.
 
@@ -63,11 +59,11 @@ The primary two methods for storing embeddings:
 - Summaries: similar to Parent-Child, except a summary of the chunk is created using an LLM and stored on a local database.
 - RAGatouille: refer to `RAGatouille <https://github.com/hwchase17/RAGatouille/tree/main>`__ for more information. This is a specialized retrieval model which is optimized for the information you are trying to retrieve.
 
-5. User query is converted to an embedding
+4. User query is converted to an embedding
 """"""""""""""""""""""""""""""""""""""""""
 Identical to step 3, except for the user input.
 
-6. User query is compared to database
+5. User query is compared to database
 """""""""""""""""""""""""""""""""""""
 The user query is compared to the database of embeddings and a relevancy search is performed to return the most relevant information.
 
@@ -77,7 +73,7 @@ When this information is returned, the source information from the PDF is also r
 
 If Parent-Child or Summary RAG types are used, the Parent Chunk, or Summary of the most relevant chunk found in the database.
 
-7. Response is generated using an LLM
+6. Response is generated using an LLM
 """""""""""""""""""""""""""""""""""""
 The response is generated using an LLM. The response is generated using the context retrieved and the LLM you specify. There are prompts used to generate the response, which are discussed in the :doc:`../modules/prompts` section. The choice of prompt is important because it will minimize hallucination of the LLM and also only return the most relevant information.
 
@@ -85,7 +81,7 @@ The prompt which is used to return the response at the end of this process is lo
 
 The response is then returned to the user.
 
-8. Visualization
+7. Visualization
 """"""""""""""""
 
 For locally deployed applications, `Renumics Spotlight <https://renumics.com/open-source/spotlight/>`__ is used to visualize the embeddings and related data. This is particularly valuable to see related data to queries made and clustering.
