@@ -190,7 +190,6 @@ def chunk_docs(docs: List[str],
     """Chunk the given list of documents into smaller chunks."""
     deps = DependencyCache.get_instance()
     _, _, RecursiveCharacterTextSplitter, _, _ = deps.get_langchain_deps()
-    _, SUMMARIZE_TEXT = deps.get_prompts()
     PyPDFLoader, Document, StrOutputParser = deps.get_doc_deps()
     
     if show_progress:
@@ -353,7 +352,6 @@ def chunk_docs(docs: List[str],
                 'chunk_overlap':chunk_overlap}
     else:
         raise NotImplementedError
-@cache_resource
 def initialize_database(index_type: str, 
                         index_name: str, 
                         query_model: object,
@@ -879,8 +877,7 @@ def get_questions_df(local_db_path: Path, index_name: str, query_model: object):
 def add_clusters(df, n_clusters:int, label_llm:object=None, doc_per_cluster:int=5):
     """Add clusters to a DataFrame based on the embeddings of its documents."""
     deps = DependencyCache.get_instance()
-    pd, np, KMeans, _ = deps.get_analysis_deps()
-    CLUSTER_LABEL, _ = deps.get_prompts()
+    _, np, KMeans, _ = deps.get_analysis_deps()
     
     matrix = np.vstack(df.embedding.values)
     kmeans = KMeans(n_clusters=n_clusters, init="k-means++", random_state=42)

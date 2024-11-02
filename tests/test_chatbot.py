@@ -519,11 +519,11 @@ def test_sidebar_manager():
 
     # Test initialization
     sidebar_manager = SidebarManager(config_file)
-    assert sidebar_manager.config is not None
-    assert 'databases' in sidebar_manager.config
-    assert 'embeddings' in sidebar_manager.config
-    assert 'llms' in sidebar_manager.config
-    assert 'rag_types' in sidebar_manager.config
+    assert sidebar_manager._config is not None
+    assert 'databases' in sidebar_manager._config
+    assert 'embeddings' in sidebar_manager._config
+    assert 'llms' in sidebar_manager._config
+    assert 'rag_types' in sidebar_manager._config
 
     # Test single case since render_sidebar now renders everything
     sb_out = sidebar_manager.render_sidebar()
