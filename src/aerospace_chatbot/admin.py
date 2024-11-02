@@ -1,39 +1,60 @@
 import os
 import json
 import streamlit as st
-from dotenv import load_dotenv,find_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-# Base imports needed immediately
-def _import_llm_deps():
-    from langchain_openai import ChatOpenAI
-    from langchain_anthropic import ChatAnthropic
-    return ChatOpenAI, ChatAnthropic
+# Create a singleton cache for dependencies
+class DependencyCache:
+    _instance = None
+    _llm_deps = None
+    _embedding_deps = None
+    _db_deps = None
+    _pdf_deps = None
+    _data_processing = None
 
-def _import_embedding_deps():
-    from langchain_openai import OpenAIEmbeddings
-    from langchain_voyageai import VoyageAIEmbeddings
-    from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-    from ragatouille import RAGPretrainedModel
-    return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings, RAGPretrainedModel
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
-def _import_db_deps():
-    import openai
-    from pinecone import Pinecone
-    import chromadb
-    return openai, Pinecone, chromadb
+    @staticmethod
+    @st.cache_resource
+    def get_llm_deps():
+        from langchain_openai import ChatOpenAI
+        from langchain_anthropic import ChatAnthropic
+        return (ChatOpenAI, ChatAnthropic)
 
-# def _import_rag_deps():
-#     import nltk
-#     nltk.download('punkt', quiet=True)
-#     from ragatouille import RAGPretrainedModel
-#     return RAGPretrainedModel
+    @staticmethod
+    @st.cache_resource
+    def get_embedding_deps():
+        from langchain_openai import OpenAIEmbeddings
+        from langchain_voyageai import VoyageAIEmbeddings
+        from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+        from ragatouille import RAGPretrainedModel
+        return (OpenAIEmbeddings, VoyageAIEmbeddings, 
+                HuggingFaceInferenceAPIEmbeddings, RAGPretrainedModel)
 
-def _import_pdf_deps():
-    import fitz
-    import requests
-    return fitz, requests
+    @staticmethod
+    @st.cache_resource
+    def get_db_deps():
+        import openai
+        from pinecone import Pinecone
+        import chromadb
+        return (openai, Pinecone, chromadb)
 
-import data_processing
+    @staticmethod
+    @st.cache_resource
+    def get_pdf_deps():
+        import fitz
+        import requests
+        return (fitz, requests)
+
+    @staticmethod
+    @st.cache_resource
+    def get_data_processing():
+        import data_processing
+        return data_processing
 
 class SecretKeyException(Exception):
     """Exception raised for secret key related errors. """
@@ -48,9 +69,12 @@ class DatabaseException(Exception):
 class SidebarManager:
     """Manages the creation, state, and layout of the Streamlit sidebar""" 
     def __init__(self, config_file):
-        self._check_local_db_path()
-        self.config = self._load_config(config_file)
+        self._config_file = config_file
+        self._config = None
+        self._deps = DependencyCache.get_instance()
         self.sb_out = {}
+        self._check_local_db_path()
+        self._load_config()
         self.initialize_session_state()
     def initialize_session_state(self):
         """Initialize session state for all sidebar elements"""
@@ -66,8 +90,8 @@ class SidebarManager:
             
             # Get disabled controls from config if they exist
             disabled_controls = {}
-            if 'disabled_controls' in self.config:
-                disabled_controls = self.config['disabled_controls']
+            if 'disabled_controls' in self._config:
+                disabled_controls = self._config['disabled_controls']
             
             for group, group_elements in elements.items():
                 for element in group_elements:
@@ -96,10 +120,11 @@ class SidebarManager:
             self._render_vector_database()
             self._render_embeddings()
             self._render_secret_keys()
-                
+
         except DatabaseException as e:
-            st.error(f"No index available, create a new one with the sidebar parameters you've selected: {e}")
+            st.error(f"Database error: {e}")
             st.stop()
+            
         return self.sb_out
     def get_paths(self, home_dir):
         """Get application paths"""
@@ -139,26 +164,10 @@ class SidebarManager:
             # Clean up UI elements
             local_db_path_input.empty()
             warn_db_path.empty()
-    def _load_config(self, config_file):
-        """Load and parse config file"""
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-            
-            # Validate the raw config before parsing
-            self._validate_config(config)
-            
-            parsed_config = {
-                'databases': {db['name']: db for db in config['databases']},
-                'embeddings': {e['name']: e for e in config['embeddings']},
-                'llms': {m['name']: m for m in config['llms']},
-                'rag_types': config['rag_types']
-            }
-            
-            # Add disabled_controls if they exist in the config
-            if 'disabled_controls' in config:
-                parsed_config['disabled_controls'] = config['disabled_controls']
-                
-            return parsed_config
+    def _load_config(self):
+        """Load configuration"""
+        self._config = _load_config_cached(self._config_file)
+        self._validate_config(self._config)
     def _validate_config(self, config):
         """Validate the configuration file structure."""
         required_sections = ['databases', 'embeddings', 'llms', 'rag_types']
@@ -181,20 +190,20 @@ class SidebarManager:
         """Pre-initialize all required dependencies before rendering GUI"""
         # Handle core dependencies first
         if 'index_type' not in self.sb_out:
-            self.sb_out['index_type'] = self.config['databases'].keys().__iter__().__next__()
+            self.sb_out['index_type'] = self._config['databases'].keys().__iter__().__next__()
         
         if 'embedding_name' not in self.sb_out:
-            query_model = self.config['databases'][self.sb_out['index_type']]['embedding_models'][0]    # Default to first embedding model in config
+            query_model = self._config['databases'][self.sb_out['index_type']]['embedding_models'][0]    # Default to first embedding model in config
             self.sb_out['query_model'] = query_model
             self.sb_out['embedding_name'] = (
                 query_model if self.sb_out['index_type'] == 'RAGatouille'
-                else self.config['embeddings'][query_model]['embedding_models'][0]  # Default to first embedding model in config
+                else self._config['embeddings'][query_model]['embedding_models'][0]  # Default to first embedding model in config
             )
         
         if 'rag_type' not in self.sb_out:
             self.sb_out['rag_type'] = (
                 'Standard' if self.sb_out['index_type'] == 'RAGatouille'
-                else self.config['rag_types'][0]
+                else self._config['rag_types'][0]
             )
     def _render_index_selection(self):
         """Render index selection section"""
@@ -219,7 +228,7 @@ class SidebarManager:
         st.sidebar.title('Vector Database Type')
         self.sb_out['index_type'] = st.sidebar.selectbox(
             'Index type',
-            list(self.config['databases'].keys()),
+            list(self._config['databases'].keys()),
             disabled=st.session_state.index_type_disabled,
             help='Select the type of index to use.'
         )
@@ -232,7 +241,7 @@ class SidebarManager:
         if self.sb_out['index_type'] == 'RAGatouille':
             self.sb_out['query_model'] = st.sidebar.selectbox(
                 'Hugging face rag models',
-                self.config['databases'][self.sb_out['index_type']]['embedding_models'],
+                self._config['databases'][self.sb_out['index_type']]['embedding_models'],
                 disabled=st.session_state.query_model_disabled,
                 help="Models listed are compatible with the selected index type."
             )
@@ -240,13 +249,13 @@ class SidebarManager:
         else:
             self.sb_out['query_model'] = st.sidebar.selectbox(
                 'Embedding model family',
-                self.config['databases'][self.sb_out['index_type']]['embedding_models'],
+                self._config['databases'][self.sb_out['index_type']]['embedding_models'],
                 disabled=st.session_state.query_model_disabled,
                 help="Model provider."
             )
             self.sb_out['embedding_name'] = st.sidebar.selectbox(
                 'Embedding model',
-                self.config['embeddings'][self.sb_out['query_model']]['embedding_models'],
+                self._config['embeddings'][self.sb_out['query_model']]['embedding_models'],
                 disabled=st.session_state.embedding_name_disabled,
                 help="Models listed are compatible with the selected index type."
             )
@@ -274,7 +283,7 @@ class SidebarManager:
         else:
             self.sb_out['rag_type'] = st.sidebar.selectbox(
                 'RAG type',
-                self.config['rag_types'],
+                self._config['rag_types'],
                 disabled=st.session_state.rag_type_disabled,
                 help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.'
             )
@@ -286,7 +295,7 @@ class SidebarManager:
         """Render RAG LLM configuration section"""
         self.sb_out['rag_llm_source'] = st.sidebar.selectbox(
             'RAG LLM model',
-            list(self.config['llms'].keys()),
+            list(self._config['llms'].keys()),
             disabled=st.session_state.rag_llm_source_disabled,
             help='Select the LLM model for RAG.'
         )
@@ -300,7 +309,7 @@ class SidebarManager:
         
         self.sb_out['llm_source'] = st.sidebar.selectbox(
             'LLM model',
-            list(self.config['llms'].keys()),
+            list(self._config['llms'].keys()),
             disabled=st.session_state.llm_source_disabled,
             help='Select the LLM model for the application.'
         )
@@ -316,21 +325,21 @@ class SidebarManager:
         if self.sb_out[source] == 'OpenAI':
             self.sb_out[model] = st.sidebar.selectbox(
                 'OpenAI model',
-                self.config['llms'][self.sb_out[source]]['models'],
+                self._config['llms'][self.sb_out[source]]['models'],
                 disabled=st.session_state[f"{model}_disabled"],
                 help='Select the OpenAI model for the application.'
             )
         elif self.sb_out[source] == 'Anthropic':
             self.sb_out[model] = st.sidebar.selectbox(
                 'Anthropic model',
-                self.config['llms'][self.sb_out[source]]['models'],
+                self._config['llms'][self.sb_out[source]]['models'],
                 disabled=st.session_state[f"{model}_disabled"],
                 help='Select the Anthropic model for the application.'
             )
         elif self.sb_out[source] == 'Hugging Face':
             self.sb_out[model] = st.sidebar.selectbox(
                 'Hugging Face model',
-                self.config['llms']['Hugging Face']['models'],
+                self._config['llms']['Hugging Face']['models'],
                 disabled=st.session_state[f"{model}_disabled"],
                 help='Select the Hugging Face model for the application.'
             )
@@ -466,8 +475,8 @@ def set_secrets(sb):
     """Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar."""
     secrets = {}
     
-    # Import dependencies lazily
-    openai, _, _ = _import_db_deps()
+    deps = DependencyCache.get_instance()
+    openai, _, _ = deps.get_db_deps()
     
     # OpenAI
     secrets['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
@@ -543,7 +552,8 @@ def test_key_status():
     return _format_key_status(key_status)
 def set_llm(sb, secrets, type='prompt'):
     """Sets up and returns a language model (LLM) based on the provided parameters."""
-    ChatOpenAI, ChatAnthropic = _import_llm_deps()
+    deps = DependencyCache.get_instance()
+    ChatOpenAI, ChatAnthropic = deps.get_llm_deps()
     
     if type == 'prompt':  # use for prompting in chat applications
         if sb['llm_source'] == 'OpenAI':
@@ -595,8 +605,9 @@ def set_llm(sb, secrets, type='prompt'):
     return llm
 def get_query_model(sb, secrets):
     """Returns the query model based on the provided parameters."""
-    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings, RAGPretrainedModel = _import_embedding_deps()
-
+    deps = DependencyCache.get_instance()
+    OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings, RAGPretrainedModel = deps.get_embedding_deps()
+    
     if sb['index_type'] == 'RAGatouille':
         query_model = RAGPretrainedModel.from_pretrained(sb['embedding_name'],
                                                          index_root=os.path.join(os.getenv('LOCAL_DB_PATH'),'.ragatouille'))
@@ -618,7 +629,8 @@ def get_query_model(sb, secrets):
 @st.cache_data(ttl=300)  # Cache for 5 minutes
 def _cached_pinecone_status(api_key):
     """Helper function to cache the processed Pinecone status."""
-    _, Pinecone, _ = _import_db_deps()
+    deps = DependencyCache.get_instance()
+    _, Pinecone, _ = deps.get_db_deps()
     
     if not api_key:
         return {'status': False, 'message': 'Pinecone API Key is not set.'}
@@ -646,7 +658,8 @@ def show_chroma_collections(format=True):
     Retrieves the list of chroma collections from the local database.
     LOCAL_DB_PATH environment variable used to pass the local database path.
     """
-    _, _, chromadb = _import_db_deps()
+    deps = DependencyCache.get_instance()
+    _, _, chromadb = deps.get_db_deps()
     
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
@@ -697,6 +710,9 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
     Makes a Streamlit expander widget to display connection status information.
     LOCAL_DB_PATH environment variable used to pass the local database path.
     """
+    deps = DependencyCache.get_instance()
+    data_processing = deps.get_data_processing()
+
     with st.expander("Connection Status", expanded=expanded):
         # Set secrets and assign to environment variables
         if set_secrets:
@@ -790,7 +806,8 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         st.markdown(f"Local database path: `{os.environ['LOCAL_DB_PATH']}`")
 def extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts the specified pages from a PDF file."""
-    fitz, requests = _import_pdf_deps()
+    deps = DependencyCache.get_instance()
+    fitz, requests = deps.get_pdf_deps()
     
     try:
         # Download extracted relevant section of the PDF file
@@ -827,7 +844,8 @@ def extract_pages_from_pdf(url, target_page, page_range=5):
         return None
 def get_pdf(url):
     """Downloads the full PDF file from the given URL. """
-    fitz, requests = _import_pdf_deps()
+    deps = DependencyCache.get_instance()
+    fitz, requests = deps.get_pdf_deps()
     
     try:
         # Download full PDF file
@@ -951,3 +969,16 @@ def _format_ragatouille_status(ragatouille_status):
         message = ragatouille_status['message']
         markdown_string = f"**Ragatouille Indexes**\n- {message} :x:"
     return markdown_string
+
+@st.cache_data(ttl=300)
+def _load_config_cached(config_file):
+    """Load and cache config file"""
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+        return {
+            'databases': {db['name']: db for db in config['databases']},
+            'embeddings': {e['name']: e for e in config['embeddings']},
+            'llms': {m['name']: m for m in config['llms']},
+            'rag_types': config['rag_types'],
+            'disabled_controls': config.get('disabled_controls', {})
+        }
