@@ -557,7 +557,6 @@ def test_sidebar_manager():
     paths = sidebar_manager.get_paths(home_dir)
     assert 'base_folder_path' in paths
     assert 'db_folder_path' in paths
-    assert 'data_folder_path' in paths
 def test_sidebar_manager_invalid_config():
     """Test SidebarManager initialization with invalid config file path"""
     with pytest.raises(FileNotFoundError):
@@ -593,7 +592,6 @@ def test_sidebar_manager_get_paths():
     paths = manager.get_paths(home_dir)
     assert os.path.exists(paths['base_folder_path'])
     assert os.path.exists(paths['db_folder_path'])
-    assert os.path.exists(paths['data_folder_path'])
     
     # Test with invalid path
     with pytest.raises(Exception):

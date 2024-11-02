@@ -109,7 +109,6 @@ class SidebarManager:
         paths = {
             'base_folder_path': home_dir,
             'db_folder_path': os.path.join(home_dir, os.getenv('LOCAL_DB_PATH')),
-            'data_folder_path': os.path.join(home_dir, 'data')
         }
         
         # Check if paths exist

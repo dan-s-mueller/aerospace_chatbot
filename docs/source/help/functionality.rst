@@ -9,7 +9,7 @@ The Streamlit app is initialized from ``app.py`` or via an access link to a pre-
 
 Sidebar
 ^^^^^^^
-In each app there is a sidebar which is used to apply settings. The sidebar is dynamic and will only show the settings that are relevant to the app. Each selectable item has a hover over help button describing what the item does.
+In each app there is a sidebar which is used to apply settings. The sidebar is dynamic and will only show the settings that are relevant to the app. Each selectable item has a hover over help button describing what the item does. For demos, the sidebar has limited functionality.
 
 .. image:: ../images/sidebar.png
   :alt: Home
@@ -20,12 +20,18 @@ Options which require further explination are described below. LLM options and t
 - RAG Type: Choose between Standard, `Parent-Child <https://python.langchain.com/docs/modules/data_connection/retrievers/parent_document_retriever/>`_, and `Summary <https://python.langchain.com/docs/modules/data_connection/retrievers/multi_vector/#summary>`__. Refer to these links to read about how these retrievers work.
 - Index Selected: When querying the database, this will select the index you interact with. It is useful when you have multiple indexes of different types.
 
-Home
-^^^^
-The home page has reference information as well as an overview of the keys and databases. You set keys on the home page for use in the other apps. It is also possible to do this in the sidebar when using other apps.
+Aerospace Chatbot
+^^^^^^^^^^^^^^^^^^
+This is the main app which is used for querying and asking questions about the data uploaded from PDFs. Functionality here includes: memory of the previous prompt/queries, alternate questions based on the prompt and response, and source documents. These are available under the dropdown below the last response.
 
-.. image:: ../images/home.png
-  :alt: Home
+To restart a conversation, click the "Restart session" button twice.
+
+When a query is made, the responses are stored in a separate vector database. This database is used for visualization in the Visualize Data app, which can be used to explore.
+
+PDF segments which are relevant are shown at the bottom and expandable.
+
+.. image:: ../images/chatbot.png
+  :alt: Chatbot
   :align: center
 
 Database Processing
@@ -41,17 +47,9 @@ Deleting existing databases is available via the connection status dropdown.
   :alt: Database Processing
   :align: center
 
-Chatbot
-^^^^^^^^
-This is the main app which is used for querying and asking questions about the data uploaded from PDFs. Functionality here includes: memory of the previous prompt/queries, alternate questions based on the prompt and response, and source documents. These are available under the dropdown below the last response.
-
-To restart a conversation, click the "Restart session" button twice.
-
-When a query is made, the responses are stored in a separate vector database. This database is used for visualization in the Visualize Data app, which can be used to explore.
-
-.. image:: ../images/chatbot.png
-  :alt: Chatbot
-  :align: center
+Visualize Data
+^^^^^^^^^^^^^^^
+Under construction
 
 Sidebar Options
 """""""""""""""

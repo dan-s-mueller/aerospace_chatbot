@@ -45,7 +45,7 @@ query_model = admin.get_query_model(sb, secrets)    # Set query model
 # Add options
 export_file=st.checkbox('Export local dataset file?',value=False,help='Export the data, including embeddings to a parquet file')
 if export_file:
-    file_name=st.text_input('Enter the file name',value=f"{os.path.join(paths['data_folder_path'],sb['index_selected']+'.parquet')}")
+    file_name=st.text_input('Enter the file name',value=f"{os.path.join(paths['db_folder_path'],sb['index_selected']+'.parquet')}")
 hf_dataset=st.checkbox('Export dataset to Hugging Face?',value=False,help='Export the data, including embeddings to a Hugging Face dataset.')
 
 if hf_dataset:
