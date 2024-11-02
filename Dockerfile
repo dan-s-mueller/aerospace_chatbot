@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11.5-bookworm
+FROM python:3.11.0-slim-bullseye
 
 # Do root things: clone repo and install dependencies. libsndfile1 for spotlight. libhdf5-serial-dev for vector distance.
 USER root
@@ -8,7 +8,8 @@ RUN useradd -m -u 1000 user && chown -R user:user /home/user && chmod -R 777 /ho
 
 RUN apt-get update && apt-get install -y \
     libhdf5-serial-dev \
-    libsndfile1 \   
+    libsndfile1 \
+    curl \   
     && rm -rf /var/lib/apt/lists/*
 
 USER user
@@ -33,8 +34,17 @@ RUN chmod 777 $HOME/src
 # Set environment variables
 ENV PATH="$HOME/.venv/bin:$PATH"
 
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+# Install Poetry and configure it to install to a user-writable location
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && poetry config virtualenvs.create true \
+    && poetry config cache-dir /home/user/.cache/poetry \
+    && poetry config virtualenvs.path /home/user/.local/share/virtualenvs
+
+# Copy Poetry files and install dependencies with correct permissions
+COPY --chown=user:user pyproject.toml poetry.lock ./
+RUN python3 -m pip install --user --no-warn-script-location poetry \
+    && poetry config virtualenvs.in-project true \
+    && poetry install --no-interaction --no-ansi
 
 # Copy the rest of your application code.
 COPY --chown=user:user ./app $HOME/app

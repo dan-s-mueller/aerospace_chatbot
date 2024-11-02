@@ -1,10 +1,3 @@
-# import cProfile, pstats  # Add these imports
-# from pstats import SortKey
-
-# # Add profiler initialization right after imports
-# profiler = cProfile.Profile()
-# profiler.enable()
-
 import os, sys, time, ast
 import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
@@ -265,24 +258,3 @@ if prompt := st.chat_input('Prompt here'):
 # Add reset button
 if st.button('Restart session'):
     _reset_conversation()
-
-# # Add this at the end of the file, right before or after the reset button
-# if st.button('Show Performance Stats'):
-#     profiler.disable()
-#     # Sort stats by cumulative time
-#     stats = pstats.Stats(profiler).sort_stats(SortKey.CUMULATIVE)
-#     # Export stats to file in same directory as script
-#     stats_file = os.path.join(current_directory, 'profile_stats.txt')
-    
-#     # Redirect stdout to capture stats output
-#     import io
-#     output_stream = io.StringIO()
-#     stats.stream = output_stream
-#     stats.print_stats(50)  # Print top 20 stats
-    
-#     # Write captured output to file
-#     with open(stats_file, 'w') as f:
-#         f.write(output_stream.getvalue())
-    
-#     # Display stats in Streamlit
-#     st.text(output_stream.getvalue())

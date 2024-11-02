@@ -334,6 +334,7 @@ def chunk_docs(docs: List[str],
                 'chunk_overlap':chunk_overlap}
     else:
         raise NotImplementedError
+@st.cache_resource
 def initialize_database(index_type: str, 
                         index_name: str, 
                         query_model: object,

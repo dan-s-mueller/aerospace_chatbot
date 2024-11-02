@@ -468,15 +468,6 @@ class SidebarManager:
 def set_secrets(sb):
     """
     Sets the secrets for various API keys by retrieving them from the environment variables or the sidebar.
-
-    Args:
-        sb (dict): The sidebar data containing the API keys.
-
-    Returns:
-        dict: A dictionary containing the set API keys.
-
-    Raises:
-        SecretKeyException: If any of the required API keys are missing.
     """
     secrets={}
 
@@ -519,9 +510,6 @@ def set_secrets(sb):
 def test_key_status():
     """
     Check the status of various API keys based on environment variables.
-
-    Returns:
-        dict: A dictionary containing the status of each API key.
     """
     key_status = {}
     # OpenAI
@@ -552,18 +540,6 @@ def test_key_status():
 def set_llm(sb, secrets, type='prompt'):
     """
     Sets up and returns a language model (LLM) based on the provided parameters.
-
-    Args:
-        sb (dict): The configuration settings for the chatbot.
-        secrets (dict): The secret keys and tokens required for authentication.
-        type (str, optional): The type of LLM to set up.
-
-    Returns:
-        ChatAnthropic or ChatOpenAI: The configured language model.
-
-    Raises:
-        ValueError: If an invalid LLM source is specified.
-
     """
     if type == 'prompt':  # use for prompting in chat applications
         if sb['llm_source'] == 'OpenAI':
@@ -616,16 +592,6 @@ def set_llm(sb, secrets, type='prompt'):
 def get_query_model(sb, secrets):
     """
     Returns the query model based on the provided parameters.
-
-    Args:
-        sb (dict): A dictionary containing the parameters for the query model.
-        secrets (dict): A dictionary containing the API keys for different query models.
-
-    Returns:
-        query_model: The selected query model based on the provided parameters.
-
-    Raises:
-        NotImplementedError: If the query model is not recognized.
     """
     if sb['index_type'] == 'RAGatouille':
         query_model = RAGPretrainedModel.from_pretrained(sb['embedding_name'],
@@ -645,18 +611,11 @@ def get_query_model(sb, secrets):
     else:
         raise NotImplementedError('Query model not recognized.')
     return query_model
+@st.cache_data(ttl=300)  # Cache for 5 minutes
 def show_pinecone_indexes(format=True):
     """
     Retrieves the list of Pinecone indexes and their status.
     LOCAL_DB_PATH environment variable used to pass the local database path.
-
-    Args:
-        format (bool, optional): Specifies whether to format the output for display.
-
-    Returns:
-        dict or str: If format is True, returns a formatted string representation of the Pinecone status.
-                    If format is False, returns a dictionary containing the Pinecone status.
-
     """
     if os.getenv('PINECONE_API_KEY') is None or os.getenv('PINECONE_API_KEY')=='':
         pinecone_status = {'status': False, 'message': 'Pinecone API Key is not set.'}
@@ -676,17 +635,6 @@ def show_chroma_collections(format=True):
     """
     Retrieves the list of chroma collections from the local database.
     LOCAL_DB_PATH environment variable used to pass the local database path.
-
-    Args:
-        format (bool, optional): Specifies whether to format the output for display.
-
-    Returns:
-        dict or str: If format is True, returns a formatted string representation of the chroma status.
-                    If format is False, returns a dictionary containing the chroma status.
-
-    Raises:
-        ValueError: If the chroma vector database needs to be reset.
-
     """
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         chroma_status = {'status': False, 'message': 'Local database path is not set.'}
@@ -709,17 +657,6 @@ def show_ragatouille_indexes(format=True):
     """
     Retrieves the list of ragatouille indexes.
     LOCAL_DB_PATH environment variable used to pass the local database path.
-
-    Args:
-        format (bool, optional): Specifies whether to format the indexes for display.
-
-    Returns:
-        dict or str: If format is True, returns a formatted string representation of the ragatouille status.
-                    If format is False, returns a dictionary containing the ragatouille status.
-
-    Raises:
-        ValueError: If the ragatouille vector database needs to be reset.
-
     """
     if os.getenv('LOCAL_DB_PATH') is None or os.getenv('LOCAL_DB_PATH')=='':
         ragatouille_status = {'status': False, 'message': 'Local database path is not set.'}
@@ -747,11 +684,6 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
     """
     Makes a Streamlit expander widget to display connection status information.
     LOCAL_DB_PATH environment variable used to pass the local database path.
-
-    Args:
-        expanded (bool, optional): Whether the expander is initially expanded or collapsed. Only intended with account access.
-        delete_buttons (bool, optional): Whether to display delete buttons for Pinecone and Chroma DB indexes.
-        set_secrets (bool, optional): Whether to set the secrets.
     """
     with st.expander("Connection Status", expanded=expanded):
         # Set secrets and assign to environment variables
@@ -845,6 +777,7 @@ def st_connection_status_expander(expanded: bool = True, delete_buttons: bool = 
         # Local database path
         st.markdown(f"Local database path: `{os.environ['LOCAL_DB_PATH']}`")
 def extract_pages_from_pdf(url, target_page, page_range=5):
+    """Extracts the specified pages from a PDF file."""
     try:
         # Download extracted relevant section of the PDF file
         response = requests.get(url)
@@ -949,12 +882,6 @@ def _get_available_indexes(index_type, embedding_name, rag_type):
 def _format_key_status(key_status: str):
     """
     Formats the key status dictionary into a formatted string.
-
-    Args:
-        key_status (str): The dictionary containing the key status information.
-
-    Returns:
-        str: The formatted string representing the key status.
     """
     formatted_status = ""
     for key, value in key_status.items():
@@ -967,12 +894,6 @@ def _format_key_status(key_status: str):
 def _format_pinecone_status(pinecone_status):
     """
     Formats the Pinecone status into a markdown string.
-
-    Args:
-        pinecone_status (dict): The Pinecone status dictionary.
-
-    Returns:
-        str: The formatted markdown string.
     """
     index_description=''
     if pinecone_status['status']:
@@ -989,12 +910,6 @@ def _format_pinecone_status(pinecone_status):
 def _format_chroma_status(chroma_status):
     """
     Formats the chroma status dictionary into a markdown string.
-
-    Args:
-        chroma_status (dict): The chroma status dictionary containing the status and message.
-
-    Returns:
-        str: The formatted markdown string.
     """
     collection_description=''
     if chroma_status['status']:
@@ -1010,13 +925,6 @@ def _format_chroma_status(chroma_status):
 def _format_ragatouille_status(ragatouille_status):
     """
     Formats the ragatouille status for display.
-
-    Args:
-        ragatouille_status (dict): The ragatouille status dictionary.
-
-    Returns:
-        str: A formatted string representation of the ragatouille status.
-
     """
     index_description=''
     if ragatouille_status['status']:
