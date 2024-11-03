@@ -40,3 +40,5 @@ tests/.ragatouille
 
 # Sphinx documentation
 docs/build/
+
+_bak/
