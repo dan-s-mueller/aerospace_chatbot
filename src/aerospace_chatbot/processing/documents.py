@@ -3,8 +3,10 @@
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
 
 from ..core.cache import Dependencies
+from ..services.prompts import SUMMARIZE_TEXT
 
 @dataclass
 class ChunkingResult:
@@ -98,27 +100,57 @@ class DocumentProcessor:
             metadata={'rag_type': 'Parent-Child'}
         )
 
-    def _process_summary(self, documents):
+    def _process_summary(self, documents, llm, batch_size=10, show_progress=False):
         """Process documents for summary RAG."""
         from ..services.llm import LLMService
+        from langchain_core.output_parsers import StrOutputParser
         
         chunks = self._chunk_documents(documents)
-        summaries = []
         
-        # Create summaries using LLM
-        llm_service = LLMService(
-            model_name="gpt-3.5-turbo",
-            model_type="openai",
-            api_key=self.embedding_service.api_key
+        # Setup the summarization chain
+        chain = (
+            {"doc": lambda x: x.page_content}
+            | SUMMARIZE_TEXT
+            | llm
+            | StrOutputParser()
         )
         
-        for doc in documents:
-            summary = self._generate_summary(doc, llm_service)
-            summaries.append(summary)
+        # Generate document IDs
+        doc_ids = [self._hash_metadata(doc.metadata) for doc in documents]
+        
+        # Initialize progress bar if requested
+        if show_progress:
+            try:
+                import streamlit as st
+                progress_bar = st.progress(0, text='Generating summaries...')
+            except ImportError:
+                show_progress = False
+        
+        # Process documents in batches
+        summaries = []
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i:i + batch_size]
+            batch_summaries = chain.batch(batch, config={"max_concurrency": batch_size})
+            summaries.extend(batch_summaries)
             
+            # Update progress if enabled
+            if show_progress:
+                progress = min(1.0, (i + batch_size) / len(documents))
+                progress_bar.progress(progress, text=f'Generating summaries...{progress*100:.2f}%')
+        
+        # Create summary documents with metadata
+        summary_docs = [
+            Document(page_content=summary, metadata={"doc_id": doc_ids[i]})
+            for i, summary in enumerate(summaries)
+        ]
+        
+        # Clean up progress bar
+        if show_progress:
+            progress_bar.empty()
+        
         return ChunkingResult(
             chunks=chunks,
-            summaries=summaries,
+            summaries=summary_docs,
             metadata={'rag_type': 'Summary'}
         )
 

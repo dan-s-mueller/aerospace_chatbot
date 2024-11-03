@@ -2,12 +2,23 @@ import os, sys, time, ast
 import streamlit as st
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
-from pinecone import Pinecone as pinecone_client
 
-sys.path.append('../src/aerospace_chatbot')   # Add package to path
-import admin, queries, data_processing
+from aerospace_chatbot import (
+    SidebarManager,
+    QAModel,
+    DocumentProcessor,
+    EmbeddingService,
+    LLMService,
+    DatabaseService,
+    setup_page_config,
+    display_chat_history,
+    display_sources
+)
 
-def handle_file_upload(sb, secrets, paths):
+# At the top of the file, after imports
+setup_page_config(title="Aerospace Chatbot", layout="wide")
+
+def handle_file_upload(sb, secrets):
     """Handle file upload functionality for the chatbot."""
     if not _validate_upload_settings(sb):
         return
@@ -20,7 +31,7 @@ def handle_file_upload(sb, secrets, paths):
     
     if st.button('Upload your docs into vector database'):
         with st.spinner('Uploading and merging your documents with the database...'):
-            _process_uploads(sb, secrets, paths, temp_files)
+            _process_uploads(sb, secrets, temp_files)
 
     if st.session_state.user_upload:
         st.markdown(
@@ -48,48 +59,49 @@ def _save_uploads_to_temp(uploaded_files):
             temp_file.write(uploaded_file.read())
         temp_files.append(temp_path)
     return temp_files
-def _process_uploads(sb, secrets, paths, temp_files):
+def _process_uploads(sb, secrets, temp_files):
     """Process uploaded files and merge them into the vector database."""
-    # Initialize Pinecone and get index metadata
-    pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-    selected_index = pc.Index(sb['index_selected'])
-    index_metadata = selected_index.fetch(ids=['db_metadata'])['vectors']['db_metadata']['metadata']
-    
-    # Get query model
-    query_model = admin.get_query_model({
-        'index_type': sb['index_type'],
-        'query_model': index_metadata['query_model'],
-        'embedding_name': index_metadata['embedding_model']
-    }, secrets)
-    
-    # Prepare chunking parameters
-    chunk_params = {
-        key: int(value) if isinstance(value, float) else value
-        for key, value in index_metadata.items()
-        if key not in ['query_model', 'embedding_model'] and value is not None
-    }
-    
-    # Generate unique identifier and process documents
-    st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
-    
-    st.markdown("*Uploading user documents to namespace...*")
-    data_processing.load_docs(
-        sb['index_type'],
-        temp_files,
-        query_model,
-        index_name=sb['index_selected'],
-        local_db_path=paths['db_folder_path'],
-        show_progress=True,
-        namespace=st.session_state.user_upload,
-        **chunk_params
+    # Initialize services
+    db_service = DatabaseService(
+        db_type=sb['index_type'].lower(),
+        local_db_path=os.getenv('LOCAL_DB_PATH')
+    )
+    embedding_service = EmbeddingService(
+        model_name=sb['embedding_name'],
+        model_type=sb['query_model'].lower(),
+        api_key=secrets.get(f"{sb['query_model'].lower()}_key")
+    )
+    llm_service = LLMService(
+        model_name=sb['llm_model'],
+        model_type=sb['llm_source'].lower(),
+        api_key=secrets.get(f"{sb['llm_source'].lower()}_key"),
+        temperature=sb['model_options']['temperature'],
+        max_tokens=sb['model_options']['output_level']
+    )
+    # Initialize document processor
+    doc_processor = DocumentProcessor(
+        db_service=db_service,
+        embedding_service=embedding_service
     )
     
-    st.markdown("*Merging user document with existing documents...*")
-    data_processing.copy_pinecone_vectors(
-        selected_index,
-        None,
-        st.session_state.user_upload,
-        show_progress=True
+    # Generate unique identifier
+    st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
+    st.markdown("*Processing and uploading user documents...*")
+    
+    # Process and index documents
+    chunking_result = doc_processor.process_documents(temp_files)
+    doc_processor.index_documents(
+        index_name=sb['index_selected'],
+        chunking_result=chunking_result,
+        namespace=st.session_state.user_upload
+    )
+
+    st.session_state.qa_model_obj = QAModel(
+        db_service=db_service,
+        llm_service=llm_service,
+        k=sb['model_options']['k'],
+        search_type=sb['model_options'].get('search_type'),
+        namespace=st.session_state.user_upload
     )
 def _reset_conversation():
     """
@@ -110,7 +122,7 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 
 # Initialize SidebarManager
-sidebar_manager = admin.SidebarManager(st.session_state.config_file)
+sidebar_manager = SidebarManager(st.session_state.config_file)
 
 # Get paths, sidebar values, and secrets
 paths = sidebar_manager.get_paths(home_dir)
@@ -135,9 +147,7 @@ if 'message_id' not in st.session_state:
     st.session_state.message_id = 0
 if 'messages' not in st.session_state:
     st.session_state.messages = []
-for message in st.session_state.messages:
-    with st.chat_message(message['role']):
-        st.markdown(message['content'])
+display_chat_history(st.session_state.messages)
 if 'pdf_urls' not in st.session_state:
     st.session_state.pdf_urls = []
 reset_query_db=False    # Add reset option for query database
@@ -159,7 +169,7 @@ with st.expander('''Helpful Information'''):
 
 if st.session_state.message_id == 0:
     with st.expander("Upload files to existing database",expanded=True):
-        handle_file_upload(sb, secrets, paths)
+        handle_file_upload(sb, secrets)
 
 # Define chat
 if prompt := st.chat_input('Prompt here'):
@@ -216,42 +226,26 @@ if prompt := st.chat_input('Prompt here'):
             
         # Create a dropdown box with hyperlinks to PDFs and their pages
         with st.container():
-            with st.spinner('Bring you source documents...'):
+            with st.spinner('Bringing you source documents...'):
                 st.write(":notebook: Source Documents")
                 for source in st.session_state.qa_model_obj.sources[-1]:
-                    st.session_state.pdf_urls=[]
-                    page = source.get('page')
                     pdf_source = source.get('source')
-                    
-                    # Parse string representations of lists
-                    try:
-                        page = ast.literal_eval(page) if isinstance(page, str) else page
-                        pdf_source = ast.literal_eval(pdf_source) if isinstance(pdf_source, str) else pdf_source
-                    except (ValueError, SyntaxError):
-                        # If parsing fails, keep the original value
-                        pass
-
-                    # Extract first element if it's a list
-                    page = page[0] if isinstance(page, list) and page else page
-                    pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
+                    page = source.get('page')
                     
                     if pdf_source and page is not None:
                         selected_url = f"https://storage.googleapis.com/aerospace_mechanisms_chatbot_demo/{pdf_source}"
                         st.session_state.pdf_urls.append(selected_url)
-                        st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
-
-                        with st.expander(":memo: View"):
-                            tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
+                        
+                        with st.expander(f"{pdf_source} - Page {page}"):
+                            tab1, tab2 = st.tabs(["Context View", "Full Document"])
                             try:
-                                # Extract and display the pages when the user clicks
-                                extracted_pdf = admin.extract_pages_from_pdf(selected_url, page)
+                                extracted_pdf = extract_pages_from_pdf(selected_url, page)
                                 with tab1:
-                                    pdf_viewer(extracted_pdf,width=1000,height=1200,render_text=True)
+                                    pdf_viewer(extracted_pdf, width=1000, height=1200, render_text=True)
                                 with tab2:
-                                    # pdf_viewer(full_pdf, width=1000,height=1200,render_text=True)
-                                    st.write("Disabled for now...see download link above!")
+                                    st.markdown(f"[Download Full Document]({selected_url})")
                             except Exception as e:
-                                st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. Contact support if this issue persists. User file uploads not yet supported.")
+                                st.warning("Unable to load PDF preview. Please use the download link.")
 
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
 
