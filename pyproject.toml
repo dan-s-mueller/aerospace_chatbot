@@ -21,7 +21,6 @@ pytest = "^8.1.1"
 ipykernel = "^6.29.3"
 streamlit = "^1.38.0"
 chromadb = "^0.5.0"
-pinecone-client = {version = "<5.0.1", extras = ["grpc"]}
 ragatouille = "^0.0.8.post4"
 huggingface-hub = "^0.24.6"
 openai = "^1.43.1"
@@ -48,6 +47,7 @@ renumics-spotlight = "^1.6.11"
 watchdog = ">=2.1.5,<6.0.0"
 cleanlab = "^2.7.0"
 cleanvision = "^0.3.6"
+pinecone-client = "^5.0.1"
 
 [build-system]
 requires = ["poetry-core"]

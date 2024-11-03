@@ -56,9 +56,9 @@ def pytest_generate_tests(metafunc):
     Use pytest_generate_tests to dynamically generate tests.
     Tests generates tests from a static file (test_cases.json). See test_cases.json for more details.
     '''
-    if 'test_input' in metafunc.fixturenames:
+    if 'test_query' in metafunc.fixturenames:
         tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)),'test_cases.json'))
-        metafunc.parametrize('test_input', tests)
+        metafunc.parametrize('test_query', tests)
 def parse_test_case(setup,test_case):
     ''' Parse test case to be used in the test functions.'''
     parsed_test = {
@@ -288,149 +288,92 @@ def test_chunk_id_lookup(setup_fixture):
     assert result['splitters'] is not None
 
 # Test initialize database with a test query
-def test_initialize_database_pinecone(monkeypatch,setup_fixture):
-    '''Test the initialization of a Pinecone database.'''
+@pytest.mark.parametrize('test_index', [
+    {
+        'index_type': 'Pinecone',
+        'query_model': 'OpenAI',
+        'embedding_name': 'text-embedding-3-large',
+        'expected_class': PineconeVectorStore,
+        'init_ragatouille': False  # None is not a valid value for init_ragatouille, false is placeholder and not used
+    },
+    {
+        'index_type': 'ChromaDB',
+        'query_model': 'OpenAI',
+        'embedding_name': 'text-embedding-ada-002',
+        'expected_class': Chroma,
+        'init_ragatouille': False   # None is not a valid value for init_ragatouille, false is placeholder and not used
+    },
+    {
+        'index_type': 'RAGatouille',
+        'query_model': 'RAGatouille',
+        'embedding_name': 'colbert-ir/colbertv2.0',
+        'expected_class': RAGPretrainedModel,
+        'init_ragatouille': True
+    }
+])
+def test_initialize_database(monkeypatch, setup_fixture, test_index):
+    '''Test the initialization of different types of databases.'''
     index_name = 'test-index'
     rag_type = 'Standard'
-    clear = True
-    init_ragatouille = False
-    show_progress = False
 
-    test_query_params={'index_type':'Pinecone',
-                       'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-3-large'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+    test_query_params = {
+        'index_type': test_index['index_type'],
+        'query_model': test_index['query_model'],
+        'embedding_name': test_index['embedding_name']
+    }
+    query_model = parse_test_model('embedding', test_query_params, setup_fixture)
+
+    # Clean up any existing database first
+    try:
+        delete_index(test_index['index_type'],
+                    index_name,
+                    rag_type,
+                    local_db_path=os.environ['LOCAL_DB_PATH'])
+    except:
+        pass  # Ignore errors if database doesn't exist
 
     # Test with environment variable local_db_path
     try:
-        vectorstore = initialize_database(test_query_params['index_type'], 
-                                          index_name, 
-                                          query_model, 
-                                          rag_type, 
-                                          os.environ['LOCAL_DB_PATH'], 
-                                          clear, 
-                                          init_ragatouille, 
-                                          show_progress)
-    except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
-        raise e
+        vectorstore = initialize_database(test_index['index_type'],
+                                        index_name,
+                                        query_model,
+                                        rag_type,
+                                        os.environ['LOCAL_DB_PATH'],
+                                        test_index['init_ragatouille'])
 
-    assert isinstance(vectorstore, PineconeVectorStore)
-    delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
+        assert isinstance(vectorstore, test_index['expected_class'])
+        
+        # Cleanup
+        delete_index(test_index['index_type'],
+                    index_name,
+                    rag_type,
+                    local_db_path=os.environ['LOCAL_DB_PATH'])
+
+    except Exception as e:
+        # If there is an error, be sure to delete the database
+        try:
+            delete_index(test_index['index_type'],
+                        index_name,
+                        rag_type,
+                        local_db_path=os.environ['LOCAL_DB_PATH'])
+        except:
+            pass
+        raise e
 
     # Test with local_db_path set manually, show it doesn't work if not set
     monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
     with pytest.raises(Exception):
-        initialize_database(test_query_params['index_type'], 
-                            index_name, 
-                            query_model, 
-                            rag_type, 
-                            os.environ['LOCAL_DB_PATH'], 
-                            clear, 
-                            init_ragatouille, 
-                            show_progress)
-    try:    # Probably redudnant but to avoid cleanup
-        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
-        raise e
-    except:
-        pass
-def test_initialize_database_chromadb(monkeypatch,setup_fixture):
-    ''' Test the initialization of a Chroma database.'''
-    index_name = 'test-index'
-    rag_type = 'Standard'
-    clear = True
-    init_ragatouille = False
-    show_progress = False
-
-    test_query_params={'index_type':'ChromaDB',
-                       'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
-
-    # Test with environment variable local_db_path
-    try:
-        vectorstore = initialize_database(test_query_params['index_type'], 
-                                          index_name, 
-                                          query_model, 
-                                          rag_type, 
-                                          os.environ['LOCAL_DB_PATH'], 
-                                          clear, 
-                                          init_ragatouille, 
-                                          show_progress)
-    except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
-        raise e
-
-    assert isinstance(vectorstore, Chroma)
-    delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
-
-    # Test with local_db_path set manually, show it doesn't work if not set
-    monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
-    with pytest.raises(Exception):
-        initialize_database(test_query_params['index_type'], 
-                            index_name, 
-                            query_model, 
-                            rag_type, 
-                            os.environ['LOCAL_DB_PATH'], 
-                            clear, 
-                            init_ragatouille, 
-                            show_progress)
-    try:    # Probably redudnant but to avoid cleanup
-        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
-        raise e
-    except:
-        pass
-def test_initialize_database_ragatouille(monkeypatch,setup_fixture):
-    '''Test the initialization of a database for RAGatouille.'''
-    index_name = 'test-index'
-    rag_type = 'Standard'
-    clear = True
-    init_ragatouille = True
-    show_progress = False
-
-    test_query_params={'index_type':'RAGatouille',
-                    'query_model': 'RAGatouille', 
-                    'embedding_name': 'colbert-ir/colbertv2.0'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
-
-    # Test with environment variable local_db_path
-    try:
-        vectorstore = initialize_database(test_query_params['index_type'], 
-                                          index_name, 
-                                          query_model, 
-                                          rag_type, 
-                                          os.environ['LOCAL_DB_PATH'], 
-                                          clear, 
-                                          init_ragatouille, 
-                                          show_progress)
-    except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
-        raise e
-    
-    assert isinstance(vectorstore, RAGPretrainedModel)
-    delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
-
-    # Test with local_db_path set manually, show it doesn't work if not set
-    monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
-    with pytest.raises(Exception):
-        initialize_database(test_query_params['index_type'], 
-                            index_name, 
-                            query_model, 
-                            rag_type, 
-                            os.environ['LOCAL_DB_PATH'], 
-                            clear, 
-                            init_ragatouille, 
-                            show_progress)
-    try:    # Probably redudnant but to avoid cleanup
-        delete_index(test_query_params['index_type'], index_name, rag_type, local_db_path=os.environ['LOCAL_DB_PATH'])
-        raise e
-    except:
-        pass
+        initialize_database(test_index['index_type'],
+                          index_name,
+                          query_model,
+                          rag_type,
+                          os.environ['LOCAL_DB_PATH'],
+                          test_index['init_ragatouille'])
 
 # Test end to end process, adding query
-def test_database_setup_and_query(test_input,setup_fixture):
+def test_database_setup_and_query(test_query,setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
-    test, print_str = parse_test_case(setup_fixture,test_input)
+    test, print_str = parse_test_case(setup_fixture,test_query)
     index_name='test'+str(test['id'])
     print(f'Starting test: {print_str}')
 

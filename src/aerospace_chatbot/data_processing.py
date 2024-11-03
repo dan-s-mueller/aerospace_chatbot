@@ -1,7 +1,7 @@
 import os, re, shutil
 import hashlib
 from pathlib import Path
-from typing import List, Union
+import streamlit as st
 import json, jsonlines
 import pickle
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -11,7 +11,6 @@ from prompts import CLUSTER_LABEL, SUMMARIZE_TEXT
 def get_cache_decorator():
     """Returns appropriate cache decorator based on environment"""
     try:
-        import streamlit as st
         return st.cache_resource
     except:
         # Return no-op decorator when not in Streamlit
@@ -92,7 +91,7 @@ class DependencyCache:
         import admin
         return admin
 
-def list_bucket_pdfs(bucket_name: str) -> List[str]:
+def list_bucket_pdfs(bucket_name: str):
     """Lists all PDF files in a Google Cloud Storage bucket."""
     try:
         # Initialize the GCS client
@@ -114,7 +113,7 @@ def list_bucket_pdfs(bucket_name: str) -> List[str]:
         return pdf_files
     except Exception as e:
         raise Exception(f"Error accessing GCS bucket: {str(e)}")
-def list_available_buckets() -> List[str]:
+def list_available_buckets():
     """Lists all available buckets in the GCS project."""
     try:
         # Initialize the GCS client
@@ -127,7 +126,7 @@ def list_available_buckets() -> List[str]:
     except Exception as e:
         raise Exception(f"Error accessing GCS buckets: {str(e)}")
 def load_docs(index_type:str,
-              docs:List[str],
+              docs,
               query_model:object,
               rag_type:str='Standard',
               index_name:str=None,
@@ -177,7 +176,7 @@ def load_docs(index_type:str,
                                  local_db_path=local_db_path,
                                  namespace=namespace)
     return vectorstore
-def chunk_docs(docs: List[str],
+def chunk_docs(docs,
                rag_type:str='Standard',
                chunk_method:str='character_recursive',
                file_out:str=None,
@@ -352,16 +351,17 @@ def chunk_docs(docs: List[str],
                 'chunk_overlap':chunk_overlap}
     else:
         raise NotImplementedError
-def initialize_database(index_type: str, 
-                        index_name: str, 
-                        query_model: object,
-                        rag_type: str,
-                        local_db_path: str = None, 
-                        clear: bool = False,
-                        init_ragatouille: bool = False,
-                        show_progress: bool = False,
-                        chunker: dict = None,
-                        namespace: str = None):
+# @cache_resource
+def initialize_database(index_type, 
+                        index_name, 
+                        _query_model,  # Add underscore to skip hashing
+                        rag_type,
+                        local_db_path=None, 
+                        clear=False,
+                        init_ragatouille=False,
+                        show_progress=False,
+                        chunker=None,
+                        namespace=None):
     """Initialize database with caching for faster subsequent loads"""
     deps = DependencyCache.get_instance()
     pinecone_client, chromadb, PersistentClient, ServerlessSpec = deps.get_db_deps()
@@ -381,15 +381,15 @@ def initialize_database(index_type: str,
             }
         else:
             index_metadata={}
-        if isinstance(query_model, OpenAIEmbeddings):
+        if isinstance(_query_model, OpenAIEmbeddings):
             index_metadata['query_model']= "OpenAI"
-            index_metadata['embedding_model'] = query_model.model
-        elif isinstance(query_model, VoyageAIEmbeddings):
+            index_metadata['embedding_model'] = _query_model.model
+        elif isinstance(_query_model, VoyageAIEmbeddings):
             index_metadata['query_model'] = "Voyage"
-            index_metadata['embedding_model'] = query_model.model
-        elif isinstance(query_model, HuggingFaceInferenceAPIEmbeddings):
+            index_metadata['embedding_model'] = _query_model.model
+        elif isinstance(_query_model, HuggingFaceInferenceAPIEmbeddings):
             index_metadata['query_model'] = "Hugging Face"
-            index_metadata['embedding_model'] = query_model.model_name
+            index_metadata['embedding_model'] = _query_model.model_name
 
     if index_type == "Pinecone":
         if clear:
@@ -399,17 +399,17 @@ def initialize_database(index_type: str,
             pc.describe_index(index_name)
         except:
             pc.create_index(index_name,
-                            dimension=_embedding_size(query_model),
+                            dimension=_embedding_size(_query_model),
                             spec=ServerlessSpec(cloud="aws", region="us-east-1"))
         index = pc.Index(index_name)
         vectorstore=PineconeVectorStore(index,
                                         index_name=index_name, 
-                                        embedding=query_model,
+                                        embedding=_query_model,
                                         text_key='page_content',
                                         pinecone_api_key=os.getenv('PINECONE_API_KEY'),
                                         namespace=namespace)
         if clear:   # Update metadata if new index
-            metadata_vector = [1e-5] * _embedding_size(query_model)  # Empty embedding vector. In queries.py, this is filtered out.
+            metadata_vector = [1e-5] * _embedding_size(_query_model)  # Empty embedding vector. In queries.py, this is filtered out.
             index.upsert(vectors=[{
                 'id': 'db_metadata',
                 'values': metadata_vector,
@@ -425,12 +425,12 @@ def initialize_database(index_type: str,
 
         if clear:   # Update metadata if new index
             vectorstore = Chroma(collection_name=index_name,
-                                embedding_function=query_model,
+                                embedding_function=_query_model,
                                 collection_metadata=index_metadata,
                                 client=persistent_client)
         else:
             vectorstore = Chroma(collection_name=index_name,
-                                embedding_function=query_model,
+                                embedding_function=_query_model,
                                 client=persistent_client)
         if show_progress:
             progress_percentage = 1
@@ -442,7 +442,7 @@ def initialize_database(index_type: str,
             delete_index(index_type, index_name, rag_type, local_db_path=local_db_path)
         if init_ragatouille:    
             # Used if the index is not already set, initializes root folder and embedding model
-            vectorstore = query_model
+            vectorstore = _query_model
         else:   
             # Used if the index is already set, loads the index directly using lazy loading
             vectorstore = _init_ragatouille(index_name, local_db_path)
@@ -984,4 +984,4 @@ def _init_ragatouille(index_name: str, local_db_path: str):
     nltk.download('punkt', quiet=True)
     from ragatouille import RAGPretrainedModel
     return RAGPretrainedModel.from_index(
-        index_path=os.path.join(local_db_path, '.ragatouille/colbert/indexes', index_name)    )
+        index_path=os.path.join(local_db_path, '.ragatouille/colbert/indexes', index_name))
