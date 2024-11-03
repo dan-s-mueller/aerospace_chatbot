@@ -57,8 +57,17 @@ class DocumentProcessor:
                        chunking_result,
                        rag_type='Standard',
                        batch_size=100,
-                       namespace=None):
+                       namespace=None,
+                       show_progress=False):
         """Index processed documents."""
+        if show_progress:
+            try:
+                import streamlit as st
+                progress_text = "Document indexing in progress..."
+                my_bar = st.progress(0, text=progress_text)
+            except ImportError:
+                show_progress = False
+
         vectorstore = self.db_service.initialize_database(
             index_name=index_name,
             embedding_service=self.embedding_service,
@@ -77,10 +86,99 @@ class DocumentProcessor:
             else:
                 vectorstore.add_documents(documents=batch, ids=batch_ids)
 
+            if show_progress:
+                progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+
         # Handle parent documents or summaries if needed
         if rag_type in ['Parent-Child', 'Summary']:
             self._store_parent_docs(index_name, chunking_result, rag_type)
 
+        if show_progress:
+            my_bar.empty()
+
+    @staticmethod
+    def list_available_buckets():
+        """Lists all available buckets in the GCS project."""
+        try:
+            # Initialize the GCS client
+            storage_client = storage.Client()
+            
+            # List all buckets
+            buckets = [bucket.name for bucket in storage_client.list_buckets()]
+            
+            return buckets
+        except Exception as e:
+            raise Exception(f"Error accessing GCS buckets: {str(e)}")
+
+    @staticmethod
+    def list_bucket_pdfs(bucket_name: str):
+        """Lists all PDF files in a Google Cloud Storage bucket."""
+        try:
+            # Initialize the GCS client
+            storage_client = storage.Client()
+            
+            # Get the bucket
+            bucket = storage_client.bucket(bucket_name)
+            
+            # List all blobs (files) in the bucket
+            blobs = bucket.list_blobs()
+            
+            # Filter for PDF files and create full GCS paths
+            pdf_files = [
+                f"gs://{bucket_name}/{blob.name}" 
+                for blob in blobs 
+                if blob.name.lower().endswith('.pdf')
+            ]
+            
+            return pdf_files
+        except Exception as e:
+            raise Exception(f"Error accessing GCS bucket: {str(e)}")
+    def copy_vectors(self, index_name, source_namespace, target_namespace, batch_size=100, show_progress=False):
+        """Copies vectors from a source Pinecone namespace to a target namespace."""
+        if self.db_service.db_type != 'pinecone':
+            raise ValueError("Vector copying is only supported for Pinecone databases")
+            
+        index = self.db_service.get_index(index_name)
+        
+        if show_progress:
+            try:
+                import streamlit as st
+                progress_text = "Document merging in progress..."
+                my_bar = st.progress(0, text=progress_text)
+            except ImportError:
+                show_progress = False
+        
+        # Get list of all vector IDs
+        ids = []
+        for id_batch in index.list():
+            ids.extend(id_batch)
+            
+        # Process vectors in batches
+        for i in range(0, len(ids), batch_size):
+            # Fetch vectors
+            batch_ids = ids[i:i + batch_size]
+            fetch_response = index.fetch(batch_ids, namespace=source_namespace)
+            
+            # Transform fetched vectors for upsert
+            vectors_to_upsert = [
+                {
+                    'id': id,
+                    'values': vector_data['values'],
+                    'metadata': vector_data['metadata']
+                }
+                for id, vector_data in fetch_response['vectors'].items()
+            ]
+            
+            # Upsert vectors to target namespace
+            index.upsert(vectors=vectors_to_upsert, namespace=target_namespace)
+            
+            if show_progress:
+                progress_percentage = min(1.0, (i + batch_size) / len(ids))
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        
+        if show_progress:
+            my_bar.empty()
     def _process_standard(self, documents):
         """Process documents for standard RAG."""
         chunks = self._chunk_documents(documents)
@@ -227,40 +325,26 @@ class DocumentProcessor:
         blob = bucket.blob(file_path)
         blob.upload_from_filename(local_file_path)
 
-    @staticmethod
-    def list_available_buckets():
-        """Lists all available buckets in the GCS project."""
-        try:
-            # Initialize the GCS client
-            storage_client = storage.Client()
-            
-            # List all buckets
-            buckets = [bucket.name for bucket in storage_client.list_buckets()]
-            
-            return buckets
-        except Exception as e:
-            raise Exception(f"Error accessing GCS buckets: {str(e)}")
+    def _store_parent_docs(self, index_name, chunking_result, rag_type):
+        """Store parent documents or original documents for Parent-Child or Summary RAG types."""
+        from pathlib import Path
+        import json
+        import os
 
-    @staticmethod
-    def list_bucket_pdfs(bucket_name: str):
-        """Lists all PDF files in a Google Cloud Storage bucket."""
-        try:
-            # Initialize the GCS client
-            storage_client = storage.Client()
-            
-            # Get the bucket
-            bucket = storage_client.bucket(bucket_name)
-            
-            # List all blobs (files) in the bucket
-            blobs = bucket.list_blobs()
-            
-            # Filter for PDF files and create full GCS paths
-            pdf_files = [
-                f"gs://{bucket_name}/{blob.name}" 
-                for blob in blobs 
-                if blob.name.lower().endswith('.pdf')
-            ]
-            
-            return pdf_files
-        except Exception as e:
-            raise Exception(f"Error accessing GCS bucket: {str(e)}")
+        # Create local file store directory if it doesn't exist
+        lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / index_name
+        lfs_path.mkdir(parents=True, exist_ok=True)
+
+        if rag_type == 'Parent-Child':
+            # Store parent documents
+            for doc_id, parent_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.parent_chunks):
+                file_path = lfs_path / str(doc_id)
+                with open(file_path, "w") as f:
+                    json.dump({"kwargs": {"page_content": parent_doc.page_content}}, f)
+        
+        elif rag_type == 'Summary':
+            # Store original documents
+            for doc_id, orig_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.pages['docs']):
+                file_path = lfs_path / str(doc_id)
+                with open(file_path, "w") as f:
+                    json.dump({"kwargs": {"page_content": orig_doc.page_content}}, f)

@@ -61,13 +61,6 @@ def _process_uploads(sb, secrets, temp_files):
         model_type=sb['query_model'].lower(),
         api_key=secrets.get(f"{sb['query_model'].lower()}_key")
     )
-    llm_service = LLMService(
-        model_name=sb['llm_model'],
-        model_type=sb['llm_source'].lower(),
-        api_key=secrets.get(f"{sb['llm_source'].lower()}_key"),
-        temperature=sb['model_options']['temperature'],
-        max_tokens=sb['model_options']['output_level']
-    )
     # Initialize document processor
     doc_processor = DocumentProcessor(
         db_service=db_service,
@@ -79,19 +72,21 @@ def _process_uploads(sb, secrets, temp_files):
     st.markdown("*Processing and uploading user documents...*")
     
     # Process and index documents
+    st.markdown("*Uploading user documents to namespace...*")
     chunking_result = doc_processor.process_documents(temp_files)
     doc_processor.index_documents(
         index_name=sb['index_selected'],
         chunking_result=chunking_result,
-        namespace=st.session_state.user_upload
+        namespace=st.session_state.user_upload,
+        show_progress=True
     )
-
-    st.session_state.qa_model_obj = QAModel(
-        db_service=db_service,
-        llm_service=llm_service,
-        k=sb['model_options']['k'],
-        search_type=sb['model_options'].get('search_type'),
-        namespace=st.session_state.user_upload
+    # Copy vectors to merge namespaces
+    st.markdown("*Merging user document with existing documents...*")
+    doc_processor.copy_vectors(
+        index_name=sb['index_selected'],
+        source_namespace=None,
+        target_namespace=st.session_state.user_upload,
+        show_progress=True
     )
 def _reset_conversation():
     """

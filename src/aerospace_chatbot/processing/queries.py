@@ -12,7 +12,7 @@ class QAModel:
     
     def __init__(self,
                  db_service,
-                 llm_service,
+                 llm_service=None,
                  k=4,
                  search_type='similarity',
                  namespace=None):

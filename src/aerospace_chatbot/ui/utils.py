@@ -1,7 +1,8 @@
 """UI utility functions."""
 
 import streamlit as st
-import os
+import os, ast
+from streamlit_pdf_viewer import pdf_viewer
 
 from ..core.cache import Dependencies, get_cache_data_decorator
 from ..services.database import DatabaseService
@@ -25,17 +26,41 @@ def display_chat_history(history, show_metadata = False):
                 with st.expander("Message Metadata"):
                     st.json(msg["metadata"])
 
-def display_sources(sources, expanded = False):
-    """Display reference sources in an expander."""
-    # TODO add back old pdf display functionality
-    with st.expander("Sources", expanded=expanded):
-        for i, source in enumerate(sources, 1):
-            st.markdown(f"**Source {i}:**")
-            st.markdown(f"- **Title:** {source.get('title', 'N/A')}")
-            st.markdown(f"- **Page:** {source.get('page', 'N/A')}")
-            if source.get('url'):
-                st.markdown(f"- **URL:** [{source['url']}]({source['url']})")
-            st.markdown("---")
+def display_sources(sources, expanded=False):
+    """Display reference sources in an expander with PDF preview functionality."""
+    with st.container():
+        with st.spinner('Loading source documents...'):
+            st.write(":notebook: Source Documents")
+            for source in sources:
+                page = source.get('page')
+                pdf_source = source.get('source')
+                
+                # Parse string representations of lists
+                try:
+                    page = ast.literal_eval(page) if isinstance(page, str) else page
+                    pdf_source = ast.literal_eval(pdf_source) if isinstance(pdf_source, str) else pdf_source
+                except (ValueError, SyntaxError):
+                    pass
+
+                # Extract first element if it's a list
+                page = page[0] if isinstance(page, list) and page else page
+                pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
+                
+                if pdf_source and page is not None:
+                    selected_url = f"https://storage.googleapis.com/aerospace_mechanisms_chatbot_demo/{pdf_source}"
+                    st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
+
+                    with st.expander(":memo: View"):
+                        tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
+                        try:
+                            # Extract and display the pages when the user clicks
+                            extracted_pdf = admin.extract_pages_from_pdf(selected_url, page)
+                            with tab1:
+                                pdf_viewer(extracted_pdf, width=1000, height=1200, render_text=True)
+                            with tab2:
+                                st.write("Disabled for now...see download link above!")
+                        except Exception as e:
+                            st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. Contact support if this issue persists. User file uploads not yet supported.")
 
 def show_connection_status(expanded = True, delete_buttons = False):
     """Display connection status for various services with optional delete functionality. """
