@@ -338,8 +338,8 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
                                         index_name,
                                         query_model,
                                         rag_type,
-                                        os.environ['LOCAL_DB_PATH'],
-                                        test_index['init_ragatouille'])
+                                        local_db_path=os.environ['LOCAL_DB_PATH'],
+                                        init_ragatouille=test_index['init_ragatouille'])
 
         assert isinstance(vectorstore, test_index['expected_class'])
         
@@ -367,8 +367,8 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
                           index_name,
                           query_model,
                           rag_type,
-                          os.environ['LOCAL_DB_PATH'],
-                          test_index['init_ragatouille'])
+                          local_db_path=os.environ['LOCAL_DB_PATH'],
+                          init_ragatouille=test_index['init_ragatouille'])
 
 # Test end to end process, adding query
 def test_database_setup_and_query(test_query,setup_fixture):
