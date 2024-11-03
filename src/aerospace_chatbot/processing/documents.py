@@ -35,7 +35,9 @@ class DocumentProcessor:
                          documents,
                          rag_type='Standard',
                          merge_pages=1):
-        """Process documents based on RAG type."""
+        """Process documents based on RAG type."""  
+        self.rag_type = rag_type
+
         # Sanitize and merge pages if needed
         cleaned_docs = [self._sanitize_page(doc) for doc in documents]
         cleaned_docs = [doc for doc in cleaned_docs if doc is not None]
@@ -51,11 +53,9 @@ class DocumentProcessor:
             return self._process_summary(cleaned_docs)
         else:
             raise ValueError(f"Unsupported RAG type: {rag_type}")
-
     def index_documents(self,
                        index_name,
                        chunking_result,
-                       rag_type='Standard',
                        batch_size=100,
                        namespace=None,
                        show_progress=False):
@@ -68,10 +68,10 @@ class DocumentProcessor:
             except ImportError:
                 show_progress = False
 
-        vectorstore = self.db_service.initialize_database(
+        self.vectorstore = self.db_service.initialize_database(
             index_name=index_name,
             embedding_service=self.embedding_service,
-            rag_type=rag_type,
+            rag_type=self.rag_type,
             namespace=namespace,
             clear=True
         )
@@ -81,18 +81,18 @@ class DocumentProcessor:
             batch = chunking_result.chunks[i:i + batch_size]
             batch_ids = [self._hash_metadata(chunk.metadata) for chunk in batch]
             
-            if self.db_service.db_type == "pinecone":
-                vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=namespace)
+            if self.db_service.db_type == "Pinecone":
+                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=namespace)
             else:
-                vectorstore.add_documents(documents=batch, ids=batch_ids)
+                self.vectorstore.add_documents(documents=batch, ids=batch_ids)
 
             if show_progress:
                 progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
                 my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
 
         # Handle parent documents or summaries if needed
-        if rag_type in ['Parent-Child', 'Summary']:
-            self._store_parent_docs(index_name, chunking_result, rag_type)
+            if self.rag_type in ['Parent-Child', 'Summary']:
+                self._store_parent_docs(index_name, chunking_result, self.rag_type)
 
         if show_progress:
             my_bar.empty()
@@ -128,7 +128,7 @@ class DocumentProcessor:
             pdf_files = [
                 f"gs://{bucket_name}/{blob.name}" 
                 for blob in blobs 
-                if blob.name.lower().endswith('.pdf')
+                if blob.name.endswith('.pdf')
             ]
             
             return pdf_files
@@ -136,7 +136,7 @@ class DocumentProcessor:
             raise Exception(f"Error accessing GCS bucket: {str(e)}")
     def copy_vectors(self, index_name, source_namespace, target_namespace, batch_size=100, show_progress=False):
         """Copies vectors from a source Pinecone namespace to a target namespace."""
-        if self.db_service.db_type != 'pinecone':
+        if self.db_service.db_type != 'Pinecone':
             raise ValueError("Vector copying is only supported for Pinecone databases")
             
         index = self.db_service.get_index(index_name)

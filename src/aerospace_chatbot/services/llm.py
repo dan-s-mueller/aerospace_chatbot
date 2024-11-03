@@ -24,24 +24,27 @@ class LLMService:
         if self._llm is None:
             ChatOpenAI, ChatAnthropic = self._deps.get_llm_deps()
             
-            if self.model_type == 'openai':
+            if self.model_type == 'OpenAI':
                 self._llm = ChatOpenAI(
                     model_name=self.model_name,
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                     openai_api_key=self.api_key
                 )
-            elif self.model_type == 'anthropic':
+            elif self.model_type == 'Anthropic':
                 self._llm = ChatAnthropic(
                     model=self.model_name,
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                     api_key=self.api_key
                 )
-            elif self.model_type == 'local':
+            elif self.model_type == 'LM Studio (local)':
                 self._llm = ChatOpenAI(
                     base_url=self.model_name,  # For local LLMs
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                     openai_api_key=self.api_key
                 )
+            else:
+                raise ValueError(f"Unsupported LLM type: {self.model_type}")
+        return self._llm

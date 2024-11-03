@@ -26,7 +26,7 @@ class SidebarManager:
                 'embeddings': ['query_model', 'embedding_name', 'embedding_endpoint'],
                 'rag': ['rag_type', 'rag_llm_source', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_source', 'llm_model', 'llm_endpoint'],
-                'model_options': ['temperature', 'output_level', 'k', 'search_type'],
+                'model_options': ['temperature', 'output_level', 'k'],
                 'api_keys': ['openai_key', 'anthropic_key', 'hf_key', 'voyage_key', 'pinecone_key']
             }
             
@@ -197,23 +197,15 @@ class SidebarManager:
         )
         
         if self.sb_out['index_type'] != 'RAGatouille':
-            search_type = st.sidebar.selectbox(
-                'Search Type',
-                ['similarity', 'mmr'],
-                disabled=st.session_state.search_type_disabled,
-                help='Select the search type for the application.'
-            )
             self.sb_out['model_options'] = {
                 'output_level': output_level,
                 'k': k,
-                'search_type': search_type,
                 'temperature': temperature
             }
         else:
             self.sb_out['model_options'] = {
                 'output_level': output_level,
                 'k': k,
-                'search_type': None,
                 'temperature': temperature
             }
 

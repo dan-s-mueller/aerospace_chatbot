@@ -54,7 +54,7 @@ def display_sources(sources, expanded=False):
                         tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
                         try:
                             # Extract and display the pages when the user clicks
-                            extracted_pdf = admin.extract_pages_from_pdf(selected_url, page)
+                            extracted_pdf = extract_pages_from_pdf(selected_url, page)
                             with tab1:
                                 pdf_viewer(extracted_pdf, width=1000, height=1200, render_text=True)
                             with tab2:

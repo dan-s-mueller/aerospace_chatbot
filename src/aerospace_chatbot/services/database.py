@@ -11,27 +11,35 @@ cache_data = get_cache_decorator()
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
-    def __init__(self, db_type, local_db_path):
-        self.db_type = db_type.lower()
-        self.local_db_path = Path(local_db_path)
-        self._db = None
+    def __init__(self, db_type, local_db_path=None):
+        self.db_type = db_type
+        self.local_db_path = local_db_path
+        self.vectorstore = None
+        self.index_name = None
+        self.embedding_service = None
+        self.rag_type = None
+        self.namespace = None
         self._deps = Dependencies()
         
-    def initialize_database(self, 
-                          index_name,
-                          embedding_service,
-                          rag_type='Standard',
-                          namespace=None,
-                          clear=False):
-        """Initialize or get vector store."""
-        if self.db_type == 'chromadb':
-            return self._init_chroma(index_name, embedding_service, clear)
-        elif self.db_type == 'pinecone':
-            return self._init_pinecone(index_name, embedding_service, namespace)
-        elif self.db_type == 'ragatouille':
-            return self._init_ragatouille(index_name)
+    def initialize_database(self, index_name, embedding_service, rag_type='Standard', namespace=None):
+        """Initialize and store database connection."""
+        self.index_name = index_name
+        self.embedding_service = embedding_service
+        self.rag_type = rag_type
+        self.namespace = namespace
+
+        # Initialize the vectorstore based on database type
+        if self.db_type == 'Pinecone':
+            self.vectorstore = self._init_pinecone()
+        elif self.db_type == 'ChromaDB':
+            self.vectorstore = self._init_chromadb()
+        elif self.db_type == 'RAGatouille':
+            self.vectorstore = self._init_ragatouille()
         else:
-            raise ConfigurationError(f"Unsupported database type: {self.db_type}")
+            raise ValueError(f"Unsupported database type: {self.db_type}")
+
+        return self.vectorstore
+
     def delete_index(self, index_name, rag_type):
         """Delete an index from the database."""
         if self.db_type == 'chromadb':
@@ -39,7 +47,7 @@ class DatabaseService:
             client = chromadb.PersistentClient(path=str(self.local_db_path / 'chromadb'))
             client.delete_collection(index_name)
             
-        elif self.db_type == 'pinecone':
+        elif self.db_type == 'Pinecone':
             Pinecone, _, _ = self._deps.get_db_deps()
             pc = Pinecone()
             pc.delete_index(index_name)
@@ -124,9 +132,9 @@ class DatabaseService:
     def get_available_indexes(self, index_type, embedding_name, rag_type):
         """Get available indexes based on current settings."""
         name = []
-        base_name = embedding_name.replace('/', '-').lower()
+        base_name = embedding_name.replace('/', '-')
         
-        if index_type.lower() == 'chromadb':
+        if index_type == 'ChromaDB':
             try:
                 _, chromadb, _ = self._deps.get_db_deps()
                 client = chromadb.PersistentClient(path=str(self.local_db_path / 'chromadb'))
@@ -143,7 +151,7 @@ class DatabaseService:
             except:
                 return []
                 
-        elif index_type.lower() == 'pinecone':
+        elif index_type == 'Pinecone':
             try:
                 Pinecone, _, _ = self._deps.get_db_deps()
                 pc = Pinecone()
@@ -160,7 +168,7 @@ class DatabaseService:
             except:
                 return []
                 
-        elif index_type.lower() == 'ragatouille':
+        elif index_type == 'RAGatouille':
             try:
                 index_path = self.local_db_path / '.ragatouille/colbert/indexes'
                 if index_path.exists():
@@ -213,7 +221,7 @@ class DatabaseService:
             return {'status': True, 'indexes': indexes}
         except Exception as e:
             return {'status': False, 'message': f'Error accessing RAGatouille indexes: {str(e)}'}
-    def _init_chroma(self, index_name, embedding_service, clear):
+    def _init_chromadb(self):
         """Initialize ChromaDB."""
         _, chromadb, _ = self._deps.get_db_deps()
         _, Chroma, _, _ = self._deps.get_vectorstore_deps()
@@ -223,29 +231,23 @@ class DatabaseService:
         
         client = chromadb.PersistentClient(path=str(db_path))
         
-        if clear:
-            try:
-                client.delete_collection(index_name)
-            except ValueError:
-                pass
-                
         return Chroma(
             client=client,
-            collection_name=index_name,
-            embedding_function=embedding_service.get_embeddings()
+            collection_name=self.index_name,
+            embedding_function=self.embedding_service.get_embeddings()
         )
-    def _init_pinecone(self, index_name, embedding_service, namespace=None):
+    def _init_pinecone(self):
         """Initialize Pinecone."""
         Pinecone, _, ServerlessSpec = self._deps.get_db_deps()
         PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
         
         pc = Pinecone()
-        dimension = embedding_service.get_dimension()
+        dimension = self.embedding_service.get_dimension()
         
         # Create index if it doesn't exist
-        if index_name not in [idx.name for idx in pc.list_indexes()]:
+        if self.index_name not in [idx.name for idx in pc.list_indexes()]:
             pc.create_index(
-                name=index_name,
+                name=self.index_name,
                 dimension=dimension,
                 spec=ServerlessSpec(
                     cloud='aws',
@@ -254,18 +256,18 @@ class DatabaseService:
             )
             
         return PineconeVectorStore(
-            index=pc.Index(index_name),
-            embedding=embedding_service.get_embeddings(),
-            namespace=namespace
+            index=pc.Index(self.index_name),
+            embedding=self.embedding_service.get_embeddings(),
+            namespace=self.namespace
         )
 
-    def _init_ragatouille(self, index_name):
+    def _init_ragatouille(self):
         """Initialize RAGatouille."""
         from ragatouille import RAGPretrainedModel
         
         index_path = self.local_db_path / '.ragatouille'
         return RAGPretrainedModel.from_pretrained(
-            model_name=index_name,
+            model_name=self.index_name,
             index_root=str(index_path)
         )
     @staticmethod

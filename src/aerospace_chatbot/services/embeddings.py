@@ -18,18 +18,18 @@ class EmbeddingService:
         if self._embeddings is None:
             OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
             
-            if self.model_type == 'openai':
+            if self.model_type == 'OpenAI':
                 self._embeddings = OpenAIEmbeddings(
                     model=self.model_name,
                     openai_api_key=self.api_key
                 )
-            elif self.model_type == 'voyage':
+            elif self.model_type == 'Voyage':
                 self._embeddings = VoyageAIEmbeddings(
                     model=self.model_name,
                     voyage_api_key=self.api_key,
                     truncation=False
                 )
-            elif self.model_type == 'huggingface':
+            elif self.model_type == 'Hugging Face':
                 self._embeddings = HuggingFaceInferenceAPIEmbeddings(
                     model_name=self.model_name,
                     api_key=self.api_key
@@ -40,15 +40,15 @@ class EmbeddingService:
     def get_dimension(self):
         """Get embedding dimension for the selected model."""
         dimensions = {
-            'openai': {
+            'OpenAI': {
                 'text-embedding-3-small': 1536,
                 'text-embedding-3-large': 3072,
             },
-            'voyage': {
+            'Voyage': {
                 'voyage-large-2': 1536,
                 'voyage-large-2-instruct': 1024
             },
-            'huggingface': {
+            'Hugging Face': {
                 'sentence-transformers/all-MiniLM-L6-v2': 384,
                 'mixedbread-ai/mxbai-embed-large-v1': 1024
             }

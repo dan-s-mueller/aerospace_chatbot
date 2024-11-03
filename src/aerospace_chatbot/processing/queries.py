@@ -1,5 +1,6 @@
 """QA model and retrieval logic."""
 
+from pathlib import Path
 from langchain_core.messages import get_buffer_string
 
 from ..core.cache import Dependencies
@@ -12,14 +13,12 @@ class QAModel:
     
     def __init__(self,
                  db_service,
-                 llm_service=None,
+                 llm_service,
                  k=4,
-                 search_type='similarity',
                  namespace=None):
         self.db_service = db_service
         self.llm_service = llm_service
         self.k = k
-        self.search_type = search_type
         self.namespace = namespace
         self._deps = Dependencies()
         self._memory = None
@@ -29,7 +28,6 @@ class QAModel:
         self.sources = None
         self.ai_response = None
         self.query_vectorstore = None
-        
     def query(self, question):
         """Process a query and return answer with sources."""
         # Initialize components if needed
@@ -41,26 +39,16 @@ class QAModel:
             self._define_qa_chain()
             
         # Get conversation history
-        memory_vars = self._memory.load_memory_variables({})
+        self._memory.load_memory_variables({})
         
-        # Get standalone question
-        standalone_question = self._get_standalone_question(
-            question, 
-            memory_vars.get('history', [])
-        )
-        
-        # Retrieve relevant documents
-        docs = self._retriever.get_relevant_documents(standalone_question)
-        
-        # Generate answer using the new chain
-        answer_result = self._qa_chain.invoke({'question': standalone_question})
-        
-        # Update result and sources arrays
+        # Add answer to response, create an array as more prompts come in
+        answer_result = self._qa_chain.invoke({'question': question})
         if self.result is None:
             self.result = [answer_result]
         else:
             self.result.append(answer_result)
 
+        # Add sources to response, create an array as more prompts come in
         answer_sources = [data.metadata for data in self.result[-1]['references']]
         if self.sources is None:
             self.sources = [answer_sources]
@@ -79,57 +67,93 @@ class QAModel:
             {'answer': self.ai_response}
         )
         
-        # If ChromaDB type, upsert query into query database
+        # Upsert query into query database if compatible
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
             self.query_vectorstore.add_documents([self._question_as_doc(question, self.result[-1])])
         
         return {
             'answer': answer_result['answer'],
-            'sources': docs,
-            'standalone_question': standalone_question
+            'sources': answer_sources
         }
-        
     def generate_similar_questions(self, question, n=3):
         """Generate similar questions using the LLM."""
         prompt = GENERATE_SIMILAR_QUESTIONS.format(question=question, n=n)
         response = self.llm_service.get_llm().invoke(prompt)
         questions = [q.strip() for q in response.content.split('\n') if q.strip()]
         return questions[:n]
-        
     def _setup_memory(self):
         """Initialize conversation memory."""
-        ConversationBufferMemory = self._deps.get_core_deps()[0]
+        _, _, _, _, ConversationBufferMemory= self._deps.get_query_deps()
         self._memory = ConversationBufferMemory(
             return_messages=True,
             output_key='answer',
             input_key='question'
         )
-        
     def _setup_retriever(self):
         """Initialize document retriever."""
-        search_kwargs = {
-            'k': self.k,
-            'fetch_k': min(self.k * 4, 100) if self.search_type == 'mmr' else self.k
-        }
-        
-        if self.db_service.db_type == 'pinecone':
-            search_kwargs['filter'] = {"type": {"$ne": "db_metadata"}}
-            
-        vectorstore = self.db_service.initialize_database(
-            index_name=self.index_name,
-            embedding_service=self.embedding_service,
-            namespace=self.namespace
+        search_kwargs = self._process_retriever_args(
+            self.db_service.db_type,  
+            self.k
         )
+
+        # Get the vectorstore directly from db_service
+        vectorstore = self.db_service.vectorstore
+        if not vectorstore:
+            raise ValueError("Database not initialized. Please ensure database is initialized before setting up retriever.")
+
+        if self.db_service.rag_type == 'Standard':
+            self._setup_standard_retriever(vectorstore, search_kwargs)
+        elif self.db_service.rag_type in ['Parent-Child', 'Summary']:
+            self._setup_multivector_retriever(vectorstore, search_kwargs)
+        else:
+            raise NotImplementedError(f"RAG type {self.db_service.rag_type} not supported")
+    def _setup_standard_retriever(self, vectorstore, search_kwargs):
+        """Set up standard retriever based on index type."""
+        if self.db_service.db_type in ['Pinecone', 'ChromaDB']:
+            self._retriever = vectorstore.as_retriever(
+                search_type='similarity',
+                search_kwargs=search_kwargs
+            )
+        elif self.db_service.db_type == 'RAGatouille':
+            self._retriever = vectorstore.as_langchain_retriever(
+                k=search_kwargs['k']
+            )
+        else:
+            raise ValueError(f"Unsupported database type: {self.db_service.db_type}")
+    def _setup_multivector_retriever(self, vectorstore, search_kwargs):
+        """Set up multi-vector retriever for Parent-Child or Summary RAG types."""
+        LocalFileStore = self._deps.get_core_deps()[2]  # Get LocalFileStore from dependencies
+        MultiVectorRetriever = self._deps.get_core_deps()[1]  # Get MultiVectorRetriever from dependencies
         
-        self._retriever = vectorstore.as_retriever(
-            search_type=self.search_type,
+        self.lfs = LocalFileStore(
+            Path(self.local_db_path).resolve() / 'local_file_store' / self.db_service.index_name
+        )
+        self._retriever = MultiVectorRetriever(
+            vectorstore=vectorstore,
+            byte_store=self.lfs,
+            id_key="doc_id",
             search_kwargs=search_kwargs
         )
+    @staticmethod
+    def _process_retriever_args(db_type, k=4):
+        """Process the retriever arguments."""
+        # Set up filter
+        if db_type == 'Pinecone':
+            filter_kwargs = {"type": {"$ne": "db_metadata"}}
+        else:
+            filter_kwargs = None
+
+        # Implement filtering and number of documents to return
+        search_kwargs = {'k': k}
         
+        if filter_kwargs:
+            search_kwargs['filter'] = filter_kwargs
+            
+        return search_kwargs
     def _define_qa_chain(self):
         """Defines the conversational QA chain."""
         # Get dependencies
-        _, itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough= self._deps.get_query_deps()
+        itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _= self._deps.get_query_deps()
         
         # This adds a 'memory' key to the input object
         loaded_memory = RunnablePassthrough.assign(
@@ -161,7 +185,6 @@ class QAModel:
             'references': itemgetter('source_documents')}
         
         self._qa_chain = loaded_memory | standalone_question | retrieved_documents | answer
-        
     def _get_standalone_question(self, question, chat_history):
         """Generate standalone question from conversation context."""
         if not chat_history:
@@ -174,10 +197,9 @@ class QAModel:
         
         response = self.llm_service.get_llm().invoke(prompt)
         return response.content.strip()
-        
     def _combine_documents(self, docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator='\n\n'):
         """Combines a list of documents into a single string using the format_document function."""
-        format_document, _, _, _, _= self._deps.get_query_deps()
+        from langchain.schema import format_document
 
         # Format each document using the format_document function
         doc_strings = [format_document(doc, document_prompt) for doc in docs]

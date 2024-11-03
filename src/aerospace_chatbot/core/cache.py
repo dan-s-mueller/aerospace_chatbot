@@ -77,8 +77,8 @@ class Dependencies:
         from operator import itemgetter
         from langchain_core.output_parsers import StrOutputParser
         from langchain_core.runnables import RunnableLambda, RunnablePassthrough
-        from langchain.schema import format_document
-        return format_document, itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough
+        from langchain.memory import ConversationBufferMemory
+        return itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, ConversationBufferMemory
     
     @staticmethod
     @cache_resource
