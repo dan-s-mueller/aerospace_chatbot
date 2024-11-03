@@ -7,6 +7,11 @@ from .core import (
     load_config,
     get_secrets
 )
+from .processing import (
+    DocumentProcessor, 
+    QAModel,
+    ChunkingResult
+)
 from .services import (
     DatabaseService, 
     EmbeddingService, 
@@ -19,20 +24,15 @@ from .services import (
     CLUSTER_LABEL,
     SUMMARIZE_TEXT
 )
-from .processing import (
-    DocumentProcessor, 
-    QAModel,
-    ChunkingResult
-)
 from .ui import (
     SidebarManager, 
+    setup_page_config,
     display_chat_history, 
     display_sources, 
-    setup_page_config,
     show_connection_status,
-    get_or_create_spotlight_viewer,
     extract_pages_from_pdf,
-    get_pdf
+    get_pdf,
+    get_or_create_spotlight_viewer,
 )
 
 __version__ = "0.0.9"
@@ -66,13 +66,13 @@ __all__ = [
     
     # UI
     'SidebarManager',
-    'display_chat_history',
-    'display_sources',
     'setup_page_config',
+    'display_chat_history', 
+    'display_sources', 
     'show_connection_status',
-    'get_or_create_spotlight_viewer',
     'extract_pages_from_pdf',
-    'get_pdf'
+    'get_pdf',
+    'get_or_create_spotlight_viewer',
 ]
 
 def get_version():

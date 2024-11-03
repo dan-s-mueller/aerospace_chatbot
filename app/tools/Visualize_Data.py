@@ -1,14 +1,9 @@
-import os, sys
+import os
 import streamlit as st
 
-from aerospace_chatbot import (
-    SidebarManager,
-    EmbeddingService,
-    LLMService,
-    DatabaseService,
-    get_or_create_spotlight_viewer,
-    get_secrets
-)
+from aerospace_chatbot.ui import SidebarManager, get_or_create_spotlight_viewer
+from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
+from aerospace_chatbot.core import get_secrets
 
 # Page setup
 st.title('📈 Visualize Data')

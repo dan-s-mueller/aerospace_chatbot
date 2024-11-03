@@ -1,15 +1,10 @@
 import os, sys, time
 import streamlit as st
 
-from aerospace_chatbot import (
-    SidebarManager,
-    DocumentProcessor,
-    EmbeddingService,
-    LLMService,
-    DatabaseService,
-    show_connection_status,
-    get_secrets
-)
+from aerospace_chatbot.ui import SidebarManager, show_connection_status
+from aerospace_chatbot.processing import DocumentProcessor
+from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
+from aerospace_chatbot.core import get_secrets
 
 # Page setup
 st.title('📓 Database Processing')

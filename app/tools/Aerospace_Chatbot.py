@@ -1,19 +1,12 @@
 import streamlit as st
-import os
+import os, time
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
 
-from aerospace_chatbot import (
-    SidebarManager,
-    QAModel,
-    DocumentProcessor,
-    EmbeddingService,
-    LLMService,
-    DatabaseService,
-    display_chat_history,
-    display_sources,
-    get_secrets
-)
+from aerospace_chatbot.ui import SidebarManager, display_chat_history, display_sources
+from aerospace_chatbot.processing import QAModel, DocumentProcessor
+from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
+from aerospace_chatbot.core import get_secrets
 
 def handle_file_upload(sb, secrets):
     """Handle file upload functionality for the chatbot."""

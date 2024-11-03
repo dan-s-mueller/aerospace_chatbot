@@ -27,6 +27,7 @@ def display_chat_history(history, show_metadata = False):
 
 def display_sources(sources, expanded = False):
     """Display reference sources in an expander."""
+    # TODO add back old pdf display functionality
     with st.expander("Sources", expanded=expanded):
         for i, source in enumerate(sources, 1):
             st.markdown(f"**Source {i}:**")
@@ -46,7 +47,73 @@ def show_connection_status(expanded = True, delete_buttons = False):
         # Database Status and Management
         st.markdown("**Database Status:**")
         _display_database_status(delete_buttons)
+@cache_data
+def extract_pages_from_pdf(url, target_page, page_range=5):
+    """Extracts specified pages from a PDF file."""
+    deps = Dependencies()
+    fitz, requests = deps.get_pdf_deps()
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        pdf_data = response.content
 
+        doc = fitz.open("pdf", pdf_data)
+        extracted_doc = fitz.open()
+
+        start_page = max(target_page, 0)
+        end_page = min(target_page + page_range, doc.page_count - 1)
+
+        for i in range(start_page, end_page + 1):
+            extracted_doc.insert_pdf(doc, from_page=i, to_page=i)
+
+        extracted_pdf = extracted_doc.tobytes()
+        extracted_doc.close()
+        doc.close()
+        return extracted_pdf
+
+    except Exception as e:
+        st.error(f"Error processing PDF: {str(e)}")
+        return None
+@cache_data
+def get_pdf(url):
+    """Downloads complete PDF file."""
+    deps = Dependencies()
+    fitz, requests = deps.get_pdf_deps()
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        pdf_data = response.content
+
+        doc = fitz.open("pdf", pdf_data)
+        extracted_pdf = doc.tobytes()
+        doc.close()
+        return extracted_pdf
+
+    except Exception as e:
+        st.error(f"Error downloading PDF: {str(e)}")
+        return None
+def get_or_create_spotlight_viewer(df, port: int = 9000):
+    """Create or get existing Spotlight viewer instance.
+    
+    Args:
+        df: pandas DataFrame containing the data to visualize
+        port: port number to run the viewer on (default: 9000)
+        
+    Returns:
+        Spotlight viewer instance
+    """
+    deps = Dependencies()
+    spotlight = deps.get_spotlight()
+    
+    viewer = spotlight.show(
+        df,
+        port=port,
+        return_viewer=True,
+        open_browser=False
+    )
+    return viewer
 def _display_api_key_status():
     """Display API key status."""
     keys = {
@@ -136,70 +203,3 @@ def _determine_rag_type(index_name):
     elif '-summary-' in index_name or index_name.endswith('-summary'):
         return 'Summary'
     return 'Standard'
-@cache_data
-def extract_pages_from_pdf(url, target_page, page_range=5):
-    """Extracts specified pages from a PDF file."""
-    deps = Dependencies()
-    fitz, requests = deps.get_pdf_deps()
-    
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        pdf_data = response.content
-
-        doc = fitz.open("pdf", pdf_data)
-        extracted_doc = fitz.open()
-
-        start_page = max(target_page, 0)
-        end_page = min(target_page + page_range, doc.page_count - 1)
-
-        for i in range(start_page, end_page + 1):
-            extracted_doc.insert_pdf(doc, from_page=i, to_page=i)
-
-        extracted_pdf = extracted_doc.tobytes()
-        extracted_doc.close()
-        doc.close()
-        return extracted_pdf
-
-    except Exception as e:
-        st.error(f"Error processing PDF: {str(e)}")
-        return None
-@cache_data
-def get_pdf(url):
-    """Downloads complete PDF file."""
-    deps = Dependencies()
-    fitz, requests = deps.get_pdf_deps()
-    
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        pdf_data = response.content
-
-        doc = fitz.open("pdf", pdf_data)
-        extracted_pdf = doc.tobytes()
-        doc.close()
-        return extracted_pdf
-
-    except Exception as e:
-        st.error(f"Error downloading PDF: {str(e)}")
-        return None
-def get_or_create_spotlight_viewer(df, port: int = 9000):
-    """Create or get existing Spotlight viewer instance.
-    
-    Args:
-        df: pandas DataFrame containing the data to visualize
-        port: port number to run the viewer on (default: 9000)
-        
-    Returns:
-        Spotlight viewer instance
-    """
-    deps = Dependencies()
-    spotlight = deps.get_spotlight()
-    
-    viewer = spotlight.show(
-        df,
-        port=port,
-        return_viewer=True,
-        open_browser=False
-    )
-    return viewer
