@@ -1,5 +1,7 @@
 """Document processing and chunking logic."""
 
+import hashlib
+import json
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from langchain_core.documents import Document
@@ -72,8 +74,7 @@ class DocumentProcessor:
             index_name=index_name,
             embedding_service=self.embedding_service,
             rag_type=self.rag_type,
-            namespace=namespace,
-            clear=True
+            namespace=namespace
         )
 
         # Index chunks in batches
@@ -348,3 +349,7 @@ class DocumentProcessor:
                 file_path = lfs_path / str(doc_id)
                 with open(file_path, "w") as f:
                     json.dump({"kwargs": {"page_content": orig_doc.page_content}}, f)
+    @staticmethod
+    def _stable_hash_meta(metadata):
+        """Calculates the stable hash of the given metadata dictionary."""
+        return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()

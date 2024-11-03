@@ -124,7 +124,7 @@ if 'message_id' in st.session_state and st.session_state.message_id > 0:
 if 'user_upload' not in st.session_state:
     st.session_state.user_upload = None
 if 'qa_model_obj' not in st.session_state:
-    st.session_state.qa_model_obj = []
+    st.session_state.qa_model_obj = None
 if 'message_id' not in st.session_state:
     st.session_state.message_id = 0
 if 'messages' not in st.session_state:
@@ -168,62 +168,61 @@ if prompt := st.chat_input('Prompt here'):
             st.session_state.message_id += 1
             st.write(f'*Starting response generation for message: {str(st.session_state.message_id)}*')
             
-            if st.session_state.message_id == 1:
-                # Initialize embedding service
-                embedding_service = EmbeddingService(
-                    model_name=sb['embedding_name'],
-                    model_type=sb['query_model'],
-                    api_key=secrets.get(f"{sb['query_model']}_key")
-                )
-                
-                # Initialize LLM service
-                llm_service = LLMService(
-                    model_name=sb['llm_model'],
-                    model_type=sb['llm_source'],
-                    api_key=secrets.get(f"{sb['llm_source']}_key"),
-                    temperature=sb['model_options']['temperature'],
-                    max_tokens=sb['model_options']['output_level']
-                )
-                
-                # Initialize services, initialie database
-                db_service = DatabaseService(
-                    db_type=sb['index_type'],
-                    local_db_path=os.getenv('LOCAL_DB_PATH')
-                )
-                db_service.initialize_database(
-                    index_name=sb['index_selected'],
-                    embedding_service=embedding_service,
-                    rag_type=sb['rag_type'],
-                    namespace=st.session_state.user_upload
-                )
+            # Initialize embedding service
+            embedding_service = EmbeddingService(
+                model_name=sb['embedding_name'],
+                model_type=sb['query_model'],
+                api_key=secrets.get(f"{sb['query_model']}_key")
+            )
+            
+            # Initialize LLM service
+            llm_service = LLMService(
+                model_name=sb['llm_model'],
+                model_type=sb['llm_source'],
+                api_key=secrets.get(f"{sb['llm_source']}_key"),
+                temperature=sb['model_options']['temperature'],
+                max_tokens=sb['model_options']['output_level']
+            )
+            
+            # Initialize services, initialie database
+            db_service = DatabaseService(
+                db_type=sb['index_type'],
+                local_db_path=os.getenv('LOCAL_DB_PATH')
+            )
+            db_service.initialize_database(
+                index_name=sb['index_selected'],
+                embedding_service=embedding_service,
+                rag_type=sb['rag_type'],
+                namespace=st.session_state.user_upload
+            )
 
-                # Initialize QA model
-                st.session_state.qa_model_obj = QAModel(
-                    db_service=db_service,
-                    llm_service=llm_service,
-                    k=sb['model_options']['k'],
-                    namespace=st.session_state.user_upload
-                )
+            # Initialize QA model
+            st.session_state.qa_model_obj = QAModel(
+                db_service=db_service,
+                llm_service=llm_service,
+                k=sb['model_options']['k'],
+                namespace=st.session_state.user_upload
+            )
 
-                st.write('*Searching vector database, generating prompt...*')
-                result = st.session_state.qa_model_obj.query(prompt)
-                ai_response = st.session_state.qa_model_obj.ai_response
+            st.write('*Searching vector database, generating prompt...*')
+            result = st.session_state.qa_model_obj.query(prompt)
+            ai_response = st.session_state.qa_model_obj.ai_response
 
-                message_placeholder.markdown(ai_response)
-                similar_questions = st.session_state.qa_model_obj.generate_similar_questions(prompt)
-                st.info("**Alternative questions:**\n\n" + "\n".join(similar_questions))
+            message_placeholder.markdown(ai_response)
+            similar_questions = st.session_state.qa_model_obj.generate_similar_questions(prompt)
+            st.info("**Alternative questions:**\n\n" + "\n".join(similar_questions))
 
-                t_delta = time.time() - t_start
-                status.update(
-                    label=':white_check_mark: Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', 
-                    state='complete', 
-                    expanded=False
-                )
-                
-                # Display sources
-                display_sources(st.session_state.qa_model_obj.sources[-1])
+            t_delta = time.time() - t_start
+            status.update(
+                label=':white_check_mark: Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', 
+                state='complete', 
+                expanded=False
+            )
+            
+            # Display sources
+            display_sources(st.session_state.qa_model_obj.sources[-1])
 
-                st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
+            st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
 
 # Add reset button
 if st.button('Restart session'):

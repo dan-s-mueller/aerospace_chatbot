@@ -78,7 +78,8 @@ class Dependencies:
         from langchain_core.output_parsers import StrOutputParser
         from langchain_core.runnables import RunnableLambda, RunnablePassthrough
         from langchain.memory import ConversationBufferMemory
-        return itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, ConversationBufferMemory
+        from langchain_core.messages import get_buffer_string
+        return itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, ConversationBufferMemory, get_buffer_string
     
     @staticmethod
     @cache_resource

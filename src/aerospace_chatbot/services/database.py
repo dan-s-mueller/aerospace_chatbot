@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import os
+
 from ..core.cache import Dependencies, get_cache_decorator
 from ..core.config import ConfigurationError
 from ..services.prompts import CLUSTER_LABEL
@@ -288,3 +289,59 @@ class DatabaseService:
             return {'status': True, 'indexes': [idx.name for idx in indexes]}
         except Exception as e:
             return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
+    def get_retriever(self, k=4):
+        """Get configured retriever for the vectorstore."""
+        search_kwargs = self._process_retriever_args(k)
+
+        if not self.vectorstore:
+            raise ValueError("Database not initialized. Please ensure database is initialized before getting retriever.")
+
+        if self.rag_type == 'Standard':
+            return self._get_standard_retriever(search_kwargs)
+        elif self.rag_type in ['Parent-Child', 'Summary']:
+            return self._get_multivector_retriever(search_kwargs)
+        else:
+            raise NotImplementedError(f"RAG type {self.rag_type} not supported")
+    def _get_standard_retriever(self, search_kwargs):
+        """Get standard retriever based on index type."""
+        if self.db_type in ['Pinecone', 'ChromaDB']:
+            return self.vectorstore.as_retriever(
+                search_type='similarity',
+                search_kwargs=search_kwargs
+            )
+        elif self.db_type == 'RAGatouille':
+            return self.vectorstore.as_langchain_retriever(
+                k=search_kwargs['k']
+            )
+        else:
+            raise ValueError(f"Unsupported database type: {self.db_type}")
+    def _get_multivector_retriever(self, search_kwargs):
+        """Get multi-vector retriever for Parent-Child or Summary RAG types."""
+        LocalFileStore = self._deps.get_core_deps()[2]
+        MultiVectorRetriever = self._deps.get_core_deps()[1]
+        
+        lfs = LocalFileStore(
+            Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name
+        )
+        return MultiVectorRetriever(
+            vectorstore=self.vectorstore,
+            byte_store=lfs,
+            id_key="doc_id",
+            search_kwargs=search_kwargs
+        )
+
+    def _process_retriever_args(self, k=4):
+        """Process the retriever arguments."""
+        # Set up filter
+        if self.db_type == 'Pinecone':
+            filter_kwargs = {"type": {"$ne": "db_metadata"}}
+        else:
+            filter_kwargs = None
+
+        # Implement filtering and number of documents to return
+        search_kwargs = {'k': k}
+        
+        if filter_kwargs:
+            search_kwargs['filter'] = filter_kwargs
+            
+        return search_kwargs
