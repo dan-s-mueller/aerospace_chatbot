@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
+from google.cloud import storage
 
 from ..core.cache import Dependencies
 from ..services.prompts import SUMMARIZE_TEXT
@@ -217,3 +218,49 @@ class DocumentProcessor:
                 metadata=merged_metadata
             ))
         return merged
+
+    @staticmethod
+    def _upload_to_gcs(bucket_name, file_path, local_file_path):
+        """Upload a file to Google Cloud Storage."""
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(file_path)
+        blob.upload_from_filename(local_file_path)
+
+    @staticmethod
+    def list_available_buckets():
+        """Lists all available buckets in the GCS project."""
+        try:
+            # Initialize the GCS client
+            storage_client = storage.Client()
+            
+            # List all buckets
+            buckets = [bucket.name for bucket in storage_client.list_buckets()]
+            
+            return buckets
+        except Exception as e:
+            raise Exception(f"Error accessing GCS buckets: {str(e)}")
+
+    @staticmethod
+    def list_bucket_pdfs(bucket_name: str):
+        """Lists all PDF files in a Google Cloud Storage bucket."""
+        try:
+            # Initialize the GCS client
+            storage_client = storage.Client()
+            
+            # Get the bucket
+            bucket = storage_client.bucket(bucket_name)
+            
+            # List all blobs (files) in the bucket
+            blobs = bucket.list_blobs()
+            
+            # Filter for PDF files and create full GCS paths
+            pdf_files = [
+                f"gs://{bucket_name}/{blob.name}" 
+                for blob in blobs 
+                if blob.name.lower().endswith('.pdf')
+            ]
+            
+            return pdf_files
+        except Exception as e:
+            raise Exception(f"Error accessing GCS bucket: {str(e)}")

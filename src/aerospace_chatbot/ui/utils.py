@@ -142,3 +142,25 @@ def get_pdf(url):
     except Exception as e:
         st.error(f"Error downloading PDF: {str(e)}")
         return None
+
+@cache_data
+def get_or_create_spotlight_viewer(df, port: int = 9000):
+    """Create or get existing Spotlight viewer instance.
+    
+    Args:
+        df: pandas DataFrame containing the data to visualize
+        port: port number to run the viewer on (default: 9000)
+        
+    Returns:
+        Spotlight viewer instance
+    """
+    deps = Dependencies()
+    spotlight = deps.get_spotlight()
+    
+    viewer = spotlight.show(
+        df,
+        port=port,
+        return_viewer=True,
+        open_browser=False
+    )
+    return viewer

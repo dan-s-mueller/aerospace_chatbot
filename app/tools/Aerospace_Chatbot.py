@@ -16,7 +16,7 @@ from aerospace_chatbot import (
 )
 
 # At the top of the file, after imports
-setup_page_config(title="Aerospace Chatbot", layout="wide")
+setup_page_config(title="🚀 Aerospace Chatbot", layout="wide")
 
 def handle_file_upload(sb, secrets):
     """Handle file upload functionality for the chatbot."""
@@ -182,70 +182,57 @@ if prompt := st.chat_input('Prompt here'):
         message_placeholder = st.empty()
 
         with st.status('Generating response...') as status:
-            t_start=time.time()
-
+            t_start = time.time()
             st.session_state.message_id += 1
             st.write(f'*Starting response generation for message: {str(st.session_state.message_id)}*')
             
-            if st.session_state.message_id==1:  # Initialize chat
-                query_model = admin.get_query_model(sb, secrets)    # Set query model
-                llm=admin.set_llm(sb,secrets,type='prompt') # Define LLM
+            if st.session_state.message_id == 1:  # Initialize chat
+                # Initialize services
+                db_service = DatabaseService(
+                    db_type=sb['index_type'].lower(),
+                    local_db_path=os.getenv('LOCAL_DB_PATH')
+                )
+                
+                embedding_service = EmbeddingService(
+                    model_name=sb['embedding_name'],
+                    model_type=sb['query_model'].lower(),
+                    api_key=secrets.get(f"{sb['query_model'].lower()}_key")
+                )
+                
+                llm_service = LLMService(
+                    model_name=sb['llm_model'],
+                    model_type=sb['llm_source'].lower(),
+                    api_key=secrets.get(f"{sb['llm_source'].lower()}_key"),
+                    temperature=sb['model_options']['temperature'],
+                    max_tokens=sb['model_options']['output_level']
+                )
+                
+                # Initialize QA model
+                st.session_state.qa_model_obj = QAModel(
+                    db_service=db_service,
+                    llm_service=llm_service,
+                    k=sb['model_options']['k'],
+                    search_type=sb['model_options'].get('search_type'),
+                    namespace=st.session_state.user_upload
+                )
 
-                # Initialize QA model object
-                if 'search_type' in sb['model_options']: 
-                    search_type=sb['model_options']['search_type']
-                else:
-                    search_type=None
-                st.session_state.qa_model_obj=queries.QA_Model(sb['index_type'],
-                                                               sb['index_selected'],
-                                                               query_model,
-                                                               llm,
-                                                               rag_type=sb['rag_type'],
-                                                               k=sb['model_options']['k'],
-                                                               search_type=search_type,
-                                                               local_db_path=paths['db_folder_path'],
-                                                               namespace=st.session_state.user_upload,
-                                                               reset_query_db=reset_query_db)
-                # reset_query_db.empty()  # Remove this option after initialization
-            if st.session_state.message_id>1:   # Chat after first message and initialization
-                # Update LLM
-                llm=admin.set_llm(sb,secrets,type='prompt')
-                st.session_state.qa_model_obj.update_model(llm)
-            
             st.write('*Searching vector database, generating prompt...*')
-            st.write(f"*Query added to query database: {sb['index_selected']+'-queries'}*")
-            st.session_state.qa_model_obj.query_docs(prompt)
-            ai_response=st.session_state.qa_model_obj.ai_response
+            result = st.session_state.qa_model_obj.query(prompt)
+            ai_response = st.session_state.qa_model_obj.ai_response
 
             message_placeholder.markdown(ai_response)
-            st.info("**Alternative questions:** \n\n\n"+
-                     st.session_state.qa_model_obj.generate_alternative_questions(prompt))
+            similar_questions = st.session_state.qa_model_obj.generate_similar_questions(prompt)
+            st.info("**Alternative questions:**\n\n" + "\n".join(similar_questions))
 
-            t_delta=time.time() - t_start
-            status.update(label=':white_check_mark: Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)
+            t_delta = time.time() - t_start
+            status.update(
+                label=':white_check_mark: Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', 
+                state='complete', 
+                expanded=False
+            )
             
-        # Create a dropdown box with hyperlinks to PDFs and their pages
-        with st.container():
-            with st.spinner('Bringing you source documents...'):
-                st.write(":notebook: Source Documents")
-                for source in st.session_state.qa_model_obj.sources[-1]:
-                    pdf_source = source.get('source')
-                    page = source.get('page')
-                    
-                    if pdf_source and page is not None:
-                        selected_url = f"https://storage.googleapis.com/aerospace_mechanisms_chatbot_demo/{pdf_source}"
-                        st.session_state.pdf_urls.append(selected_url)
-                        
-                        with st.expander(f"{pdf_source} - Page {page}"):
-                            tab1, tab2 = st.tabs(["Context View", "Full Document"])
-                            try:
-                                extracted_pdf = extract_pages_from_pdf(selected_url, page)
-                                with tab1:
-                                    pdf_viewer(extracted_pdf, width=1000, height=1200, render_text=True)
-                                with tab2:
-                                    st.markdown(f"[Download Full Document]({selected_url})")
-                            except Exception as e:
-                                st.warning("Unable to load PDF preview. Please use the download link.")
+        # Display sources
+        display_sources(st.session_state.qa_model_obj.sources[-1])
 
         st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
 

@@ -1,17 +1,25 @@
 import os, sys, time
-import glob
 import streamlit as st
 
-sys.path.append('../src/aerospace_chatbot')   # Add package to path
-import admin, data_processing
+from aerospace_chatbot import (
+    SidebarManager,
+    DocumentProcessor,
+    EmbeddingService,
+    LLMService,
+    DatabaseService,
+    setup_page_config,
+    show_connection_status
+)
 
 # Page setup
+setup_page_config(title="📓 Database Processing", layout="wide")
 st.title('📓 Database Processing')
+
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 
 # Initialize SidebarManager
-sidebar_manager = admin.SidebarManager(st.session_state.config_file)
+sidebar_manager = SidebarManager(st.session_state.config_file)
 
 # Get paths, sidebar values, and secrets
 paths = sidebar_manager.get_paths(home_dir)
@@ -20,17 +28,21 @@ secrets = sidebar_manager.get_secrets()
 
 # Page setup
 st.subheader('Connection status and vector database cleanup')
-admin.st_connection_status_expander(expanded=False,delete_buttons=True)
+show_connection_status(expanded=False, delete_buttons=True)
 
 # Add section for creating and loading into a vector database
 st.subheader('Create and load into a vector database')
 
-# Set query model
-query_model = admin.get_query_model(sb, secrets)
+# Initialize services
+embedding_service = EmbeddingService(
+    model_name=sb['embedding_name'],
+    model_type=sb['query_model'].lower(),
+    api_key=secrets.get(f"{sb['query_model'].lower()}_key")
+)
 
 # Find docs
 try:
-    buckets = data_processing.list_available_buckets()
+    buckets = DocumentProcessor.list_available_buckets()
     
     if not buckets:
         st.warning("No GCS buckets found. Please ensure you have access to at least one bucket in your GCS project.")
@@ -40,12 +52,11 @@ try:
                              options=buckets,
                              help='Select a Google Cloud Storage bucket containing PDFs')
 
-    docs = data_processing.list_bucket_pdfs(bucket_name)
+    docs = DocumentProcessor.list_bucket_pdfs(bucket_name)
     markdown_text = f"**Number of PDFs found:** {len(docs)}\n"
     if len(docs) > 0:
         markdown_text += "**PDFs found:**\n"
         for doc in docs:
-            # Get just the filename from the GCS path
             filename = doc.split('/')[-1]
             markdown_text += f"- `{filename}`\n"
     else:
@@ -56,7 +67,7 @@ except Exception as e:
     st.error(f'Error accessing GCS: {str(e)}. Please check your credentials and permissions. You may need to log into your Google Cloud account (`gcloud auth login`), or access to the bucket.')
 
 # Set database name
-index_appendix=st.text_input('Appendix for index name','mch')
+index_appendix = st.text_input('Appendix for index name', 'mch')
 index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
 
 # Add an expandable box for options
@@ -71,16 +82,13 @@ with st.expander("Options",expanded=True):
     # Merge pages before processing
     merge_pages=st.checkbox('Merge pages before processing?',value=True,
                             help='If checked, pages will be merged before processing.')
-    if merge_pages:
-        n_merge_pages=st.number_input('Number of pages to merge', min_value=2, step=1, value=2, 
-                                        help='''Number of pages to merge into a single document. 
-                                        This is done before chunking occurs. 
-                                        If zero, each page is processed independently before chunking.''')
-    else:
-        n_merge_pages=None
+    n_merge_pages=st.number_input('Number of pages to merge', min_value=2, step=1, value=2, 
+                                    help='''Number of pages to merge into a single document. 
+                                    This is done before chunking occurs. 
+                                    If zero, each page is processed independently before chunking.''') if merge_pages else None
     
     # For each rag_type, set chunk parameters
-    if sb['rag_type']!='Summary':
+    if sb['rag_type'] != 'Summary':
         if sb['rag_type']=='Parent-Child':
             st.info('''
                     Chunk method applies to parent document. Child documents are default split into 4 smaller chunks.
@@ -98,7 +106,7 @@ with st.expander("Options",expanded=True):
             chunk_overlap=None
         else:
             raise NotImplementedError
-    elif sb['rag_type']=='Summary':
+    else:
         chunk_method=None
         chunk_size=None
         chunk_overlap=None
@@ -106,61 +114,52 @@ with st.expander("Options",expanded=True):
         sb['model_options']['temperature'] = st.slider('Summary model remperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
         sb['model_options']['output_level'] = st.number_input('Summary model max output tokens', min_value=50, step=10, value=4000,
                                             help='Max output tokens for LLM. Concise: 50, Verbose: >1000. Limit depends on model.')
-    else:  
-        raise NotImplementedError
-    
-    # # Json export
-    # export_json = st.checkbox('Export jsonl?', value=False,help='If checked, a jsonl file will be generated when you load docs to vector database. No embeddeng data will be saved.')
-    # if export_json:
-    #     json_file=st.text_input('Jsonl file',os.path.join(data_folder,f'{index_appendix}_data-{chunk_size}-{chunk_overlap}.jsonl'))
-    #     json_file=os.path.join(paths['base_folder_path'],json_file)
-    # else:
-    #     json_file=None
-    
 
-# Check the index name, give error before running if it is invalid
-try:
-    # Set LLM if relevant
-    if sb['rag_type']=='Summary':
-        llm=admin.set_llm(sb,secrets,type='rag')
-        index_name=data_processing.db_name(sb['index_type'],
-                                           sb['rag_type'],
-                                           index_name,
-                                           model_name=llm.model_name,
-                                           n_merge_pages=n_merge_pages,
-                                           chunk_size=chunk_size,
-                                           chunk_overlap=chunk_overlap)
-    else:
-        llm=None
-        index_name=data_processing.db_name(sb['index_type'],
-                                           sb['rag_type'],
-                                           index_name,
-                                           n_merge_pages=n_merge_pages,
-                                           chunk_size=chunk_size,
-                                           chunk_overlap=chunk_overlap)
-    st.markdown(f'Index name: `{index_name}`')
-except ValueError as e:
-    st.warning(str(e))
-    st.stop()
+# Initialize services for document processing
+db_service = DatabaseService(
+    db_type=sb['index_type'].lower(),
+    local_db_path=paths['db_folder_path']
+)
+
+if sb['rag_type'] == 'Summary':
+    llm_service = LLMService(
+        model_name=sb['rag_llm_model'],
+        model_type=sb['rag_llm_source'].lower(),
+        api_key=secrets.get(f"{sb['rag_llm_source'].lower()}_key"),
+        temperature=sb['model_options']['temperature'],
+        max_tokens=sb['model_options']['output_level']
+    )
+else:
+    llm_service = None
+
+doc_processor = DocumentProcessor(
+    db_service=db_service,
+    embedding_service=embedding_service
+)
 
 # Add a button to run the function
 if st.button('Load docs into vector database'):
-    start_time = time.time()  # Start the timer
-
-    data_processing.load_docs(sb['index_type'],
-                        docs,
-                        query_model,
-                        rag_type=sb['rag_type'],
-                        index_name=index_name,
-                        n_merge_pages=n_merge_pages,
-                        chunk_method=chunk_method,
-                        chunk_size=chunk_size,
-                        chunk_overlap=chunk_overlap,    
-                        clear=clear_database,
-                        batch_size=batch_size,
-                        local_db_path=paths['db_folder_path'],
-                        llm=llm,
-                        show_progress=True)
-    end_time = time.time()  # Stop the timer
-    elapsed_time = end_time - start_time 
-    st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
+    start_time = time.time()
+    
+    try:
+        # Process documents
+        chunking_result = doc_processor.process_documents(
+            documents=docs,
+            rag_type=sb['rag_type'],
+            merge_pages=n_merge_pages if merge_pages else 1
+        )
+        
+        # Index documents
+        doc_processor.index_documents(
+            index_name=index_name,
+            chunking_result=chunking_result,
+            clear=clear_database,
+            batch_size=batch_size
+        )
+        
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
+        
+    except Exception as e:
+        st.error(f"Error processing documents: {str(e)}")

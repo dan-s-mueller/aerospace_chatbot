@@ -1,6 +1,6 @@
 """Document and query processing functionality."""
 
-from .documents import DocumentProcessor
+from .documents import DocumentProcessor, ChunkingResult
 from .queries import QAModel
 
-__all__ = ['DocumentProcessor', 'QAModel']
+__all__ = ['DocumentProcessor', 'ChunkingResult', 'QAModel']
