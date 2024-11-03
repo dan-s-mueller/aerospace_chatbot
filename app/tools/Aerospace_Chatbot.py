@@ -1,5 +1,5 @@
-import os, sys, time, ast
 import streamlit as st
+import os, sys, time, ast
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
 
@@ -14,9 +14,6 @@ from aerospace_chatbot import (
     display_chat_history,
     display_sources
 )
-
-# At the top of the file, after imports
-setup_page_config(title="🚀 Aerospace Chatbot", layout="wide")
 
 def handle_file_upload(sb, secrets):
     """Handle file upload functionality for the chatbot."""

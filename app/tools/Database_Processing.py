@@ -12,7 +12,7 @@ from aerospace_chatbot import (
 )
 
 # Page setup
-setup_page_config(title="📓 Database Processing", layout="wide")
+# setup_page_config(title="📓 Database Processing", layout="wide")
 st.title('📓 Database Processing')
 
 current_directory = os.path.dirname(os.path.abspath(__file__))

@@ -13,7 +13,7 @@ from aerospace_chatbot import (
 )
 
 # Page setup
-setup_page_config(title="📈 Visualize Data", layout="wide")
+# setup_page_config(title="📈 Visualize Data", layout="wide")
 st.title('📈 Visualize Data')
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
