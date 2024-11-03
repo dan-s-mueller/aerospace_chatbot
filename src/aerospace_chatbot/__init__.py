@@ -1,11 +1,11 @@
 from .core import (
     Dependencies, 
-    load_config, 
+    cache_resource,
+    ConfigurationError,
     get_cache_decorator, 
     get_cache_data_decorator,
-    ConfigurationError,
-    ensure_paths,
-    cache_resource
+    load_config,
+    get_secrets
 )
 from .services import (
     DatabaseService, 
@@ -39,13 +39,13 @@ __version__ = "0.0.9"
 
 __all__ = [
     # Core
-    'Dependencies',
-    'load_config',
-    'get_cache_decorator',
-    'get_cache_data_decorator',
-    'ConfigurationError',
-    'ensure_paths',
+    'Dependencies', 
     'cache_resource',
+    'ConfigurationError',
+    'get_cache_decorator', 
+    'get_cache_data_decorator',
+    'load_config',
+    'get_secrets',
     
     # Services
     'DatabaseService',

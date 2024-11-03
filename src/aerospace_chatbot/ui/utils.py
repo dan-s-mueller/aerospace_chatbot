@@ -1,21 +1,11 @@
 """UI utility functions."""
 
 import streamlit as st
-from typing import List, Dict
 import os
 
-from ..core.cache import Dependencies
+from ..core.cache import Dependencies, get_cache_data_decorator
+from ..services.database import DatabaseService
 
-def get_cache_data_decorator():
-    """Returns appropriate cache_data decorator based on environment"""
-    try:
-        import streamlit as st
-        return st.cache_data
-    except:
-        # Return no-op decorator when not in Streamlit
-        return lambda *args, **kwargs: (lambda func: func)
-
-# Replace @st.cache_data with dynamic decorator
 cache_data = get_cache_data_decorator()
 
 def setup_page_config(title: str = "Aerospace Chatbot", layout: str = "wide"):
@@ -26,7 +16,7 @@ def setup_page_config(title: str = "Aerospace Chatbot", layout: str = "wide"):
         page_icon="🚀"
     )
 
-def display_chat_history(history: List[Dict], show_metadata: bool = False):
+def display_chat_history(history, show_metadata = False):
     """Display chat history with optional metadata."""
     for msg in history:
         with st.chat_message(msg["role"]):
@@ -35,7 +25,7 @@ def display_chat_history(history: List[Dict], show_metadata: bool = False):
                 with st.expander("Message Metadata"):
                     st.json(msg["metadata"])
 
-def display_sources(sources: List[Dict], expanded: bool = False):
+def display_sources(sources, expanded = False):
     """Display reference sources in an expander."""
     with st.expander("Sources", expanded=expanded):
         for i, source in enumerate(sources, 1):
@@ -46,21 +36,16 @@ def display_sources(sources: List[Dict], expanded: bool = False):
                 st.markdown(f"- **URL:** [{source['url']}]({source['url']})")
             st.markdown("---")
 
-@cache_data
-def show_connection_status(expanded: bool = True):
-    """Display connection status for various services."""
+def show_connection_status(expanded = True, delete_buttons = False):
+    """Display connection status for various services with optional delete functionality. """
     with st.expander("Connection Status", expanded=expanded):
         # API Keys Status
         st.markdown("**API Keys Status:**")
         _display_api_key_status()
         
-        # Database Status
+        # Database Status and Management
         st.markdown("**Database Status:**")
-        _display_database_status()
-        
-        # Model Status
-        st.markdown("**Model Status:**")
-        _display_model_status()
+        _display_database_status(delete_buttons)
 
 def _display_api_key_status():
     """Display API key status."""
@@ -72,28 +57,85 @@ def _display_api_key_status():
         'Hugging Face API Key': os.getenv('HUGGINGFACEHUB_API_TOKEN')
     }
     
-    for name, key in keys.items():
-        status = "✅" if key else "❌"
-        st.markdown(f"- {name}: {status}")
+    markdown_str = "\n".join([f"- {name}: {'✅' if key else '❌'}" for name, key in keys.items()])
+    st.markdown(markdown_str)
 
-@cache_data
-def _display_database_status():
-    """Display database connection status."""
-    from ..services.database import DatabaseService
+def _display_database_status(delete_buttons = False):
+    """Display database status and management options."""
+    # Get local_db_path from environment
+    local_db_path = os.getenv('LOCAL_DB_PATH')
+    if not local_db_path:
+        st.error("Local database path not set")
+        return
+
+    # Initialize database services for each type
+    db_services = {
+        'Pinecone': DatabaseService('Pinecone', local_db_path),
+        'ChromaDB': DatabaseService('ChromaDB', local_db_path),
+        'RAGatouille': DatabaseService('RAGatouille', local_db_path)
+    }
     
-    db_service = DatabaseService()
-    status = db_service.check_connection()
-    st.markdown(f"- Database Connection: {'✅' if status else '❌'}")
+    # Show Pinecone status
+    pinecone_status = db_services['Pinecone'].get_pinecone_status()
+    st.markdown("**Pinecone Indexes:**")
+    if pinecone_status['status']:
+        for index in pinecone_status['indexes']:
+            st.markdown(f"- `{index}` ✅")
+            if delete_buttons:
+                _handle_index_deletion('Pinecone', index, db_services['Pinecone'])
+    else:
+        st.markdown(f"- {pinecone_status['message']} ❌")
 
-@cache_data
-def _display_model_status():
-    """Display model availability status."""
-    from ..services.llm import LLMService
+    # Show ChromaDB status
+    chroma_status = db_services['ChromaDB'].get_chroma_status()
+    st.markdown("**ChromaDB Collections:**")
+    if chroma_status['status']:
+        for collection in chroma_status['collections']:
+            st.markdown(f"- `{collection.name}` ✅")
+            if delete_buttons:
+                _handle_index_deletion('ChromaDB', collection.name, db_services['ChromaDB'])
+    else:
+        st.markdown(f"- {chroma_status['message']} ❌")
+
+    # Show RAGatouille status
+    rag_status = db_services['RAGatouille'].get_ragatouille_status()
+    st.markdown("**RAGatouille Indexes:**")
+    if rag_status['status']:
+        for index in rag_status['indexes']:
+            st.markdown(f"- `{index}` ✅")
+            if delete_buttons:
+                _handle_index_deletion('RAGatouille', index, db_services['RAGatouille'])
+    else:
+        st.markdown(f"- {rag_status['message']} ❌")
+
+    # Show database path
+    st.markdown(f"**Local database path:** `{local_db_path}`")
+
+def _handle_index_deletion(db_type, index_name, db_service):
+    """Handle deletion of database indexes."""
+    if st.button(f'Delete {index_name}', help='This is permanent!'):
+        try:
+            rag_type = _determine_rag_type(index_name)
+            db_service.delete_index(db_type, index_name, rag_type)
+            st.success(f"Successfully deleted {index_name}")
+            st.rerun()  # Refresh the page to show updated status
+        except Exception as e:
+            st.error(f"Error deleting index: {str(e)}")
+
+def _determine_rag_type(index_name):
+    """Determine RAG type from index name.
     
-    llm_service = LLMService()
-    status = llm_service.check_availability()
-    st.markdown(f"- Model Availability: {'✅' if status else '❌'}")
-
+    Args:
+        index_name: Name of the index
+        
+    Returns:
+        RAG type ('Parent-Child', 'Summary', or 'Standard')
+    """
+    if index_name.endswith('-parent-child'):
+        return 'Parent-Child'
+    elif '-summary-' in index_name or index_name.endswith('-summary'):
+        return 'Summary'
+    return 'Standard'
 @cache_data
 def extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
@@ -122,7 +164,6 @@ def extract_pages_from_pdf(url, target_page, page_range=5):
     except Exception as e:
         st.error(f"Error processing PDF: {str(e)}")
         return None
-
 @cache_data
 def get_pdf(url):
     """Downloads complete PDF file."""
@@ -142,8 +183,6 @@ def get_pdf(url):
     except Exception as e:
         st.error(f"Error downloading PDF: {str(e)}")
         return None
-
-@cache_data
 def get_or_create_spotlight_viewer(df, port: int = 9000):
     """Create or get existing Spotlight viewer instance.
     

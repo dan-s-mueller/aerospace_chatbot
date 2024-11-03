@@ -1,25 +1,21 @@
 """Admin interface components."""
 
 import streamlit as st
-from typing import Dict, Optional
-from pathlib import Path
+import os
 
 from ..core.cache import Dependencies
 from ..core.config import load_config, ConfigurationError
 from ..services.database import DatabaseService
-from ..services.embeddings import EmbeddingService
-from ..services.llm import LLMService
 
 class SidebarManager:
     """Manages the creation, state, and layout of the Streamlit sidebar."""
     
     def __init__(self, config_file):
         self._config_file = config_file
-        self._config = None
+        self._config = load_config(self._config_file)
         self._deps = Dependencies()
         self.sb_out = {}
         self._check_local_db_path()
-        self._load_config()
         self.initialize_session_state()
         
     def initialize_session_state(self):
@@ -61,19 +57,49 @@ class SidebarManager:
             self._render_vector_database()
             self._render_embeddings()
             self._render_secret_keys()
-
+            return self.sb_out
         except ConfigurationError as e:
             st.error(f"Configuration error: {e}")
             st.stop()
-            
-        return self.sb_out
         
+    def _ensure_dependencies(self):
+        """Pre-initialize all required dependencies before rendering GUI"""
+        # Handle core dependencies first
+        if 'index_type' not in self.sb_out:
+            # Get first database name from the list
+            self.sb_out['index_type'] = self._config['databases'][0]['name']    # Default to first database type in config
+        
+        if 'embedding_name' not in self.sb_out:
+            # Find the database config by name
+            db_config = next(db for db in self._config['databases'] if db['name'] == self.sb_out['index_type'])
+            query_model = db_config['embedding_models'][0]    # Default to first embedding model in config
+            self.sb_out['query_model'] = query_model
+            
+            if self.sb_out['index_type'] == 'RAGatouille':
+                self.sb_out['embedding_name'] = query_model
+            else:
+                # Find the embedding config by name
+                embedding_config = next(e for e in self._config['embeddings'] if e['name'] == query_model)
+                self.sb_out['embedding_name'] = embedding_config['embedding_models'][0]  # Default to first embedding model in config
+        
+        if 'rag_type' not in self.sb_out:
+            self.sb_out['rag_type'] = (
+                'Standard' if self.sb_out['index_type'] == 'RAGatouille'
+                else self._config['rag_types'][0]
+            )
     def _render_index_selection(self):
         """Render index selection section."""
         st.sidebar.title('Index Selected')
         
+        # Initialize database service
+        db_service = DatabaseService(self.sb_out['index_type'], os.getenv('LOCAL_DB_PATH'))
+        
         # Get available indexes based on current settings
-        available_indexes = self._get_available_indexes()
+        available_indexes = db_service.get_available_indexes(
+            self.sb_out['index_type'],
+            self.sb_out['embedding_name'],
+            self.sb_out['rag_type']
+        )
         
         if not available_indexes:
             st.warning('No compatible collections found.')
@@ -90,14 +116,16 @@ class SidebarManager:
         """Render LLM selection section."""
         st.sidebar.title('Language Model')
         
-        llm_sources = self._config['llms'].keys()
+        llm_sources = [llm['name'] for llm in self._config['llms']]
         self.sb_out['llm_source'] = st.sidebar.selectbox(
             'LLM Provider',
             llm_sources,
             disabled=st.session_state.llm_source_disabled
         )
         
-        models = self._config['llms'][self.sb_out['llm_source']]['models']
+        # Find the LLM config by name
+        llm_config = next(llm for llm in self._config['llms'] if llm['name'] == self.sb_out['llm_source'])
+        models = llm_config.get('models', [])  # Use get() in case 'models' key doesn't exist
         self.sb_out['llm_model'] = st.sidebar.selectbox(
             'Model',
             models,
@@ -192,9 +220,13 @@ class SidebarManager:
     def _render_vector_database(self):
         """Render vector database section."""
         st.sidebar.title('Vector Database Type')
+        
+        # Get list of database names from the config list
+        database_names = [db['name'] for db in self._config['databases']]
+        
         self.sb_out['index_type'] = st.sidebar.selectbox(
             'Index type',
-            list(self._config['databases'].keys()),
+            database_names,
             disabled=st.session_state.index_type_disabled,
             help='Select the type of index to use.'
         )
@@ -204,10 +236,13 @@ class SidebarManager:
         st.sidebar.title('Embeddings', 
                         help='See embedding leaderboard here for performance overview: https://huggingface.co/spaces/mteb/leaderboard')
         
+        # Find the database config for the selected index type
+        db_config = next(db for db in self._config['databases'] if db['name'] == self.sb_out['index_type'])
+        
         if self.sb_out['index_type'] == 'RAGatouille':
             self.sb_out['query_model'] = st.sidebar.selectbox(
                 'Hugging face rag models',
-                self._config['databases'][self.sb_out['index_type']]['embedding_models'],
+                db_config['embedding_models'],
                 disabled=st.session_state.query_model_disabled,
                 help="Models listed are compatible with the selected index type."
             )
@@ -215,13 +250,17 @@ class SidebarManager:
         else:
             self.sb_out['query_model'] = st.sidebar.selectbox(
                 'Embedding model family',
-                self._config['databases'][self.sb_out['index_type']]['embedding_models'],
+                db_config['embedding_models'],
                 disabled=st.session_state.query_model_disabled,
                 help="Model provider."
             )
+            
+            # Find the embedding config for the selected model
+            embedding_config = next(e for e in self._config['embeddings'] if e['name'] == self.sb_out['query_model'])
+            
             self.sb_out['embedding_name'] = st.sidebar.selectbox(
                 'Embedding model',
-                self._config['embeddings'][self.sb_out['query_model']]['embedding_models'],
+                embedding_config['embedding_models'],
                 disabled=st.session_state.embedding_name_disabled,
                 help="Models listed are compatible with the selected index type."
             )
@@ -284,3 +323,18 @@ class SidebarManager:
                 disabled=st.session_state.hf_key_disabled,
                 help='Hugging Face API Key: https://huggingface.co/settings/tokens'
             )
+    def _check_local_db_path(self):
+        """Check and set local database path if not already set"""
+        if not os.environ.get('LOCAL_DB_PATH'):
+            local_db_path_input = st.empty()
+            warn_db_path = st.warning('Local Database Path is required to initialize. Use an absolute path.')
+            local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. chroma).')
+            
+            if local_db_path:
+                os.environ['LOCAL_DB_PATH'] = local_db_path
+            else:
+                st.stop()
+                
+            # Clean up UI elements
+            local_db_path_input.empty()
+            warn_db_path.empty()

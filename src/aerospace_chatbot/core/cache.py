@@ -1,8 +1,5 @@
 """Centralized dependency management and caching."""
 
-from functools import lru_cache
-import streamlit as st
-
 def get_cache_decorator():
     """Returns appropriate cache decorator based on environment"""
     try:
@@ -14,6 +11,18 @@ def get_cache_decorator():
 
 # Replace @st.cache_resource with dynamic decorator
 cache_resource = get_cache_decorator()
+
+def get_cache_data_decorator():
+    """Returns appropriate cache_data decorator based on environment"""
+    try:
+        import streamlit as st
+        return st.cache_data
+    except:
+        # Return no-op decorator when not in Streamlit
+        return lambda *args, **kwargs: (lambda func: func)
+
+# Replace @st.cache_data with dynamic decorator
+cache_data = get_cache_data_decorator()
 
 class Dependencies:
     """Centralized dependency management with lazy loading."""

@@ -1,5 +1,5 @@
 import streamlit as st
-import os, sys, time, ast
+import os
 from streamlit_pdf_viewer import pdf_viewer
 import tempfile
 
@@ -10,9 +10,9 @@ from aerospace_chatbot import (
     EmbeddingService,
     LLMService,
     DatabaseService,
-    setup_page_config,
     display_chat_history,
-    display_sources
+    display_sources,
+    get_secrets
 )
 
 def handle_file_upload(sb, secrets):
@@ -120,11 +120,8 @@ home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 
 # Initialize SidebarManager
 sidebar_manager = SidebarManager(st.session_state.config_file)
-
-# Get paths, sidebar values, and secrets
-paths = sidebar_manager.get_paths(home_dir)
 sb = sidebar_manager.render_sidebar()
-secrets = sidebar_manager.get_secrets()
+secrets = get_secrets()
 
 # Disable sidebar elements after first message
 if 'message_id' in st.session_state and st.session_state.message_id > 0:

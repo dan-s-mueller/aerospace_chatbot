@@ -1,9 +1,11 @@
 """Configuration management and environment setup."""
 
-import os
-import json
-from pathlib import Path
+import os, json
+from dotenv import load_dotenv, find_dotenv
 
+class ConfigurationError(Exception):
+    """Raised when there are configuration related errors."""
+    pass
 def get_cache_decorator():
     """Returns appropriate cache decorator based on environment."""
     try:
@@ -21,18 +23,11 @@ def get_cache_data_decorator():
     except ImportError:
         # Return no-op decorator when not in Streamlit
         return lambda *args, **kwargs: (lambda func: func)
-
-class ConfigurationError(Exception):
-    """Raised when there are configuration related errors."""
-    pass
-
 @get_cache_data_decorator()
-def load_config(config_path = None):
+def load_config(config_path):
     """Load configuration from file with caching. """
-    if config_path is None:
-        config_path = os.getenv('AEROSPACE_CHATBOT_CONFIG_PATH')
-        if not config_path:
-            raise ConfigurationError("No config path specified")
+    if not os.path.exists(config_path):
+        raise ConfigurationError(f"Config file not found: {config_path}")
     
     try:
         with open(config_path) as f:
@@ -48,17 +43,13 @@ def load_config(config_path = None):
         
     except Exception as e:
         raise ConfigurationError(f"Failed to load config: {str(e)}")
-
-def ensure_paths():
-    """Ensure required application paths exist."""
-    required_paths = {
-        'LOCAL_DB_PATH': os.getenv('LOCAL_DB_PATH'),
-        'CACHE_DIR': os.getenv('CACHE_DIR', 'cache'),
+def get_secrets():
+    """Load and return secrets from environment"""
+    load_dotenv(find_dotenv())
+    return {
+        'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
+        'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY'),
+        'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
+        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY'),
+        'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY')
     }
-    
-    for name, path in required_paths.items():
-        if not path:
-            raise ConfigurationError(f"Missing required path: {name}")
-        
-        path = Path(path)
-        path.mkdir(parents=True, exist_ok=True)

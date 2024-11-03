@@ -3,29 +3,22 @@ import streamlit as st
 
 from aerospace_chatbot import (
     SidebarManager,
-    DocumentProcessor,
     EmbeddingService,
     LLMService,
     DatabaseService,
-    setup_page_config,
-    show_connection_status,
-    get_or_create_spotlight_viewer
+    get_or_create_spotlight_viewer,
+    get_secrets
 )
 
 # Page setup
-# setup_page_config(title="📈 Visualize Data", layout="wide")
 st.title('📈 Visualize Data')
-
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 
 # Initialize SidebarManager
 sidebar_manager = SidebarManager(st.session_state.config_file)
-
-# Get paths, sidebar values, and secrets
-paths = sidebar_manager.get_paths(home_dir)
 sb = sidebar_manager.render_sidebar()
-secrets = sidebar_manager.get_secrets()
+secrets = get_secrets()
 
 # Set up session state variables
 if 'viewer' not in st.session_state:
@@ -51,13 +44,13 @@ llm_service = LLMService(
 
 db_service = DatabaseService(
     db_type=sb['index_type'].lower(),
-    local_db_path=paths['db_folder_path']
+    local_db_path=os.getenv('LOCAL_DB_PATH')
 )
 
 # Add options
 export_file=st.checkbox('Export local dataset file?',value=False,help='Export the data, including embeddings to a parquet file')
 if export_file:
-    file_name=st.text_input('Enter the file name',value=f"{os.path.join(paths['db_folder_path'],sb['index_selected']+'.parquet')}")
+    file_name=st.text_input('Enter the file name',value=f"{os.path.join(os.getenv('LOCAL_DB_PATH'),sb['index_selected']+'.parquet')}")
 hf_dataset=st.checkbox('Export dataset to Hugging Face?',value=False,help='Export the data, including embeddings to a Hugging Face dataset.')
 
 if hf_dataset:

@@ -7,24 +7,19 @@ from aerospace_chatbot import (
     EmbeddingService,
     LLMService,
     DatabaseService,
-    setup_page_config,
-    show_connection_status
+    show_connection_status,
+    get_secrets
 )
 
 # Page setup
-# setup_page_config(title="📓 Database Processing", layout="wide")
 st.title('📓 Database Processing')
-
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 
 # Initialize SidebarManager
 sidebar_manager = SidebarManager(st.session_state.config_file)
-
-# Get paths, sidebar values, and secrets
-paths = sidebar_manager.get_paths(home_dir)
 sb = sidebar_manager.render_sidebar()
-secrets = sidebar_manager.get_secrets()
+secrets = get_secrets()
 
 # Page setup
 st.subheader('Connection status and vector database cleanup')
@@ -118,7 +113,7 @@ with st.expander("Options",expanded=True):
 # Initialize services for document processing
 db_service = DatabaseService(
     db_type=sb['index_type'].lower(),
-    local_db_path=paths['db_folder_path']
+    local_db_path=os.getenv('LOCAL_DB_PATH')
 )
 
 if sb['rag_type'] == 'Summary':
