@@ -460,7 +460,7 @@ def initialize_database(index_type,
 def upsert_docs_db(vectorstore,
                    chunk_batch,
                    chunk_batch_ids,
-                   namespace):
+                   namespace=None):
     """
     Upserts a batch of documents into a vector database. The lancghain call is identical between Pinecone and ChromaDB.
     This function handles issues with hosted database upserts or when using hugging face or other endpoint services which are less stable.
