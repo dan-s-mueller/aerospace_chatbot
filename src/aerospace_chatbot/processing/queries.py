@@ -1,9 +1,5 @@
 """QA model and retrieval logic."""
 
-from pathlib import Path
-from typing import Dict
-from datetime import datetime
-
 from ..core.cache import Dependencies
 from ..services.prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT, 
                                 DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS,
@@ -21,7 +17,6 @@ class QAModel:
                  k=4,
                  namespace=None):
         """Initialize QA model with necessary services."""
-        print("Initializing QAModel...")  # Debug print
         self.db_service = db_service
         self.llm_service = llm_service
         self.k = k
@@ -30,7 +25,7 @@ class QAModel:
         self.sources = []
         self.ai_response = ""
         self.result = []
-        self.conversational_qa_chain = None  # Explicitly initialize as None
+        self.conversational_qa_chain = None
 
         _, _, _, _, ConversationBufferMemory, _ = self._deps.get_query_deps()
 
@@ -49,19 +44,16 @@ class QAModel:
         )
         
         # Get retrievers from database services
-        print("Getting retrievers...")  # Debug print
-        self.retriever = self.db_service.get_retriever(k=k)
-        print(f"Retriever initialized: {self.retriever}")  # Debug print
+        self.db_service.get_retriever(k=k)
+        self.query_db_service.get_retriever(k=k)
 
         # Initialize memory
-        print("Initializing memory...")  # Debug print
         self.memory = ConversationBufferMemory(
             return_messages=True, 
             output_key='answer', 
             input_key='question'
         )
         self.conversational_qa_chain = self._define_qa_chain()
-        print(f"Chain assigned to self._qa_chain: {self.conversational_qa_chain}")  # Debug print
 
         if self.conversational_qa_chain is None:
             raise ValueError("QA chain not initialized")
@@ -92,9 +84,15 @@ class QAModel:
             raise NotImplementedError   # To catch any weird stuff I might add later and break the chatbot
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
-        # If ChromaDB type, upsert query into query database
+        # If compatible type, upsert query into query database
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
-            self.query_vectorstore.add_documents([self._question_as_doc(query, self.result[-1])])
+            self.query_db_service.vectorstore.add_documents([self._question_as_doc(query, self.result[-1])])
+    def generate_similar_questions(self, question, n=3):
+        """Generate similar questions using the LLM."""
+        prompt = GENERATE_SIMILAR_QUESTIONS.format(question=question, n=n)
+        response = self.llm_service.get_llm().invoke(prompt)
+        questions = [q.strip() for q in response.content.split('\n') if q.strip()]
+        return questions[:n]
     def _setup_memory(self):
         """Initialize conversation memory."""
         _, _, _, _, ConversationBufferMemory, _= self._deps.get_query_deps()
@@ -105,11 +103,8 @@ class QAModel:
         )
     def _define_qa_chain(self):
         """Defines the conversational QA chain."""
-        print("Inside _define_qa_chain...")  # Debug print
-        
         # Get dependencies
         itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string = self._deps.get_query_deps()
-        print("Dependencies retrieved")  # Debug print
         
         # This adds a 'memory' key to the input object
         loaded_memory = RunnablePassthrough.assign(
@@ -127,7 +122,7 @@ class QAModel:
         
         retrieved_documents = {
             'source_documents': itemgetter('standalone_question') 
-                                | self.retriever,
+                                | self.db_service.retriever,
             'question': lambda x: x['standalone_question']}
         
         final_inputs = {
@@ -149,7 +144,8 @@ class QAModel:
         
         # Join the formatted strings with the separator
         return document_separator.join(doc_strings)
-    def _question_as_doc(question: str, rag_answer: dict):
+    @staticmethod
+    def _question_as_doc(question, rag_answer):
         """Creates a Document object based on the given question and RAG answer."""
         sources = [data.metadata for data in rag_answer['references']]
         return Document(
@@ -159,12 +155,6 @@ class QAModel:
                 "sources": ",".join(map(DocumentProcessor._stable_hash_meta, sources)),
             },
         )
-    def generate_similar_questions(self, question, n=3):
-        """Generate similar questions using the LLM."""
-        prompt = GENERATE_SIMILAR_QUESTIONS.format(question=question, n=n)
-        response = self.llm_service.get_llm().invoke(prompt)
-        questions = [q.strip() for q in response.content.split('\n') if q.strip()]
-        return questions[:n]
     def _get_standalone_question(self, question, chat_history):
         """Generate standalone question from conversation context."""
         _, _, _, _, _, get_buffer_string = self._deps.get_query_deps()

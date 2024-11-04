@@ -29,6 +29,25 @@ class DatabaseService:
         self.rag_type = rag_type
         self.namespace = namespace
 
+        # TODO add index metadata
+        # if chunker is not None:
+        #     # Cannot add objects as metadata, don't add full docs
+        #     index_metadata = {
+        #         key: value for key, value in chunker.items() 
+        #         if key not in ['pages', 'chunks', 'summaries', 'splitters', 'llm'] and value is not None    
+        #     }
+        # else:
+        #     index_metadata={}
+        # if isinstance(_query_model, OpenAIEmbeddings):
+        #     index_metadata['query_model']= "OpenAI"
+        #     index_metadata['embedding_model'] = _query_model.model
+        # elif isinstance(_query_model, VoyageAIEmbeddings):
+        #     index_metadata['query_model'] = "Voyage"
+        #     index_metadata['embedding_model'] = _query_model.model
+        # elif isinstance(_query_model, HuggingFaceInferenceAPIEmbeddings):
+        #     index_metadata['query_model'] = "Hugging Face"
+        #     index_metadata['embedding_model'] = _query_model.model_name
+
         # Initialize the vectorstore based on database type
         if self.db_type == 'Pinecone':
             self.vectorstore = self._init_pinecone()
@@ -40,7 +59,6 @@ class DatabaseService:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
         return self.vectorstore
-
     def delete_index(self, index_name, rag_type):
         """Delete an index from the database."""
         if self.db_type == 'chromadb':
@@ -52,6 +70,20 @@ class DatabaseService:
             Pinecone, _, _ = self._deps.get_db_deps()
             pc = Pinecone()
             pc.delete_index(index_name)
+    def get_retriever(self, k=4):
+        """Get configured retriever for the vectorstore."""
+        self.retriever = None
+        search_kwargs = self._process_retriever_args(k)
+
+        if not self.vectorstore:
+            raise ValueError("Database not initialized. Please ensure database is initialized before getting retriever.")
+
+        if self.rag_type == 'Standard':
+            self.retriever =  self._get_standard_retriever(search_kwargs)
+        elif self.rag_type in ['Parent-Child', 'Summary']:
+            self.retriever = self._get_multivector_retriever(search_kwargs)
+        else:
+            raise NotImplementedError(f"RAG type {self.rag_type} not supported")
     def get_docs_questions_df(self, 
                              index_name,
                              query_index_name,
@@ -255,10 +287,21 @@ class DatabaseService:
                     region='us-west-2'
                 )
             )
-            
+        # TODO update metadata if new index  
+        # if clear:   # Update metadata if new index
+        #     metadata_vector = [1e-5] * _embedding_size(_query_model)  # Empty embedding vector. In queries.py, this is filtered out.
+        #     index.upsert(vectors=[{
+        #         'id': 'db_metadata',
+        #         'values': metadata_vector,
+        #         'metadata': index_metadata
+        #     }])
+
         return PineconeVectorStore(
             index=pc.Index(self.index_name),
+            index_name=self.index_name,
             embedding=self.embedding_service.get_embeddings(),
+            text_key='page_content',
+            pinecone_api_key=os.getenv('PINECONE_API_KEY'),
             namespace=self.namespace
         )
 
@@ -289,19 +332,6 @@ class DatabaseService:
             return {'status': True, 'indexes': [idx.name for idx in indexes]}
         except Exception as e:
             return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
-    def get_retriever(self, k=4):
-        """Get configured retriever for the vectorstore."""
-        search_kwargs = self._process_retriever_args(k)
-
-        if not self.vectorstore:
-            raise ValueError("Database not initialized. Please ensure database is initialized before getting retriever.")
-
-        if self.rag_type == 'Standard':
-            return self._get_standard_retriever(search_kwargs)
-        elif self.rag_type in ['Parent-Child', 'Summary']:
-            return self._get_multivector_retriever(search_kwargs)
-        else:
-            raise NotImplementedError(f"RAG type {self.rag_type} not supported")
     def _get_standard_retriever(self, search_kwargs):
         """Get standard retriever based on index type."""
         if self.db_type in ['Pinecone', 'ChromaDB']:
