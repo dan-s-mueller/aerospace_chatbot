@@ -5,6 +5,7 @@ import json
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from langchain_core.documents import Document
+from langchain.text_splitter import TextSplitter
 from google.cloud import storage
 
 from ..core.cache import Dependencies
@@ -13,10 +14,17 @@ from ..services.prompts import SUMMARIZE_TEXT
 @dataclass
 class ChunkingResult:
     """Container for chunking results."""
-    chunks: List[Document]
+    pages: List[Any]
+    chunks: List[Any]
+    splitters: Optional[Any] = None
+    n_merge_pages: Optional[int] = None
+    chunk_method: Optional[str] = None
+    chunk_size: Optional[int] = None
+    chunk_overlap: Optional[int] = None
     metadata: Dict[str, Any]
-    parent_chunks: Optional[List[Document]] = None
+    parent_chunks: Optional[List[Any]] = None
     summaries: Optional[List[Document]] = None
+    llm: Optional[Any] = None
 
 class DocumentProcessor:
     """Handles document processing, chunking, and indexing."""
@@ -24,43 +32,69 @@ class DocumentProcessor:
     def __init__(self, 
                  db_service,
                  embedding_service,
+                 rag_type='Standard',
+                 chunk_method='RecursiveCharacterTextSplitter',
                  chunk_size=500,
-                 chunk_overlap=50):
+                 chunk_overlap=50,
+                 merge_pages=2):
         self.db_service = db_service
         self.embedding_service = embedding_service
+        self.rag_type = rag_type
+        self.chunk_method = chunk_method
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        self.merge_pages = merge_pages
         self._deps = Dependencies()
 
     def process_documents(self, 
-                         documents,
-                         rag_type='Standard',
-                         merge_pages=1):
-        """Process documents based on RAG type."""  
-        self.rag_type = rag_type
-
-        # Sanitize and merge pages if needed
-        cleaned_docs = [self._sanitize_page(doc) for doc in documents]
-        cleaned_docs = [doc for doc in cleaned_docs if doc is not None]
+                          documents):
+        """Process documents based on RAG type by chunking."""  
+        # TODO use cache load function
+        from langchain_community.document_loaders import PyPDFLoader
         
-        if merge_pages > 1:
-            cleaned_docs = self._merge_pages(cleaned_docs, merge_pages)
+        # Load the document. First try as if it is a path, second try as if it is a file object 
+        # Need to handle multiple pdfs, currently taken from old script where only one pdf was used and looped over
+        loader = PyPDFLoader(doc)
+        doc_page_data = loader.load()
 
-        if rag_type == 'Standard':
+        # Clean up page info, update some metadata
+        cleaned_docs=[]
+        doc_pages=[]
+        for doc_page in doc_page_data:
+            doc_page=self._sanitize_page(doc_page)
+            if doc_page is not None:
+                doc_pages.append(doc_page)
+
+        # Merge pages if option is selected
+        if self.merge_pages > 1:
+            for i in range(0, len(doc_pages), self.merge_pages):
+                group = doc_pages[i:i+self.merge_pages]
+                group_page_content=' '.join([doc.page_content for doc in group])
+                group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
+                                  'source': str([doc.metadata['source'] for doc in group])}
+                merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
+                cleaned_docs.append(merged_doc)
+        else:
+            cleaned_docs.extend(doc_pages)
+
+        if self.rag_type == 'Standard':
             return self._process_standard(cleaned_docs)
-        elif rag_type == 'Parent-Child':
+        elif self.rag_type == 'Parent-Child':
             return self._process_parent_child(cleaned_docs)
-        elif rag_type == 'Summary':
+        elif self.rag_type == 'Summary':
             return self._process_summary(cleaned_docs)
         else:
-            raise ValueError(f"Unsupported RAG type: {rag_type}")
+            raise ValueError(f"Unsupported RAG type: {self.rag_type}")
     def index_documents(self,
                        index_name,
                        chunking_result,
                        batch_size=100,
+                       clear=False,
                        namespace=None,
                        show_progress=False):
         """Index processed documents."""
+        OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
+
         if show_progress:
             try:
                 import streamlit as st
@@ -73,8 +107,32 @@ class DocumentProcessor:
             index_name=index_name,
             embedding_service=self.embedding_service,
             rag_type=self.rag_type,
-            namespace=namespace
+            namespace=namespace,
+            clear=clear
         )
+
+        # Add index metadata
+        index_metadata = {}
+        if chunking_result.n_merge_pages is not None:
+            index_metadata['n_merge_pages'] = chunking_result.n_merge_pages
+        if chunking_result.chunk_method is not None:
+            index_metadata['chunk_method'] = chunking_result.chunk_method
+        if chunking_result.chunk_size is not None:
+            index_metadata['chunk_size'] = chunking_result.chunk_size
+        if chunking_result.chunk_overlap is not None:
+            index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
+        if chunking_result.metadata is not None:
+            index_metadata['metadata'] = chunking_result.metadata
+        if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
+            index_metadata['query_model']= "OpenAI"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
+        elif isinstance(self.embedding_service.get_embeddings(), VoyageAIEmbeddings):
+            index_metadata['query_model'] = "Voyage"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
+        elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
+            index_metadata['query_model'] = "Hugging Face"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
+        self._store_index_metadata(index_name, index_metadata, namespace)
 
         # Index chunks in batches
         for i in range(0, len(chunking_result.chunks), batch_size):
@@ -182,7 +240,11 @@ class DocumentProcessor:
     def _process_standard(self, documents):
         """Process documents for standard RAG."""
         chunks = self._chunk_documents(documents)
-        return ChunkingResult(chunks=chunks, metadata={'rag_type': 'Standard'})
+        return ChunkingResult(pages=documents,
+                              chunks=chunks, 
+                              
+                              metadata={'rag_type': 'Standard'}
+        )
 
     def _process_parent_child(self, documents):
         """Process documents for parent-child RAG."""
@@ -255,20 +317,21 @@ class DocumentProcessor:
 
     def _chunk_documents(self, documents):
         """Chunk documents using specified parameters."""
+        # TODO import from cache function
         from langchain.text_splitter import RecursiveCharacterTextSplitter
-        
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=self.chunk_size,
-            chunk_overlap=self.chunk_overlap
-        )
-        
-        chunks = []
-        for doc in documents:
-            doc_chunks = splitter.split_documents([doc])
-            chunks.extend(doc_chunks)
-            
+        if self.chunk_method=='character_recursive':
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
+                                                           chunk_overlap=self.chunk_overlap,
+                                                           add_start_index=True)
+            page_chunks = text_splitter.split_documents(documents)
+            for chunk in page_chunks:
+                chunks.append(chunk)    # Not sanitized because the page already was
+        elif self.chunk_method=='None':
+            text_splitter = None
+            chunks = documents  # No chunking, take whole pages as documents
+        else:
+            raise NotImplementedError
         return chunks
-
     @staticmethod
     def _sanitize_page(doc):
         """Clean up page content and metadata."""
@@ -352,3 +415,31 @@ class DocumentProcessor:
     def _stable_hash_meta(metadata):
         """Calculates the stable hash of the given metadata dictionary."""
         return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
+    def _store_index_metadata(self, index_name, metadata):
+        """Store index metadata based on the database type."""
+        embedding_size = self.embedding_service.get_dimension()
+        metadata_vector = [1e-5] * embedding_size
+        if self.db_service.db_type == "Pinecone":
+            index = self.db_service.get_index(index_name)
+            index.upsert(vectors=[{
+                'id': 'db_metadata',
+                'values': metadata_vector,
+                'metadata': metadata
+            }])
+        
+        elif self.db_service.db_type == "Chroma":
+            # ChromaDB: Store metadata in a special collection
+            client = self.db_service.get_client()
+            metadata_collection = client.get_or_create_collection(
+                name=f"{index_name}_metadata"
+            )
+            # Store using a dummy embedding
+            metadata_collection.add(
+                embeddings=metadata_vector,  # Single dimension dummy embedding
+                documents=["metadata"],
+                metadatas=[metadata],
+                ids=["db_metadata"]
+            )
+        
+        elif self.db_service.db_type == "Ragatouille":
+            print("Warning: Metadata storage is not yet supported for RAGatouille indexes")

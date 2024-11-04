@@ -136,15 +136,15 @@ if st.button('Load docs into vector database'):
         chunking_result = doc_processor.process_documents(
             documents=docs,
             rag_type=sb['rag_type'],
-            merge_pages=n_merge_pages if merge_pages else 1
+            merge_pages=n_merge_pages if merge_pages else None
         )
         
         # Index documents
         doc_processor.index_documents(
             index_name=index_name,
             chunking_result=chunking_result,
-            clear=clear_database,
-            batch_size=batch_size
+            batch_size=batch_size,
+            clear=clear_database
         )
         
         end_time = time.time()

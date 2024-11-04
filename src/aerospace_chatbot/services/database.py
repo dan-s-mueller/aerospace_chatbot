@@ -4,7 +4,6 @@ from pathlib import Path
 import os
 
 from ..core.cache import Dependencies, get_cache_decorator
-from ..core.config import ConfigurationError
 from ..services.prompts import CLUSTER_LABEL
 
 cache_data = get_cache_decorator()
@@ -22,44 +21,25 @@ class DatabaseService:
         self.namespace = None
         self._deps = Dependencies()
         
-    def initialize_database(self, index_name, embedding_service, rag_type='Standard', namespace=None):
+    def initialize_database(self, index_name, embedding_service, rag_type='Standard', namespace=None, clear=False):
         """Initialize and store database connection."""
         self.index_name = index_name
         self.embedding_service = embedding_service
         self.rag_type = rag_type
         self.namespace = namespace
 
-        # TODO add index metadata
-        # if chunker is not None:
-        #     # Cannot add objects as metadata, don't add full docs
-        #     index_metadata = {
-        #         key: value for key, value in chunker.items() 
-        #         if key not in ['pages', 'chunks', 'summaries', 'splitters', 'llm'] and value is not None    
-        #     }
-        # else:
-        #     index_metadata={}
-        # if isinstance(_query_model, OpenAIEmbeddings):
-        #     index_metadata['query_model']= "OpenAI"
-        #     index_metadata['embedding_model'] = _query_model.model
-        # elif isinstance(_query_model, VoyageAIEmbeddings):
-        #     index_metadata['query_model'] = "Voyage"
-        #     index_metadata['embedding_model'] = _query_model.model
-        # elif isinstance(_query_model, HuggingFaceInferenceAPIEmbeddings):
-        #     index_metadata['query_model'] = "Hugging Face"
-        #     index_metadata['embedding_model'] = _query_model.model_name
-
         # Initialize the vectorstore based on database type
         if self.db_type == 'Pinecone':
-            self.vectorstore = self._init_pinecone()
+            self.vectorstore = self._init_pinecone(clear=clear)
         elif self.db_type == 'ChromaDB':
-            self.vectorstore = self._init_chromadb()
+            self.vectorstore = self._init_chromadb(clear=clear)
         elif self.db_type == 'RAGatouille':
-            self.vectorstore = self._init_ragatouille()
+            self.vectorstore = self._init_ragatouille(clear=clear)
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
         return self.vectorstore
-    def delete_index(self, index_name, rag_type):
+    def delete_index(self, index_name):
         """Delete an index from the database."""
         if self.db_type == 'chromadb':
             _, chromadb, _ = self._deps.get_db_deps()
@@ -254,7 +234,7 @@ class DatabaseService:
             return {'status': True, 'indexes': indexes}
         except Exception as e:
             return {'status': False, 'message': f'Error accessing RAGatouille indexes: {str(e)}'}
-    def _init_chromadb(self):
+    def _init_chromadb(self, clear=False):
         """Initialize ChromaDB."""
         _, chromadb, _ = self._deps.get_db_deps()
         _, Chroma, _, _ = self._deps.get_vectorstore_deps()
@@ -264,12 +244,14 @@ class DatabaseService:
         
         client = chromadb.PersistentClient(path=str(db_path))
         
+        if clear:
+            client.delete_collection(self.index_name)
         return Chroma(
             client=client,
             collection_name=self.index_name,
             embedding_function=self.embedding_service.get_embeddings()
         )
-    def _init_pinecone(self):
+    def _init_pinecone(self, clear=False):
         """Initialize Pinecone."""
         Pinecone, _, ServerlessSpec = self._deps.get_db_deps()
         PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
@@ -278,6 +260,8 @@ class DatabaseService:
         dimension = self.embedding_service.get_dimension()
         
         # Create index if it doesn't exist
+        if clear:
+            pc.delete_index(self.index_name)
         if self.index_name not in [idx.name for idx in pc.list_indexes()]:
             pc.create_index(
                 name=self.index_name,
@@ -287,14 +271,6 @@ class DatabaseService:
                     region='us-west-2'
                 )
             )
-        # TODO update metadata if new index  
-        # if clear:   # Update metadata if new index
-        #     metadata_vector = [1e-5] * _embedding_size(_query_model)  # Empty embedding vector. In queries.py, this is filtered out.
-        #     index.upsert(vectors=[{
-        #         'id': 'db_metadata',
-        #         'values': metadata_vector,
-        #         'metadata': index_metadata
-        #     }])
 
         return PineconeVectorStore(
             index=pc.Index(self.index_name),
@@ -305,11 +281,13 @@ class DatabaseService:
             namespace=self.namespace
         )
 
-    def _init_ragatouille(self):
+    def _init_ragatouille(self, clear=False):
         """Initialize RAGatouille."""
         from ragatouille import RAGPretrainedModel
         
         index_path = self.local_db_path / '.ragatouille'
+        if clear:
+            RAGPretrainedModel.delete_index(self.index_name)
         return RAGPretrainedModel.from_pretrained(
             model_name=self.index_name,
             index_root=str(index_path)
@@ -347,6 +325,7 @@ class DatabaseService:
             raise ValueError(f"Unsupported database type: {self.db_type}")
     def _get_multivector_retriever(self, search_kwargs):
         """Get multi-vector retriever for Parent-Child or Summary RAG types."""
+        # TODO check that hashing/indexing with parent/child is working. Doesn't look like it is.
         LocalFileStore = self._deps.get_core_deps()[2]
         MultiVectorRetriever = self._deps.get_core_deps()[1]
         
