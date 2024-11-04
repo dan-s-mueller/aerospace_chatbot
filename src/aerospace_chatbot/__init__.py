@@ -25,14 +25,15 @@ from .services import (
     SUMMARIZE_TEXT
 )
 from .ui import (
-    SidebarManager, 
+    SidebarManager,
     setup_page_config,
     display_chat_history, 
     display_sources, 
     show_connection_status,
+    handle_file_upload,
     extract_pages_from_pdf,
     get_pdf,
-    get_or_create_spotlight_viewer,
+    get_or_create_spotlight_viewer
 )
 
 __version__ = "0.0.9"
@@ -70,9 +71,10 @@ __all__ = [
     'display_chat_history', 
     'display_sources', 
     'show_connection_status',
+    'handle_file_upload',
     'extract_pages_from_pdf',
     'get_pdf',
-    'get_or_create_spotlight_viewer',
+    'get_or_create_spotlight_viewer'
 ]
 
 def get_version():

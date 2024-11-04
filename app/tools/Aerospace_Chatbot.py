@@ -1,100 +1,13 @@
 import streamlit as st
 import os, time
-from streamlit_pdf_viewer import pdf_viewer
-import tempfile
 
-from aerospace_chatbot.ui import SidebarManager, display_chat_history, display_sources
-from aerospace_chatbot.processing import QAModel, DocumentProcessor
+from aerospace_chatbot.ui import SidebarManager, display_chat_history, display_sources, handle_file_upload
+from aerospace_chatbot.processing import QAModel
 from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
 from aerospace_chatbot.core import get_secrets
 
-def handle_file_upload(sb, secrets):
-    """Handle file upload functionality for the chatbot."""
-    if not _validate_upload_settings(sb):
-        return
-
-    uploaded_files = st.file_uploader("Choose pdf files", accept_multiple_files=True)
-    if not uploaded_files:
-        return
-
-    temp_files = _save_uploads_to_temp(uploaded_files)
-    
-    if st.button('Upload your docs into vector database'):
-        with st.spinner('Uploading and merging your documents with the database...'):
-            _process_uploads(sb, secrets, temp_files)
-
-    if st.session_state.user_upload:
-        st.markdown(
-            f":white_check_mark: Merged! Your upload ID: `{st.session_state.user_upload}`. "
-            "This will be used for this chat session to also include your documents. "
-            "When you restart the chat, you'll have to re-upload your documents."
-        )
-def _validate_upload_settings(sb):
-    """Validate RAG type and index type settings."""
-    if sb['rag_type'] != "Standard":
-        st.error("Only Standard RAG is supported for user document upload.")
-        return False
-    if sb['index_type'] != 'Pinecone':
-        st.error("Only Pinecone is supported for user document upload.")
-        return False
-    
-    st.write("Upload parameters set to standard values, hard coded for now...standard only")
-    return True
-def _save_uploads_to_temp(uploaded_files):
-    """Save uploaded files to temporary directory."""
-    temp_files = []
-    for uploaded_file in uploaded_files:
-        temp_path = os.path.join(tempfile.gettempdir(), uploaded_file.name)
-        with open(temp_path, 'wb') as temp_file:
-            temp_file.write(uploaded_file.read())
-        temp_files.append(temp_path)
-    return temp_files
-def _process_uploads(sb, secrets, temp_files):
-    """Process uploaded files and merge them into the vector database."""
-    # Initialize services
-    db_service = DatabaseService(
-        db_type=sb['index_type'],
-        local_db_path=os.getenv('LOCAL_DB_PATH')
-    )
-    embedding_service = EmbeddingService(
-        model_name=sb['embedding_name'],
-        model_type=sb['query_model'],
-        api_key=secrets.get(f"{sb['query_model']}_key")
-    )
-    # Initialize document processor
-    doc_processor = DocumentProcessor(
-        db_service=db_service,
-        embedding_service=embedding_service
-    )
-    
-    # Generate unique identifier
-    st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
-    st.markdown("*Processing and uploading user documents...*")
-    
-    # Process and index documents
-    st.markdown("*Uploading user documents to namespace...*")
-    chunking_result = doc_processor.process_documents(temp_files)
-    doc_processor.index_documents(
-        index_name=sb['index_selected'],
-        chunking_result=chunking_result,
-        namespace=st.session_state.user_upload,
-        show_progress=True
-    )
-    # Copy vectors to merge namespaces
-    st.markdown("*Merging user document with existing documents...*")
-    doc_processor.copy_vectors(
-        index_name=sb['index_selected'],
-        source_namespace=None,
-        target_namespace=st.session_state.user_upload,
-        show_progress=True
-    )
 def _reset_conversation():
-    """
-    Resets the conversation by clearing the session state variables related to the chatbot.
-
-    Returns:
-        None
-    """
+    """Resets the conversation by clearing the session state variables related to the chatbot."""
     st.session_state.qa_model_obj = []
     st.session_state.message_id = 0
     st.session_state.messages = []
