@@ -87,12 +87,23 @@ class QAModel:
         # If compatible type, upsert query into query database
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
             self.query_db_service.vectorstore.add_documents([self._question_as_doc(query, self.result[-1])])
-    def generate_similar_questions(self, question, n=3):
-        """Generate similar questions using the LLM."""
-        prompt = GENERATE_SIMILAR_QUESTIONS.format(question=question, n=n)
-        response = self.llm_service.get_llm().invoke(prompt)
-        questions = [q.strip() for q in response.content.split('\n') if q.strip()]
-        return questions[:n]
+    def generate_alternative_questions(self, prompt):
+        """Generates alternative questions based on a prompt."""
+        _, StrOutputParser, _, _, _, _ = self._deps.get_query_deps()
+        if self.ai_response:
+            prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
+            invoke_dict={'question':prompt,'context':self.ai_response}
+        else:
+            prompt_template=GENERATE_SIMILAR_QUESTIONS
+            invoke_dict={'question':prompt}
+        
+        chain = (
+                prompt_template
+                | self.llm_service.get_llm()
+                | StrOutputParser()
+            )
+        alternative_questions=chain.invoke(invoke_dict)
+        return alternative_questions
     def _setup_memory(self):
         """Initialize conversation memory."""
         _, _, _, _, ConversationBufferMemory, _= self._deps.get_query_deps()

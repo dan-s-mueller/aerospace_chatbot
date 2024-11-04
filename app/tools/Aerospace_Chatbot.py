@@ -209,8 +209,9 @@ if prompt := st.chat_input('Prompt here'):
             ai_response = st.session_state.qa_model_obj.ai_response
 
             message_placeholder.markdown(ai_response)
-            similar_questions = st.session_state.qa_model_obj.generate_similar_questions(prompt)
-            st.info("**Alternative questions:**\n\n" + "\n".join(similar_questions))
+            similar_questions = st.session_state.qa_model_obj.generate_alternative_questions(prompt)
+            st.info("**Alternative questions:**\n\n" + 
+                    "\n".join(similar_questions))
 
             t_delta = time.time() - t_start
             status.update(
@@ -219,10 +220,10 @@ if prompt := st.chat_input('Prompt here'):
                 expanded=False
             )
             
-            # Display sources
-            display_sources(st.session_state.qa_model_obj.sources[-1])
+        # Display sources
+        display_sources(st.session_state.qa_model_obj.sources[-1])
 
-            st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
+        st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
 
 # Add reset button
 if st.button('Restart session'):

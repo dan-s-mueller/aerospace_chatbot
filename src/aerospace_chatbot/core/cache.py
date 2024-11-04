@@ -5,8 +5,11 @@ def get_cache_decorator():
     try:
         import streamlit as st
         return st.cache_resource
-    except:
+    except ImportError:
         # Return no-op decorator when not in Streamlit
+        return lambda *args, **kwargs: (lambda func: func)
+    except RuntimeError:
+        # Silently handle case when Streamlit runtime is not found
         return lambda *args, **kwargs: (lambda func: func)
 
 # Replace @st.cache_resource with dynamic decorator
@@ -17,8 +20,11 @@ def get_cache_data_decorator():
     try:
         import streamlit as st
         return st.cache_data
-    except:
+    except ImportError:
         # Return no-op decorator when not in Streamlit
+        return lambda *args, **kwargs: (lambda func: func)
+    except RuntimeError:
+        # Silently handle case when Streamlit runtime is not found
         return lambda *args, **kwargs: (lambda func: func)
 
 # Replace @st.cache_data with dynamic decorator

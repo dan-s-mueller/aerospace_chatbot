@@ -5,7 +5,6 @@ import json
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from langchain_core.documents import Document
-from langchain_core.prompts import PromptTemplate
 from google.cloud import storage
 
 from ..core.cache import Dependencies

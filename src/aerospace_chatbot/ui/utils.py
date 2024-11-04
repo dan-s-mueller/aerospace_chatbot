@@ -29,7 +29,7 @@ def display_chat_history(history, show_metadata = False):
 def display_sources(sources, expanded=False):
     """Display reference sources in an expander with PDF preview functionality."""
     with st.container():
-        with st.spinner('Loading source documents...'):
+        with st.spinner('Bringing you source documents...'):
             st.write(":notebook: Source Documents")
             for source in sources:
                 page = source.get('page')
