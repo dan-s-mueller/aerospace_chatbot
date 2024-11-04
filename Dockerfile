@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11.0-slim-bullseye
+FROM python:3.11.5-bookworm
 
 # Do root things: clone repo and install dependencies. libsndfile1 for spotlight. libhdf5-serial-dev for vector distance.
 USER root
