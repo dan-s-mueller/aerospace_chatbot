@@ -325,7 +325,7 @@ class DatabaseService:
             raise ValueError(f"Unsupported database type: {self.db_type}")
     def _get_multivector_retriever(self, search_kwargs):
         """Get multi-vector retriever for Parent-Child or Summary RAG types."""
-        # TODO check that hashing/indexing with parent/child is working. Doesn't look like it is.
+        # FIXME check that hashing/indexing with parent/child is working. Doesn't look like it is.
         LocalFileStore = self._deps.get_core_deps()[2]
         MultiVectorRetriever = self._deps.get_core_deps()[1]
         

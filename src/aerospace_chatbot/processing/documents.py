@@ -14,14 +14,14 @@ from ..services.prompts import SUMMARIZE_TEXT
 @dataclass
 class ChunkingResult:
     """Container for chunking results."""
+    rag_type: str
     pages: List[Any]
-    chunks: List[Any]
+    chunks: Optional[List[Any]] = None
     splitters: Optional[Any] = None
     n_merge_pages: Optional[int] = None
     chunk_method: Optional[str] = None
     chunk_size: Optional[int] = None
     chunk_overlap: Optional[int] = None
-    metadata: Dict[str, Any]
     parent_chunks: Optional[List[Any]] = None
     summaries: Optional[List[Document]] = None
     llm: Optional[Any] = None
@@ -41,6 +41,7 @@ class DocumentProcessor:
         self.embedding_service = embedding_service
         self.rag_type = rag_type
         self.chunk_method = chunk_method
+        self.splitter = None
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.merge_pages = merge_pages
@@ -240,12 +241,15 @@ class DocumentProcessor:
     def _process_standard(self, documents):
         """Process documents for standard RAG."""
         chunks = self._chunk_documents(documents)
-        return ChunkingResult(pages=documents,
+        return ChunkingResult(rag_type=self.rag_type,
+                              pages=documents,
                               chunks=chunks, 
-                              
-                              metadata={'rag_type': 'Standard'}
+                              splitters=self.splitter,
+                              chunk_method=self.chunk_method,
+                              n_merge_pages=self.merge_pages,
+                              chunk_size=self.chunk_size,
+                              chunk_overlap=self.chunk_overlap,
         )
-
     def _process_parent_child(self, documents):
         """Process documents for parent-child RAG."""
         chunks = self._chunk_documents(documents)
@@ -255,10 +259,14 @@ class DocumentProcessor:
         for chunk in chunks:
             chunk.metadata['doc_id'] = self._hash_metadata(chunk.metadata)
             
-        return ChunkingResult(
-            chunks=chunks,
-            parent_chunks=parent_chunks,
-            metadata={'rag_type': 'Parent-Child'}
+        # FIXME fix pages and splitters
+        return ChunkingResult(rag_type=self.rag_type,
+                              pages={'doc_ids':doc_ids,'parent_chunks':parent_chunks},
+                              chunks=chunks, 
+                              splitters={'parent_splitter':parent_splitter,'child_splitter':child_splitter},
+                              n_merge_pages=self.merge_pages,
+                              chunk_size=self.chunk_size,
+                              chunk_overlap=self.chunk_overlap,
         )
 
     def _process_summary(self, documents, llm, batch_size=10, show_progress=False):
@@ -267,7 +275,7 @@ class DocumentProcessor:
         from langchain_core.output_parsers import StrOutputParser
         
         chunks = self._chunk_documents(documents)
-        
+        # FIXME LLM won't work as called here
         # Setup the summarization chain
         chain = (
             {"doc": lambda x: x.page_content}
@@ -309,15 +317,21 @@ class DocumentProcessor:
         if show_progress:
             progress_bar.empty()
         
-        return ChunkingResult(
-            chunks=chunks,
-            summaries=summary_docs,
-            metadata={'rag_type': 'Summary'}
+        # FIXME fix pages and llm
+        return ChunkingResult(rag_type=self.rag_type,
+                              pages={'doc_ids':doc_ids,'docs':pages},
+                              summaries=summary_docs, 
+                              llm=llm,
+                              n_merge_pages=self.merge_pages,
+                              chunk_method=self.chunk_method,
+                              chunk_size=self.chunk_size,
+                              chunk_overlap=self.chunk_overlap,
         )
 
     def _chunk_documents(self, documents):
         """Chunk documents using specified parameters."""
         # TODO import from cache function
+        # FIXME modify this for parent-child and summary
         from langchain.text_splitter import RecursiveCharacterTextSplitter
         if self.chunk_method=='character_recursive':
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
@@ -331,6 +345,7 @@ class DocumentProcessor:
             chunks = documents  # No chunking, take whole pages as documents
         else:
             raise NotImplementedError
+        self.splitter = text_splitter
         return chunks
     @staticmethod
     def _sanitize_page(doc):
