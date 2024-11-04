@@ -36,6 +36,10 @@ db/local_file_store
 tests/chromadb
 tests/local_file_store
 tests/.ragatouille
+profile_stats.txt
 
 # Sphinx documentation
 docs/build/
+
+# Backups
+_bak/
