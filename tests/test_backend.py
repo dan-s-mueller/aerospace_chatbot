@@ -1131,7 +1131,7 @@ def test_get_docs_questions_df(setup_fixture):
     rag_type='Standard'
     test_query_params={'index_type':'ChromaDB',
                        'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
+                       'embedding_name': "text-embedding-3-large"}
     test_llm_params={'llm_family': 'OpenAI', 
                      'llm': 'gpt-3.5-turbo-0125'}
     query_model=parse_test_model('embedding', test_query_params, setup_fixture)
@@ -1208,7 +1208,7 @@ def test_add_clusters(setup_fixture):
     rag_type='Standard'
     test_query_params={'index_type':'ChromaDB',
                        'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
+                       'embedding_name': "text-embedding-3-large"}
     test_llm_params={'llm_family': 'OpenAI', 
                      'llm': 'gpt-3.5-turbo-0125'}
     query_model=parse_test_model('embedding', test_query_params, setup_fixture)
