@@ -1,26 +1,39 @@
 {
     "databases": [
         {
-            "name": "ChromaDB",
+            "name": "Pinecone",
             "embedding_models": ["OpenAI"]
         }
     ],
     "embeddings": [
         {
             "name": "OpenAI",
-            "embedding_models": ["text-embedding-3-large"
-            ]
+            "embedding_models": ["text-embedding-3-large"]
         }
     ],
     "llms": [
         {
             "name": "OpenAI",
             "models": [
-                "gpt-4o-mini",
                 "gpt-4o",
+                "gpt-4o-mini",
                 "gpt-4"
+            ]
+        },
+        {
+            "name": "Anthropic",
+            "models": [
+                "claude-3-5-sonnet-latest"
             ]
         }
     ],
-    "rag_types": ["Standard"]
+    "rag_types": ["Standard"],
+    "disabled_controls": {
+        "embeddings": ["query_model", "embedding_name", "embedding_endpoint"],
+        "rag": ["rag_type", "rag_llm_source", "rag_llm_model", "rag_endpoint"],
+        "llm": ["llm_source", "llm_model", "llm_endpoint"],
+        "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"],
+        "index": ["index_type"],
+        "model_options": ["output_level", "search_type"]
+    }
 }

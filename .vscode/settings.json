@@ -1,15 +1,11 @@
 {
-    "python.analysis.extraPaths": [
-        "./src/aerospace_chatbot",
-        "./tests"
-    ],
-    "python.testing.cwd": "${workspaceFolder}",
+    "esbonio.sphinx.confDir": "",
     "python.testing.pytestArgs": [
-        "tests",
-        "-v",
-        "-s"
+        "tests"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "esbonio.sphinx.confDir": ""
+    "python.analysis.extraPaths": [
+        "./src/aerospace_chatbot"
+    ]
 }

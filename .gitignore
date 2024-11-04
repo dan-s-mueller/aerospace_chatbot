@@ -19,6 +19,7 @@ data/**/*.jsonl
 !tests/*.pdf
 *.pickle
 *.parquet
+profile_stats.txt
 
 # Notebooks
 notebooks/playground.ipynb
@@ -39,3 +40,5 @@ tests/.ragatouille
 
 # Sphinx documentation
 docs/build/
+
+_bak/
