@@ -36,7 +36,8 @@ class DocumentProcessor:
                  chunk_method='RecursiveCharacterTextSplitter',
                  chunk_size=500,
                  chunk_overlap=50,
-                 merge_pages=2):
+                 merge_pages=2,
+                 llm_service=None):
         self.db_service = db_service
         self.embedding_service = embedding_service
         self.rag_type = rag_type
@@ -45,16 +46,19 @@ class DocumentProcessor:
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.merge_pages = merge_pages
+        self.llm_service = llm_service  # Only for rag_type=='Summary', otherwise ignored
         self._deps = Dependencies()
 
     def process_documents(self, 
-                          documents):
+                          documents,
+                          show_progress=False):
         """Process documents based on RAG type by chunking."""  
+        # TODO add show_progress functionality here
         # TODO use cache load function
         from langchain_community.document_loaders import PyPDFLoader
         
         # Load the document. First try as if it is a path, second try as if it is a file object 
-        # Need to handle multiple pdfs, currently taken from old script where only one pdf was used and looped over
+        # FIXME Need to handle multiple pdfs, currently taken from old script where only one pdf was used and looped over
         loader = PyPDFLoader(doc)
         doc_page_data = loader.load()
 
@@ -155,7 +159,6 @@ class DocumentProcessor:
 
         if show_progress:
             my_bar.empty()
-
     @staticmethod
     def list_available_buckets():
         """Lists all available buckets in the GCS project."""
@@ -169,7 +172,6 @@ class DocumentProcessor:
             return buckets
         except Exception as e:
             raise Exception(f"Error accessing GCS buckets: {str(e)}")
-
     @staticmethod
     def list_bucket_pdfs(bucket_name: str):
         """Lists all PDF files in a Google Cloud Storage bucket."""
@@ -248,80 +250,52 @@ class DocumentProcessor:
                               chunk_method=self.chunk_method,
                               n_merge_pages=self.merge_pages,
                               chunk_size=self.chunk_size,
-                              chunk_overlap=self.chunk_overlap,
-        )
+                              chunk_overlap=self.chunk_overlap)
     def _process_parent_child(self, documents):
         """Process documents for parent-child RAG."""
-        chunks = self._chunk_documents(documents)
-        parent_chunks = documents
-        
-        # Add parent document references to chunks
-        for chunk in chunks:
-            chunk.metadata['doc_id'] = self._hash_metadata(chunk.metadata)
-            
-        # FIXME fix pages and splitters
+        chunks, parent_chunks = self._chunk_documents(documents)
         return ChunkingResult(rag_type=self.rag_type,
-                              pages={'doc_ids':doc_ids,'parent_chunks':parent_chunks},
+                              pages=parent_chunks,
                               chunks=chunks, 
-                              splitters={'parent_splitter':parent_splitter,'child_splitter':child_splitter},
+                              splitters={'parent_splitter':self.splitter,'child_splitter':self.child_splitter},
                               n_merge_pages=self.merge_pages,
                               chunk_size=self.chunk_size,
-                              chunk_overlap=self.chunk_overlap,
-        )
-
-    def _process_summary(self, documents, llm, batch_size=10, show_progress=False):
+                              chunk_overlap=self.chunk_overlap)
+    def _process_summary(self, documents):
         """Process documents for summary RAG."""
-        from ..services.llm import LLMService
+        # TODO fix the dependencies, use cache
         from langchain_core.output_parsers import StrOutputParser
         
         chunks = self._chunk_documents(documents)
-        # FIXME LLM won't work as called here
+        id_key = "doc_id"
+        doc_ids = [str(self._stable_hash_meta(chunk.metadata)) for chunk in chunks]
         # Setup the summarization chain
         chain = (
             {"doc": lambda x: x.page_content}
             | SUMMARIZE_TEXT
-            | llm
+            | self.llm_service.get_llm()
             | StrOutputParser()
         )
         
-        # Generate document IDs
-        doc_ids = [self._hash_metadata(doc.metadata) for doc in documents]
-        
-        # Initialize progress bar if requested
-        if show_progress:
-            try:
-                import streamlit as st
-                progress_bar = st.progress(0, text='Generating summaries...')
-            except ImportError:
-                show_progress = False
-        
         # Process documents in batches
         summaries = []
-        for i in range(0, len(documents), batch_size):
-            batch = documents[i:i + batch_size]
+        batch_size=10   # TODO make this a parameter
+        for i in range(0, len(chunks), batch_size):
+            batch = chunks[i:i + batch_size]
             batch_summaries = chain.batch(batch, config={"max_concurrency": batch_size})
             summaries.extend(batch_summaries)
-            
-            # Update progress if enabled
-            if show_progress:
-                progress = min(1.0, (i + batch_size) / len(documents))
-                progress_bar.progress(progress, text=f'Generating summaries...{progress*100:.2f}%')
+            # TODO add progress bar functionalty for summary
         
         # Create summary documents with metadata
         summary_docs = [
             Document(page_content=summary, metadata={"doc_id": doc_ids[i]})
             for i, summary in enumerate(summaries)
-        ]
-        
-        # Clean up progress bar
-        if show_progress:
-            progress_bar.empty()
-        
-        # FIXME fix pages and llm
+        ]        
+
         return ChunkingResult(rag_type=self.rag_type,
-                              pages={'doc_ids':doc_ids,'docs':pages},
+                              pages={'doc_ids':doc_ids,'docs':chunks},
                               summaries=summary_docs, 
-                              llm=llm,
+                              llm=self.llm_service.get_llm(),
                               n_merge_pages=self.merge_pages,
                               chunk_method=self.chunk_method,
                               chunk_size=self.chunk_size,
@@ -331,22 +305,61 @@ class DocumentProcessor:
     def _chunk_documents(self, documents):
         """Chunk documents using specified parameters."""
         # TODO import from cache function
-        # FIXME modify this for parent-child and summary
         from langchain.text_splitter import RecursiveCharacterTextSplitter
-        if self.chunk_method=='character_recursive':
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-                                                           chunk_overlap=self.chunk_overlap,
-                                                           add_start_index=True)
-            page_chunks = text_splitter.split_documents(documents)
-            for chunk in page_chunks:
-                chunks.append(chunk)    # Not sanitized because the page already was
-        elif self.chunk_method=='None':
-            text_splitter = None
-            chunks = documents  # No chunking, take whole pages as documents
+
+        if self.rag_type!='Parent-Child':
+            if self.chunk_method=='character_recursive':
+                self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
+                                                            chunk_overlap=self.chunk_overlap,
+                                                            add_start_index=True)
+                page_chunks = self.splitter.split_documents(documents)
+                for chunk in page_chunks:
+                    chunks.append(chunk)    # Not sanitized because the page already was
+            elif self.chunk_method=='None':
+                self.splitter = None
+                chunks = documents  # No chunking, take whole pages as documents
+            else:
+                raise NotImplementedError
+            return chunks
+        elif self.rag_type=='Parent-Child':
+            # TODO put k_child in a place that makes more sense
+            self.k_child = 4
+            if self.chunk_method=='character_recursive':
+                # Settings apply to parent splitter. k_child divides parent into smaller sizes.
+                self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
+                                                            chunk_overlap=self.chunk_overlap,
+                                                            add_start_index=True)    # Without add_start_index, will not be a unique id
+                parent_chunks = self.splitter.split_documents(documents)
+            elif self.chunk_method=='None':
+                self.splitter = None
+                parent_chunks = documents  # No chunking, take whole pages as documents
+                # raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
+            else:
+                raise NotImplementedError
+            # Assign parent doc ids
+            doc_ids = [str(self._stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
+            
+            # Split up child chunks
+            id_key = "doc_id"
+            chunks = []
+            for i, doc in enumerate(parent_chunks):
+                _id = doc_ids[i]
+                if self.chunk_method=='character_recursive':
+                    self.child_splitter=RecursiveCharacterTextSplitter(chunk_size=self.chunk_size/self.k_child, 
+                                                    chunk_overlap=self.chunk_overlap,
+                                                    add_start_index=True)
+                elif self.chunk_method=='None':
+                    i_chunk_size=len(doc.page_content)/self.k_child
+                    self.child_splitter=RecursiveCharacterTextSplitter(chunk_size=i_chunk_size, 
+                                                    chunk_overlap=0,
+                                                    add_start_index=True)
+                _chunks = self.child_splitter.split_documents([doc])
+                for _doc in _chunks:
+                    _doc.metadata[id_key] = _id
+                chunks.extend(_chunks)
+            return chunks, {'doc_ids':doc_ids,'parent_chunks':parent_chunks}
         else:
             raise NotImplementedError
-        self.splitter = text_splitter
-        return chunks
     @staticmethod
     def _sanitize_page(doc):
         """Clean up page content and metadata."""
