@@ -24,7 +24,7 @@ st.subheader('Create and load into a vector database')
 # Initialize services
 embedding_service = EmbeddingService(
     model_name=sb['embedding_name'],
-    model_type=sb['query_model'].lower()
+    model_type=sb['query_model']
 )
 
 # Find docs
@@ -112,7 +112,7 @@ db_service = DatabaseService(
 if sb['rag_type'] == 'Summary':
     llm_service = LLMService(
         model_name=sb['rag_llm_model'],
-        model_type=sb['rag_llm_source'].lower(),
+        model_type=sb['rag_llm_source'],
         temperature=sb['model_options']['temperature'],
         max_tokens=sb['model_options']['output_level']
     )

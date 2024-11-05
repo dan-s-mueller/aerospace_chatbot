@@ -154,8 +154,6 @@ class DocumentProcessor:
             index_metadata['chunk_size'] = chunking_result.chunk_size
         if chunking_result.chunk_overlap is not None:
             index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
-        if chunking_result.metadata is not None:
-            index_metadata['metadata'] = chunking_result.metadata
         if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
             index_metadata['query_model']= "OpenAI"
             index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
@@ -165,7 +163,7 @@ class DocumentProcessor:
         elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
             index_metadata['query_model'] = "Hugging Face"
             index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
-        self._store_index_metadata(index_name, index_metadata, namespace)
+        self._store_index_metadata(index_name, index_metadata)
 
         # Index chunks in batches
         for i in range(0, len(chunking_result.chunks), batch_size):
