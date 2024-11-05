@@ -297,29 +297,30 @@ class DatabaseService:
         )
     def _init_pinecone(self, clear=False):
         """Initialize Pinecone."""
-        try:
-            if clear:
-                return self._delete_and_create_pinecone_index()
-            else:
-                # Check if index exists
-                Pinecone, _, _ = self._deps.get_db_deps()
-                PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
-                pc = Pinecone()
+        # try:
+        if clear:
+            # FIXME this still is not working properly. It is not deleting the index and then creating it or is timing out.
+            return self._delete_and_create_pinecone_index()
+        else:
+            # Check if index exists
+            Pinecone, _, _ = self._deps.get_db_deps()
+            PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
+            pc = Pinecone()
+            
+            if self.index_name not in pc.list_indexes():
+                raise Exception(f"Index '{self.index_name}' does not exist and clear=False")
+            
+            return PineconeVectorStore(
+                index=pc.Index(self.index_name),
+                index_name=self.index_name,
+                embedding=self.embedding_service.get_embeddings(),
+                text_key='page_content',
+                pinecone_api_key=os.getenv('PINECONE_API_KEY'),
+                namespace=self.namespace
+            )
                 
-                if self.index_name not in pc.list_indexes():
-                    raise Exception(f"Index '{self.index_name}' does not exist and clear=False")
-                
-                return PineconeVectorStore(
-                    index=pc.Index(self.index_name),
-                    index_name=self.index_name,
-                    embedding=self.embedding_service.get_embeddings(),
-                    text_key='page_content',
-                    pinecone_api_key=os.getenv('PINECONE_API_KEY'),
-                    namespace=self.namespace
-                )
-                
-        except Exception as e:
-            raise Exception(f"Error initializing Pinecone index: {str(e)}")
+        # except Exception as e:
+        #     raise Exception(f"Error initializing Pinecone index: {str(e)}")
 
     def _init_ragatouille(self, clear=False):
         """Initialize RAGatouille."""
