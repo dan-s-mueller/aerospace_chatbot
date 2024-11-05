@@ -5,9 +5,9 @@ import json
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from langchain_core.documents import Document
-from langchain.text_splitter import TextSplitter
 from google.cloud import storage
 import streamlit as st
+import tempfile
 
 from ..core.cache import Dependencies
 from ..services.prompts import SUMMARIZE_TEXT
@@ -75,32 +75,48 @@ class DocumentProcessor:
             my_bar = st.progress(0, text=progress_text)
         
         cleaned_docs = []
-        for i, doc in enumerate(documents):
-            if self.show_progress:
-                progress_percentage = i / len(documents)
-                my_bar.progress(progress_percentage, text=f'Reading documents...{doc}...{progress_percentage*100:.2f}%')
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for i, doc in enumerate(documents):
+                if self.show_progress:
+                    progress_percentage = i / len(documents)
+                    my_bar.progress(progress_percentage, text=f'Reading documents...{doc}...{progress_percentage*100:.2f}%')
 
-            loader = PyPDFLoader(doc)
-            doc_page_data = loader.load()
+                # Handle GCS URLs
+                if doc.startswith('gs://'):
+                    # Parse bucket and blob name
+                    bucket_name = doc.split('/')[2]
+                    blob_name = '/'.join(doc.split('/')[3:])
+                    
+                    # Download file from GCS
+                    storage_client = storage.Client()
+                    bucket = storage_client.bucket(bucket_name)
+                    blob = bucket.blob(blob_name)
+                    local_path = f"{temp_dir}/{blob_name.split('/')[-1]}"
+                    blob.download_to_filename(local_path)
+                    doc = local_path
 
-            # Clean up page info, update some metadata
-            doc_pages = []
-            for doc_page in doc_page_data:
-                doc_page = self._sanitize_page(doc_page)
-                if doc_page is not None:
-                    doc_pages.append(doc_page)
+                # Load and process the PDF
+                loader = PyPDFLoader(doc)
+                doc_page_data = loader.load()
 
-            # Merge pages if option is selected
-            if self.merge_pages > 1:
-                for i in range(0, len(doc_pages), self.merge_pages):
-                    group = doc_pages[i:i+self.merge_pages]
-                    group_page_content = ' '.join([doc.page_content for doc in group])
-                    group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
-                                    'source': str([doc.metadata['source'] for doc in group])}
-                    merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
-                    cleaned_docs.append(merged_doc)
-            else:
-                cleaned_docs.extend(doc_pages)
+                # Clean up page info, update some metadata
+                doc_pages = []
+                for doc_page in doc_page_data:
+                    doc_page = self._sanitize_page(doc_page)
+                    if doc_page is not None:
+                        doc_pages.append(doc_page)
+
+                # Merge pages if option is selected
+                if self.merge_pages > 1:
+                    for i in range(0, len(doc_pages), self.merge_pages):
+                        group = doc_pages[i:i+self.merge_pages]
+                        group_page_content = ' '.join([doc.page_content for doc in group])
+                        group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
+                                        'source': str([doc.metadata['source'] for doc in group])}
+                        merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
+                        cleaned_docs.append(merged_doc)
+                else:
+                    cleaned_docs.extend(doc_pages)
         
         if self.show_progress:
             my_bar.empty()

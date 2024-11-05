@@ -137,24 +137,25 @@ doc_processor = DocumentProcessor(
 if st.button('Load docs into vector database'):
     start_time = time.time()
     
-    try:
-        # Process documents
-        chunking_result = doc_processor.process_documents(
-            documents=docs,
-            show_progress=True
-        )
+    # try:
+    
+    # Process documents
+    chunking_result = doc_processor.process_documents(
+        documents=docs,
+        show_progress=True
+    )
+    
+    # Index documents
+    doc_processor.index_documents(
+        index_name=index_name,
+        chunking_result=chunking_result,
+        batch_size=batch_size,
+        clear=clear_database
+    )
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
         
-        # Index documents
-        doc_processor.index_documents(
-            index_name=index_name,
-            chunking_result=chunking_result,
-            batch_size=batch_size,
-            clear=clear_database
-        )
-        
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
-        
-    except Exception as e:
-        st.error(f"Error processing documents: {str(e)}")
+    # except Exception as e:
+    #     st.error(f"Error processing documents: {str(e)}")
