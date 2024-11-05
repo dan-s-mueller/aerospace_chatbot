@@ -1,6 +1,6 @@
 """Embedding service implementations."""
 
-from typing import Any, Dict
+import os
 from ..core.cache import Dependencies
 
 class EmbeddingService:
@@ -9,7 +9,6 @@ class EmbeddingService:
     def __init__(self, model_name, model_type, api_key):
         self.model_name = model_name
         self.model_type = model_type
-        self.api_key = api_key
         self._embeddings = None
         self._deps = Dependencies()
         
@@ -21,18 +20,18 @@ class EmbeddingService:
             if self.model_type == 'OpenAI':
                 self._embeddings = OpenAIEmbeddings(
                     model=self.model_name,
-                    openai_api_key=self.api_key
+                    openai_api_key=os.getenv('OPENAI_API_KEY')
                 )
             elif self.model_type == 'Voyage':
                 self._embeddings = VoyageAIEmbeddings(
                     model=self.model_name,
-                    voyage_api_key=self.api_key,
+                    voyage_api_key=os.getenv('VOYAGE_API_KEY'),
                     truncation=False
                 )
             elif self.model_type == 'Hugging Face':
                 self._embeddings = HuggingFaceInferenceAPIEmbeddings(
                     model_name=self.model_name,
-                    api_key=self.api_key
+                    api_key=os.getenv('HUGGINGFACEHUB_API_KEY')
                 )
                 
         return self._embeddings

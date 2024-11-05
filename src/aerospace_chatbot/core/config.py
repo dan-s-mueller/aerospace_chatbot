@@ -14,7 +14,6 @@ def get_cache_decorator():
     except ImportError:
         # Return no-op decorator when not in Streamlit
         return lambda *args, **kwargs: (lambda func: func)
-
 def get_cache_data_decorator():
     """Returns appropriate cache_data decorator based on environment."""
     try:
@@ -23,7 +22,6 @@ def get_cache_data_decorator():
     except ImportError:
         # Return no-op decorator when not in Streamlit
         return lambda *args, **kwargs: (lambda func: func)
-@get_cache_data_decorator()
 def load_config(config_path):
     """Load configuration from file with caching. """
     if not os.path.exists(config_path):
@@ -49,7 +47,18 @@ def get_secrets():
     return {
         'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
         'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY'),
-        'HUGGINGFACEHUB_API_TOKEN': os.getenv('HUGGINGFACEHUB_API_TOKEN'),
+        'HUGGINGFACEHUB_API_KEY': os.getenv('HUGGINGFACEHUB_API_KEY'),
         'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY'),
         'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY')
     }
+
+def set_secrets(secrets):
+    """Sets environment variables from provided secrets dictionary."""
+    for key_name, value in secrets.items():
+        if value:  # Only set if value exists
+            os.environ[key_name] = value
+            if os.environ[key_name] == '':
+                readable_name = ' '.join(key_name.split('_')[:-1]).title()
+                raise ConfigurationError(f'{readable_name} is required.')
+    
+    return secrets

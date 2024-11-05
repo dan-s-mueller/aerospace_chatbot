@@ -5,6 +5,7 @@ import os, ast, tempfile
 from streamlit_pdf_viewer import pdf_viewer
 
 from ..core.cache import Dependencies, get_cache_data_decorator
+from ..core.config import get_secrets
 from ..services.database import DatabaseService
 from ..services.embeddings import EmbeddingService
 from ..processing.documents import DocumentProcessor
@@ -61,7 +62,6 @@ def display_sources(sources, expanded=False):
                                 st.write("Disabled for now...see download link above!")
                         except Exception as e:
                             st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. Contact support if this issue persists. User file uploads not yet supported.")
-
 def show_connection_status(expanded = True, delete_buttons = False):
     """Display connection status for various services with optional delete functionality. """
     with st.expander("Connection Status", expanded=expanded):
@@ -72,7 +72,7 @@ def show_connection_status(expanded = True, delete_buttons = False):
         # Database Status and Management
         st.markdown("**Database Status:**")
         _display_database_status(delete_buttons)
-def handle_file_upload(sb, secrets):
+def handle_file_upload(sb):
     """Handle file upload functionality for the chatbot."""
     if not _validate_upload_settings(sb):
         return
@@ -85,7 +85,7 @@ def handle_file_upload(sb, secrets):
     
     if st.button('Upload your docs into vector database'):
         with st.spinner('Uploading and merging your documents with the database...'):
-            _process_uploads(sb, secrets, temp_files)
+            _process_uploads(sb, temp_files)
 
     if st.session_state.user_upload:
         st.markdown(
@@ -115,66 +115,38 @@ def get_or_create_spotlight_viewer(df, port: int = 9000):
     return viewer
 def _display_api_key_status():
     """Display API key status."""
-    keys = {
-        'OpenAI API Key': os.getenv('OPENAI_API_KEY'),
-        'Anthropic API Key': os.getenv('ANTHROPIC_API_KEY'),
-        'Voyage API Key': os.getenv('VOYAGE_API_KEY'),
-        'Pinecone API Key': os.getenv('PINECONE_API_KEY'),
-        'Hugging Face API Key': os.getenv('HUGGINGFACEHUB_API_TOKEN')
-    }
-    
-    markdown_str = "\n".join([f"- {name}: {'✅' if key else '❌'}" for name, key in keys.items()])
+    secrets = get_secrets()
+    markdown_str = "\n".join([f"- {name}: {'✅' if secret else '❌'}" for name, secret in secrets.items()])
     st.markdown(markdown_str)
-def _display_database_status(delete_buttons = False):
+def _display_database_status(delete_buttons=False):
     """Display database status and management options."""
-    # Get local_db_path from environment
-    local_db_path = os.getenv('LOCAL_DB_PATH')
-    if not local_db_path:
+    if not os.getenv('LOCAL_DB_PATH'):
         st.error("Local database path not set")
         return
 
-    # Initialize database services for each type
     db_services = {
-        'Pinecone': DatabaseService('Pinecone', local_db_path),
-        'ChromaDB': DatabaseService('ChromaDB', local_db_path),
-        'RAGatouille': DatabaseService('RAGatouille', local_db_path)
+        'Pinecone': DatabaseService('Pinecone', os.getenv('LOCAL_DB_PATH')),
+        'ChromaDB': DatabaseService('ChromaDB', os.getenv('LOCAL_DB_PATH')),
+        'RAGatouille': DatabaseService('RAGatouille', os.getenv('LOCAL_DB_PATH'))
     }
     
-    # Show Pinecone status
-    pinecone_status = db_services['Pinecone'].get_pinecone_status()
-    st.markdown("**Pinecone Indexes:**")
-    if pinecone_status['status']:
-        for index in pinecone_status['indexes']:
-            st.markdown(f"- `{index}` ✅")
-            if delete_buttons:
-                _handle_index_deletion('Pinecone', index, db_services['Pinecone'])
-    else:
-        st.markdown(f"- {pinecone_status['message']} ❌")
-
-    # Show ChromaDB status
-    chroma_status = db_services['ChromaDB'].get_chroma_status()
-    st.markdown("**ChromaDB Collections:**")
-    if chroma_status['status']:
-        for collection in chroma_status['collections']:
-            st.markdown(f"- `{collection.name}` ✅")
-            if delete_buttons:
-                _handle_index_deletion('ChromaDB', collection.name, db_services['ChromaDB'])
-    else:
-        st.markdown(f"- {chroma_status['message']} ❌")
-
-    # Show RAGatouille status
-    rag_status = db_services['RAGatouille'].get_ragatouille_status()
-    st.markdown("**RAGatouille Indexes:**")
-    if rag_status['status']:
-        for index in rag_status['indexes']:
-            st.markdown(f"- `{index}` ✅")
-            if delete_buttons:
-                _handle_index_deletion('RAGatouille', index, db_services['RAGatouille'])
-    else:
-        st.markdown(f"- {rag_status['message']} ❌")
+    # Display status for each database type
+    for db_type, service in db_services.items():
+        st.markdown(f"**{db_type} {'Indexes' if db_type != 'ChromaDB' else 'Collections'}:**")
+        status = service.get_database_status(db_type)
+        
+        if status['status']:
+            for index in status['indexes']:
+                # Handle different index name formats
+                index_name = index.name if hasattr(index, 'name') else index
+                st.markdown(f"- `{index_name}` ✅")
+                if delete_buttons:
+                    _handle_index_deletion(db_type, index_name, service)
+        else:
+            st.markdown(f"- {status['message']} ❌")
 
     # Show database path
-    st.markdown(f"**Local database path:** `{local_db_path}`")
+    st.markdown(f"**Local database path:** `{os.getenv('LOCAL_DB_PATH')}`")
 def _handle_index_deletion(db_type, index_name, db_service):
     """Handle deletion of database indexes."""
     if st.button(f'Delete {index_name}', help='This is permanent!'):
@@ -219,7 +191,7 @@ def _save_uploads_to_temp(uploaded_files):
             temp_file.write(uploaded_file.read())
         temp_files.append(temp_path)
     return temp_files
-def _process_uploads(sb, secrets, temp_files):
+def _process_uploads(sb, temp_files):
     """Process uploaded files and merge them into the vector database."""
     # Initialize services
     db_service = DatabaseService(
@@ -228,8 +200,7 @@ def _process_uploads(sb, secrets, temp_files):
     )
     embedding_service = EmbeddingService(
         model_name=sb['embedding_name'],
-        model_type=sb['query_model'],
-        api_key=secrets.get(f"{sb['query_model']}_key")
+        model_type=sb['query_model']
     )
     # Initialize document processor
     doc_processor = DocumentProcessor(

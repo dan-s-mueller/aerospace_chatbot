@@ -4,7 +4,6 @@ import os, time
 from aerospace_chatbot.ui import SidebarManager, display_chat_history, display_sources, handle_file_upload
 from aerospace_chatbot.processing import QAModel
 from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
-from aerospace_chatbot.core import get_secrets
 
 def _reset_conversation():
     """Resets the conversation by clearing the session state variables related to the chatbot."""
@@ -22,7 +21,6 @@ home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 # Initialize SidebarManager
 sidebar_manager = SidebarManager(st.session_state.config_file)
 sb = sidebar_manager.render_sidebar()
-secrets = get_secrets()
 
 # Disable sidebar elements after first message
 if 'message_id' in st.session_state and st.session_state.message_id > 0:
@@ -64,7 +62,7 @@ with st.expander('''Helpful Information'''):
 
 if st.session_state.message_id == 0:
     with st.expander("Upload files to existing database",expanded=True):
-        handle_file_upload(sb, secrets)
+        handle_file_upload(sb)
 
 # Define chat
 if prompt := st.chat_input('Prompt here'):
@@ -84,15 +82,13 @@ if prompt := st.chat_input('Prompt here'):
             # Initialize embedding service
             embedding_service = EmbeddingService(
                 model_name=sb['embedding_name'],
-                model_type=sb['query_model'],
-                api_key=secrets.get(f"{sb['query_model']}_key")
+                model_type=sb['query_model']
             )
             
             # Initialize LLM service
             llm_service = LLMService(
                 model_name=sb['llm_model'],
                 model_type=sb['llm_source'],
-                api_key=secrets.get(f"{sb['llm_source']}_key"),
                 temperature=sb['model_options']['temperature'],
                 max_tokens=sb['model_options']['output_level']
             )

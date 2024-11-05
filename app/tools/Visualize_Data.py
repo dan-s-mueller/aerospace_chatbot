@@ -3,7 +3,6 @@ import streamlit as st
 
 from aerospace_chatbot.ui import SidebarManager, get_or_create_spotlight_viewer
 from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
-from aerospace_chatbot.core import get_secrets
 
 # Page setup
 st.title('📈 Visualize Data')
@@ -13,7 +12,6 @@ home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 # Initialize SidebarManager
 sidebar_manager = SidebarManager(st.session_state.config_file)
 sb = sidebar_manager.render_sidebar()
-secrets = get_secrets()
 
 # Set up session state variables
 if 'viewer' not in st.session_state:
@@ -25,20 +23,18 @@ if sb["index_type"] == 'RAGatouille':
 
 embedding_service = EmbeddingService(
     model_name=sb['embedding_name'],
-    model_type=sb['query_model'].lower(),
-    api_key=secrets.get(f"{sb['query_model'].lower()}_key")
+    model_type=sb['query_model']
 )
 
 llm_service = LLMService(
     model_name=sb['llm_model'],
-    model_type=sb['llm_source'].lower(),
-    api_key=secrets.get(f"{sb['llm_source'].lower()}_key"),
+    model_type=sb['llm_source'],
     temperature=sb['model_options']['temperature'],
     max_tokens=sb['model_options']['output_level']
 )
 
 db_service = DatabaseService(
-    db_type=sb['index_type'].lower(),
+    db_type=sb['index_type'],
     local_db_path=os.getenv('LOCAL_DB_PATH')
 )
 

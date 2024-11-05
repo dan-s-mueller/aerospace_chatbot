@@ -3,8 +3,8 @@
 import streamlit as st
 import os
 
+from ..core.config import load_config, ConfigurationError, get_secrets, set_secrets
 from ..core.cache import Dependencies
-from ..core.config import load_config, ConfigurationError
 from ..services.database import DatabaseService
 
 class SidebarManager:
@@ -27,7 +27,7 @@ class SidebarManager:
                 'rag': ['rag_type', 'rag_llm_source', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_source', 'llm_model', 'llm_endpoint'],
                 'model_options': ['temperature', 'output_level', 'k'],
-                'api_keys': ['openai_key', 'anthropic_key', 'hf_key', 'voyage_key', 'pinecone_key']
+                'api_keys': ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'HUGGINGFACEHUB_API_KEY', 'VOYAGE_API_KEY', 'PINECONE_API_KEY']
             }
             
             # Get disabled controls from config
@@ -309,12 +309,21 @@ class SidebarManager:
         
         if ('llm_source' in self.sb_out and self.sb_out['llm_source'] == 'Hugging Face') or \
            ('query_model' in self.sb_out and self.sb_out['query_model'] == 'Hugging Face'):
-            self.sb_out['keys']['HUGGINGFACEHUB_API_TOKEN'] = st.sidebar.text_input(
+            self.sb_out['keys']['HUGGINGFACEHUB_API_KEY'] = st.sidebar.text_input(
                 'Hugging Face API Key',
                 type='password',
                 disabled=st.session_state.hf_key_disabled,
                 help='Hugging Face API Key: https://huggingface.co/settings/tokens'
             )
+        
+        # Set secrets and environment variables
+        try:
+            secrets = get_secrets()  # Get secrets from environment
+            self.secrets = set_secrets(secrets)  # Set them as environment variables
+        except ConfigurationError as e:
+            st.warning(f"{e}")
+            st.stop()
+
     def _check_local_db_path(self):
         """Check and set local database path if not already set"""
         if not os.environ.get('LOCAL_DB_PATH'):

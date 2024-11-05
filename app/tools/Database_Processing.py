@@ -4,7 +4,6 @@ import streamlit as st
 from aerospace_chatbot.ui import SidebarManager, show_connection_status
 from aerospace_chatbot.processing import DocumentProcessor
 from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
-from aerospace_chatbot.core import get_secrets
 
 # Page setup
 st.title('📓 Database Processing')
@@ -14,7 +13,6 @@ home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 # Initialize SidebarManager
 sidebar_manager = SidebarManager(st.session_state.config_file)
 sb = sidebar_manager.render_sidebar()
-secrets = get_secrets()
 
 # Page setup
 st.subheader('Connection status and vector database cleanup')
@@ -26,8 +24,7 @@ st.subheader('Create and load into a vector database')
 # Initialize services
 embedding_service = EmbeddingService(
     model_name=sb['embedding_name'],
-    model_type=sb['query_model'].lower(),
-    api_key=secrets.get(f"{sb['query_model'].lower()}_key")
+    model_type=sb['query_model'].lower()
 )
 
 # Find docs
@@ -107,7 +104,7 @@ with st.expander("Options",expanded=True):
 
 # Initialize services for document processing
 db_service = DatabaseService(
-    db_type=sb['index_type'].lower(),
+    db_type=sb['index_type'],
     local_db_path=os.getenv('LOCAL_DB_PATH')
 )
 
@@ -115,7 +112,6 @@ if sb['rag_type'] == 'Summary':
     llm_service = LLMService(
         model_name=sb['rag_llm_model'],
         model_type=sb['rag_llm_source'].lower(),
-        api_key=secrets.get(f"{sb['rag_llm_source'].lower()}_key"),
         temperature=sb['model_options']['temperature'],
         max_tokens=sb['model_options']['output_level']
     )

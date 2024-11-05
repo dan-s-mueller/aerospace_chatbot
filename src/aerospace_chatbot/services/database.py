@@ -140,7 +140,7 @@ class DatabaseService:
         hf_dataset = Dataset.from_pandas(df)
         hf_dataset.push_to_hub(
             dataset_name, 
-            token=os.getenv('HUGGINGFACEHUB_API_TOKEN')
+            token=os.getenv('HUGGINGFACEHUB_API_KEY')
         )
     def get_available_indexes(self, index_type, embedding_name, rag_type):
         """Get available indexes based on current settings."""
@@ -192,12 +192,26 @@ class DatabaseService:
                 return []
         
         return name
-    def get_pinecone_status(self):
+    def get_database_status(self, db_type):
+        """Get status of database indexes/collections."""
+        status_handlers = {
+            'Pinecone': self._get_pinecone_status,
+            'ChromaDB': self._get_chromadb_status,
+            'RAGatouille': self._get_ragatouille_status
+        }
+        
+        handler = status_handlers.get(db_type)
+        if not handler:
+            return {'status': False, 'message': f'Unsupported database type: {db_type}'}
+        
+        return handler()
+
+    def _get_pinecone_status(self):
         """Get status of Pinecone indexes."""
         api_key = os.getenv('PINECONE_API_KEY')
         return self._cached_pinecone_status(api_key)
 
-    def get_chroma_status(self):
+    def _get_chromadb_status(self):
         """Get status of ChromaDB collections."""
         _, chromadb, _ = self._deps.get_db_deps()
         
@@ -208,13 +222,13 @@ class DatabaseService:
             db_path = self.local_db_path / 'chromadb'
             client = chromadb.PersistentClient(path=str(db_path))
             collections = client.list_collections()
-            if len(collections) == 0:
+            if not collections:
                 return {'status': False, 'message': 'No collections found'}
-            return {'status': True, 'collections': collections}
+            return {'status': True, 'indexes': collections}
         except Exception as e:
             return {'status': False, 'message': f'Error connecting to ChromaDB: {str(e)}'}
 
-    def get_ragatouille_status(self):
+    def _get_ragatouille_status(self):
         """Get status of RAGatouille indexes."""
         if not self.local_db_path:
             return {'status': False, 'message': 'Local database path not set'}
@@ -224,12 +238,8 @@ class DatabaseService:
             if not index_path.exists():
                 return {'status': False, 'message': 'No indexes found'}
             
-            indexes = []
-            for item in index_path.iterdir():
-                if item.is_dir():
-                    indexes.append(item.name)
-                    
-            if len(indexes) == 0:
+            indexes = [item.name for item in index_path.iterdir() if item.is_dir()]
+            if not indexes:
                 return {'status': False, 'message': 'No indexes found'}
             return {'status': True, 'indexes': indexes}
         except Exception as e:
