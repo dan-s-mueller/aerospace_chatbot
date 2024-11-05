@@ -31,8 +31,6 @@ from .ui import (
     display_sources, 
     show_connection_status,
     handle_file_upload,
-    extract_pages_from_pdf,
-    get_pdf,
     get_or_create_spotlight_viewer
 )
 
@@ -72,8 +70,6 @@ __all__ = [
     'display_sources', 
     'show_connection_status',
     'handle_file_upload',
-    'extract_pages_from_pdf',
-    'get_pdf',
     'get_or_create_spotlight_viewer'
 ]
 
