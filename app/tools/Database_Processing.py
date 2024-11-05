@@ -124,7 +124,13 @@ else:
 
 doc_processor = DocumentProcessor(
     db_service=db_service,
-    embedding_service=embedding_service
+    embedding_service=embedding_service,
+    rag_type=sb['rag_type'],
+    chunk_method=chunk_method,
+    chunk_size=chunk_size,
+    chunk_overlap=chunk_overlap,
+    merge_pages=n_merge_pages if merge_pages else None,
+    llm_service=llm_service
 )
 
 # Add a button to run the function
@@ -135,8 +141,7 @@ if st.button('Load docs into vector database'):
         # Process documents
         chunking_result = doc_processor.process_documents(
             documents=docs,
-            rag_type=sb['rag_type'],
-            merge_pages=n_merge_pages if merge_pages else None
+            show_progress=True
         )
         
         # Index documents
