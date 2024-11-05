@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from langchain_core.documents import Document
 from langchain.text_splitter import TextSplitter
 from google.cloud import storage
+import streamlit as st
 
 from ..core.cache import Dependencies
 from ..services.prompts import SUMMARIZE_TEXT
@@ -49,39 +50,12 @@ class DocumentProcessor:
         self.llm_service = llm_service  # Only for rag_type=='Summary', otherwise ignored
         self._deps = Dependencies()
 
-    def process_documents(self, 
-                          documents,
-                          show_progress=False):
-        """Process documents based on RAG type by chunking."""  
-        # TODO add show_progress functionality here
-        # TODO use cache load function
-        from langchain_community.document_loaders import PyPDFLoader
+    def process_documents(self, documents, show_progress=False):
+        """Process documents based on RAG type by chunking."""
+        self.show_progress = show_progress
+
+        cleaned_docs = self._load_and_clean_documents(documents)
         
-        # Load the document. First try as if it is a path, second try as if it is a file object 
-        # FIXME Need to handle multiple pdfs, currently taken from old script where only one pdf was used and looped over
-        loader = PyPDFLoader(doc)
-        doc_page_data = loader.load()
-
-        # Clean up page info, update some metadata
-        cleaned_docs=[]
-        doc_pages=[]
-        for doc_page in doc_page_data:
-            doc_page=self._sanitize_page(doc_page)
-            if doc_page is not None:
-                doc_pages.append(doc_page)
-
-        # Merge pages if option is selected
-        if self.merge_pages > 1:
-            for i in range(0, len(doc_pages), self.merge_pages):
-                group = doc_pages[i:i+self.merge_pages]
-                group_page_content=' '.join([doc.page_content for doc in group])
-                group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
-                                  'source': str([doc.metadata['source'] for doc in group])}
-                merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
-                cleaned_docs.append(merged_doc)
-        else:
-            cleaned_docs.extend(doc_pages)
-
         if self.rag_type == 'Standard':
             return self._process_standard(cleaned_docs)
         elif self.rag_type == 'Parent-Child':
@@ -90,23 +64,61 @@ class DocumentProcessor:
             return self._process_summary(cleaned_docs)
         else:
             raise ValueError(f"Unsupported RAG type: {self.rag_type}")
+
+    def _load_and_clean_documents(self, documents):
+        """Load PDF documents and clean their contents."""
+        # TODO use cache load function
+        from langchain_community.document_loaders import PyPDFLoader
+        
+        if self.show_progress:
+            progress_text = 'Reading documents...'
+            my_bar = st.progress(0, text=progress_text)
+        
+        cleaned_docs = []
+        for i, doc in enumerate(documents):
+            if self.show_progress:
+                progress_percentage = i / len(documents)
+                my_bar.progress(progress_percentage, text=f'Reading documents...{doc}...{progress_percentage*100:.2f}%')
+
+            loader = PyPDFLoader(doc)
+            doc_page_data = loader.load()
+
+            # Clean up page info, update some metadata
+            doc_pages = []
+            for doc_page in doc_page_data:
+                doc_page = self._sanitize_page(doc_page)
+                if doc_page is not None:
+                    doc_pages.append(doc_page)
+
+            # Merge pages if option is selected
+            if self.merge_pages > 1:
+                for i in range(0, len(doc_pages), self.merge_pages):
+                    group = doc_pages[i:i+self.merge_pages]
+                    group_page_content = ' '.join([doc.page_content for doc in group])
+                    group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
+                                    'source': str([doc.metadata['source'] for doc in group])}
+                    merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
+                    cleaned_docs.append(merged_doc)
+            else:
+                cleaned_docs.extend(doc_pages)
+        
+        if self.show_progress:
+            my_bar.empty()
+        
+        return cleaned_docs
+
     def index_documents(self,
                        index_name,
                        chunking_result,
                        batch_size=100,
                        clear=False,
-                       namespace=None,
-                       show_progress=False):
+                       namespace=None):
         """Index processed documents."""
         OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
 
-        if show_progress:
-            try:
-                import streamlit as st
-                progress_text = "Document indexing in progress..."
-                my_bar = st.progress(0, text=progress_text)
-            except ImportError:
-                show_progress = False
+        if self.show_progress:  
+            progress_text = "Document indexing in progress..."
+            my_bar = st.progress(0, text=progress_text)
 
         self.vectorstore = self.db_service.initialize_database(
             index_name=index_name,
@@ -149,7 +161,7 @@ class DocumentProcessor:
             else:
                 self.vectorstore.add_documents(documents=batch, ids=batch_ids)
 
-            if show_progress:
+            if self.show_progress:
                 progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
                 my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
 
@@ -157,7 +169,7 @@ class DocumentProcessor:
             if self.rag_type in ['Parent-Child', 'Summary']:
                 self._store_parent_docs(index_name, chunking_result, self.rag_type)
 
-        if show_progress:
+        if self.show_progress:
             my_bar.empty()
     @staticmethod
     def list_available_buckets():
@@ -204,7 +216,6 @@ class DocumentProcessor:
         
         if show_progress:
             try:
-                import streamlit as st
                 progress_text = "Document merging in progress..."
                 my_bar = st.progress(0, text=progress_text)
             except ImportError:
@@ -257,7 +268,7 @@ class DocumentProcessor:
         return ChunkingResult(rag_type=self.rag_type,
                               pages=parent_chunks,
                               chunks=chunks, 
-                              splitters={'parent_splitter':self.splitter,'child_splitter':self.child_splitter},
+                              splitters={'parent_splitter':self.parent_splitter,'child_splitter':self.child_splitter},
                               n_merge_pages=self.merge_pages,
                               chunk_size=self.chunk_size,
                               chunk_overlap=self.chunk_overlap)
@@ -265,8 +276,14 @@ class DocumentProcessor:
         """Process documents for summary RAG."""
         # TODO fix the dependencies, use cache
         from langchain_core.output_parsers import StrOutputParser
+
+        if self.show_progress:
+            progress_text = 'Chunking documents...'
+            my_bar = st.progress(0, text=progress_text)
         
         chunks = self._chunk_documents(documents)
+
+        # Create unique ids for each chunk, set up chain
         id_key = "doc_id"
         doc_ids = [str(self._stable_hash_meta(chunk.metadata)) for chunk in chunks]
         # Setup the summarization chain
@@ -284,14 +301,19 @@ class DocumentProcessor:
             batch = chunks[i:i + batch_size]
             batch_summaries = chain.batch(batch, config={"max_concurrency": batch_size})
             summaries.extend(batch_summaries)
-            # TODO add progress bar functionalty for summary
+            if self.show_progress:
+                progress_percentage = i / len(chunks)
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         
         # Create summary documents with metadata
         summary_docs = [
-            Document(page_content=summary, metadata={"doc_id": doc_ids[i]})
+            Document(page_content=summary, metadata={id_key: doc_ids[i]})
             for i, summary in enumerate(summaries)
         ]        
 
+        if self.show_progress:
+            my_bar.empty()  
+            
         return ChunkingResult(rag_type=self.rag_type,
                               pages={'doc_ids':doc_ids,'docs':chunks},
                               summaries=summary_docs, 
@@ -308,32 +330,40 @@ class DocumentProcessor:
         from langchain.text_splitter import RecursiveCharacterTextSplitter
 
         if self.rag_type!='Parent-Child':
+            if self.show_progress:
+                progress_text = 'Chunking documents...'
+                my_bar = st.progress(0, text=progress_text)
             if self.chunk_method=='character_recursive':
                 self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
                                                             chunk_overlap=self.chunk_overlap,
                                                             add_start_index=True)
                 page_chunks = self.splitter.split_documents(documents)
-                for chunk in page_chunks:
+                for i, chunk in enumerate(page_chunks):
+                    if self.show_progress:
+                        progress_percentage = i / len(page_chunks)
+                        my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
                     chunks.append(chunk)    # Not sanitized because the page already was
             elif self.chunk_method=='None':
                 self.splitter = None
                 chunks = documents  # No chunking, take whole pages as documents
             else:
                 raise NotImplementedError
+            if self.show_progress:
+                my_bar.empty()
             return chunks
         elif self.rag_type=='Parent-Child':
             # TODO put k_child in a place that makes more sense
+            # TODO add progress bar
             self.k_child = 4
             if self.chunk_method=='character_recursive':
                 # Settings apply to parent splitter. k_child divides parent into smaller sizes.
-                self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
+                self.parent_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
                                                             chunk_overlap=self.chunk_overlap,
                                                             add_start_index=True)    # Without add_start_index, will not be a unique id
-                parent_chunks = self.splitter.split_documents(documents)
+                parent_chunks = self.parent_splitter.split_documents(documents)
             elif self.chunk_method=='None':
-                self.splitter = None
+                self.parent_splitter = None
                 parent_chunks = documents  # No chunking, take whole pages as documents
-                # raise ValueError("You must specify a chunk_method with rag_type=Parent-Child.")
             else:
                 raise NotImplementedError
             # Assign parent doc ids
@@ -356,7 +386,12 @@ class DocumentProcessor:
                 _chunks = self.child_splitter.split_documents([doc])
                 for _doc in _chunks:
                     _doc.metadata[id_key] = _id
+                if self.show_progress:
+                    progress_percentage = i / len(parent_chunks)
+                    my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
                 chunks.extend(_chunks)
+            if self.show_progress:
+                my_bar.empty()
             return chunks, {'doc_ids':doc_ids,'parent_chunks':parent_chunks}
         else:
             raise NotImplementedError
