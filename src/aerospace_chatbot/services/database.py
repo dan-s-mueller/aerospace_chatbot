@@ -5,7 +5,6 @@ import os
 
 from ..core.cache import Dependencies, get_cache_decorator
 from ..services.prompts import CLUSTER_LABEL
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 cache_data = get_cache_decorator()
 
@@ -256,37 +255,36 @@ class DatabaseService:
         client = chromadb.PersistentClient(path=str(db_path))
         
         if clear:
+            # FIXME delete won't clear local filestores
             client.delete_collection(self.index_name)
         return Chroma(
             client=client,
             collection_name=self.index_name,
             embedding_function=self.embedding_service.get_embeddings()
         )
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type(Exception)
-    )
-    def _delete_and_create_pinecone_index(self):
-        """Helper method to delete and recreate a Pinecone index"""
-        Pinecone, _, ServerlessSpec = self._deps.get_db_deps()
+    def _init_pinecone(self, clear=False):
+        """Initialize Pinecone."""
+        # Check if index exists
+        pinecone_client, _, ServerlessSpec = self._deps.get_db_deps()
         PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
         
-        pc = Pinecone()
-        dimension = self.embedding_service.get_dimension()
-        
-        if self.index_name in pc.list_indexes():
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+        if clear:
+            # FIXME delete won't clear local filestores
             pc.delete_index(self.index_name)
-        
-        pc.create_index(
-            name=self.index_name,
-            dimension=dimension,
-            spec=ServerlessSpec(
-                cloud='aws',
-                region='us-west-2'
+      
+        try:
+            pc.describe_index(self.index_name)
+        except:
+            pc.create_index(
+                name=self.index_name,
+                dimension=self.embedding_service.get_dimension(),
+                spec=ServerlessSpec(
+                    cloud='aws',    
+                    region='us-west-2'
+                )
             )
-        )
-
+        
         return PineconeVectorStore(
             index=pc.Index(self.index_name),
             index_name=self.index_name,
@@ -295,32 +293,6 @@ class DatabaseService:
             pinecone_api_key=os.getenv('PINECONE_API_KEY'),
             namespace=self.namespace
         )
-    def _init_pinecone(self, clear=False):
-        """Initialize Pinecone."""
-        # try:
-        if clear:
-            # FIXME this still is not working properly. It is not deleting the index and then creating it or is timing out.
-            return self._delete_and_create_pinecone_index()
-        else:
-            # Check if index exists
-            Pinecone, _, _ = self._deps.get_db_deps()
-            PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
-            pc = Pinecone()
-            
-            if self.index_name not in pc.list_indexes():
-                raise Exception(f"Index '{self.index_name}' does not exist and clear=False")
-            
-            return PineconeVectorStore(
-                index=pc.Index(self.index_name),
-                index_name=self.index_name,
-                embedding=self.embedding_service.get_embeddings(),
-                text_key='page_content',
-                pinecone_api_key=os.getenv('PINECONE_API_KEY'),
-                namespace=self.namespace
-            )
-                
-        # except Exception as e:
-        #     raise Exception(f"Error initializing Pinecone index: {str(e)}")
 
     def _init_ragatouille(self, clear=False):
         """Initialize RAGatouille."""
@@ -328,6 +300,7 @@ class DatabaseService:
         
         index_path = self.local_db_path / '.ragatouille'
         if clear:
+            # FIXME delete won't clear local filestores
             RAGPretrainedModel.delete_index(self.index_name)
         return RAGPretrainedModel.from_pretrained(
             model_name=self.index_name,

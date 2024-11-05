@@ -61,10 +61,10 @@ class Dependencies:
     @cache_resource
     def get_db_deps():
         """Load database dependencies."""
-        from pinecone import Pinecone
+        from pinecone import Pinecone as pinecone_client
         import chromadb
         from pinecone import ServerlessSpec
-        return Pinecone, chromadb, ServerlessSpec
+        return pinecone_client, chromadb, ServerlessSpec
     
     @staticmethod
     @cache_resource
