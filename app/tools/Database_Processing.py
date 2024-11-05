@@ -28,15 +28,16 @@ embedding_service = EmbeddingService(
 )
 
 # Find docs
+st.session_state.buckets = None
 try:
-    buckets = DocumentProcessor.list_available_buckets()
+    st.session_state.buckets = DocumentProcessor.list_available_buckets()
     
-    if not buckets:
-        st.warning("No GCS buckets found. Please ensure you have access to at least one bucket in your GCS project.")
+    if not st.session_state.buckets:
+        st.warning("No Google Cloud Storage buckets found. Please ensure you have access to at least one bucket in your Google Cloud project.")
         st.stop()
         
-    bucket_name = st.selectbox('Select GCS bucket',
-                             options=buckets,
+    bucket_name = st.selectbox('Select Google Cloud Storage bucket',
+                             options=st.session_state.buckets,
                              help='Select a Google Cloud Storage bucket containing PDFs')
 
     docs = DocumentProcessor.list_bucket_pdfs(bucket_name)
@@ -131,16 +132,12 @@ doc_processor = DocumentProcessor(
 
 # Add a button to run the function
 if st.button('Load docs into vector database'):
-    start_time = time.time()
-    
-    # try:
-    
+    start_time = time.time()    
     # Process documents
     chunking_result = doc_processor.process_documents(
         documents=docs,
         show_progress=True
     )
-    
     # Index documents
     doc_processor.index_documents(
         index_name=index_name,
@@ -148,10 +145,6 @@ if st.button('Load docs into vector database'):
         batch_size=batch_size,
         clear=clear_database
     )
-    
     end_time = time.time()
     elapsed_time = end_time - start_time
     st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
-        
-    # except Exception as e:
-    #     st.error(f"Error processing documents: {str(e)}")

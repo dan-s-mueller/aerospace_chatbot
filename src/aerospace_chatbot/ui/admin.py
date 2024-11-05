@@ -27,7 +27,7 @@ class SidebarManager:
                 'rag': ['rag_type', 'rag_llm_source', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_source', 'llm_model', 'llm_endpoint'],
                 'model_options': ['temperature', 'output_level', 'k'],
-                'api_keys': ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'HUGGINGFACEHUB_API_KEY', 'VOYAGE_API_KEY', 'PINECONE_API_KEY']
+                'api_keys': ['openai_key', 'anthropic_key', 'hf_key', 'voyage_key', 'pinecone_key']
             }
             
             # Get disabled controls from config
@@ -35,7 +35,11 @@ class SidebarManager:
             
             for group, group_elements in elements.items():
                 for element in group_elements:
-                    disabled = element in disabled_controls.get(group, [])
+                    disabled = False
+                    # Check if this element should be disabled based on config
+                    if group in disabled_controls and element in disabled_controls[group]:
+                        disabled = True
+                    
                     if f'{element}_disabled' not in st.session_state:
                         st.session_state[f'{element}_disabled'] = disabled
                     if f'{element}_value' not in st.session_state:
