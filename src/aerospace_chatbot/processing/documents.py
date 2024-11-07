@@ -404,24 +404,27 @@ class DocumentProcessor:
                         parent_chunks.extend(parent_page_chunks)  # Use extend to flatten the list
                     else:
                         raise NotImplementedError
-                    
-                    doc_ids = [str(self._stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
-                    id_key = "doc_id"
-                    for parent_chunk in parent_chunks:
-                        _id = doc_ids[i]
-                        if self.chunk_method == 'character_recursive':
-                            self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size / self.k_child, 
-                                                                                chunk_overlap=self.chunk_overlap,
-                                                                                add_start_index=True)
-                        else:
-                            raise NotImplementedError
-                        _chunks = self.child_splitter.split_documents([parent_chunk])
-                        for _doc in _chunks:
-                            _doc.metadata[id_key] = _id
-                        chunks.extend(_chunks)  # Use extend to flatten the list
                     if self.show_progress:
                         progress_percentage = i / len(documents)
-                        my_bar.progress(progress_percentage, text=f'Chunking parent-child documents...{progress_percentage*100:.2f}%')
+                        my_bar.progress(progress_percentage, text=f'Chunking parent documents...{progress_percentage*100:.2f}%')
+                    
+                doc_ids = [str(self._stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
+                id_key = "doc_id"
+                for i, doc in enumerate(parent_chunks):
+                    _id = doc_ids[i]
+                    if self.chunk_method == 'character_recursive':
+                        self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size / self.k_child, 
+                                                                            chunk_overlap=self.chunk_overlap,
+                                                                            add_start_index=True)
+                    else:
+                        raise NotImplementedError
+                    _chunks = self.child_splitter.split_documents([doc])
+                    for _doc in _chunks:
+                        _doc.metadata[id_key] = _id
+                    chunks.extend(_chunks)  # Use extend to flatten the list
+                    if self.show_progress:
+                        progress_percentage = i / len(documents)
+                        my_bar.progress(progress_percentage, text=f'Chunking child documents...{progress_percentage*100:.2f}%')
         
                 if self.show_progress:
                     my_bar.empty()
