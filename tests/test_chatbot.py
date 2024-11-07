@@ -87,9 +87,9 @@ def pytest_generate_tests(metafunc):
     Use pytest_generate_tests to dynamically generate tests.
     Tests generates tests from a static file (test_cases.json). See test_cases.json for more details.
     '''
-    if 'test_query' in metafunc.fixturenames:
+    if 'test_input' in metafunc.fixturenames:
         tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test_cases.json'))
-        metafunc.parametrize('test_query', tests)
+        metafunc.parametrize('test_input', tests)
 
 def parse_test_case(setup, test_case):
     ''' Parse test case to be used in the test functions.'''
@@ -109,32 +109,47 @@ def parse_test_case(setup, test_case):
 def parse_test_model(type, test, setup_fixture):
     """Parses the test model based on the given type and test parameters."""
     if type == 'embedding':
-        # Parse out embedding
-        if test['index_type'] == 'RAGatouille':
-            query_model = RAGPretrainedModel.from_pretrained(test['embedding_name'],
-                                                             index_root=os.path.join(setup_fixture['LOCAL_DB_PATH'], '.ragatouille'))
-        elif test['query_model'] == 'OpenAI' or test['query_model'] == 'Voyage' or test['query_model'] == 'Hugging Face':
-            if test['query_model'] == 'OpenAI':
-                query_model = OpenAIEmbeddings(model=test['embedding_name'], openai_api_key=setup_fixture['OPENAI_API_KEY'])
-            elif test['query_model'] == 'Voyage':
-                query_model = VoyageAIEmbeddings(model=test['embedding_name'], voyage_api_key=setup_fixture['VOYAGE_API_KEY'], truncation=False)
-            elif test['query_model'] == 'Hugging Face':
-                query_model = HuggingFaceInferenceAPIEmbeddings(model_name=test['embedding_name'], 
-                                                                api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'])
+        # Initialize the embedding service
+        if test['query_model'] == 'OpenAI':
+            embedding_service = EmbeddingService(
+                model_name=test['embedding_name'],
+                model_type='OpenAI'
+            )
+        elif test['query_model'] == 'Voyage':
+            embedding_service = EmbeddingService(
+                model_name=test['embedding_name'],
+                model_type='Voyage'
+            )
+        elif test['query_model'] == 'Hugging Face':
+            embedding_service = EmbeddingService(
+                model_name=test['embedding_name'],
+                model_type='Hugging Face'
+            )
         else:
             raise NotImplementedError('Query model not implemented.')
-        return query_model
+        return embedding_service
+
     elif type == 'llm':
-        # Parse out llm
+        # Initialize the LLM service
         if test['llm_family'] == 'OpenAI':
-            llm = ChatOpenAI(model_name=test['llm'], openai_api_key=setup_fixture['OPENAI_API_KEY'], max_tokens=500)
+            llm_service = LLMService(
+                model_name=test['llm'],
+                model_type='OpenAI'
+            )
         elif test['llm_family'] == 'Anthropic':
-            llm = ChatAnthropic(model=test['llm'], anthropic_api_key=setup_fixture['ANTHROPIC_API_KEY'], max_tokens=500)
+            llm_service = LLMService(
+                model_name=test['llm'],
+                model_type='Anthropic'
+            )
         elif test['llm_family'] == 'Hugging Face':
-            llm = ChatOpenAI(base_url='https://api-inference.huggingface.co/v1', model=test['llm'], api_key=setup_fixture['HUGGINGFACEHUB_API_TOKEN'], max_tokens=500)
+            llm_service = LLMService(
+                model_name=test['llm'],
+                model_type='Hugging Face'
+            )
         else:
             raise NotImplementedError('LLM not implemented.')
-        return llm
+        return llm_service
+
     else:
         raise ValueError('Invalid type. Must be either "embedding" or "llm".')
 
@@ -257,7 +272,7 @@ def test_process_docs_merge_nochunk(setup_fixture):
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Standard'],
         chunk_method='None',
-        n_merge_pages=2
+        merge_pages=2
     )
     
     result = doc_processor.process_documents(setup_fixture['docs'])
@@ -308,17 +323,17 @@ def test_process_documents_parent_child(setup_fixture):
     
     result = doc_processor.process_documents(setup_fixture['docs'])
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages.parent_chunks]
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages['parent_chunks']]
     chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
 
     assert result.rag_type == setup_fixture['rag_type']['Parent-Child']
-    assert result.pages.doc_ids is not None
-    assert result.pages.parent_chunks is not None
+    assert result.pages['doc_ids'] is not None
+    assert result.pages['parent_chunks'] is not None
     assert len(page_ids) == len(set(page_ids))
     assert result.chunks is not None
     assert len(chunk_ids) == len(set(chunk_ids))
-    assert result.splitters.parent_splitter is not None
-    assert result.splitters.child_splitter is not None
+    assert result.splitters['parent_splitter'] is not None
+    assert result.splitters['child_splitter'] is not None
 
 def test_process_documents_summary(setup_fixture):
     '''Test document processing with summary RAG.'''
@@ -335,12 +350,12 @@ def test_process_documents_summary(setup_fixture):
     
     result = doc_processor.process_documents(setup_fixture['docs'])
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages.docs]
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages['docs']]
     summary_ids = [DocumentProcessor._stable_hash_meta(summary.metadata) for summary in result.summaries]
     
     assert result.rag_type == setup_fixture['rag_type']['Summary']
-    assert result.pages.doc_ids is not None
-    assert result.pages.docs is not None
+    assert result.pages['doc_ids'] is not None
+    assert result.pages['docs'] is not None
     assert len(page_ids) == len(set(page_ids))
     assert result.summaries is not None
     assert len(summary_ids) == len(set(summary_ids))
@@ -455,94 +470,80 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
         )
 
 # Test end to end process, adding query
-def test_database_setup_and_query(test_query, setup_fixture):
+def test_database_setup_and_query(test_input, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
-    test, print_str = parse_test_case(setup_fixture, test_query)
+    test, print_str = parse_test_case(setup_fixture, test_input)
     index_name = 'test' + str(test['id'])
     print(f'Starting test: {print_str}')
 
-    # Initialize services
-    embedding_service = EmbeddingService(
-        model_name=test['embedding_name'],
-        model_type=test['query_model']
-    )
-    
-    db_service = DatabaseService(
-        db_type=test['index_type'],
-        local_db_path=setup_fixture['LOCAL_DB_PATH']
-    )
-    
-    llm_service = LLMService(
-        model_name=test['llm'],
-        model_type=test['llm_family'],
-        temperature=0.1,
-        max_tokens=1000
-    )
-
-    # Initialize document processor
-    doc_processor = DocumentProcessor(
-        db_service=db_service,
-        embedding_service=embedding_service,
-        rag_type=test['rag_type'],
-        chunk_size=setup_fixture['chunk_size'],
-        chunk_overlap=setup_fixture['chunk_overlap'],
-        llm_service=llm_service if test['rag_type'] == 'Summary' else None
-    )
+    # Get the embedding and LLM services
+    query_model_service = parse_test_model('embedding', test, setup_fixture)
+    llm_service = parse_test_model('llm', test, setup_fixture)
 
     try:
+        # Initialize the document processor with services
+        doc_processor = DocumentProcessor(
+            db_service=setup_fixture['mock_db_service'],
+            embedding_service=query_model_service,
+            rag_type=test['rag_type'],
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap'],
+            llm_service=llm_service
+        )
+
         # Process and index documents
         chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        vectorstore = doc_processor.index_documents(
+        doc_processor.index_documents(
             chunking_result=chunking_result,
             index_name=index_name,
             batch_size=setup_fixture['batch_size'],
             clear=True
         )
 
-        # Verify vectorstore type
+        # Verify the vectorstore type
         if test['index_type'] == 'ChromaDB':
-            assert isinstance(vectorstore, Chroma)
+            assert isinstance(doc_processor.vectorstore, Chroma)
         elif test['index_type'] == 'Pinecone':
-            assert isinstance(vectorstore, PineconeVectorStore)
+            assert isinstance(doc_processor.vectorstore, PineconeVectorStore)
         elif test['index_type'] == 'RAGatouille':
-            assert isinstance(vectorstore, RAGPretrainedModel)
+            assert isinstance(doc_processor.vectorstore, RAGPretrainedModel)
         print('Vectorstore created.')
 
-        # Update index name for special RAG types
+        # Set index names for special databases
         if test['rag_type'] == 'Parent-Child':
-            index_name = f"{index_name}-parent-child"
-        elif test['rag_type'] == 'Summary':
-            index_name = f"{index_name}{llm_service.model_name.replace('/', '-')}-summary"
+            index_name = index_name + '-parent-child'
+        if test['rag_type'] == 'Summary':
+            index_name = index_name + llm_service.model_name.replace('/', '-') + '-summary'
 
         # Initialize QA model
         qa_model = QAModel(
-            db_service=db_service,
-            embedding_service=embedding_service,
-            llm_service=llm_service,
-            rag_type=test['rag_type']
+            db_service=setup_fixture['mock_db_service'],
+            embedding_service=query_model_service,
+            llm_service=llm_service
         )
+        print('QA model object created.')
+        assert qa_model is not None
 
-        # Test querying
-        response = qa_model.query(setup_fixture['test_prompt'])
-        assert response.answer is not None
-        assert response.sources is not None
-        assert response.chat_history is not None
-        
-        # Test alternative questions
-        alt_questions = qa_model.generate_alternative_questions(setup_fixture['test_prompt'])
-        assert alt_questions is not None
+        # Run a query and verify results
+        qa_model.query(setup_fixture['test_prompt'])
+        assert qa_model.ai_response is not None
+        assert qa_model.sources is not None
+        assert qa_model.memory is not None
+
+        # Generate alternative questions
+        alternate_question = qa_model.generate_alternative_questions(setup_fixture['test_prompt'])
+        assert alternate_question is not None
         print('Query and alternative question successful!')
 
-        # Cleanup
-        db_service.delete_index(rag_type=test['rag_type'])
+        # Delete the index
+        setup_fixture['mock_db_service'].delete_index(test['index_type'], index_name, test['rag_type'])
         if test['rag_type'] in ['Parent-Child', 'Summary']:
             lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
-            assert not os.path.exists(lfs_path)
+            assert not os.path.exists(lfs_path)  # Check that the local file store was deleted
         print('Database deleted.')
 
-    except Exception as e:
-        # Cleanup on error
-        db_service.delete_index(rag_type=test['rag_type'])
+    except Exception as e:  # If there is an error, be sure to delete the database
+        setup_fixture['mock_db_service'].delete_index(test['index_type'], 'test' + str(test['id']), test['rag_type'])
         raise e
 
 # Test sidebar loading and secret keys

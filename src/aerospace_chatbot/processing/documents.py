@@ -35,8 +35,8 @@ class DocumentProcessor:
                  rag_type='Standard',
                  chunk_method='RecursiveCharacterTextSplitter',
                  chunk_size=500,
-                 chunk_overlap=50,
-                 merge_pages=2,
+                 chunk_overlap=0,
+                 merge_pages=None,
                  llm_service=None):
         self.db_service = db_service
         self.embedding_service = embedding_service
@@ -106,7 +106,7 @@ class DocumentProcessor:
                         doc_pages.append(doc_page)
 
                 # Merge pages if option is selected
-                if self.merge_pages > 1:
+                if self.merge_pages is not None:
                     for i in range(0, len(doc_pages), self.merge_pages):
                         group = doc_pages[i:i+self.merge_pages]
                         group_page_content = ' '.join([doc.page_content for doc in group])
@@ -278,6 +278,8 @@ class DocumentProcessor:
     def _process_parent_child(self, documents):
         """Process documents for parent-child RAG."""
         chunks, parent_chunks = self._chunk_documents(documents)
+
+        # chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
         return ChunkingResult(rag_type=self.rag_type,
                               pages=parent_chunks,
                               chunks=chunks, 
@@ -345,75 +347,85 @@ class DocumentProcessor:
             progress_text = 'Chunking documents...'
             my_bar = st.progress(0, text=progress_text)
 
-        chunks=[]
-        if self.rag_type!='Parent-Child':
+        chunks = []
+        if self.rag_type != 'Parent-Child':
+            if self.chunk_method == 'None':
+                if self.show_progress:
+                    my_bar.empty()
+                return documents
             for i, doc in enumerate(documents):
-                if self.chunk_method=='character_recursive':
+                if self.chunk_method == 'character_recursive':
                     self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-                                                                chunk_overlap=self.chunk_overlap,
-                                                                add_start_index=True)
-                    page_chunks = self.splitter.split_documents(documents)
-                    # TODO Check that append vs extend works properly
-                    chunks.append(page_chunks)    # Not sanitized because the page already was
-                elif self.chunk_method=='None':
-                    self.splitter = None
-                    # TODO Check that append vs extend works properly
-                    chunks.append(documents)  # No chunking, take whole pages as documents
+                                                                   chunk_overlap=self.chunk_overlap,
+                                                                   add_start_index=True)
+                    page_chunks = self.splitter.split_documents([doc])
+                    chunks.extend(page_chunks)  # Use extend to flatten the list
                 else:
                     raise NotImplementedError
                 if self.show_progress:
-                    progress_percentage = i / len(page_chunks)
+                    progress_percentage = i / len(documents)
                     my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
             
             if self.show_progress:
                 my_bar.empty()
             return chunks
-        elif self.rag_type=='Parent-Child':
-            parent_chunks=[]
-            for i, doc in enumerate(documents):
-                # TODO put k_child in a place that makes more sense
-                self.k_child = 4
-                if self.chunk_method=='character_recursive':
-                    # Settings apply to parent splitter. k_child divides parent into smaller sizes.
-                    self.parent_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-                                                                chunk_overlap=self.chunk_overlap,
-                                                                add_start_index=True)    # Without add_start_index, will not be a unique id
-                    parent_page_chunks = self.parent_splitter.split_documents(documents)
-                    parent_chunks.append(parent_page_chunks)    # Not sanitized because the page already was
-                elif self.chunk_method=='None':
-                    self.parent_splitter = None
-                    # TODO check that extent works properly here vs. append
-                    parent_chunks.append(documents)  # No chunking, take whole pages as documents
-                else:
-                    raise NotImplementedError
-                # Assign parent doc ids
-                doc_ids = [str(self._stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
-                
-                # Split up child chunks
-                id_key = "doc_id"
-                for doc in parent_chunks:
-                    _id = doc_ids[i]
-                    if self.chunk_method=='character_recursive':
-                        self.child_splitter=RecursiveCharacterTextSplitter(chunk_size=self.chunk_size/self.k_child, 
-                                                        chunk_overlap=self.chunk_overlap,
-                                                        add_start_index=True)
-                    elif self.chunk_method=='None':
-                        i_chunk_size=len(doc.page_content)/self.k_child
-                        self.child_splitter=RecursiveCharacterTextSplitter(chunk_size=i_chunk_size, 
-                                                        chunk_overlap=0,
-                                                        add_start_index=True)
-                    _chunks = self.child_splitter.split_documents([doc])
-                    for _doc in _chunks:
-                        _doc.metadata[id_key] = _id
-                    # TODO check that extent works properly here vs. append
-                    chunks.extend(_chunks)
+        elif self.rag_type == 'Parent-Child':
+            parent_chunks = []
+            if self.chunk_method == 'None':
+                parent_chunks = documents
+                for i, doc in enumerate(documents):
+                    self.k_child = 4
+                    doc_ids = [str(self._stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
+                    id_key = "doc_id"
+                    for parent_chunk in parent_chunks:
+                        _id = doc_ids[i]
+                        # Default character recursive since no chunking method specified, use k_child to determine chunk size
+                        self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=len(parent_chunk.page_content) / self.k_child, 
+                                                                            chunk_overlap=0,
+                                                                            add_start_index=True)
+                        _chunks = self.child_splitter.split_documents([parent_chunk])
+                        for _doc in _chunks:
+                            _doc.metadata[id_key] = _id
+                        chunks.extend(_chunks)  # Use extend to flatten the list
+                    if self.show_progress:
+                        progress_percentage = i / len(documents)
+                        my_bar.progress(progress_percentage, text=f'Chunking parent-child documents...{progress_percentage*100:.2f}%')
                 if self.show_progress:
-                    progress_percentage = i / len(page_chunks)
-                    my_bar.progress(progress_percentage, text=f'Chunking parent-child documents...{progress_percentage*100:.2f}%')
+                    my_bar.empty()
+                return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
+            else:
+                for i, doc in enumerate(documents):
+                    self.k_child = 4
+                    if self.chunk_method == 'character_recursive':
+                        self.parent_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
+                                                                            chunk_overlap=self.chunk_overlap,
+                                                                            add_start_index=True)
+                        parent_page_chunks = self.parent_splitter.split_documents([doc])
+                        parent_chunks.extend(parent_page_chunks)  # Use extend to flatten the list
+                    else:
+                        raise NotImplementedError
+                    
+                    doc_ids = [str(self._stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
+                    id_key = "doc_id"
+                    for parent_chunk in parent_chunks:
+                        _id = doc_ids[i]
+                        if self.chunk_method == 'character_recursive':
+                            self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size / self.k_child, 
+                                                                                chunk_overlap=self.chunk_overlap,
+                                                                                add_start_index=True)
+                        else:
+                            raise NotImplementedError
+                        _chunks = self.child_splitter.split_documents([parent_chunk])
+                        for _doc in _chunks:
+                            _doc.metadata[id_key] = _id
+                        chunks.extend(_chunks)  # Use extend to flatten the list
+                    if self.show_progress:
+                        progress_percentage = i / len(documents)
+                        my_bar.progress(progress_percentage, text=f'Chunking parent-child documents...{progress_percentage*100:.2f}%')
         
-            if self.show_progress:
-                my_bar.empty()
-            return chunks, {'doc_ids':doc_ids,'parent_chunks':parent_chunks}
+                if self.show_progress:
+                    my_bar.empty()
+                return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
         else:
             raise NotImplementedError
     @staticmethod
