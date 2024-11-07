@@ -147,14 +147,14 @@ def setup_fixture():
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
     VOYAGE_API_KEY = os.getenv('VOYAGE_API_KEY')
-    HUGGINGFACEHUB_API_TOKEN = os.getenv('HUGGINGFACEHUB_API_TOKEN')
+    HUGGINGFACEHUB_API_KEY = os.getenv('HUGGINGFACEHUB_API_KEY')
     PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 
     # Set environment variables from .env file. They are required for items tested here. This is done in the GUI setup.
     os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
     os.environ['ANTHROPIC_API_KEY'] = ANTHROPIC_API_KEY
     os.environ['VOYAGE_API_KEY'] = VOYAGE_API_KEY
-    os.environ['HUGGINGFACEHUB_API_TOKEN'] = HUGGINGFACEHUB_API_TOKEN
+    os.environ['HUGGINGFACEHUB_API_KEY'] = HUGGINGFACEHUB_API_KEY
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
 
     LOCAL_DB_PATH = os.path.abspath(os.path.dirname(__file__))   # Default to the test path for easy cleanup.
@@ -176,11 +176,22 @@ def setup_fixture():
     index_type = {index: index for index in ['ChromaDB', 'Pinecone', 'RAGatouille']}
     rag_type = {rag: rag for rag in ['Standard', 'Parent-Child', 'Summary']}
     
+    # Add mock services for testing
+    mock_db_service = DatabaseService(
+        db_type='ChromaDB',
+        local_db_path=LOCAL_DB_PATH
+    )
+    
+    mock_embedding_service = EmbeddingService(
+        model_name='text-embedding-3-large',
+        model_type='OpenAI'
+    )
+
     setup = {
         'OPENAI_API_KEY': OPENAI_API_KEY,
         'ANTHROPIC_API_KEY': ANTHROPIC_API_KEY,
         'VOYAGE_API_KEY': VOYAGE_API_KEY,
-        'HUGGINGFACEHUB_API_TOKEN': HUGGINGFACEHUB_API_TOKEN,
+        'HUGGINGFACEHUB_API_KEY': HUGGINGFACEHUB_API_KEY,
         'PINECONE_API_KEY': PINECONE_API_KEY,
         'LOCAL_DB_PATH': LOCAL_DB_PATH,
         'docs': docs,
@@ -190,7 +201,10 @@ def setup_fixture():
         'batch_size': batch_size,
         'test_prompt': test_prompt,
         'index_type': index_type,
-        'rag_type': rag_type
+        'rag_type': rag_type,
+        # Add mock services
+        'mock_db_service': mock_db_service,
+        'mock_embedding_service': mock_embedding_service
     }
 
     return setup
@@ -204,7 +218,7 @@ def temp_dotenv(setup_fixture):
             print('Creating .env file for testing.')
             f.write(f'OPENAI_API_KEY = {setup_fixture["OPENAI_API_KEY"]}\n')
             f.write(f'PINECONE_API_KEY = {setup_fixture["PINECONE_API_KEY"]}\n')
-            f.write(f'HUGGINGFACEHUB_API_TOKEN = {setup_fixture["HUGGINGFACEHUB_API_TOKEN"]}\n')
+            f.write(f'HUGGINGFACEHUB_API_KEY = {setup_fixture["HUGGINGFACEHUB_API_KEY"]}\n')
             f.write(f'LOCAL_DB_PATH = {setup_fixture["LOCAL_DB_PATH"]}\n')
         yield dotenv_path
         os.remove(dotenv_path)
@@ -213,121 +227,146 @@ def temp_dotenv(setup_fixture):
 
 ### Begin tests
 # Test chunk docs
-def test_chunk_docs_standard(setup_fixture):
-    '''Test the chunk_docs function with standard RAG.'''
-    doc_processor = DocumentProcessor()
-    result = doc_processor.chunk_docs(setup_fixture['docs'], 
-                                      rag_type=setup_fixture['rag_type']['Standard'], 
-                                      chunk_method=setup_fixture['chunk_method'], 
-                                      chunk_size=setup_fixture['chunk_size'], 
-                                      chunk_overlap=setup_fixture['chunk_overlap'])
+def test_process_documents_standard(setup_fixture):
+    '''Test document processing with standard RAG.'''
+    doc_processor = DocumentProcessor(
+        db_service=setup_fixture['mock_db_service'],
+        embedding_service=setup_fixture['mock_embedding_service'],
+        rag_type=setup_fixture['rag_type']['Standard'],
+        chunk_method=setup_fixture['chunk_method'],
+        chunk_size=setup_fixture['chunk_size'],
+        chunk_overlap=setup_fixture['chunk_overlap']
+    )
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']]
-    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+    result = doc_processor.process_documents(setup_fixture['docs'])
     
-    assert result['rag_type'] == setup_fixture['rag_type']['Standard']
-    assert result['pages'] is not None
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages]
+    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
+    
+    assert result.rag_type == setup_fixture['rag_type']['Standard']
+    assert result.pages is not None
     assert len(page_ids) == len(set(page_ids))
-    assert result['chunks'] is not None
+    assert result.chunks is not None
     assert len(chunk_ids) == len(set(chunk_ids))
-    assert result['splitters'] is not None
+    assert result.splitters is not None
 
-def test_chunk_docs_merge_nochunk(setup_fixture):
-    """Test case for the `chunk_docs` function with no chunking and merging."""
-    doc_processor = DocumentProcessor()
-    result = doc_processor.chunk_docs(setup_fixture['docs'], 
-                                      rag_type=setup_fixture['rag_type']['Standard'], 
-                                      chunk_method='None',
-                                      n_merge_pages=2)
+def test_process_docs_merge_nochunk(setup_fixture):
+    """Test case for document processing with no chunking and merging."""
+    doc_processor = DocumentProcessor(
+        db_service=setup_fixture['mock_db_service'],
+        embedding_service=setup_fixture['mock_embedding_service'],
+        rag_type=setup_fixture['rag_type']['Standard'],
+        chunk_method='None',
+        n_merge_pages=2
+    )
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']]
-    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+    result = doc_processor.process_documents(setup_fixture['docs'])
+    
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages]
+    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
 
-    assert result['rag_type'] == setup_fixture['rag_type']['Standard']
-    assert result['pages'] is not None
+    assert result.rag_type == setup_fixture['rag_type']['Standard']
+    assert result.pages is not None
     assert len(page_ids) == len(set(page_ids))
-    assert result['chunks'] is not None
+    assert result.chunks is not None
     assert chunk_ids == page_ids
-    assert result['splitters'] is None
+    assert result.splitters is None
 
-def test_chunk_docs_nochunk(setup_fixture):
-    '''Test the chunk_docs function with no chunking.'''
-    doc_processor = DocumentProcessor()
-    result = doc_processor.chunk_docs(setup_fixture['docs'], 
-                                      rag_type=setup_fixture['rag_type']['Standard'], 
-                                      chunk_method='None', 
-                                      chunk_size=setup_fixture['chunk_size'], 
-                                      chunk_overlap=setup_fixture['chunk_overlap'])
+def test_process_documents_nochunk(setup_fixture):
+    '''Test document processing with no chunking.'''
+    doc_processor = DocumentProcessor(
+        db_service=setup_fixture['mock_db_service'],
+        embedding_service=setup_fixture['mock_embedding_service'],
+        rag_type=setup_fixture['rag_type']['Standard'],
+        chunk_method='None',
+        chunk_size=setup_fixture['chunk_size'],
+        chunk_overlap=setup_fixture['chunk_overlap']
+    )
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']]
-    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+    result = doc_processor.process_documents(setup_fixture['docs'])
+    
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages]
+    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
 
-    assert result['rag_type'] == setup_fixture['rag_type']['Standard']
-    assert result['pages'] is not None
+    assert result.rag_type == setup_fixture['rag_type']['Standard']
+    assert result.pages is not None
     assert len(page_ids) == len(set(page_ids))
-    assert result['chunks'] is result['pages']
+    assert result.chunks is result.pages
     assert len(chunk_ids) == len(set(chunk_ids))
-    assert result['splitters'] is None
+    assert result.splitters is None
 
-def test_chunk_docs_parent_child(setup_fixture):
-    '''Test the chunk_docs function with parent-child RAG.'''
-    doc_processor = DocumentProcessor()
-    result = doc_processor.chunk_docs(setup_fixture['docs'], 
-                                      rag_type=setup_fixture['rag_type']['Parent-Child'], 
-                                      chunk_method=setup_fixture['chunk_method'], 
-                                      chunk_size=setup_fixture['chunk_size'], 
-                                      chunk_overlap=setup_fixture['chunk_overlap'])
-        
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']['parent_chunks']]
-    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+def test_process_documents_parent_child(setup_fixture):
+    '''Test document processing with parent-child RAG.'''
+    doc_processor = DocumentProcessor(
+        db_service=setup_fixture['mock_db_service'],
+        embedding_service=setup_fixture['mock_embedding_service'],
+        rag_type=setup_fixture['rag_type']['Parent-Child'],
+        chunk_method=setup_fixture['chunk_method'],
+        chunk_size=setup_fixture['chunk_size'],
+        chunk_overlap=setup_fixture['chunk_overlap']
+    )
+    
+    result = doc_processor.process_documents(setup_fixture['docs'])
+    
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages.parent_chunks]
+    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
 
-    assert result['rag_type'] == setup_fixture['rag_type']['Parent-Child']
-    assert result['pages']['doc_ids'] is not None
-    assert result['pages']['parent_chunks'] is not None
+    assert result.rag_type == setup_fixture['rag_type']['Parent-Child']
+    assert result.pages.doc_ids is not None
+    assert result.pages.parent_chunks is not None
     assert len(page_ids) == len(set(page_ids))
-    assert result['chunks'] is not None
+    assert result.chunks is not None
     assert len(chunk_ids) == len(set(chunk_ids))
-    assert result['splitters']['parent_splitter'] is not None
-    assert result['splitters']['child_splitter'] is not None
+    assert result.splitters.parent_splitter is not None
+    assert result.splitters.child_splitter is not None
 
-def test_chunk_docs_summary(setup_fixture):
-    '''Test the chunk_docs function with summary RAG.'''
+def test_process_documents_summary(setup_fixture):
+    '''Test document processing with summary RAG.'''
     llm = LLMService().get_llm('OpenAI', 'gpt-3.5-turbo-0125')
-    doc_processor = DocumentProcessor()
-    result = doc_processor.chunk_docs(setup_fixture['docs'], 
-                                      rag_type=setup_fixture['rag_type']['Summary'], 
-                                      chunk_method=setup_fixture['chunk_method'], 
-                                      chunk_size=setup_fixture['chunk_size'], 
-                                      chunk_overlap=setup_fixture['chunk_overlap'], 
-                                      llm=llm)
+    doc_processor = DocumentProcessor(
+        db_service=setup_fixture['mock_db_service'],
+        embedding_service=setup_fixture['mock_embedding_service'],
+        rag_type=setup_fixture['rag_type']['Summary'],
+        chunk_method=setup_fixture['chunk_method'],
+        chunk_size=setup_fixture['chunk_size'],
+        chunk_overlap=setup_fixture['chunk_overlap'],
+        llm_service=llm
+    )
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']['docs']]
-    summary_ids = [DocumentProcessor._stable_hash_meta(summary.metadata) for summary in result['summaries']]
+    result = doc_processor.process_documents(setup_fixture['docs'])
     
-    assert result['rag_type'] == setup_fixture['rag_type']['Summary']
-    assert result['pages']['doc_ids'] is not None
-    assert result['pages']['docs'] is not None
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages.docs]
+    summary_ids = [DocumentProcessor._stable_hash_meta(summary.metadata) for summary in result.summaries]
+    
+    assert result.rag_type == setup_fixture['rag_type']['Summary']
+    assert result.pages.doc_ids is not None
+    assert result.pages.docs is not None
     assert len(page_ids) == len(set(page_ids))
-    assert result['summaries'] is not None
+    assert result.summaries is not None
     assert len(summary_ids) == len(set(summary_ids))
-    assert result['llm'] == llm
+    assert result.llm == llm
 
 def test_chunk_id_lookup(setup_fixture):
     '''Test case for chunk_id_lookup function.'''
-    doc_processor = DocumentProcessor()
-    result = doc_processor.chunk_docs(setup_fixture['docs'], 
-                                      rag_type=setup_fixture['rag_type']['Standard'], 
-                                      chunk_method=setup_fixture['chunk_method'], 
-                                      chunk_size=setup_fixture['chunk_size'], 
-                                      chunk_overlap=setup_fixture['chunk_overlap'])
-    assert result['rag_type'] == setup_fixture['rag_type']['Standard']
-    assert result['pages'] is not None
-    assert result['chunks'] is not None
+    doc_processor = DocumentProcessor(
+        db_service=setup_fixture['mock_db_service'],
+        embedding_service=setup_fixture['mock_embedding_service'],
+        rag_type=setup_fixture['rag_type']['Standard'],
+        chunk_method=setup_fixture['chunk_method'],
+        chunk_size=setup_fixture['chunk_size'],
+        chunk_overlap=setup_fixture['chunk_overlap']
+    )
+    
+    result = doc_processor.process_documents(setup_fixture['docs'])
+    
+    assert result.rag_type == setup_fixture['rag_type']['Standard']
+    assert result.pages is not None
+    assert result.chunks is not None
     metadata_test = {'source': 'test1.pdf', 'page': 1, 'start_index': 0}
     test_hash = 'e006e6fbafe375d1faff4783878c302a70c90ad9'
-    assert DocumentProcessor._stable_hash_meta(result['chunks'][0].metadata) == DocumentProcessor._stable_hash_meta(metadata_test)  # Tests that the metadata is correct
-    assert DocumentProcessor._stable_hash_meta(result['chunks'][0].metadata) == test_hash  # Tests that the hash is correct
-    assert result['splitters'] is not None
+    assert DocumentProcessor._stable_hash_meta(result.chunks[0].metadata) == DocumentProcessor._stable_hash_meta(metadata_test)  # Tests that the metadata is correct
+    assert DocumentProcessor._stable_hash_meta(result.chunks[0].metadata) == test_hash  # Tests that the hash is correct
+    assert result.splitters is not None
 
 # Test initialize database with a test query
 @pytest.mark.parametrize('test_index', [
