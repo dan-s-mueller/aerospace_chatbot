@@ -249,14 +249,14 @@ class DatabaseService:
         _, chromadb, _ = self._deps.get_db_deps()
         _, Chroma, _, _ = self._deps.get_vectorstore_deps()
         
-        db_path = self.local_db_path / 'chromadb'
-        db_path.mkdir(parents=True, exist_ok=True)
-        
+        db_path = os.path.join(self.local_db_path, 'chromadb')
+        os.makedirs(db_path, exist_ok=True)
         client = chromadb.PersistentClient(path=str(db_path))
         
         if clear:
-            # FIXME delete won't clear local filestores
-            client.delete_collection(self.index_name)
+            collections = client.list_collections()
+            if any(c.name == self.index_name for c in collections):
+                client.delete_collection(self.index_name)
         return Chroma(
             client=client,
             collection_name=self.index_name,
@@ -268,16 +268,22 @@ class DatabaseService:
         pinecone_client, _, ServerlessSpec = self._deps.get_db_deps()
         PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
         
+        print(self.index_name)
+
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         if clear:
-            # FIXME delete won't clear local filestores
-            pc.delete_index(self.index_name)
+            try:
+                # Only attempt deletion if index exists
+                if self.index_name in [idx.name for idx in pc.list_indexes()]:
+                    pc.delete_index(self.index_name)
+            except Exception as e:
+                print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
       
         try:
             pc.describe_index(self.index_name)
         except:
             pc.create_index(
-                name=self.index_name,
+                self.index_name,
                 dimension=self.embedding_service.get_dimension(),
                 spec=ServerlessSpec(
                     cloud='aws',    

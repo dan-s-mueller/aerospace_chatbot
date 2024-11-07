@@ -36,6 +36,7 @@ try:
         st.warning("No Google Cloud Storage buckets found. Please ensure you have access to at least one bucket in your Google Cloud project.")
         st.stop()
         
+    # TODO add tag filtering for buckets
     bucket_name = st.selectbox('Select Google Cloud Storage bucket',
                              options=st.session_state.buckets,
                              help='Select a Google Cloud Storage bucket containing PDFs')
@@ -119,20 +120,28 @@ if sb['rag_type'] == 'Summary':
 else:
     llm_service = None
 
-doc_processor = DocumentProcessor(
-    db_service=db_service,
-    embedding_service=embedding_service,
-    rag_type=sb['rag_type'],
-    chunk_method=chunk_method,
-    chunk_size=chunk_size,
-    chunk_overlap=chunk_overlap,
-    merge_pages=n_merge_pages if merge_pages else None,
-    llm_service=llm_service
-)
-
 # Add a button to run the function
 if st.button('Load docs into vector database'):
     start_time = time.time()    
+
+    # db_service.initialize_database(
+    #     index_name=index_name,
+    #     embedding_service=embedding_service,
+    #     rag_type=sb['rag_type'],
+    #     clear=clear_database
+    # )
+
+    doc_processor = DocumentProcessor(
+        db_service=db_service,
+        embedding_service=embedding_service,
+        rag_type=sb['rag_type'],
+        chunk_method=chunk_method,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        merge_pages=n_merge_pages if merge_pages else None,
+        llm_service=llm_service
+    )
+
     # Process documents
     chunking_result = doc_processor.process_documents(
         documents=docs,
@@ -140,8 +149,8 @@ if st.button('Load docs into vector database'):
     )
     # Index documents
     doc_processor.index_documents(
-        index_name=index_name,
         chunking_result=chunking_result,
+        index_name=index_name,
         batch_size=batch_size,
         clear=clear_database
     )

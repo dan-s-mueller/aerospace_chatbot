@@ -1,8 +1,7 @@
 """Document processing and chunking logic."""
 
-import hashlib
-import json
-from typing import Dict, List, Optional, Any
+import os, hashlib, json
+from typing import List, Optional, Any
 from dataclasses import dataclass
 from langchain_core.documents import Document
 from google.cloud import storage
@@ -124,12 +123,11 @@ class DocumentProcessor:
         return cleaned_docs
 
     def index_documents(self,
-                       index_name,
                        chunking_result,
+                       index_name,
                        batch_size=100,
-                       clear=False,
-                       namespace=None):
-        """Index processed documents."""
+                       clear=False):
+        """Index processed documents. This is where the index is initialized or created if required."""
         OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
 
         if self.show_progress:  
@@ -140,7 +138,7 @@ class DocumentProcessor:
             index_name=index_name,
             embedding_service=self.embedding_service,
             rag_type=self.rag_type,
-            namespace=namespace,
+            namespace=self.db_service.namespace,
             clear=clear
         )
 
@@ -148,7 +146,7 @@ class DocumentProcessor:
         index_metadata = {}
         if chunking_result.n_merge_pages is not None:
             index_metadata['n_merge_pages'] = chunking_result.n_merge_pages
-        if chunking_result.chunk_method is not None:
+        if chunking_result.chunk_method is not 'None':
             index_metadata['chunk_method'] = chunking_result.chunk_method
         if chunking_result.chunk_size is not None:
             index_metadata['chunk_size'] = chunking_result.chunk_size
@@ -163,7 +161,7 @@ class DocumentProcessor:
         elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
             index_metadata['query_model'] = "Hugging Face"
             index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
-        self._store_index_metadata(index_name, index_metadata)
+        self._store_index_metadata(index_metadata)
 
         # Index chunks in batches
         for i in range(0, len(chunking_result.chunks), batch_size):
@@ -171,7 +169,7 @@ class DocumentProcessor:
             batch_ids = [self._hash_metadata(chunk.metadata) for chunk in batch]
             
             if self.db_service.db_type == "Pinecone":
-                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=namespace)
+                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.db_service.namespace)
             else:
                 self.vectorstore.add_documents(documents=batch, ids=batch_ids)
 
@@ -180,8 +178,8 @@ class DocumentProcessor:
                 my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
 
         # Handle parent documents or summaries if needed
-            if self.rag_type in ['Parent-Child', 'Summary']:
-                self._store_parent_docs(index_name, chunking_result, self.rag_type)
+        if self.rag_type in ['Parent-Child', 'Summary']:
+            self._store_parent_docs(index_name, chunking_result, self.rag_type)
 
         if self.show_progress:
             my_bar.empty()
@@ -226,6 +224,7 @@ class DocumentProcessor:
         if self.db_service.db_type != 'Pinecone':
             raise ValueError("Vector copying is only supported for Pinecone databases")
             
+        # FIXME initialize database first, this function deosn't exist
         index = self.db_service.get_index(index_name)
         
         if show_progress:
@@ -492,31 +491,38 @@ class DocumentProcessor:
     def _stable_hash_meta(metadata):
         """Calculates the stable hash of the given metadata dictionary."""
         return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-    def _store_index_metadata(self, index_name, metadata):
+    def _store_index_metadata(self, index_metadata):
         """Store index metadata based on the database type."""
+
         embedding_size = self.embedding_service.get_dimension()
         metadata_vector = [1e-5] * embedding_size
+
+        # index = self.db_service.vectorstore
         if self.db_service.db_type == "Pinecone":
-            index = self.db_service.get_index(index_name)
+            # TODO use cache dependency function
+            # TODO see if I can do this with langchain vectorstore, problem is I need to make a dunmmy embedding.
+            from pinecone import Pinecone as pinecone_client
+            
+            pc_native = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+            index = pc_native.Index(self.db_service.index_name)
             index.upsert(vectors=[{
                 'id': 'db_metadata',
                 'values': metadata_vector,
-                'metadata': metadata
+                'metadata': index_metadata
             }])
         
         elif self.db_service.db_type == "Chroma":
-            # ChromaDB: Store metadata in a special collection
-            client = self.db_service.get_client()
-            metadata_collection = client.get_or_create_collection(
-                name=f"{index_name}_metadata"
+            # TODO use cache dependency function
+            from chromadb import PersistentClient
+            chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
+            index = chroma_native.get_collection(name=self.db_service.index_name)
+            index.add(
+                embeddings=[metadata_vector],
+                metadatas=[index_metadata],
+                ids=['db_metadata']
             )
-            # Store using a dummy embedding
-            metadata_collection.add(
-                embeddings=metadata_vector,  # Single dimension dummy embedding
-                documents=["metadata"],
-                metadatas=[metadata],
-                ids=["db_metadata"]
-            )
+
         
-        elif self.db_service.db_type == "Ragatouille":
+        elif self.db_service.db_type == "Ragatsouille":
+            # TODO add metadata storage for RAGatouille, maybe can use the same method as others
             print("Warning: Metadata storage is not yet supported for RAGatouille indexes")
