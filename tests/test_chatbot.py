@@ -2,33 +2,62 @@ import os, sys, json
 import itertools
 import pytest
 import pandas as pd
-from dotenv import load_dotenv,find_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-from langchain_openai import OpenAIEmbeddings
-from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_anthropic import ChatAnthropic
-
-from langchain_pinecone import PineconeVectorStore
-from langchain_chroma import Chroma
-
-from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
-import nltk # Do before ragatioulle import to avoid logs
-nltk.download('punkt', quiet=True)
+from pinecone import Pinecone as pinecone_client
+import chromadb
 from ragatouille import RAGPretrainedModel
 
-import chromadb
+from langchain_pinecone import PineconeVectorStore
+from langchain_chroma import Chroma
+from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.storage import LocalFileStore
+
+from aerospace_chatbot.core import (
+    Dependencies, 
+    cache_resource,
+    ConfigurationError,
+    get_cache_decorator, 
+    get_cache_data_decorator,
+    load_config,
+    get_secrets,
+    set_secrets
+)
+from aerospace_chatbot.processing import (
+    DocumentProcessor, 
+    QAModel,
+    ChunkingResult
+)
+from aerospace_chatbot.services import (
+    DatabaseService, 
+    EmbeddingService, 
+    LLMService,
+    CONDENSE_QUESTION_PROMPT,
+    QA_PROMPT,
+    DEFAULT_DOCUMENT_PROMPT,
+    GENERATE_SIMILAR_QUESTIONS,
+    GENERATE_SIMILAR_QUESTIONS_W_CONTEXT,
+    CLUSTER_LABEL,
+    SUMMARIZE_TEXT
+)
+from aerospace_chatbot.ui import (
+    SidebarManager,
+    setup_page_config,
+    display_chat_history, 
+    display_sources, 
+    show_connection_status,
+    handle_file_upload,
+    get_or_create_spotlight_viewer
+)
 
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
-from data_processing import chunk_docs, initialize_database, load_docs, \
-      delete_index, _stable_hash_meta, get_docs_df, get_questions_df, \
-      add_clusters, get_docs_questions_df
-from admin import SidebarManager, set_secrets, SecretKeyException, DatabaseException
-from queries import QA_Model
 
 # TODO add tests to check conversation history functionality
 
@@ -36,7 +65,7 @@ from queries import QA_Model
 def permute_tests(test_data):
     '''Generate permutations of test cases.'''
     rows = []
-    idx=0
+    idx = 0
     for row_data in test_data:
         keys = row_data.keys()
         values = row_data.values()
@@ -45,21 +74,24 @@ def permute_tests(test_data):
             row = dict(zip(keys, perm))
             row['id'] = idx
             rows.append(row)
-            idx+=1
+            idx += 1
     return rows
-def read_test_cases(json_path:str):
+
+def read_test_cases(json_path: str):
     with open(json_path, 'r') as json_file:
         test_cases = json.load(json_file)
     return test_cases
+
 def pytest_generate_tests(metafunc):
     '''
     Use pytest_generate_tests to dynamically generate tests.
     Tests generates tests from a static file (test_cases.json). See test_cases.json for more details.
     '''
     if 'test_query' in metafunc.fixturenames:
-        tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)),'test_cases.json'))
+        tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test_cases.json'))
         metafunc.parametrize('test_query', tests)
-def parse_test_case(setup,test_case):
+
+def parse_test_case(setup, test_case):
     ''' Parse test case to be used in the test functions.'''
     parsed_test = {
         'id': test_case['id'],
@@ -68,18 +100,19 @@ def parse_test_case(setup,test_case):
         'embedding_name': test_case['embedding_name'],
         'rag_type': setup['rag_type'][test_case['rag_type']],
         'llm_family': test_case['llm_family'],
-        'llm' : test_case['llm']
+        'llm': test_case['llm']
     }
     print_str = ', '.join(f'{key}: {value}' for key, value in test_case.items())
 
     return parsed_test, print_str
+
 def parse_test_model(type, test, setup_fixture):
     """Parses the test model based on the given type and test parameters."""
     if type == 'embedding':
         # Parse out embedding
         if test['index_type'] == 'RAGatouille':
             query_model = RAGPretrainedModel.from_pretrained(test['embedding_name'],
-                                                             index_root=os.path.join(setup_fixture['LOCAL_DB_PATH'],'.ragatouille'))
+                                                             index_root=os.path.join(setup_fixture['LOCAL_DB_PATH'], '.ragatouille'))
         elif test['query_model'] == 'OpenAI' or test['query_model'] == 'Voyage' or test['query_model'] == 'Hugging Face':
             if test['query_model'] == 'OpenAI':
                 query_model = OpenAIEmbeddings(model=test['embedding_name'], openai_api_key=setup_fixture['OPENAI_API_KEY'])
@@ -109,14 +142,13 @@ def parse_test_model(type, test, setup_fixture):
 @pytest.fixture(scope='session', autouse=True)
 def setup_fixture():
     """Sets up the fixture for testing the backend."""
-    ...
     # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
-    load_dotenv(find_dotenv(),override=True)
-    OPENAI_API_KEY=os.getenv('OPENAI_API_KEY')
-    ANTHROPIC_API_KEY=os.getenv('ANTHROPIC_API_KEY')
-    VOYAGE_API_KEY=os.getenv('VOYAGE_API_KEY')
-    HUGGINGFACEHUB_API_TOKEN=os.getenv('HUGGINGFACEHUB_API_TOKEN')
-    PINECONE_API_KEY=os.getenv('PINECONE_API_KEY')
+    load_dotenv(find_dotenv(), override=True)
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
+    VOYAGE_API_KEY = os.getenv('VOYAGE_API_KEY')
+    HUGGINGFACEHUB_API_TOKEN = os.getenv('HUGGINGFACEHUB_API_TOKEN')
+    PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 
     # Set environment variables from .env file. They are required for items tested here. This is done in the GUI setup.
     os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
@@ -125,26 +157,26 @@ def setup_fixture():
     os.environ['HUGGINGFACEHUB_API_TOKEN'] = HUGGINGFACEHUB_API_TOKEN
     os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
 
-    LOCAL_DB_PATH=os.path.abspath(os.path.dirname(__file__))   # Default to the test path for easy cleanup.
+    LOCAL_DB_PATH = os.path.abspath(os.path.dirname(__file__))   # Default to the test path for easy cleanup.
     # Set default to environment variable
     os.environ['LOCAL_DB_PATH'] = LOCAL_DB_PATH
     
     # Fixed inputs
     docs = ['test1.pdf', 'test2.pdf']
     for i in range(len(docs)):
-        docs[i] = os.path.join(os.path.abspath(os.path.dirname(__file__)),docs[i])
+        docs[i] = os.path.join(os.path.abspath(os.path.dirname(__file__)), docs[i])
 
-    chunk_method='character_recursive'
-    chunk_size=400
-    chunk_overlap=0
-    batch_size=50
-    test_prompt='What are some nuances associated with the analysis and design of hinged booms?'   # Info on test2.pdf
+    chunk_method = 'character_recursive'
+    chunk_size = 400
+    chunk_overlap = 0
+    batch_size = 50
+    test_prompt = 'What are some nuances associated with the analysis and design of hinged booms?'   # Info on test2.pdf
 
     # Variable inputs
     index_type = {index: index for index in ['ChromaDB', 'Pinecone', 'RAGatouille']}
-    rag_type = {rag: rag for rag in ['Standard','Parent-Child','Summary']}
+    rag_type = {rag: rag for rag in ['Standard', 'Parent-Child', 'Summary']}
     
-    setup={
+    setup = {
         'OPENAI_API_KEY': OPENAI_API_KEY,
         'ANTHROPIC_API_KEY': ANTHROPIC_API_KEY,
         'VOYAGE_API_KEY': VOYAGE_API_KEY,
@@ -162,10 +194,11 @@ def setup_fixture():
     }
 
     return setup
+
 @pytest.fixture()
 def temp_dotenv(setup_fixture):
     """Creates a temporary .env file for testing purposes."""
-    dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','.env')
+    dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '.env')
     if not os.path.exists(dotenv_path):
         with open(dotenv_path, 'w') as f:
             print('Creating .env file for testing.')
@@ -182,14 +215,15 @@ def temp_dotenv(setup_fixture):
 # Test chunk docs
 def test_chunk_docs_standard(setup_fixture):
     '''Test the chunk_docs function with standard RAG.'''
-    result = chunk_docs(setup_fixture['docs'], 
-                        rag_type=setup_fixture['rag_type']['Standard'], 
-                        chunk_method=setup_fixture['chunk_method'], 
-                        chunk_size=setup_fixture['chunk_size'], 
-                        chunk_overlap=setup_fixture['chunk_overlap'])
+    doc_processor = DocumentProcessor()
+    result = doc_processor.chunk_docs(setup_fixture['docs'], 
+                                      rag_type=setup_fixture['rag_type']['Standard'], 
+                                      chunk_method=setup_fixture['chunk_method'], 
+                                      chunk_size=setup_fixture['chunk_size'], 
+                                      chunk_overlap=setup_fixture['chunk_overlap'])
     
-    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
-    chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']]
+    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
     
     assert result['rag_type'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
@@ -197,33 +231,36 @@ def test_chunk_docs_standard(setup_fixture):
     assert result['chunks'] is not None
     assert len(chunk_ids) == len(set(chunk_ids))
     assert result['splitters'] is not None
+
 def test_chunk_docs_merge_nochunk(setup_fixture):
     """Test case for the `chunk_docs` function with no chunking and merging."""
-
-    result = chunk_docs(setup_fixture['docs'], 
-                        rag_type=setup_fixture['rag_type']['Standard'], 
-                        chunk_method='None',
-                        n_merge_pages=2)
+    doc_processor = DocumentProcessor()
+    result = doc_processor.chunk_docs(setup_fixture['docs'], 
+                                      rag_type=setup_fixture['rag_type']['Standard'], 
+                                      chunk_method='None',
+                                      n_merge_pages=2)
     
-    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
-    chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']]
+    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
 
     assert result['rag_type'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
     assert len(page_ids) == len(set(page_ids))
     assert result['chunks'] is not None
-    assert chunk_ids==page_ids
+    assert chunk_ids == page_ids
     assert result['splitters'] is None
+
 def test_chunk_docs_nochunk(setup_fixture):
     '''Test the chunk_docs function with no chunking.'''
-    result = chunk_docs(setup_fixture['docs'], 
-                        rag_type=setup_fixture['rag_type']['Standard'], 
-                        chunk_method='None', 
-                        chunk_size=setup_fixture['chunk_size'], 
-                        chunk_overlap=setup_fixture['chunk_overlap'])
+    doc_processor = DocumentProcessor()
+    result = doc_processor.chunk_docs(setup_fixture['docs'], 
+                                      rag_type=setup_fixture['rag_type']['Standard'], 
+                                      chunk_method='None', 
+                                      chunk_size=setup_fixture['chunk_size'], 
+                                      chunk_overlap=setup_fixture['chunk_overlap'])
     
-    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']]
-    chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']]
+    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
 
     assert result['rag_type'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
@@ -231,16 +268,18 @@ def test_chunk_docs_nochunk(setup_fixture):
     assert result['chunks'] is result['pages']
     assert len(chunk_ids) == len(set(chunk_ids))
     assert result['splitters'] is None
+
 def test_chunk_docs_parent_child(setup_fixture):
     '''Test the chunk_docs function with parent-child RAG.'''
-    result = chunk_docs(setup_fixture['docs'], 
-                        rag_type=setup_fixture['rag_type']['Parent-Child'], 
-                        chunk_method=setup_fixture['chunk_method'], 
-                        chunk_size=setup_fixture['chunk_size'], 
-                        chunk_overlap=setup_fixture['chunk_overlap'])
+    doc_processor = DocumentProcessor()
+    result = doc_processor.chunk_docs(setup_fixture['docs'], 
+                                      rag_type=setup_fixture['rag_type']['Parent-Child'], 
+                                      chunk_method=setup_fixture['chunk_method'], 
+                                      chunk_size=setup_fixture['chunk_size'], 
+                                      chunk_overlap=setup_fixture['chunk_overlap'])
         
-    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']['parent_chunks']]
-    chunk_ids = [_stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']['parent_chunks']]
+    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result['chunks']]
 
     assert result['rag_type'] == setup_fixture['rag_type']['Parent-Child']
     assert result['pages']['doc_ids'] is not None
@@ -250,19 +289,20 @@ def test_chunk_docs_parent_child(setup_fixture):
     assert len(chunk_ids) == len(set(chunk_ids))
     assert result['splitters']['parent_splitter'] is not None
     assert result['splitters']['child_splitter'] is not None
+
 def test_chunk_docs_summary(setup_fixture):
     '''Test the chunk_docs function with summary RAG.'''
-    llm=parse_test_model('llm', {'llm_family': 'OpenAI', 'llm': 'gpt-3.5-turbo-0125'}, setup_fixture)
-
-    result = chunk_docs(setup_fixture['docs'], 
-                        rag_type=setup_fixture['rag_type']['Summary'], 
-                        chunk_method=setup_fixture['chunk_method'], 
-                        chunk_size=setup_fixture['chunk_size'], 
-                        chunk_overlap=setup_fixture['chunk_overlap'], 
-                        llm=llm)
+    llm = LLMService().get_llm('OpenAI', 'gpt-3.5-turbo-0125')
+    doc_processor = DocumentProcessor()
+    result = doc_processor.chunk_docs(setup_fixture['docs'], 
+                                      rag_type=setup_fixture['rag_type']['Summary'], 
+                                      chunk_method=setup_fixture['chunk_method'], 
+                                      chunk_size=setup_fixture['chunk_size'], 
+                                      chunk_overlap=setup_fixture['chunk_overlap'], 
+                                      llm=llm)
     
-    page_ids = [_stable_hash_meta(page.metadata) for page in result['pages']['docs']]
-    summary_ids = [_stable_hash_meta(summary.metadata) for summary in result['summaries']]
+    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result['pages']['docs']]
+    summary_ids = [DocumentProcessor._stable_hash_meta(summary.metadata) for summary in result['summaries']]
     
     assert result['rag_type'] == setup_fixture['rag_type']['Summary']
     assert result['pages']['doc_ids'] is not None
@@ -271,20 +311,22 @@ def test_chunk_docs_summary(setup_fixture):
     assert result['summaries'] is not None
     assert len(summary_ids) == len(set(summary_ids))
     assert result['llm'] == llm
+
 def test_chunk_id_lookup(setup_fixture):
     '''Test case for chunk_id_lookup function.'''
-    result = chunk_docs(setup_fixture['docs'], 
-                        rag_type=setup_fixture['rag_type']['Standard'], 
-                        chunk_method=setup_fixture['chunk_method'], 
-                        chunk_size=setup_fixture['chunk_size'], 
-                        chunk_overlap=setup_fixture['chunk_overlap'])
+    doc_processor = DocumentProcessor()
+    result = doc_processor.chunk_docs(setup_fixture['docs'], 
+                                      rag_type=setup_fixture['rag_type']['Standard'], 
+                                      chunk_method=setup_fixture['chunk_method'], 
+                                      chunk_size=setup_fixture['chunk_size'], 
+                                      chunk_overlap=setup_fixture['chunk_overlap'])
     assert result['rag_type'] == setup_fixture['rag_type']['Standard']
     assert result['pages'] is not None
     assert result['chunks'] is not None
-    metadata_test={'source': 'test1.pdf', 'page': 1, 'start_index': 0}
-    test_hash='e006e6fbafe375d1faff4783878c302a70c90ad9'
-    assert _stable_hash_meta(result['chunks'][0].metadata) == _stable_hash_meta(metadata_test)  # Tests that the metadata is correct
-    assert _stable_hash_meta(result['chunks'][0].metadata) == test_hash # Tests that the has is correct
+    metadata_test = {'source': 'test1.pdf', 'page': 1, 'start_index': 0}
+    test_hash = 'e006e6fbafe375d1faff4783878c302a70c90ad9'
+    assert DocumentProcessor._stable_hash_meta(result['chunks'][0].metadata) == DocumentProcessor._stable_hash_meta(metadata_test)  # Tests that the metadata is correct
+    assert DocumentProcessor._stable_hash_meta(result['chunks'][0].metadata) == test_hash  # Tests that the hash is correct
     assert result['splitters'] is not None
 
 # Test initialize database with a test query
@@ -316,46 +358,43 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     index_name = 'test-index'
     rag_type = 'Standard'
 
-    test_query_params = {
-        'index_type': test_index['index_type'],
-        'query_model': test_index['query_model'],
-        'embedding_name': test_index['embedding_name']
-    }
-    query_model = parse_test_model('embedding', test_query_params, setup_fixture)
+    # Create services
+    embedding_service = EmbeddingService(
+        model_name=test_index['embedding_name'],
+        model_type=test_index['query_model']
+    )
+    
+    db_service = DatabaseService(
+        db_type=test_index['index_type'],
+        index_name=index_name,
+        local_db_path=setup_fixture['LOCAL_DB_PATH']
+    )
 
     # Clean up any existing database first
     try:
-        delete_index(test_index['index_type'],
-                    index_name,
-                    rag_type,
-                    local_db_path=os.environ['LOCAL_DB_PATH'])
+        db_service.delete_index(rag_type=rag_type)
     except:
         pass  # Ignore errors if database doesn't exist
 
     # Test with environment variable local_db_path
     try:
-        vectorstore = initialize_database(test_index['index_type'],
-                                        index_name,
-                                        query_model,
-                                        rag_type,
-                                        local_db_path=os.environ['LOCAL_DB_PATH'],
-                                        init_ragatouille=test_index['init_ragatouille'])
+        vectorstore = db_service.initialize_database(
+            index_name=index_name,
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            namespace=db_service.namespace,
+            clear=True
+        )
 
         assert isinstance(vectorstore, test_index['expected_class'])
         
         # Cleanup
-        delete_index(test_index['index_type'],
-                    index_name,
-                    rag_type,
-                    local_db_path=os.environ['LOCAL_DB_PATH'])
+        db_service.delete_index(rag_type=rag_type)
 
     except Exception as e:
         # If there is an error, be sure to delete the database
         try:
-            delete_index(test_index['index_type'],
-                        index_name,
-                        rag_type,
-                        local_db_path=os.environ['LOCAL_DB_PATH'])
+            db_service.delete_index(rag_type=rag_type)
         except:
             pass
         raise e
@@ -363,36 +402,65 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     # Test with local_db_path set manually, show it doesn't work if not set
     monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
     with pytest.raises(Exception):
-        initialize_database(test_index['index_type'],
-                          index_name,
-                          query_model,
-                          rag_type,
-                          local_db_path=os.environ['LOCAL_DB_PATH'],
-                          init_ragatouille=test_index['init_ragatouille'])
+        db_service = DatabaseService(
+            db_type=test_index['index_type'],
+            index_name=index_name,
+            local_db_path=None
+        )
+        db_service.initialize_database(
+            index_name=index_name,
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            namespace=db_service.namespace,
+            clear=True
+        )
 
 # Test end to end process, adding query
-def test_database_setup_and_query(test_query,setup_fixture):
+def test_database_setup_and_query(test_query, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
-    test, print_str = parse_test_case(setup_fixture,test_query)
-    index_name='test'+str(test['id'])
+    test, print_str = parse_test_case(setup_fixture, test_query)
+    index_name = 'test' + str(test['id'])
     print(f'Starting test: {print_str}')
 
-    query_model=parse_test_model('embedding', test, setup_fixture)
-    llm=parse_test_model('llm', test, setup_fixture)    
+    # Initialize services
+    embedding_service = EmbeddingService(
+        model_name=test['embedding_name'],
+        model_type=test['query_model']
+    )
+    
+    db_service = DatabaseService(
+        db_type=test['index_type'],
+        local_db_path=setup_fixture['LOCAL_DB_PATH']
+    )
+    
+    llm_service = LLMService(
+        model_name=test['llm'],
+        model_type=test['llm_family'],
+        temperature=0.1,
+        max_tokens=1000
+    )
 
-    try: 
-        vectorstore = load_docs(
-            test['index_type'],
-            setup_fixture['docs'],
-            rag_type=test['rag_type'],
-            query_model=query_model,
-            index_name=index_name, 
-            chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap'],
-            clear=True,
+    # Initialize document processor
+    doc_processor = DocumentProcessor(
+        db_service=db_service,
+        embedding_service=embedding_service,
+        rag_type=test['rag_type'],
+        chunk_size=setup_fixture['chunk_size'],
+        chunk_overlap=setup_fixture['chunk_overlap'],
+        llm_service=llm_service if test['rag_type'] == 'Summary' else None
+    )
+
+    try:
+        # Process and index documents
+        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
+        vectorstore = doc_processor.index_documents(
+            chunking_result=chunking_result,
+            index_name=index_name,
             batch_size=setup_fixture['batch_size'],
-            local_db_path=setup_fixture['LOCAL_DB_PATH'],
-            llm=llm)
+            clear=True
+        )
+
+        # Verify vectorstore type
         if test['index_type'] == 'ChromaDB':
             assert isinstance(vectorstore, Chroma)
         elif test['index_type'] == 'Pinecone':
@@ -401,56 +469,43 @@ def test_database_setup_and_query(test_query,setup_fixture):
             assert isinstance(vectorstore, RAGPretrainedModel)
         print('Vectorstore created.')
 
-        # Set index names for special databases
+        # Update index name for special RAG types
         if test['rag_type'] == 'Parent-Child':
-            index_name = index_name + '-parent-child'
-        if test['rag_type'] == 'Summary':
-            index_name = index_name + llm.model_name.replace('/', '-') + '-summary' 
+            index_name = f"{index_name}-parent-child"
+        elif test['rag_type'] == 'Summary':
+            index_name = f"{index_name}{llm_service.model_name.replace('/', '-')}-summary"
 
-        if test['index_type'] == 'RAGatouille':
-            # query_model_qa=vectorstore  
-            query_model_qa = RAGPretrainedModel.from_index(index_path=os.path.join(setup_fixture['LOCAL_DB_PATH'],
-                                                                                   '.ragatouille/colbert/indexes',
-                                                                                   index_name))         
-        else:
-            query_model_qa = query_model
-        assert query_model_qa is not None
+        # Initialize QA model
+        qa_model = QAModel(
+            db_service=db_service,
+            embedding_service=embedding_service,
+            llm_service=llm_service,
+            rag_type=test['rag_type']
+        )
+
+        # Test querying
+        response = qa_model.query(setup_fixture['test_prompt'])
+        assert response.answer is not None
+        assert response.sources is not None
+        assert response.chat_history is not None
         
-        qa_model_obj = QA_Model(test['index_type'],
-                            index_name,
-                            query_model_qa,
-                            llm,
-                            rag_type=test['rag_type'],
-                            local_db_path=setup_fixture['LOCAL_DB_PATH'])
-        print('QA model object created.')
-        assert qa_model_obj is not None
-
-        qa_model_obj.query_docs(setup_fixture['test_prompt'])
-        assert qa_model_obj.ai_response is not None
-        assert qa_model_obj.sources is not None
-        assert qa_model_obj.memory is not None
-        
-
-        alternate_question = qa_model_obj.generate_alternative_questions(setup_fixture['test_prompt'])
-        assert alternate_question is not None
+        # Test alternative questions
+        alt_questions = qa_model.generate_alternative_questions(setup_fixture['test_prompt'])
+        assert alt_questions is not None
         print('Query and alternative question successful!')
 
-        delete_index(test['index_type'],
-                index_name, 
-                test['rag_type'],
-                local_db_path=setup_fixture['LOCAL_DB_PATH'])
-        if test['rag_type'] == 'Parent-Child' or test['rag_type'] == 'Summary':
-            lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_Store', index_name)
-            assert not os.path.exists(lfs_path) # Check that the local file store was deleted
+        # Cleanup
+        db_service.delete_index(rag_type=test['rag_type'])
+        if test['rag_type'] in ['Parent-Child', 'Summary']:
+            lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
+            assert not os.path.exists(lfs_path)
         print('Database deleted.')
 
-    except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(test['index_type'],
-                        'test'+str(test['id']), 
-                        test['rag_type'],
-                        local_db_path=setup_fixture['LOCAL_DB_PATH'])
+    except Exception as e:
+        # Cleanup on error
+        db_service.delete_index(rag_type=test['rag_type'])
         raise e
-        
+
 # Test sidebar loading and secret keys
 def test_sidebar_manager():
     """Test the SidebarManager class functionality."""
@@ -569,238 +624,219 @@ def test_sidebar_manager_validate_config():
     # Test with empty config
     with pytest.raises(Exception):
         manager._validate_config({})
-def test_set_secrets_with_environment_variables(monkeypatch):
-    '''Test case to verify the behavior of the set_secrets function when environment variables are set.'''
+def test_get_secrets_with_environment_variables(monkeypatch):
+    '''Test case to verify get_secrets function when environment variables are set.'''
     # Set the environment variables
     monkeypatch.setenv('OPENAI_API_KEY', 'openai_key')
     monkeypatch.setenv('VOYAGE_API_KEY', 'voyage_key')
     monkeypatch.setenv('PINECONE_API_KEY', 'pinecone_key')
     monkeypatch.setenv('HUGGINGFACEHUB_API_TOKEN', 'huggingface_key')
-    # Call the set_secrets function
-    secrets = set_secrets({})
-    # Assert that the secrets are set correctly
+    monkeypatch.setenv('ANTHROPIC_API_KEY', 'anthropic_key')
+    
+    # Get secrets from environment
+    secrets = get_secrets()
+    
+    # Assert that the secrets are loaded correctly
     assert secrets['OPENAI_API_KEY'] == 'openai_key'
     assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
     assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
-    assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
-def test_set_secrets_with_inputs(monkeypatch):
-    '''Test case for the set_secrets function with sidebar data.'''
-    # For this test, delete the environment variables
-    monkeypatch.delenv('OPENAI_API_KEY', raising=False)
-    monkeypatch.delenv('VOYAGE_API_KEY', raising=False)
-    monkeypatch.delenv('PINECONE_API_KEY', raising=False)
-    monkeypatch.delenv('HUGGINGFACEHUB_API_TOKEN', raising=False)
-    # Define the sidebar data
-    sb = {
-        'keys': {
-            'OPENAI_API_KEY': 'openai_key',
-            'VOYAGE_API_KEY': 'voyage_key',
-            'PINECONE_API_KEY': 'pinecone_key',
-            'HUGGINGFACEHUB_API_TOKEN': 'huggingface_key'
-        }
+    assert secrets['HUGGINGFACEHUB_API_KEY'] == 'huggingface_key'
+    assert secrets['ANTHROPIC_API_KEY'] == 'anthropic_key'
+
+def test_set_secrets_with_valid_input():
+    '''Test case for set_secrets function with valid input.'''
+    test_secrets = {
+        'OPENAI_API_KEY': 'openai_key',
+        'VOYAGE_API_KEY': 'voyage_key',
+        'PINECONE_API_KEY': 'pinecone_key',
+        'HUGGINGFACEHUB_API_KEY': 'huggingface_key',
+        'ANTHROPIC_API_KEY': 'anthropic_key'
     }
-    # Call the set_secrets function
-    secrets = set_secrets(sb)
-    # Assert that the secrets are set correctly
-    assert secrets['OPENAI_API_KEY'] == 'openai_key'
-    assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
-    assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
-    assert secrets['HUGGINGFACEHUB_API_TOKEN'] == 'huggingface_key'
-@pytest.mark.parametrize('missing_key',
-                         ['OPENAI_API_KEY','ANTHROPIC_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN'])
-def test_set_secrets_missing_api_keys(monkeypatch, missing_key):
-    '''Test case for setting secrets with missing API keys.'''
-    print(f'Testing missing required key: {missing_key}')
-    # For this test, delete the environment variables
-    key_list=['OPENAI_API_KEY','ANTHROPIC_API_KEY','VOYAGE_API_KEY','PINECONE_API_KEY','HUGGINGFACEHUB_API_TOKEN']
-    for key in key_list:
+    
+    # Set secrets and verify return
+    result = set_secrets(test_secrets)
+    assert result == test_secrets
+    
+    # Verify environment variables were set
+    for key, value in test_secrets.items():
+        assert os.environ[key] == value
+
+@pytest.mark.parametrize('missing_key', [
+    'OPENAI_API_KEY',
+    'ANTHROPIC_API_KEY',
+    'VOYAGE_API_KEY',
+    'PINECONE_API_KEY',
+    'HUGGINGFACEHUB_API_KEY'
+])
+def test_set_secrets_with_empty_values(monkeypatch, missing_key):
+    '''Test case for set_secrets with empty values.'''
+    # Create secrets dict with one empty value
+    test_secrets = {
+        'OPENAI_API_KEY': 'openai_key',
+        'VOYAGE_API_KEY': 'voyage_key',
+        'PINECONE_API_KEY': 'pinecone_key',
+        'HUGGINGFACEHUB_API_KEY': 'huggingface_key',
+        'ANTHROPIC_API_KEY': 'anthropic_key'
+    }
+    test_secrets[missing_key] = ''
+    
+    # Clear environment variables
+    for key in test_secrets:
         monkeypatch.delenv(key, raising=False)
-    # Define the sidebar data with the current key being tested set to an empty string
-    sb = {'keys': {missing_key: ''}}
-    # Call the set_secrets function without setting any environment variables or sidebar data
-    with pytest.raises(SecretKeyException):
-        set_secrets(sb)
+    
+    # Verify ConfigurationError is raised
+    with pytest.raises(ConfigurationError) as exc_info:
+        set_secrets(test_secrets)
+    
+    # Verify error message
+    readable_name = ' '.join(missing_key.split('_')[:-1]).title()
+    assert str(exc_info.value) == f'{readable_name} is required.'
 
-# Test data visualization
-def test_get_docs_df(setup_fixture):
-    """Test case for the get_docs_df function."""
-    index_name = 'test-index'
-    test_query_params={'index_type':'ChromaDB',
-                       'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
+def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
+    '''Test get_secrets with .env file'''
+    # Create temporary .env file
+    env_path = tmp_path / '.env'
+    env_content = '\n'.join([
+        'OPENAI_API_KEY=openai_key',
+        'VOYAGE_API_KEY=voyage_key',
+        'PINECONE_API_KEY=pinecone_key',
+        'HUGGINGFACEHUB_API_KEY=huggingface_key',
+        'ANTHROPIC_API_KEY=anthropic_key'
+    ])
+    env_path.write_text(env_content)
+    
+    # Temporarily change working directory
+    with monkeypatch.context() as m:
+        m.chdir(tmp_path)
+        secrets = get_secrets()
+        
+        # Verify secrets were loaded from .env
+        assert secrets['OPENAI_API_KEY'] == 'openai_key'
+        assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
+        assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
+        assert secrets['HUGGINGFACEHUB_API_KEY'] == 'huggingface_key'
+        assert secrets['ANTHROPIC_API_KEY'] == 'anthropic_key'
 
-    # Call the function
-    # TODO add pinecone test
-    df = get_docs_df('ChromaDB',setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
-
-    # Perform assertions
-    assert isinstance(df, pd.DataFrame)
-    assert "id" in df.columns
-    assert "source" in df.columns
-    assert "page" in df.columns
-    assert "document" in df.columns
-    assert "embedding" in df.columns
-def test_get_questions_df(setup_fixture):
-    """Test case for the get_questions_df function."""
-    index_name = 'test-index'
-    test_query_params={'index_type':'ChromaDB',
-                       'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-ada-002'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
-
-    # Call the function
-    df = get_questions_df(setup_fixture['LOCAL_DB_PATH'], index_name, query_model)
-
-    # Perform assertions
-    assert isinstance(df, pd.DataFrame)
-    assert "id" in df.columns
-    assert "question" in df.columns
-    assert "answer" in df.columns
-    assert "sources" in df.columns
-    assert "embedding" in df.columns
 def test_get_docs_questions_df(setup_fixture):
     """Test function for the get_docs_questions_df() method."""
+    index_name = 'test-visualization'
     
-    index_name='test-vizualisation'
-    rag_type='Standard'
-    test_query_params={'index_type':'ChromaDB',
-                       'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-3-large'}
-    test_llm_params={'llm_family': 'OpenAI', 
-                     'llm': 'gpt-4o-mini'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
-    llm=parse_test_model('llm', test_llm_params, setup_fixture)
+    # Initialize services
+    db_service = DatabaseService(
+        db_type='ChromaDB',
+        local_db_path=setup_fixture['LOCAL_DB_PATH']
+    )
+    embedding_service = EmbeddingService(
+        model_name='text-embedding-3-large',
+        model_type='OpenAI'
+    )
+    llm_service = LLMService(
+        model_name='gpt-4o-mini',
+        model_type='OpenAI'
+    )
 
-    try: 
-        vectorstore = load_docs(
-            test_query_params['index_type'],
-            setup_fixture['docs'],
-            query_model=query_model,
-            rag_type=rag_type,
-            index_name=index_name, 
+    try:
+        # Initialize document processor
+        doc_processor = DocumentProcessor(
+            db_service=db_service,
+            embedding_service=embedding_service,
+            llm_service=llm_service,
             chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap'],
-            clear=True,
-            batch_size=setup_fixture['batch_size'],
-            local_db_path=setup_fixture['LOCAL_DB_PATH'],
-            llm=llm)
-        qa_model_obj = QA_Model(test_query_params['index_type'],
-                            index_name,
-                            query_model,
-                            llm,
-                            rag_type=rag_type,
-                            local_db_path=setup_fixture['LOCAL_DB_PATH'])
-        qa_model_obj.query_docs(setup_fixture['test_prompt'])
-        assert qa_model_obj.query_vectorstore is not None
-        
-        df = get_docs_questions_df(
-            test_query_params['index_type'],
-            setup_fixture['LOCAL_DB_PATH'],
-            index_name,
-            setup_fixture['LOCAL_DB_PATH'],
-            index_name+'-queries',
-            query_model
+            chunk_overlap=setup_fixture['chunk_overlap']
         )
+
+        # Process and index documents
+        doc_processor.process_and_index(
+            documents=setup_fixture['docs'],
+            index_name=index_name,
+            clear=True
+        )
+
+        # Create QA model and run query
+        qa_model = QAModel(
+            db_service=db_service,
+            embedding_service=embedding_service,
+            llm_service=llm_service
+        )
+        qa_model.query_docs(setup_fixture['test_prompt'])
+
+        # Get combined dataframe
+        df = DatabaseService.get_docs_questions_df(index_name, index_name+'-queries', embedding_service)
 
         # Assert the result
         assert isinstance(df, pd.DataFrame)
         assert len(df) > 0
-        assert "id" in df.columns
-        assert "source" in df.columns
-        assert "page" in df.columns
-        assert "document" in df.columns
-        assert "embedding" in df.columns
-        assert "type" in df.columns
-        assert "num_sources" in df.columns
-        assert "first_source" in df.columns
-        assert "used_by_questions" in df.columns
-        assert "used_by_num_questions" in df.columns
-        assert "used_by_question_first" in df.columns
+        assert all(col in df.columns for col in [
+            "id", "source", "page", "document", "embedding", "type",
+            "first_source", "used_by_questions", "used_by_num_questions",
+            "used_by_question_first"
+        ])
 
-        delete_index(test_query_params['index_type'],
-                index_name, 
-                rag_type,
-                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        # Cleanup
+        db_service.delete_index()
 
-    except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(test_query_params['index_type'],
-                index_name, 
-                rag_type,
-                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+    except Exception as e:
+        db_service.delete_index()
         raise e
+
 def test_add_clusters(setup_fixture):
     """Test function for the add_clusters function."""
-    
-    index_name='test-vizualisation'
-    rag_type='Standard'
-    test_query_params={'index_type':'ChromaDB',
-                       'query_model': 'OpenAI', 
-                       'embedding_name': 'text-embedding-3-large'}
-    test_llm_params={'llm_family': 'OpenAI', 
-                     'llm': 'gpt-4o-mini'}
-    query_model=parse_test_model('embedding', test_query_params, setup_fixture)
-    llm=parse_test_model('llm', test_llm_params, setup_fixture)
+    # Setup same as test_get_docs_questions_df
+    index_name = 'test-visualization'
+    db_service = DatabaseService(
+        db_type='ChromaDB',
+        local_db_path=setup_fixture['LOCAL_DB_PATH']
+    )
+    embedding_service = EmbeddingService(
+        model_name='text-embedding-3-large',
+        model_type='OpenAI'
+    )
+    llm_service = LLMService(
+        model_name='gpt-4o-mini',
+        model_type='OpenAI'
+    )
 
-    print(query_model)
-
-    try: 
-        vectorstore = load_docs(
-            test_query_params['index_type'],
-            setup_fixture['docs'],
-            query_model=query_model,
-            rag_type=rag_type,
-            index_name=index_name, 
+    try:
+        # Initialize and process documents (same as previous test)
+        doc_processor = DocumentProcessor(
+            db_service=db_service,
+            embedding_service=embedding_service,
+            llm_service=llm_service,
             chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap'],
-            clear=True,
-            batch_size=setup_fixture['batch_size'],
-            local_db_path=setup_fixture['LOCAL_DB_PATH'],
-            llm=llm)
-        qa_model_obj = QA_Model(test_query_params['index_type'],
-                            index_name,
-                            query_model,
-                            llm,
-                            rag_type=rag_type,
-                            local_db_path=setup_fixture['LOCAL_DB_PATH'])
-        qa_model_obj.query_docs(setup_fixture['test_prompt'])
-
-        df = get_docs_questions_df(
-            test_query_params['index_type'],
-            setup_fixture['LOCAL_DB_PATH'],
-            index_name,
-            setup_fixture['LOCAL_DB_PATH'],
-            index_name+'-queries',
-            query_model
+            chunk_overlap=setup_fixture['chunk_overlap']
+        )
+        doc_processor.process_and_index(
+            documents=setup_fixture['docs'],
+            index_name=index_name,
+            clear=True
         )
 
-        delete_index(test_query_params['index_type'],
-                index_name, 
-                rag_type,
-                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        qa_model = QAModel(
+            db_service=db_service,
+            embedding_service=embedding_service,
+            llm_service=llm_service
+        )
+        qa_model.query_docs(setup_fixture['test_prompt'])
 
-    except Exception as e:  # If there is an error, be sure to delete the database
-        delete_index(test_query_params['index_type'],
-                index_name, 
-                rag_type,
-                local_db_path=setup_fixture['LOCAL_DB_PATH'])
+        df = DatabaseService.get_docs_questions_df(index_name, index_name+'-queries', embedding_service)
+        db_service.delete_index()
+
+    except Exception as e:
+        db_service.delete_index()
         pytest.fail(f"Test failed with exception: {str(e)}")
 
-    # Check the add_clusters function with no labeling
-    n_clusters = 2  # Define the expected number of clusters
-    df_with_clusters = add_clusters(df, n_clusters) # Call the add_clusters function
-    assert len(df_with_clusters["Cluster"].unique()) == n_clusters  # Check if the number of clusters is correct
-    for cluster in df_with_clusters["Cluster"].unique():    # Check if the number of documents per cluster is correct
-        num_documents = len(df_with_clusters[df_with_clusters["Cluster"] == cluster])
-        assert num_documents >= 1
+    # Test clustering without labels
+    n_clusters = 2
+    df_with_clusters = DatabaseService.add_clusters(df, n_clusters)
+    assert len(df_with_clusters["Cluster"].unique()) == n_clusters
+    for cluster in df_with_clusters["Cluster"].unique():
+        assert len(df_with_clusters[df_with_clusters["Cluster"] == cluster]) >= 1
 
-    # Check the add_clusters function with labeling
-    n_clusters = 2  # Define a different number of clusters
-    df_with_clusters = add_clusters(df, n_clusters, llm, 2)  # Call the add_clusters function
-    assert len(df_with_clusters["Cluster"].unique()) == n_clusters  # Check if the number of clusters is correct
-    assert "Cluster_Label" in df_with_clusters.columns  # Check if the cluster labels are added correctly
-    assert df_with_clusters["Cluster_Label"].notnull().all()  # Check if the cluster labels are non-empty
-    assert df_with_clusters["Cluster_Label"].apply(lambda x: isinstance(x, str)).all()  # Check if the cluster labels are strings
-    for cluster in df_with_clusters["Cluster"].unique():  # Check if the number of documents per cluster is more than zero
-        num_documents = len(df_with_clusters[df_with_clusters["Cluster"] == cluster])
-        assert num_documents > 0
+    # Test clustering with labels
+    df_with_clusters = DatabaseService.add_clusters(df, n_clusters, llm_service, 2)
+    assert len(df_with_clusters["Cluster"].unique()) == n_clusters
+    assert "Cluster_Label" in df_with_clusters.columns
+    assert df_with_clusters["Cluster_Label"].notnull().all()
+    assert df_with_clusters["Cluster_Label"].apply(lambda x: isinstance(x, str)).all()
+    for cluster in df_with_clusters["Cluster"].unique():
+        assert len(df_with_clusters[df_with_clusters["Cluster"] == cluster]) > 0

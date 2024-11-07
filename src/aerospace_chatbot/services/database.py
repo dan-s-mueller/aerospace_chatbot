@@ -106,7 +106,7 @@ class DatabaseService:
     def add_clusters(self,
                     df,
                     n_clusters,
-                    llm_service,
+                    llm_service=None,
                     docs_per_cluster: int = 10):
         """Add cluster labels to DataFrame using KMeans clustering."""
         deps = Dependencies()
@@ -116,21 +116,21 @@ class DatabaseService:
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         df['cluster'] = kmeans.fit_predict(np.stack(df['embedding'].values))
         
-        # Generate cluster labels using LLM
-        cluster_labels = []
-        for i in range(n_clusters):
-            cluster_docs = df[df['cluster'] == i]['text'].head(docs_per_cluster).tolist()
-            prompt = CLUSTER_LABEL.format(
-                documents="\n\n".join(cluster_docs),
-                n=docs_per_cluster
-            )
-            response = llm_service.get_llm().invoke(prompt)
-            cluster_labels.append(response.content.strip())
-        
-        # Map cluster numbers to labels
-        cluster_map = {i: label for i, label in enumerate(cluster_labels)}
-        df['cluster_label'] = df['cluster'].map(cluster_map)
-        
+        # Generate cluster labels using LLM if provided
+        if llm_service is not None:
+            cluster_labels = []
+            for i in range(n_clusters):
+                cluster_docs = df[df['cluster'] == i]['text'].head(docs_per_cluster).tolist()
+                prompt = CLUSTER_LABEL.format(
+                    documents="\n\n".join(cluster_docs),
+                    n=docs_per_cluster
+                )
+                response = llm_service.get_llm().invoke(prompt)
+                cluster_labels.append(response.content.strip())
+            
+            # Map cluster numbers to labels
+            cluster_map = {i: label for i, label in enumerate(cluster_labels)}
+            df['cluster_label'] = df['cluster'].map(cluster_map)
         return df
     def export_to_hf_dataset(self, df, dataset_name):
         """Export DataFrame to Hugging Face dataset."""

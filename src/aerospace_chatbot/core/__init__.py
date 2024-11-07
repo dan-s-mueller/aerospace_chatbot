@@ -9,7 +9,8 @@ from .config import (
     get_cache_decorator, 
     get_cache_data_decorator,
     load_config,
-    get_secrets
+    get_secrets,
+    set_secrets
 )
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     'get_cache_decorator', 
     'get_cache_data_decorator',
     'load_config',
-    'get_secrets'
+    'get_secrets',
+    'set_secrets'
 ]
