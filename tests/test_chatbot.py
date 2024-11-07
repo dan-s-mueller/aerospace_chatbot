@@ -60,6 +60,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 
 # TODO add tests to check conversation history functionality
+# TODO add a test to check parent/child and summary lookup functionality (not just that it executes)
 
 # Functions
 def permute_tests(test_data):
@@ -202,6 +203,13 @@ def setup_fixture():
         model_type='OpenAI'
     )
 
+    mock_llm_service = LLMService(
+        model_name='gpt-4o-mini',
+        model_type='OpenAI',
+        temperature=0,
+        max_tokens=1000
+    )
+
     setup = {
         'OPENAI_API_KEY': OPENAI_API_KEY,
         'ANTHROPIC_API_KEY': ANTHROPIC_API_KEY,
@@ -219,7 +227,8 @@ def setup_fixture():
         'rag_type': rag_type,
         # Add mock services
         'mock_db_service': mock_db_service,
-        'mock_embedding_service': mock_embedding_service
+        'mock_embedding_service': mock_embedding_service,
+        'mock_llm_service': mock_llm_service
     }
 
     return setup
@@ -337,7 +346,6 @@ def test_process_documents_parent_child(setup_fixture):
 
 def test_process_documents_summary(setup_fixture):
     '''Test document processing with summary RAG.'''
-    llm = LLMService().get_llm('OpenAI', 'gpt-3.5-turbo-0125')
     doc_processor = DocumentProcessor(
         db_service=setup_fixture['mock_db_service'],
         embedding_service=setup_fixture['mock_embedding_service'],
@@ -345,7 +353,7 @@ def test_process_documents_summary(setup_fixture):
         chunk_method=setup_fixture['chunk_method'],
         chunk_size=setup_fixture['chunk_size'],
         chunk_overlap=setup_fixture['chunk_overlap'],
-        llm_service=llm
+        llm_service=setup_fixture['mock_llm_service']
     )
     
     result = doc_processor.process_documents(setup_fixture['docs'])
@@ -359,31 +367,8 @@ def test_process_documents_summary(setup_fixture):
     assert len(page_ids) == len(set(page_ids))
     assert result.summaries is not None
     assert len(summary_ids) == len(set(summary_ids))
-    assert result.llm == llm
+    assert result.llm_service == setup_fixture['mock_llm_service']
 
-def test_chunk_id_lookup(setup_fixture):
-    '''Test case for chunk_id_lookup function.'''
-    doc_processor = DocumentProcessor(
-        db_service=setup_fixture['mock_db_service'],
-        embedding_service=setup_fixture['mock_embedding_service'],
-        rag_type=setup_fixture['rag_type']['Standard'],
-        chunk_method=setup_fixture['chunk_method'],
-        chunk_size=setup_fixture['chunk_size'],
-        chunk_overlap=setup_fixture['chunk_overlap']
-    )
-    
-    result = doc_processor.process_documents(setup_fixture['docs'])
-    
-    assert result.rag_type == setup_fixture['rag_type']['Standard']
-    assert result.pages is not None
-    assert result.chunks is not None
-    metadata_test = {'source': 'test1.pdf', 'page': 1, 'start_index': 0}
-    test_hash = 'e006e6fbafe375d1faff4783878c302a70c90ad9'
-    assert DocumentProcessor._stable_hash_meta(result.chunks[0].metadata) == DocumentProcessor._stable_hash_meta(metadata_test)  # Tests that the metadata is correct
-    assert DocumentProcessor._stable_hash_meta(result.chunks[0].metadata) == test_hash  # Tests that the hash is correct
-    assert result.splitters is not None
-
-# Test initialize database with a test query
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',

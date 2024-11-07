@@ -24,7 +24,7 @@ class ChunkingResult:
     chunk_overlap: Optional[int] = None
     parent_chunks: Optional[List[Any]] = None
     summaries: Optional[List[Document]] = None
-    llm: Optional[Any] = None
+    llm_service: Optional[Any] = None
 
 class DocumentProcessor:
     """Handles document processing, chunking, and indexing."""
@@ -332,7 +332,7 @@ class DocumentProcessor:
         return ChunkingResult(rag_type=self.rag_type,
                               pages={'doc_ids':doc_ids,'docs':chunks},
                               summaries=summary_docs, 
-                              llm=self.llm_service.get_llm(),
+                              llm_service=self.llm_service,
                               n_merge_pages=self.merge_pages,
                               chunk_method=self.chunk_method,
                               chunk_size=self.chunk_size,
