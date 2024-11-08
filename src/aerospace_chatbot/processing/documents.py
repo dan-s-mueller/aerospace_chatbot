@@ -333,7 +333,7 @@ class DocumentProcessor:
                               pages={'doc_ids':doc_ids,'docs':chunks},
                               summaries=summary_docs, 
                               llm_service=self.llm_service,
-                              n_merge_pages=self.merge_pages,
+                              merge_pages=self.merge_pages,
                               chunk_method=self.chunk_method,
                               chunk_size=self.chunk_size,
                               chunk_overlap=self.chunk_overlap,

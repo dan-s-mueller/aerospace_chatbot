@@ -43,6 +43,7 @@ def load_config(config_path):
         raise ConfigurationError(f"Failed to load config: {str(e)}")
 def get_secrets():
     """Load and return secrets from environment"""
+    # TODO add handling for missing keys. First check if the key is needed based on the config file. Make the list of required secrets. Then check if they are in the environment. If not, raise an error.
     load_dotenv(find_dotenv())
     return {
         'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),

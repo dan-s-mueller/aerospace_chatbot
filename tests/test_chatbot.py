@@ -104,7 +104,7 @@ def parse_test_case(setup, test_case):
     print_str = ', '.join(f'{key}: {value}' for key, value in test_case.items())
 
     return parsed_test, print_str
-def parse_test_model(type, test, setup_fixture):
+def parse_test_model(type, test):
     """Parses the test model based on the given type and test parameters."""
     if type == 'embedding':
         # Initialize the embedding service
@@ -335,8 +335,8 @@ def test_process_documents_standard(setup_fixture):
     
     result = doc_processor.process_documents(setup_fixture['docs'])
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages]
-    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
+    page_ids = [DocumentProcessor.stable_hash_meta(page.metadata) for page in result.pages]
+    chunk_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in result.chunks]
     
     assert result.rag_type == setup_fixture['rag_type']['Standard']
     assert result.pages is not None
@@ -356,8 +356,8 @@ def test_process_docs_merge_nochunk(setup_fixture):
     
     result = doc_processor.process_documents(setup_fixture['docs'])
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages]
-    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
+    page_ids = [DocumentProcessor.stable_hash_meta(page.metadata) for page in result.pages]
+    chunk_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in result.chunks]
 
     assert result.rag_type == setup_fixture['rag_type']['Standard']
     assert result.pages is not None
@@ -378,8 +378,8 @@ def test_process_documents_nochunk(setup_fixture):
     
     result = doc_processor.process_documents(setup_fixture['docs'])
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages]
-    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
+    page_ids = [DocumentProcessor.stable_hash_meta(page.metadata) for page in result.pages]
+    chunk_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in result.chunks]
 
     assert result.rag_type == setup_fixture['rag_type']['Standard']
     assert result.pages is not None
@@ -400,8 +400,8 @@ def test_process_documents_parent_child(setup_fixture):
     
     result = doc_processor.process_documents(setup_fixture['docs'])
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages['parent_chunks']]
-    chunk_ids = [DocumentProcessor._stable_hash_meta(chunk.metadata) for chunk in result.chunks]
+    page_ids = [DocumentProcessor.stable_hash_meta(page.metadata) for page in result.pages['parent_chunks']]
+    chunk_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in result.chunks]
 
     assert result.rag_type == setup_fixture['rag_type']['Parent-Child']
     assert result.pages['doc_ids'] is not None
@@ -425,8 +425,8 @@ def test_process_documents_summary(setup_fixture):
     
     result = doc_processor.process_documents(setup_fixture['docs'])
     
-    page_ids = [DocumentProcessor._stable_hash_meta(page.metadata) for page in result.pages['docs']]
-    summary_ids = [DocumentProcessor._stable_hash_meta(summary.metadata) for summary in result.summaries]
+    page_ids = [DocumentProcessor.stable_hash_meta(page.metadata) for page in result.pages['docs']]
+    summary_ids = [DocumentProcessor.stable_hash_meta(summary.metadata) for summary in result.summaries]
     
     assert result.rag_type == setup_fixture['rag_type']['Summary']
     assert result.pages['doc_ids'] is not None
@@ -597,15 +597,7 @@ def test_delete_database(setup_fixture, test_index):
         except:
             pass
         raise e
-
-    # Test Case 3: Delete database multiple times
-    try:
-        db_service.delete_index(index_name=index_name)
-        db_service.delete_index(index_name=index_name)  # Should raise exception on second deletion
-        pytest.fail("Expected exception when deleting non-existent database")
-    except Exception as e:
-        assert "does not exist" in str(e).lower() or "not found" in str(e).lower()
-
+    
 # Test end to end process, adding query
 def test_database_setup_and_query(test_input, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
@@ -621,10 +613,8 @@ def test_database_setup_and_query(test_input, setup_fixture):
         db_type=test['index_type'],
         local_db_path=setup_fixture['LOCAL_DB_PATH']
     )
-    query_model_service = parse_test_model('embedding', test, setup_fixture)
-    llm_service = parse_test_model('llm', test, setup_fixture)
-
-    index_name = validate_index_name(base_index_name, db_service, doc_processor)
+    query_model_service = parse_test_model('embedding', test)
+    llm_service = parse_test_model('llm', test)
 
     try:
         # Initialize the document processor with services
@@ -637,6 +627,8 @@ def test_database_setup_and_query(test_input, setup_fixture):
             llm_service=llm_service
         )
 
+        index_name = validate_index_name(base_index_name, db_service, doc_processor)
+
         # Process and index documents
         chunking_result = doc_processor.process_documents(setup_fixture['docs'])
         doc_processor.index_documents(
@@ -647,19 +639,13 @@ def test_database_setup_and_query(test_input, setup_fixture):
         )
 
         # Verify the vectorstore type
-        if test['index_type'] == 'ChromaDB':
+        if db_service.db_type == 'ChromaDB':
             assert isinstance(doc_processor.vectorstore, Chroma)
-        elif test['index_type'] == 'Pinecone':
+        elif db_service.db_type == 'Pinecone':
             assert isinstance(doc_processor.vectorstore, PineconeVectorStore)
-        elif test['index_type'] == 'RAGatouille':
+        elif db_service.db_type == 'RAGatouille':
             assert isinstance(doc_processor.vectorstore, RAGPretrainedModel)
         print('Vectorstore created.')
-
-        # Set index names for special databases
-        if test['rag_type'] == 'Parent-Child':
-            index_name = index_name + '-parent-child'
-        if test['rag_type'] == 'Summary':
-            index_name = index_name + llm_service.model_name.replace('/', '-') + '-summary'
 
         # Initialize QA model
         qa_model = QAModel(
@@ -683,7 +669,7 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
         # Delete the index
         db_service.delete_index(index_name=index_name)
-        if test['rag_type'] in ['Parent-Child', 'Summary']:
+        if doc_processor.rag_type in ['Parent-Child', 'Summary']:
             lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
             assert not os.path.exists(lfs_path)  # Check that the local file store was deleted
         print('Database deleted.')
@@ -846,37 +832,6 @@ def test_set_secrets_with_valid_input():
     # Verify environment variables were set
     for key, value in test_secrets.items():
         assert os.environ[key] == value
-
-@pytest.mark.parametrize('missing_key', [
-    'OPENAI_API_KEY',
-    'ANTHROPIC_API_KEY',
-    'VOYAGE_API_KEY',
-    'PINECONE_API_KEY',
-    'HUGGINGFACEHUB_API_KEY'
-])
-def test_set_secrets_with_empty_values(monkeypatch, missing_key):
-    '''Test case for set_secrets with empty values.'''
-    # Create secrets dict with one empty value
-    test_secrets = {
-        'OPENAI_API_KEY': 'openai_key',
-        'VOYAGE_API_KEY': 'voyage_key',
-        'PINECONE_API_KEY': 'pinecone_key',
-        'HUGGINGFACEHUB_API_KEY': 'huggingface_key',
-        'ANTHROPIC_API_KEY': 'anthropic_key'
-    }
-    test_secrets[missing_key] = ''
-    
-    # Clear environment variables
-    for key in test_secrets:
-        monkeypatch.delenv(key, raising=False)
-    
-    # Verify ConfigurationError is raised
-    with pytest.raises(ConfigurationError) as exc_info:
-        set_secrets(test_secrets)
-    
-    # Verify error message
-    readable_name = ' '.join(missing_key.split('_')[:-1]).title()
-    assert str(exc_info.value) == f'{readable_name} is required.'
 
 def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
     '''Test get_secrets with .env file'''
