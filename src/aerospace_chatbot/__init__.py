@@ -15,6 +15,7 @@ from .processing import (
 )
 from .services import (
     DatabaseService, 
+    validate_index_name,
     EmbeddingService, 
     LLMService,
     CONDENSE_QUESTION_PROMPT,
@@ -50,6 +51,7 @@ __all__ = [
     
     # Services
     'DatabaseService',
+    'validate_index_name',
     'EmbeddingService',
     'LLMService',
     'CONDENSE_QUESTION_PROMPT',

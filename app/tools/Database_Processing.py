@@ -3,7 +3,9 @@ import streamlit as st
 
 from aerospace_chatbot.ui import SidebarManager, show_connection_status
 from aerospace_chatbot.processing import DocumentProcessor
-from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
+from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService, validate_index_name
+
+# TODO add index name somewhere in gui
 
 # Page setup
 st.title('📓 Database Processing')
@@ -51,13 +53,12 @@ try:
     else:
         st.info(f"No PDF files found in bucket '{bucket_name}'")
     st.markdown(markdown_text)
-        
 except Exception as e:
     st.error(f'Error accessing GCS: {str(e)}. Please check your credentials and permissions. You may need to log into your Google Cloud account (`gcloud auth login`), or access to the bucket.')
 
 # Set database name
 index_appendix = st.text_input('Appendix for index name', 'mch')
-index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
+st.session_state.index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
 
 # Add an expandable box for options
 with st.expander("Options",expanded=True):
@@ -109,7 +110,6 @@ db_service = DatabaseService(
     db_type=sb['index_type'],
     local_db_path=os.getenv('LOCAL_DB_PATH')
 )
-
 if sb['rag_type'] == 'Summary':
     llm_service = LLMService(
         model_name=sb['rag_llm_model'],
@@ -123,13 +123,6 @@ else:
 # Add a button to run the function
 if st.button('Load docs into vector database'):
     start_time = time.time()    
-
-    # db_service.initialize_database(
-    #     index_name=index_name,
-    #     embedding_service=embedding_service,
-    #     rag_type=sb['rag_type'],
-    #     clear=clear_database
-    # )
 
     doc_processor = DocumentProcessor(
         db_service=db_service,
@@ -147,10 +140,11 @@ if st.button('Load docs into vector database'):
         documents=docs,
         show_progress=True
     )
+    st.session_state.index_name=validate_index_name(st.session_state.index_name, db_service, doc_processor)
     # Index documents
     doc_processor.index_documents(
         chunking_result=chunking_result,
-        index_name=index_name,
+        index_name=st.session_state.index_name,
         batch_size=batch_size,
         clear=clear_database
     )

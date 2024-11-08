@@ -1,6 +1,7 @@
 """Service layer for database, embeddings, and LLM interactions."""
 
-from .database import DatabaseService
+from .database import (DatabaseService,
+                       validate_index_name)
 from .embeddings import EmbeddingService
 from .llm import LLMService
 from .prompts import (
@@ -16,6 +17,7 @@ from .prompts import (
 
 __all__ = [
     'DatabaseService',
+    'validate_index_name',
     'EmbeddingService',
     'LLMService',
     'CONDENSE_QUESTION_PROMPT',

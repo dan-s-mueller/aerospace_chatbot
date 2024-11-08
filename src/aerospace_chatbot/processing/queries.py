@@ -163,7 +163,7 @@ class QAModel:
             page_content=question,
             metadata={
                 "answer": rag_answer['answer'].content,
-                "sources": ",".join(map(DocumentProcessor._stable_hash_meta, sources)),
+                "sources": ",".join(map(DocumentProcessor.stable_hash_meta, sources)),
             },
         )
     def _get_standalone_question(self, question, chat_history):

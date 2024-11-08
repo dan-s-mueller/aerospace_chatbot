@@ -61,6 +61,7 @@ sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 
 # TODO add tests to check conversation history functionality
 # TODO add a test to check parent/child and summary lookup functionality (not just that it executes)
+# FIXME add test case which tries to delete an index that doesn't exist and one that does
 
 # Functions
 def permute_tests(test_data):
@@ -77,12 +78,10 @@ def permute_tests(test_data):
             rows.append(row)
             idx += 1
     return rows
-
 def read_test_cases(json_path: str):
     with open(json_path, 'r') as json_file:
         test_cases = json.load(json_file)
     return test_cases
-
 def pytest_generate_tests(metafunc):
     '''
     Use pytest_generate_tests to dynamically generate tests.
@@ -91,7 +90,6 @@ def pytest_generate_tests(metafunc):
     if 'test_input' in metafunc.fixturenames:
         tests = read_test_cases(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test_cases.json'))
         metafunc.parametrize('test_input', tests)
-
 def parse_test_case(setup, test_case):
     ''' Parse test case to be used in the test functions.'''
     parsed_test = {
@@ -106,7 +104,6 @@ def parse_test_case(setup, test_case):
     print_str = ', '.join(f'{key}: {value}' for key, value in test_case.items())
 
     return parsed_test, print_str
-
 def parse_test_model(type, test, setup_fixture):
     """Parses the test model based on the given type and test parameters."""
     if type == 'embedding':
@@ -232,7 +229,6 @@ def setup_fixture():
     }
 
     return setup
-
 @pytest.fixture()
 def temp_dotenv(setup_fixture):
     """Creates a temporary .env file for testing purposes."""
@@ -250,6 +246,81 @@ def temp_dotenv(setup_fixture):
         yield dotenv_path
 
 ### Begin tests
+def test_validate_index_name(setup_fixture):
+    """Test edge cases for validate_index_name function."""
+    from aerospace_chatbot.services.database import validate_index_name, DatabaseService
+    from aerospace_chatbot.processing import DocumentProcessor
+    
+    # Test case 1: Empty index name
+    db_service = DatabaseService("ChromaDB", "test_path")
+    doc_processor = DocumentProcessor(
+        db_service=db_service,
+        embedding_service=setup_fixture['mock_embedding_service'],
+        rag_type='Standard',
+        chunk_size=400,
+        chunk_overlap=50
+    )
+    
+    with pytest.raises(ValueError, match="Index name cannot be empty"):
+        validate_index_name("", db_service, doc_processor)
+
+    # Test case 2: Whitespace-only index name
+    with pytest.raises(ValueError, match="Index name cannot be empty"):
+        validate_index_name("   ", db_service, doc_processor)
+
+    # Test case 3: ChromaDB invalid characters
+    with pytest.raises(ValueError, match="can only contain alphanumeric characters"):
+        validate_index_name("test@index", db_service, doc_processor)
+
+    # Test case 4: ChromaDB consecutive periods
+    with pytest.raises(ValueError, match="can only contain alphanumeric characters, underscores, or hyphens"):
+        validate_index_name("test..index", db_service, doc_processor)
+
+    # Test case 5: ChromaDB non-alphanumeric start/end
+    with pytest.raises(ValueError, match="must start and end with an alphanumeric character"):
+        validate_index_name("-testindex-", db_service, doc_processor)
+
+    # Test case 6: ChromaDB name too long
+    with pytest.raises(ValueError, match="must be less than 63 characters"):
+        validate_index_name("a" * 64, db_service, doc_processor)
+
+    # Test case 7: Pinecone name too long
+    pinecone_db = DatabaseService("Pinecone", "test_path")
+    doc_processor.db_service = pinecone_db
+    with pytest.raises(ValueError, match="must be less than 45 characters"):
+        validate_index_name("a" * 46, pinecone_db, doc_processor)
+
+    # Test case 8: Summary RAG type without embedding service
+    doc_processor.rag_type = "Summary"
+    doc_processor.embedding_service = None
+    with pytest.raises(ValueError, match="Embedding service with model name is required"):
+        validate_index_name("test-index", pinecone_db, doc_processor)
+
+    # Test case 9: Valid cases with different RAG types
+    doc_processor.embedding_service = setup_fixture['mock_embedding_service']
+    
+    # Standard RAG
+    doc_processor.rag_type = "Standard"
+    result = validate_index_name("test-index", pinecone_db, doc_processor)
+    assert result == "test-index-400-50"
+    
+    # Parent-Child RAG
+    doc_processor.rag_type = "Parent-Child"
+    result = validate_index_name("test-index", pinecone_db, doc_processor)
+    assert result == "test-index-parent-child-400-50"
+    
+    # Summary RAG
+    doc_processor.rag_type = "Summary"
+    result = validate_index_name("test-index", pinecone_db, doc_processor)
+    assert "test-index" in result
+    assert "summary" in result
+    assert "400-50" in result
+
+    # Test case 10: Merged pages parameter
+    doc_processor.rag_type = "Standard"
+    doc_processor.merge_pages = 2
+    result = validate_index_name("test-index", pinecone_db, doc_processor)
+    assert result == "test-index-2nm"
 # Test chunk docs
 def test_process_documents_standard(setup_fixture):
     '''Test document processing with standard RAG.'''
@@ -273,7 +344,6 @@ def test_process_documents_standard(setup_fixture):
     assert result.chunks is not None
     assert len(chunk_ids) == len(set(chunk_ids))
     assert result.splitters is not None
-
 def test_process_docs_merge_nochunk(setup_fixture):
     """Test case for document processing with no chunking and merging."""
     doc_processor = DocumentProcessor(
@@ -295,7 +365,6 @@ def test_process_docs_merge_nochunk(setup_fixture):
     assert result.chunks is not None
     assert chunk_ids == page_ids
     assert result.splitters is None
-
 def test_process_documents_nochunk(setup_fixture):
     '''Test document processing with no chunking.'''
     doc_processor = DocumentProcessor(
@@ -318,7 +387,6 @@ def test_process_documents_nochunk(setup_fixture):
     assert result.chunks is result.pages
     assert len(chunk_ids) == len(set(chunk_ids))
     assert result.splitters is None
-
 def test_process_documents_parent_child(setup_fixture):
     '''Test document processing with parent-child RAG.'''
     doc_processor = DocumentProcessor(
@@ -343,7 +411,6 @@ def test_process_documents_parent_child(setup_fixture):
     assert len(chunk_ids) == len(set(chunk_ids))
     assert result.splitters['parent_splitter'] is not None
     assert result.splitters['child_splitter'] is not None
-
 def test_process_documents_summary(setup_fixture):
     '''Test document processing with summary RAG.'''
     doc_processor = DocumentProcessor(
@@ -374,22 +441,19 @@ def test_process_documents_summary(setup_fixture):
         'index_type': 'Pinecone',
         'query_model': 'OpenAI',
         'embedding_name': 'text-embedding-3-large',
-        'expected_class': PineconeVectorStore,
-        'init_ragatouille': False  # None is not a valid value for init_ragatouille, false is placeholder and not used
+        'expected_class': PineconeVectorStore
     },
     {
         'index_type': 'ChromaDB',
         'query_model': 'OpenAI',
         'embedding_name': 'text-embedding-ada-002',
-        'expected_class': Chroma,
-        'init_ragatouille': False   # None is not a valid value for init_ragatouille, false is placeholder and not used
+        'expected_class': Chroma
     },
     {
         'index_type': 'RAGatouille',
         'query_model': 'RAGatouille',
         'embedding_name': 'colbert-ir/colbertv2.0',
-        'expected_class': RAGPretrainedModel,
-        'init_ragatouille': True
+        'expected_class': RAGPretrainedModel
     }
 ])
 def test_initialize_database(monkeypatch, setup_fixture, test_index):
@@ -405,13 +469,12 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     
     db_service = DatabaseService(
         db_type=test_index['index_type'],
-        index_name=index_name,
         local_db_path=setup_fixture['LOCAL_DB_PATH']
     )
 
     # Clean up any existing database first
     try:
-        db_service.delete_index(rag_type=rag_type)
+        db_service.delete_index(index_name=index_name)
     except:
         pass  # Ignore errors if database doesn't exist
 
@@ -428,12 +491,12 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
         assert isinstance(vectorstore, test_index['expected_class'])
         
         # Cleanup
-        db_service.delete_index(rag_type=rag_type)
+        db_service.delete_index(index_name=index_name)
 
     except Exception as e:
         # If there is an error, be sure to delete the database
         try:
-            db_service.delete_index(rag_type=rag_type)
+            db_service.delete_index(index_name=index_name)
         except:
             pass
         raise e
@@ -453,22 +516,120 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
             namespace=db_service.namespace,
             clear=True
         )
+@pytest.mark.parametrize('test_index', [
+    {
+        'index_type': 'Pinecone',
+        'query_model': 'OpenAI',
+        'embedding_name': 'text-embedding-3-large',
+        'expected_class': PineconeVectorStore
+    },
+    {
+        'index_type': 'ChromaDB',
+        'query_model': 'OpenAI',
+        'embedding_name': 'text-embedding-ada-002',
+        'expected_class': Chroma
+    },
+    {
+        'index_type': 'RAGatouille',
+        'query_model': 'RAGatouille',
+        'embedding_name': 'colbert-ir/colbertv2.0',
+        'expected_class': RAGPretrainedModel
+    }
+])
+def test_delete_database(setup_fixture, test_index):
+    '''Test deleting both existing and non-existing databases.'''
+    # FIXME check that local filestores are deleted
+    index_name = 'test-delete-index'
+    rag_type = 'Standard'
+
+    # Create services
+    embedding_service = EmbeddingService(
+        model_name=test_index['embedding_name'],
+        model_type=test_index['query_model']
+    )
+    
+    db_service = DatabaseService(
+        db_type=test_index['index_type'],
+        local_db_path=setup_fixture['LOCAL_DB_PATH']
+    )
+
+    # Clean up any existing test indexes first
+    try:
+        db_service.delete_index(index_name=index_name)
+    except Exception as e:
+        print(f"Info: Cleanup of existing index failed (this is expected if index didn't exist): {str(e)}")
+
+    # Test Case 1: Delete non-existent database
+    try:
+        db_service.delete_index(index_name=index_name)
+    except Exception as e:
+        assert "does not exist" in str(e).lower() or "not found" in str(e).lower()
+
+    # Test Case 2: Create and delete standard database
+    try:
+        vectorstore = db_service.initialize_database(
+            index_name=index_name,
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            namespace=db_service.namespace,
+            clear=True
+        )
+        assert isinstance(vectorstore, test_index['expected_class'])
+        
+        # Delete the database
+        db_service.delete_index(index_name=index_name)
+        
+        # Verify deletion by checking if database exists
+        if test_index['index_type'] == 'Pinecone':
+            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+            assert index_name not in pc.list_indexes()
+        elif test_index['index_type'] == 'ChromaDB':
+            db_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], index_name)
+            assert not os.path.exists(db_path)
+        elif test_index['index_type'] == 'RAGatouille':
+            db_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'ragatouille', index_name)
+            assert not os.path.exists(db_path)
+
+    except Exception as e:
+        # If test fails, ensure cleanup
+        try:
+            db_service.delete_index(index_name=index_name)
+        except:
+            pass
+        raise e
+
+    # Test Case 3: Delete database multiple times
+    try:
+        db_service.delete_index(index_name=index_name)
+        db_service.delete_index(index_name=index_name)  # Should raise exception on second deletion
+        pytest.fail("Expected exception when deleting non-existent database")
+    except Exception as e:
+        assert "does not exist" in str(e).lower() or "not found" in str(e).lower()
 
 # Test end to end process, adding query
 def test_database_setup_and_query(test_input, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
+    from aerospace_chatbot.services.database import validate_index_name, DatabaseService
+    from aerospace_chatbot.processing import DocumentProcessor
+
     test, print_str = parse_test_case(setup_fixture, test_input)
-    index_name = 'test' + str(test['id'])
+    base_index_name = 'test' + str(test['id'])
     print(f'Starting test: {print_str}')
 
-    # Get the embedding and LLM services
+    # Get services
+    db_service = DatabaseService(
+        db_type=test['index_type'],
+        local_db_path=setup_fixture['LOCAL_DB_PATH']
+    )
     query_model_service = parse_test_model('embedding', test, setup_fixture)
     llm_service = parse_test_model('llm', test, setup_fixture)
+
+    index_name = validate_index_name(base_index_name, db_service, doc_processor)
 
     try:
         # Initialize the document processor with services
         doc_processor = DocumentProcessor(
-            db_service=setup_fixture['mock_db_service'],
+            db_service=db_service,
             embedding_service=query_model_service,
             rag_type=test['rag_type'],
             chunk_size=setup_fixture['chunk_size'],
@@ -502,7 +663,7 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
         # Initialize QA model
         qa_model = QAModel(
-            db_service=setup_fixture['mock_db_service'],
+            db_service=db_service,
             embedding_service=query_model_service,
             llm_service=llm_service
         )
@@ -521,14 +682,14 @@ def test_database_setup_and_query(test_input, setup_fixture):
         print('Query and alternative question successful!')
 
         # Delete the index
-        setup_fixture['mock_db_service'].delete_index(test['index_type'], index_name, test['rag_type'])
+        db_service.delete_index(index_name=index_name)
         if test['rag_type'] in ['Parent-Child', 'Summary']:
             lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
             assert not os.path.exists(lfs_path)  # Check that the local file store was deleted
         print('Database deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
-        setup_fixture['mock_db_service'].delete_index(test['index_type'], 'test' + str(test['id']), test['rag_type'])
+        db_service.delete_index(index_name=index_name)
         raise e
 
 # Test sidebar loading and secret keys

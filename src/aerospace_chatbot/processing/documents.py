@@ -18,7 +18,7 @@ class ChunkingResult:
     pages: List[Any]
     chunks: Optional[List[Any]] = None
     splitters: Optional[Any] = None
-    n_merge_pages: Optional[int] = None
+    merge_pages: Optional[int] = None
     chunk_method: Optional[str] = None
     chunk_size: Optional[int] = None
     chunk_overlap: Optional[int] = None
@@ -144,8 +144,8 @@ class DocumentProcessor:
 
         # Add index metadata
         index_metadata = {}
-        if chunking_result.n_merge_pages is not None:
-            index_metadata['n_merge_pages'] = chunking_result.n_merge_pages
+        if chunking_result.merge_pages is not None:
+            index_metadata['merge_pages'] = chunking_result.merge_pages
         if chunking_result.chunk_method is not 'None':
             index_metadata['chunk_method'] = chunking_result.chunk_method
         if chunking_result.chunk_size is not None:
@@ -272,7 +272,7 @@ class DocumentProcessor:
                               chunks=chunks, 
                               splitters=self.splitter,
                               chunk_method=self.chunk_method,
-                              n_merge_pages=self.merge_pages,
+                              merge_pages=self.merge_pages,
                               chunk_size=self.chunk_size,
                               chunk_overlap=self.chunk_overlap)
     def _process_parent_child(self, documents):
@@ -284,7 +284,7 @@ class DocumentProcessor:
                               pages=parent_chunks,
                               chunks=chunks, 
                               splitters={'parent_splitter':self.parent_splitter,'child_splitter':self.child_splitter},
-                              n_merge_pages=self.merge_pages,
+                              merge_pages=self.merge_pages,
                               chunk_size=self.chunk_size,
                               chunk_overlap=self.chunk_overlap)
     def _process_summary(self, documents):
@@ -300,7 +300,7 @@ class DocumentProcessor:
 
         # Create unique ids for each chunk, set up chain
         id_key = "doc_id"
-        doc_ids = [str(self._stable_hash_meta(chunk.metadata)) for chunk in chunks]
+        doc_ids = [str(self.stable_hash_meta(chunk.metadata)) for chunk in chunks]
         # Setup the summarization chain
         chain = (
             {"doc": lambda x: x.page_content}
@@ -375,7 +375,7 @@ class DocumentProcessor:
                 parent_chunks = documents
                 for i, doc in enumerate(documents):
                     self.k_child = 4
-                    doc_ids = [str(self._stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
+                    doc_ids = [str(self.stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
                     id_key = "doc_id"
                     for parent_chunk in parent_chunks:
                         _id = doc_ids[i]
@@ -408,7 +408,7 @@ class DocumentProcessor:
                         progress_percentage = i / len(documents)
                         my_bar.progress(progress_percentage, text=f'Chunking parent documents...{progress_percentage*100:.2f}%')
                     
-                doc_ids = [str(self._stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
+                doc_ids = [str(self.stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
                 id_key = "doc_id"
                 for i, doc in enumerate(parent_chunks):
                     _id = doc_ids[i]
@@ -511,7 +511,7 @@ class DocumentProcessor:
                 with open(file_path, "w") as f:
                     json.dump({"kwargs": {"page_content": orig_doc.page_content}}, f)
     @staticmethod
-    def _stable_hash_meta(metadata):
+    def stable_hash_meta(metadata):
         """Calculates the stable hash of the given metadata dictionary."""
         return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
     def _store_index_metadata(self, index_metadata):
