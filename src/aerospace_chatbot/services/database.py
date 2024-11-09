@@ -11,12 +11,12 @@ cache_data = get_cache_decorator()
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
-    def __init__(self, db_type, index_name):
+    def __init__(self, db_type, rag_type, index_name):
         self.db_type = db_type
+        self.rag_type = rag_type
         self.index_name = index_name
         self.vectorstore = None
         self.embedding_service = None
-        self.rag_type = None
         self.namespace = None
         self._deps = Dependencies()
         
@@ -77,7 +77,6 @@ class DatabaseService:
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
     def index_documents(self,
-                       rag_type,
                        chunking_result,
                        batch_size=100,
                        clear=False):
@@ -86,8 +85,6 @@ class DatabaseService:
         # TODO update with dependency cache
         import streamlit as st
 
-        self.rag_type = rag_type
-        
         if self.show_progress:  
             progress_text = "Document indexing in progress..."
             my_bar = st.progress(0, text=progress_text)
@@ -95,7 +92,6 @@ class DatabaseService:
         print(f"Embedding Service in index_documents: {self.embedding_service.get_embeddings()}")
         self.vectorstore = self.initialize_database(
             embedding_service=self.embedding_service,
-            rag_type=self.rag_type,
             namespace=self.namespace,
             clear=clear
         )
@@ -140,7 +136,7 @@ class DatabaseService:
 
         # Handle parent documents or summaries if needed
         if self.rag_type in ['Parent-Child', 'Summary']:
-            self._store_parent_docs(self.index_name, chunking_result, self.rag_type)
+            self._store_parent_docs(chunking_result)
 
         if self.show_progress:
             my_bar.empty()
@@ -236,12 +232,13 @@ class DatabaseService:
             dataset_name, 
             token=os.getenv('HUGGINGFACEHUB_API_KEY')
         )
-    def get_available_indexes(self, index_type, embedding_name, rag_type):
+    def get_available_indexes(self):
         """Get available indexes based on current settings."""
+        # FIXME do this filtering based on index metadata, it won't work properly
         name = []
-        base_name = embedding_name.replace('/', '-')
+        base_name = self.embedding_service.model_name.replace('/', '-')
         
-        if index_type == 'ChromaDB':
+        if self.db_type == 'ChromaDB':
             try:
                 _, chromadb, _ = self._deps.get_db_deps()
                 client = chromadb.PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
@@ -251,14 +248,14 @@ class DatabaseService:
                     if not collection.name.startswith(base_name) or collection.name.endswith('-queries'):
                         continue
                         
-                    if (rag_type == 'Parent-Child' and collection.name.endswith('-parent-child')) or \
-                       (rag_type == 'Summary' and collection.name.endswith('-summary')) or \
-                       (rag_type == 'Standard' and not collection.name.endswith(('-parent-child', '-summary'))):
+                    if (self.rag_type == 'Parent-Child' and collection.name.endswith('-parent-child')) or \
+                       (self.rag_type == 'Summary' and collection.name.endswith('-summary')) or \
+                       (self.rag_type == 'Standard' and not collection.name.endswith(('-parent-child', '-summary'))):
                         name.append(collection.name)
             except:
                 return []
                 
-        elif index_type == 'Pinecone':
+        elif self.db_type == 'Pinecone':
             try:
                 Pinecone, _, _ = self._deps.get_db_deps()
                 pc = Pinecone()
@@ -268,14 +265,14 @@ class DatabaseService:
                     if not index.name.startswith(base_name) or index.name.endswith('-queries'):
                         continue
                         
-                    if (rag_type == 'Parent-Child' and index.name.endswith('-parent-child')) or \
-                       (rag_type == 'Summary' and index.name.endswith('-summary')) or \
-                       (rag_type == 'Standard' and not index.name.endswith(('-parent-child', '-summary'))):
+                    if (self.rag_type == 'Parent-Child' and index.name.endswith('-parent-child')) or \
+                       (self.rag_type == 'Summary' and index.name.endswith('-summary')) or \
+                       (self.rag_type == 'Standard' and not index.name.endswith(('-parent-child', '-summary'))):
                         name.append(index.name)
             except:
                 return []
                 
-        elif index_type == 'RAGatouille':
+        elif self.db_type == 'RAGatouille':
             try:
                 index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes')
                 if os.path.exists(index_path):
@@ -286,7 +283,8 @@ class DatabaseService:
                 return []
         
         return name
-    def get_database_status(self, db_type):
+    @staticmethod
+    def get_database_status(self,db_type):
         """Get status of database indexes/collections."""
         status_handlers = {
             'Pinecone': self._get_pinecone_status,
@@ -348,11 +346,33 @@ class DatabaseService:
         
         if show_progress:
             my_bar.empty()
+    
+    @staticmethod
     def _get_pinecone_status(self):
         """Get status of Pinecone indexes."""
         api_key = os.getenv('PINECONE_API_KEY')
         return self._cached_pinecone_status(api_key)
+    
+    @staticmethod
+    @cache_data
+    def _cached_pinecone_status(api_key):
+        """Helper function to cache the processed Pinecone status."""
+        Pinecone, _, _ = Dependencies().get_db_deps()
+        
+        if not api_key:
+            return {'status': False, 'message': 'Pinecone API Key is not set'}
+        
+        try:
+            pc = Pinecone(api_key=api_key)
+            indexes = pc.list_indexes()
+            if len(indexes) == 0:
+                return {'status': False, 'message': 'No indexes found'}
+            # Convert indexes to list of names to avoid caching Pinecone objects
+            return {'status': True, 'indexes': [idx.name for idx in indexes]}
+        except Exception as e:
+            return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
 
+    @staticmethod
     def _get_chromadb_status(self):
         """Get status of ChromaDB collections."""
         _, chromadb, _ = self._deps.get_db_deps()
@@ -370,6 +390,7 @@ class DatabaseService:
         except Exception as e:
             return {'status': False, 'message': f'Error connecting to ChromaDB: {str(e)}'}
 
+    @staticmethod
     def _get_ragatouille_status(self):
         """Get status of RAGatouille indexes."""
         if not os.getenv('LOCAL_DB_PATH'):
@@ -386,6 +407,7 @@ class DatabaseService:
             return {'status': True, 'indexes': indexes}
         except Exception as e:
             return {'status': False, 'message': f'Error accessing RAGatouille indexes: {str(e)}'}
+        
     def _init_chromadb(self, clear=False):
         """Initialize ChromaDB."""
         _, chromadb, _ = self._deps.get_db_deps()
@@ -405,6 +427,7 @@ class DatabaseService:
             collection_name=self.index_name,
             embedding_function=self.embedding_service.get_embeddings()
         )
+    
     def _init_pinecone(self, clear=False):
         """Initialize Pinecone."""
         # Check if index exists
@@ -445,24 +468,7 @@ class DatabaseService:
             pretrained_model_name_or_path=self.embedding_service.model_name,
             index_root=index_path
         )
-    @staticmethod
-    @cache_data
-    def _cached_pinecone_status(api_key):
-        """Helper function to cache the processed Pinecone status."""
-        Pinecone, _, _ = Dependencies().get_db_deps()
-        
-        if not api_key:
-            return {'status': False, 'message': 'Pinecone API Key is not set'}
-        
-        try:
-            pc = Pinecone(api_key=api_key)
-            indexes = pc.list_indexes()
-            if len(indexes) == 0:
-                return {'status': False, 'message': 'No indexes found'}
-            # Convert indexes to list of names to avoid caching Pinecone objects
-            return {'status': True, 'indexes': [idx.name for idx in indexes]}
-        except Exception as e:
-            return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
+    
     def _get_standard_retriever(self, search_kwargs):
         """Get standard retriever based on index type."""
         if self.db_type in ['Pinecone', 'ChromaDB']:

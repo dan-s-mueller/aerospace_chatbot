@@ -191,12 +191,6 @@ def setup_fixture():
     index_type = {index: index for index in ['ChromaDB', 'Pinecone', 'RAGatouille']}
     rag_type = {rag: rag for rag in ['Standard', 'Parent-Child', 'Summary']}
     
-    # Add mock services for testing
-    mock_db_service = DatabaseService(
-        db_type='ChromaDB',
-        index_name='test-index'
-    )
-    
     mock_embedding_service = EmbeddingService(
         model_name='text-embedding-3-large',
         model_type='OpenAI'
@@ -225,7 +219,6 @@ def setup_fixture():
         'index_type': index_type,
         'rag_type': rag_type,
         # Add mock services
-        'mock_db_service': mock_db_service,
         'mock_embedding_service': mock_embedding_service,
         'mock_llm_service': mock_llm_service
     }
@@ -257,9 +250,9 @@ def test_validate_index(setup_fixture):
     db_type='ChromaDB'
     db_service = DatabaseService(
         db_type=db_type,
-        index_name=''
+        index_name='',
+        rag_type='Standard'
     )
-    db_service.rag_type = 'Standard'
 
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
@@ -301,9 +294,9 @@ def test_validate_index(setup_fixture):
     db_type='Pinecone'
     db_service = DatabaseService(
         db_type=db_type,
-        index_name=''
+        index_name='',
+        rag_type='Standard'
     )
-    db_service.rag_type = 'Standard'
 
     with pytest.raises(ValueError, match="must be less than 45 characters"):
         db_service.index_name = "a" * 46
@@ -324,9 +317,9 @@ def test_validate_index(setup_fixture):
     # Standard RAG
     db_service = DatabaseService(
         db_type=db_type,
-        index_name=index_name
+        index_name=index_name,
+        rag_type='Standard'
     )
-    db_service.rag_type = 'Standard'
     doc_processor.rag_type = db_service.rag_type
     db_service._validate_index(doc_processor)
     assert db_service.index_name == index_name
@@ -334,9 +327,9 @@ def test_validate_index(setup_fixture):
     # Parent-Child RAG
     db_service = DatabaseService(
         db_type=db_type,
-        index_name=index_name
+        index_name=index_name,
+        rag_type='Parent-Child'
     )
-    db_service.rag_type = 'Parent-Child'
     doc_processor.rag_type = db_service.rag_type
     db_service._validate_index(doc_processor)
     assert db_service.index_name == index_name + "-parent-child"
@@ -344,9 +337,9 @@ def test_validate_index(setup_fixture):
     # Summary RAG
     db_service = DatabaseService(
         db_type=db_type,
-        index_name=index_name
+        index_name=index_name,
+        rag_type='Summary'
     )
-    db_service.rag_type = 'Summary'
     doc_processor.rag_type = db_service.rag_type
     doc_processor.llm_service = setup_fixture['mock_llm_service']
     db_service._validate_index(doc_processor)
@@ -496,9 +489,9 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     
     db_service = DatabaseService(
         db_type=test_index['index_type'],
-        index_name=index_name
+        index_name=index_name,
+        rag_type=rag_type
     )
-    db_service.rag_type = rag_type
 
     # Clean up any existing database first
     try:
@@ -532,9 +525,9 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     with pytest.raises(ValueError,match="LOCAL_DB_PATH environment variable must be set"):
         db_service = DatabaseService(
             db_type=test_index['index_type'],
-            index_name=index_name
+            index_name=index_name,
+            rag_type=rag_type
         )
-        db_service.rag_type = rag_type
         db_service.initialize_database(
             embedding_service=embedding_service,
             namespace=db_service.namespace,
@@ -574,7 +567,8 @@ def test_delete_database(setup_fixture, test_index):
     
     db_service = DatabaseService(
         db_type=test_index['index_type'],
-        index_name=index_name
+        index_name=index_name,
+        rag_type=rag_type
     )
 
     # Clean up any existing test indexes first
@@ -593,7 +587,6 @@ def test_delete_database(setup_fixture, test_index):
     try:
         vectorstore = db_service.initialize_database(
             embedding_service=embedding_service,
-            rag_type=rag_type,
             namespace=db_service.namespace,
             clear=True
         )
@@ -634,7 +627,8 @@ def test_database_setup_and_query(test_input, setup_fixture):
     # Get services
     db_service = DatabaseService(
         db_type=test['index_type'],
-        index_name=index_name
+        index_name=index_name,
+        rag_type=test['rag_type']
     )
     query_model_service = parse_test_model('embedding', test)
     llm_service = parse_test_model('llm', test)
@@ -660,7 +654,6 @@ def test_database_setup_and_query(test_input, setup_fixture):
         chunking_result = doc_processor.process_documents(setup_fixture['docs'])
         db_service.index_documents(
             chunking_result=chunking_result,
-            index_name=index_name,
             batch_size=setup_fixture['batch_size'],
             clear=True
         )
@@ -873,7 +866,8 @@ def test_get_docs_questions_df(setup_fixture):
     # Initialize services
     db_service = DatabaseService(
         db_type='ChromaDB',
-        index_name=index_name
+        index_name=index_name,
+        rag_type='Standard'
     )
     embedding_service = EmbeddingService(
         model_name='text-embedding-3-large',
@@ -933,7 +927,8 @@ def test_add_clusters(setup_fixture):
     index_name = 'test-visualization'
     db_service = DatabaseService(
         db_type='ChromaDB',
-        index_name=index_name
+        index_name=index_name,
+        rag_type='Standard' 
     )
     embedding_service = EmbeddingService(
         model_name='text-embedding-3-large',
