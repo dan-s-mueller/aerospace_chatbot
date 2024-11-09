@@ -91,25 +91,7 @@ class DatabaseService:
         )
 
         # Add index metadata
-        index_metadata = {}
-        if chunking_result.merge_pages is not None:
-            index_metadata['merge_pages'] = chunking_result.merge_pages
-        if chunking_result.chunk_method is not 'None':
-            index_metadata['chunk_method'] = chunking_result.chunk_method
-        if chunking_result.chunk_size is not None:
-            index_metadata['chunk_size'] = chunking_result.chunk_size
-        if chunking_result.chunk_overlap is not None:
-            index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
-        if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
-            index_metadata['query_model']= "OpenAI"
-            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
-        elif isinstance(self.embedding_service.get_embeddings(), VoyageAIEmbeddings):
-            index_metadata['query_model'] = "Voyage"
-            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
-        elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
-            index_metadata['query_model'] = "Hugging Face"
-            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
-        self._store_index_metadata(index_metadata)
+        self._store_index_metadata(chunking_result)
 
         # Validate index name and parameters, upsert documents
         self._validate_index(chunking_result)
@@ -124,9 +106,9 @@ class DatabaseService:
             raise ValueError("Database not initialized. Please ensure database is initialized before getting retriever.")
 
         if self.rag_type == 'Standard':
-            self.retriever =  self._get_standard_retriever(search_kwargs)
+            self._get_standard_retriever(search_kwargs)
         elif self.rag_type in ['Parent-Child', 'Summary']:
-            self.retriever = self._get_multivector_retriever(search_kwargs)
+            self._get_multivector_retriever(search_kwargs)
         else:
             raise NotImplementedError(f"RAG type {self.rag_type} not supported")
     
@@ -447,12 +429,12 @@ class DatabaseService:
     def _get_standard_retriever(self, search_kwargs):
         """Get standard retriever based on index type."""
         if self.db_type in ['Pinecone', 'ChromaDB']:
-            return self.vectorstore.as_retriever(
+            self.retriever = self.vectorstore.as_retriever(
                 search_type='similarity',
                 search_kwargs=search_kwargs
             )
         elif self.db_type == 'RAGatouille':
-            return self.vectorstore.as_langchain_retriever(
+            self.retriever = self.vectorstore.as_langchain_retriever(
                 k=search_kwargs['k']
             )
         else:
@@ -460,13 +442,14 @@ class DatabaseService:
     def _get_multivector_retriever(self, search_kwargs):
         """Get multi-vector retriever for Parent-Child or Summary RAG types."""
         # FIXME check that hashing/indexing with parent/child is working. Doesn't look like it is. See documents.py for chunking hashing.
-        LocalFileStore = self._deps.get_core_deps()[2]
-        MultiVectorRetriever = self._deps.get_core_deps()[1]
+        # TODO update to use dependency cache
+        from langchain.storage import LocalFileStore
+        from langchain.retrievers.multi_vector import MultiVectorRetriever
         
         lfs = LocalFileStore(
             os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
         )
-        return MultiVectorRetriever(
+        self.retriever = MultiVectorRetriever(
             vectorstore=self.vectorstore,
             byte_store=lfs,
             id_key="doc_id",
@@ -488,17 +471,39 @@ class DatabaseService:
             search_kwargs['filter'] = filter_kwargs
             
         return search_kwargs
-    def _store_index_metadata(self, index_metadata):
+    def _store_index_metadata(self, chunking_result):
         """Store index metadata based on the database type."""
+        # TODO update dependency cache
+        from langchain_openai import OpenAIEmbeddings
+        from langchain_voyageai import VoyageAIEmbeddings
+        from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+        from pinecone import Pinecone as pinecone_client
+        from chromadb import PersistentClient
+
+        index_metadata = {}
+        if chunking_result.merge_pages is not None:
+            index_metadata['merge_pages'] = chunking_result.merge_pages
+        if chunking_result.chunk_method is not 'None':
+            index_metadata['chunk_method'] = chunking_result.chunk_method
+        if chunking_result.chunk_size is not None:
+            index_metadata['chunk_size'] = chunking_result.chunk_size
+        if chunking_result.chunk_overlap is not None:
+            index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
+        if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
+            index_metadata['query_model']= "OpenAI"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
+        elif isinstance(self.embedding_service.get_embeddings(), VoyageAIEmbeddings):
+            index_metadata['query_model'] = "Voyage"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
+        elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
+            index_metadata['query_model'] = "Hugging Face"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
 
         embedding_size = self.embedding_service.get_dimension()
         metadata_vector = [1e-5] * embedding_size
 
         if self.db_type == "Pinecone":
-            # TODO use cache dependency function
             # TODO see if I can do this with langchain vectorstore, problem is I need to make a dunmmy embedding.
-            from pinecone import Pinecone as pinecone_client
-            
             pc_native = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             index = pc_native.Index(self.index_name)
             index.upsert(vectors=[{
@@ -508,8 +513,6 @@ class DatabaseService:
             }])
         
         elif self.db_type == "Chroma":
-            # TODO use cache dependency function
-            from chromadb import PersistentClient
             chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
             index = chroma_native.get_collection(name=self.index_name)
             index.add(
@@ -523,7 +526,6 @@ class DatabaseService:
             print("Warning: Metadata storage is not yet supported for RAGatouille indexes")
     def _validate_index(self, doc_processor):
         """Validate and format index with parameters passed from DocumentProcessor. Does nothing if no exceptions are raised, unless RAG type is Parent-Child or Summary, which will append to index_name."""
-        from ..processing.documents import DocumentProcessor
 
         if doc_processor.rag_type != self.rag_type:
             raise ValueError(f"RAG type mismatch: DocumentProcessor has '{doc_processor.rag_type}' but DatabaseService has '{self.rag_type}'")
@@ -590,7 +592,7 @@ class DatabaseService:
                 if show_progress:
                     progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        if self.rag_type == 'Parent-Child' or self.rag_type == 'Summary'    :
+        if self.rag_type == 'Parent-Child' or self.rag_type == 'Summary':
             lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / self.index_name
             store = LocalFileStore(lfs_path)
             
@@ -623,7 +625,8 @@ class DatabaseService:
                     my_bar.progress(progress_percentage, text=f'Document indexing in progress...{progress_percentage*100:.2f}%')
             
             # Index parent docs all at once
-            self.retriever.docstore.mset(list(zip(doc_ids, pages)))
+            retriever.docstore.mset(list(zip(doc_ids, pages)))
+            self.retriever = retriever
         
         if show_progress:
             my_bar.empty()
