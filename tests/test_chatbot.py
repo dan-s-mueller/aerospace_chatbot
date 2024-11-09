@@ -248,13 +248,19 @@ def temp_dotenv(setup_fixture):
         yield dotenv_path
 
 ### Begin tests
-def test_validate_index_name(setup_fixture):
-    """Test edge cases for validate_index_name function."""
-    from aerospace_chatbot.services.database import validate_index_name
+def test_validate_index(setup_fixture):
+    """Test edge cases for validate_index function."""
+    from aerospace_chatbot.services.database import DatabaseService
     from aerospace_chatbot.processing import DocumentProcessor
     
     # Test case 1: Empty index name
     db_type='ChromaDB'
+    db_service = DatabaseService(
+        db_type=db_type,
+        index_name=''
+    )
+    db_service.rag_type = 'Standard'
+
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type='Standard',
@@ -263,65 +269,89 @@ def test_validate_index_name(setup_fixture):
     )
     
     with pytest.raises(ValueError, match="Index name cannot be empty"):
-        validate_index_name("", db_type, doc_processor)
+        db_service.index_name = ""
+        db_service._validate_index(doc_processor)
 
     # Test case 2: Whitespace-only index name
     with pytest.raises(ValueError, match="Index name cannot be empty"):
-        validate_index_name("   ", db_type, doc_processor)
+        db_service.index_name = "   "
+        db_service._validate_index(doc_processor)
 
     # Test case 3: ChromaDB invalid characters
     with pytest.raises(ValueError, match="can only contain alphanumeric characters"):
-        validate_index_name("test@index", db_type, doc_processor)
+        db_service.index_name = "test@index"
+        db_service._validate_index(doc_processor)
 
     # Test case 4: ChromaDB consecutive periods
     with pytest.raises(ValueError, match="can only contain alphanumeric characters, underscores, or hyphens"):
-        validate_index_name("test..index", db_type, doc_processor)
+        db_service.index_name = "test..index"
+        db_service._validate_index(doc_processor)
 
     # Test case 5: ChromaDB non-alphanumeric start/end
     with pytest.raises(ValueError, match="must start and end with an alphanumeric character"):
-        validate_index_name("-testindex-", db_type, doc_processor)
+        db_service.index_name = "-testindex-"
+        db_service._validate_index(doc_processor)
 
     # Test case 6: ChromaDB name too long
     with pytest.raises(ValueError, match="must be less than 63 characters"):
-        validate_index_name("a" * 64, db_type, doc_processor)
+        db_service.index_name = "a" * 64
+        db_service._validate_index(doc_processor)
 
     # Test case 7: Pinecone name too long
     db_type='Pinecone'
+    db_service = DatabaseService(
+        db_type=db_type,
+        index_name=''
+    )
+    db_service.rag_type = 'Standard'
 
     with pytest.raises(ValueError, match="must be less than 45 characters"):
-        validate_index_name("a" * 46, db_type, doc_processor)
+        db_service.index_name = "a" * 46
+        db_service._validate_index(doc_processor)
 
-    # Test case 8: Summary RAG type without embedding service
+    # Test case 8: Summary RAG type without LLM service
     doc_processor.rag_type = "Summary"
-    doc_processor.embedding_service = None
-    with pytest.raises(ValueError, match="Embedding service with model name is required"):
-        validate_index_name("test-index", db_type, doc_processor)
+    db_service.rag_type = doc_processor.rag_type
+    doc_processor.llm_service = None
+    with pytest.raises(ValueError, match="LLM service is required for Summary RAG type"):
+        db_service.index_name = "test-index"
+        db_service._validate_index(doc_processor)
 
     # Test case 9: Valid cases with different RAG types
-    doc_processor.embedding_service = setup_fixture['mock_embedding_service']
-    
+    db_type='ChromaDB'
+    index_name = "test-index"
+
     # Standard RAG
-    doc_processor.rag_type = "Standard"
-    result = validate_index_name("test-index", db_type, doc_processor)
-    assert result == "test-index-400-50"
+    db_service = DatabaseService(
+        db_type=db_type,
+        index_name=index_name
+    )
+    db_service.rag_type = 'Standard'
+    doc_processor.rag_type = db_service.rag_type
+    db_service._validate_index(doc_processor)
+    assert db_service.index_name == index_name
     
     # Parent-Child RAG
-    doc_processor.rag_type = "Parent-Child"
-    result = validate_index_name("test-index", db_type, doc_processor)
-    assert result == "test-index-parent-child-400-50"
+    db_service = DatabaseService(
+        db_type=db_type,
+        index_name=index_name
+    )
+    db_service.rag_type = 'Parent-Child'
+    doc_processor.rag_type = db_service.rag_type
+    db_service._validate_index(doc_processor)
+    assert db_service.index_name == index_name + "-parent-child"
     
     # Summary RAG
-    doc_processor.rag_type = "Summary"
-    result = validate_index_name("test-index", db_type, doc_processor)
-    assert "test-index" in result
-    assert "summary" in result
-    assert "400-50" in result
+    db_service = DatabaseService(
+        db_type=db_type,
+        index_name=index_name
+    )
+    db_service.rag_type = 'Summary'
+    doc_processor.rag_type = db_service.rag_type
+    doc_processor.llm_service = setup_fixture['mock_llm_service']
+    db_service._validate_index(doc_processor)
+    assert db_service.index_name == index_name + "-summary"
 
-    # Test case 10: Merged pages parameter
-    doc_processor.rag_type = "Standard"
-    doc_processor.merge_pages = 2
-    result = validate_index_name("test-index", db_type, doc_processor)
-    assert result == "test-index-2nm"
 # Test chunk docs
 def test_process_documents_standard(setup_fixture):
     '''Test document processing with standard RAG.'''
@@ -593,11 +623,11 @@ def test_delete_database(setup_fixture, test_index):
 # Test end to end process, adding query
 def test_database_setup_and_query(test_input, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
-    from aerospace_chatbot.services.database import validate_index_name, DatabaseService
+    from aerospace_chatbot.services.database import DatabaseService
     from aerospace_chatbot.processing import DocumentProcessor
 
     test, print_str = parse_test_case(setup_fixture, test_input)
-    base_index_name = 'test' + str(test['id'])
+    index_name = 'test' + str(test['id'])
     print(f'Starting test: {print_str}')
 
     # Get services
@@ -624,8 +654,6 @@ def test_database_setup_and_query(test_input, setup_fixture):
             chunk_overlap=setup_fixture['chunk_overlap'],
             llm_service=llm_service
         )
-
-        index_name = validate_index_name(base_index_name, db_service, doc_processor)
 
         # Process and index documents
         chunking_result = doc_processor.process_documents(setup_fixture['docs'])

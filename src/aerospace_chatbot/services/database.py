@@ -119,6 +119,9 @@ class DatabaseService:
             index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
         self._store_index_metadata(index_metadata)
 
+        # Validate index name and parameters
+        self._validate_index(chunking_result)
+
         # Index chunks in batches
         for i in range(0, len(chunking_result.chunks), batch_size):
             batch = chunking_result.chunks[i:i + batch_size]
@@ -535,56 +538,46 @@ class DatabaseService:
         elif self.db_type == "RAGatouille":
             # TODO add metadata storage for RAGatouille, maybe can use the same method as others
             print("Warning: Metadata storage is not yet supported for RAGatouille indexes")
-def validate_index_name(base_index_name,
-                       db_type,
-                       doc_processor):
-    """Validate and format index name with optional parameters."""
-    from ..processing.documents import DocumentProcessor
+    def _validate_index(self, doc_processor):
+        """Validate and format index with parameters passed from DocumentProcessor. Does nothing if no exceptions are raised, unless RAG type is Parent-Child or Summary, which will append to index_name."""
+        from ..processing.documents import DocumentProcessor
 
-    if not base_index_name or not base_index_name.strip():
-        raise ValueError("Index name cannot be empty or contain only whitespace")
-    
-    # Clean the base name
-    name = base_index_name.lower().strip()
-    
-    # Add RAG type suffix
-    if doc_processor.rag_type == 'Parent-Child':
-        name += '-parent-child'
-    elif doc_processor.rag_type == 'Summary':
-        if not doc_processor.embedding_service or not doc_processor.embedding_service.model_name:
-            raise ValueError("Embedding service with model name is required for Summary RAG type")
+        if doc_processor.rag_type != self.rag_type:
+            raise ValueError(f"RAG type mismatch: DocumentProcessor has '{doc_processor.rag_type}' but DatabaseService has '{self.rag_type}'")
+        if not self.index_name or not self.index_name.strip():
+            raise ValueError("Index name cannot be empty or contain only whitespace")
         
-        model_name = doc_processor.embedding_service.model_name
-        model_name_temp = model_name.replace(".", "-").replace("/", "-").lower()
-        model_name_temp = model_name_temp.split('/')[-1]  # Just get the model name, not org
-        model_name_temp = model_name_temp[:3] + model_name_temp[-3:]  # First and last 3 characters
+        # Clean the base name
+        name = self.index_name.lower().strip()
         
-        # Add hash of model name
-        model_name_temp += "-" + DocumentProcessor.stable_hash_meta({"model_name": model_name})[:4]
-        name += f"-{model_name_temp}-summary"
-    
-    # Add parameters if they exist
-    if doc_processor.merge_pages is not None:
-        name += f"-{doc_processor.merge_pages}nm"
-    else:
-        if doc_processor.chunk_size is not None:
-            name += f"-{doc_processor.chunk_size}"
-        if doc_processor.chunk_overlap is not None:
-            name += f"-{doc_processor.chunk_overlap}"
+        # Add RAG type suffix
+        if doc_processor.rag_type == 'Parent-Child':
+            name += '-parent-child'
+            self.index_name = name
+        elif doc_processor.rag_type == 'Summary':
+            if not doc_processor.llm_service:
+                raise ValueError("LLM service is required for Summary RAG type")
+            
+            model_name = doc_processor.embedding_service.model_name
+            model_name_temp = model_name.replace(".", "-").replace("/", "-").lower()
+            model_name_temp = model_name_temp.split('/')[-1]  # Just get the model name, not org
+            model_name_temp = model_name_temp[:3] + model_name_temp[-3:]  # First and last 3 characters
+            
+            # Add hash of model name
+            name += "-summary"
+            self.index_name = name
 
-    # Database-specific validation
-    if db_type == "Pinecone":
-        if len(name) > 45:
-            raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {name}")
-    elif db_type == "ChromaDB":
-        print(f"ChromaDB name: {name}")
-        if len(name) > 63:
-            raise ValueError(f"The ChromaDB collection name must be less than 63 characters. Entry: {name}")
-        if not name[0].isalnum() or not name[-1].isalnum():
-            raise ValueError(f"The ChromaDB collection name must start and end with an alphanumeric character. Entry: {name}")
-        if not re.match(r"^[a-zA-Z0-9_-]+$", name):
-            raise ValueError(f"The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {name}")
-        if ".." in name:
-            raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
-    
-    return name
+        # Database-specific validation
+        if self.db_type == "Pinecone":
+            if len(name) > 45:
+                raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {name}")
+        elif self.db_type == "ChromaDB":
+            print(f"ChromaDB name: {name}")
+            if len(name) > 63:
+                raise ValueError(f"The ChromaDB collection name must be less than 63 characters. Entry: {name}")
+            if not name[0].isalnum() or not name[-1].isalnum():
+                raise ValueError(f"The ChromaDB collection name must start and end with an alphanumeric character. Entry: {name}")
+            if not re.match(r"^[a-zA-Z0-9_-]+$", name):
+                raise ValueError(f"The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {name}")
+            if ".." in name:
+                raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
