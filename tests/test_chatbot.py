@@ -62,7 +62,7 @@ sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 # TODO add tests to check conversation history functionality
 # TODO add a test to check parent/child and summary lookup functionality (not just that it executes)
 # TODO add upload file test
-# TODO add ap test from streamlit
+# TODO add apptest from streamlit
 # TODO test retrieval of metadata vector from databases
 
 # Functions

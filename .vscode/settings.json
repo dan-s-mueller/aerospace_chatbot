@@ -1,11 +1,14 @@
 {
     "esbonio.sphinx.confDir": "",
     "python.testing.pytestArgs": [
-        "tests"
+        "tests",
+        "-v",
+        "-s"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.analysis.extraPaths": [
-        "./src/aerospace_chatbot"
+        "./src/aerospace_chatbot",
+        "./tests"
     ]
 }

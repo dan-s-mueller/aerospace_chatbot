@@ -85,6 +85,7 @@ class DatabaseService:
         # TODO update with dependency cache
         import streamlit as st
 
+        # Initialize database
         self.vectorstore = self.initialize_database(
             namespace=self.namespace,
             clear=clear
@@ -95,7 +96,7 @@ class DatabaseService:
 
         # Validate index name and parameters, upsert documents
         self._validate_index(chunking_result)
-        self._upsert_docs(chunking_result, batch_size, show_progress)
+        self._upsert_docs(chunking_result, batch_size, show_progress, clear=clear)
 
     def get_retriever(self, k=4):
         """Get configured retriever for the vectorstore."""
@@ -567,8 +568,8 @@ class DatabaseService:
             if ".." in name:
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
 
-    def _upsert_docs(self, chunking_result, batch_size, show_progress):
-        """Upsert documents. Used for all RAG types."""
+    def _upsert_docs(self, chunking_result, batch_size, show_progress, clear=False):
+        """Upsert documents. Used for all RAG types. Clear only used for RAGatouille."""
         # TODO update to use dependency cache
         from langchain.storage import LocalFileStore
         from langchain.retrievers.multi_vector import MultiVectorRetriever
@@ -579,6 +580,7 @@ class DatabaseService:
             progress_text = "Document indexing in progress..."
             my_bar = st.progress(0, text=progress_text)
         
+        # Standard for pinecone and chroma
         if self.rag_type == 'Standard':
             for i in range(0, len(chunking_result.chunks), batch_size):
                 batch = chunking_result.chunks[i:i + batch_size]
@@ -586,47 +588,67 @@ class DatabaseService:
                 
                 if self.db_type == "Pinecone":
                     self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
-                else:
+                elif self.db_type == "Chroma":
                     self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+                elif self.db_type == "RAGatouille":
 
+                    continue
+                else:
+                    raise NotImplementedError
                 if show_progress:
                     progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
                     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        
+        # RAGatouille for all chunks at once
+        if self.db_type == "RAGatouille":
+            # Process all chunks at once for RAGatouille
+            self.vectorstore.index(
+                collection=[chunk.page_content for chunk in chunking_result.chunks],
+                document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in chunking_result.chunks],
+                index_name=self.index_name,
+                overwrite_index=clear,
+                split_documents=True,
+                document_metadatas=[chunk.metadata for chunk in chunking_result.chunks]
+            )
+        
+        # Parent-Child or Summary for pinecone and chroma
         if self.rag_type == 'Parent-Child' or self.rag_type == 'Summary':
-            lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / self.index_name
-            store = LocalFileStore(lfs_path)
-            
-            id_key = "doc_id"
-            retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
-
-            if self.rag_type == 'Parent-Child':
-                chunks = chunking_result.chunks
-                pages = chunking_result.pages['parent_chunks']
-                doc_ids = chunking_result.pages['doc_ids']
-            elif self.rag_type == 'Summary':
-                chunks = chunking_result.summaries
-                pages = chunking_result.pages['docs']
-                doc_ids = chunking_result.pages['doc_ids']
+            if self.db_type == 'RAGatouille':
+                raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
             else:
-                raise NotImplementedError
+                lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / self.index_name
+                store = LocalFileStore(lfs_path)
+                
+                id_key = "doc_id"
+                retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
 
-            for i in range(0, len(chunks), batch_size):
-                batch = chunks[i:i + batch_size]
-                batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
-                
-                
-                if self.db_type == "Pinecone":
-                    self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+                if self.rag_type == 'Parent-Child':
+                    chunks = chunking_result.chunks
+                    pages = chunking_result.pages['parent_chunks']
+                    doc_ids = chunking_result.pages['doc_ids']
+                elif self.rag_type == 'Summary':
+                    chunks = chunking_result.summaries
+                    pages = chunking_result.pages['docs']
+                    doc_ids = chunking_result.pages['doc_ids']
                 else:
-                    self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+                    raise NotImplementedError
+
+                for i in range(0, len(chunks), batch_size):
+                    batch = chunks[i:i + batch_size]
+                    batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
+                    
+                    if self.db_type == "Pinecone":
+                        self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+                    else:
+                        self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+                    
+                    if show_progress:
+                        progress_percentage = i / len(chunks)
+                        my_bar.progress(progress_percentage, text=f'Document indexing in progress...{progress_percentage*100:.2f}%')
                 
-                if show_progress:
-                    progress_percentage = i / len(chunks)
-                    my_bar.progress(progress_percentage, text=f'Document indexing in progress...{progress_percentage*100:.2f}%')
-            
-            # Index parent docs all at once
-            retriever.docstore.mset(list(zip(doc_ids, pages)))
-            self.retriever = retriever
+                # Index parent docs all at once
+                retriever.docstore.mset(list(zip(doc_ids, pages)))
+                self.retriever = retriever
         
         if show_progress:
             my_bar.empty()

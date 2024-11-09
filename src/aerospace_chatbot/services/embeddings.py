@@ -50,6 +50,9 @@ class EmbeddingService:
             'Hugging Face': {
                 'sentence-transformers/all-MiniLM-L6-v2': 384,
                 'mixedbread-ai/mxbai-embed-large-v1': 1024
+            },
+            'RAGatouille': {
+                'colbert-ir/colbertv2.0': 0
             }
         }
         
