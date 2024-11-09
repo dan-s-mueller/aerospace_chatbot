@@ -29,6 +29,10 @@ class DatabaseService:
 
         print(f"Embedding Service in initialize_database: {embedding_service.get_embeddings()}")
 
+        # Check if LOCAL_DB_PATH environment variable exists
+        if not os.getenv('LOCAL_DB_PATH'):
+            raise ValueError("LOCAL_DB_PATH environment variable must be set")
+
         # Initialize the vectorstore based on database type
         if self.db_type == 'Pinecone':
             self.vectorstore = self._init_pinecone(clear=clear)

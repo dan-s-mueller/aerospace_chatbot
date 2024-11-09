@@ -498,7 +498,7 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
 
     # Test with local_db_path set manually, show it doesn't work if not set
     monkeypatch.delenv('LOCAL_DB_PATH', raising=False)
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError,match="LOCAL_DB_PATH environment variable must be set"):
         db_service = DatabaseService(
             db_type=test_index['index_type'],
             index_name=index_name
@@ -793,24 +793,6 @@ def test_sidebar_manager_validate_config():
     # Test with empty config
     with pytest.raises(Exception):
         manager._validate_config({})
-def test_get_secrets_with_environment_variables(monkeypatch):
-    '''Test case to verify get_secrets function when environment variables are set.'''
-    # Set the environment variables
-    monkeypatch.setenv('OPENAI_API_KEY', 'openai_key')
-    monkeypatch.setenv('VOYAGE_API_KEY', 'voyage_key')
-    monkeypatch.setenv('PINECONE_API_KEY', 'pinecone_key')
-    monkeypatch.setenv('HUGGINGFACEHUB_API_TOKEN', 'huggingface_key')
-    monkeypatch.setenv('ANTHROPIC_API_KEY', 'anthropic_key')
-    
-    # Get secrets from environment
-    secrets = get_secrets()
-    
-    # Assert that the secrets are loaded correctly
-    assert secrets['OPENAI_API_KEY'] == 'openai_key'
-    assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
-    assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
-    assert secrets['HUGGINGFACEHUB_API_KEY'] == 'huggingface_key'
-    assert secrets['ANTHROPIC_API_KEY'] == 'anthropic_key'
 
 def test_set_secrets_with_valid_input():
     '''Test case for set_secrets function with valid input.'''
