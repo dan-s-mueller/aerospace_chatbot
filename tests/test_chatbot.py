@@ -97,7 +97,7 @@ def parse_test_case(setup, test_case):
     parsed_test = {
         'id': test_case['id'],
         'index_type': setup['index_type'][test_case['index_type']],
-        'query_model': test_case['query_model'],
+        'embedding_family': test_case['embedding_family'],
         'embedding_name': test_case['embedding_name'],
         'rag_type': setup['rag_type'][test_case['rag_type']],
         'llm_family': test_case['llm_family'],
@@ -106,52 +106,6 @@ def parse_test_case(setup, test_case):
     print_str = ', '.join(f'{key}: {value}' for key, value in test_case.items())
 
     return parsed_test, print_str
-def parse_test_model(type, test):
-    """Parses the test model based on the given type and test parameters."""
-    if type == 'embedding':
-        # Initialize the embedding service
-        if test['query_model'] == 'OpenAI':
-            embedding_service = EmbeddingService(
-                model_name=test['embedding_name'],
-                model_type='OpenAI'
-            )
-        elif test['query_model'] == 'Voyage':
-            embedding_service = EmbeddingService(
-                model_name=test['embedding_name'],
-                model_type='Voyage'
-            )
-        elif test['query_model'] == 'Hugging Face':
-            embedding_service = EmbeddingService(
-                model_name=test['embedding_name'],
-                model_type='Hugging Face'
-            )
-        else:
-            raise NotImplementedError('Query model not implemented.')
-        return embedding_service
-
-    elif type == 'llm':
-        # Initialize the LLM service
-        if test['llm_family'] == 'OpenAI':
-            llm_service = LLMService(
-                model_name=test['llm'],
-                model_type='OpenAI'
-            )
-        elif test['llm_family'] == 'Anthropic':
-            llm_service = LLMService(
-                model_name=test['llm'],
-                model_type='Anthropic'
-            )
-        elif test['llm_family'] == 'Hugging Face':
-            llm_service = LLMService(
-                model_name=test['llm'],
-                model_type='Hugging Face'
-            )
-        else:
-            raise NotImplementedError('LLM not implemented.')
-        return llm_service
-
-    else:
-        raise ValueError('Invalid type. Must be either "embedding" or "llm".')
 
 # Fixtures
 @pytest.fixture(scope='session', autouse=True)
@@ -463,19 +417,19 @@ def test_process_documents_summary(setup_fixture):
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',
-        'query_model': 'OpenAI',
+        'embedding_family': 'OpenAI',
         'embedding_name': 'text-embedding-3-large',
         'expected_class': PineconeVectorStore
     },
     {
         'index_type': 'ChromaDB',
-        'query_model': 'OpenAI',
+        'embedding_family': 'OpenAI',
         'embedding_name': 'text-embedding-ada-002',
         'expected_class': Chroma
     },
     {
         'index_type': 'RAGatouille',
-        'query_model': 'RAGatouille',
+        'embedding_family': 'RAGatouille',
         'embedding_name': 'colbert-ir/colbertv2.0',
         'expected_class': RAGPretrainedModel
     }
@@ -489,7 +443,7 @@ def test_initialize_database(monkeypatch, test_index):
     # Create services
     embedding_service = EmbeddingService(
         model_name=test_index['embedding_name'],
-        model_type=test_index['query_model']
+        model_type=test_index['embedding_family']
     )
     
     db_service = DatabaseService(
@@ -541,19 +495,19 @@ def test_initialize_database(monkeypatch, test_index):
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',
-        'query_model': 'OpenAI',
+        'embedding_family': 'OpenAI',
         'embedding_name': 'text-embedding-3-large',
         'expected_class': PineconeVectorStore
     },
     {
         'index_type': 'ChromaDB',
-        'query_model': 'OpenAI',
+        'embedding_family': 'OpenAI',
         'embedding_name': 'text-embedding-ada-002',
         'expected_class': Chroma
     },
     {
         'index_type': 'RAGatouille',
-        'query_model': 'RAGatouille',
+        'embedding_family': 'RAGatouille',
         'embedding_name': 'colbert-ir/colbertv2.0',
         'expected_class': RAGPretrainedModel
     }
@@ -567,7 +521,7 @@ def test_delete_database(setup_fixture, test_index):
     # Create services
     embedding_service = EmbeddingService(
         model_name=test_index['embedding_name'],
-        model_type=test_index['query_model']
+        model_type=test_index['embedding_family']
     )
     
     db_service = DatabaseService(
@@ -629,22 +583,22 @@ def test_database_setup_and_query(test_input, setup_fixture):
     index_name = 'test' + str(test['id'])
     print(f'Starting test: {print_str}')
 
-    embedding_service = parse_test_model('embedding', test)
-    llm_service = parse_test_model('llm', test)
-
     # Get services
+    embedding_service = EmbeddingService(
+        model_name=test['embedding_name'],
+        model_type=test['embedding_family']
+    )
+    llm_service = LLMService(
+        model_name=test['llm'],
+        model_type=test['llm_family']
+    )
+
     db_service = DatabaseService(
         db_type=test['index_type'],
         index_name=index_name,
         rag_type=test['rag_type'],
         embedding_service=embedding_service
     )
-
-    # Print query model service details
-    print("\nQuery Model Service Details:")
-    print(f"Model Name: {embedding_service.model_name}")
-    print(f"Model Type: {embedding_service.model_type}")
-    print(f"Embedding Dimension in test: {embedding_service.get_dimension()}")
 
     try:
         # Initialize the document processor with services

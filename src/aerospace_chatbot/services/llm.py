@@ -40,10 +40,11 @@ class LLMService:
                     tags=[self.model_name]
                 )
             elif self.model_type == 'Hugging Face':
+                hf_endpoint = 'https://api-inference.huggingface.co/v1'
                 self._llm = ChatOpenAI(
-                    base_url=self.model_name,
+                    base_url=hf_endpoint,
                     model=self.model_name,
-                    api_key=os.getenv('HUGGINGFACEHUB_API_TOKEN'),
+                    api_key=os.getenv('HUGGINGFACEHUB_API_KEY'),
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                     tags=[self.model_name]

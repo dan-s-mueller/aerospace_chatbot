@@ -1,7 +1,7 @@
 [
     {
         "index_type": "ChromaDB",
-        "query_model": "OpenAI",
+        "embedding_family": "OpenAI",
         "embedding_name": "text-embedding-3-small",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
@@ -10,7 +10,7 @@
     },
     {
         "index_type": "ChromaDB",
-        "query_model": "OpenAI",
+        "embedding_family": "OpenAI",
         "embedding_name": "text-embedding-3-large",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
@@ -19,7 +19,7 @@
     },
     {
         "index_type": "ChromaDB",
-        "query_model": "Hugging Face",
+        "embedding_family": "Hugging Face",
         "embedding_name": "mixedbread-ai/mxbai-embed-large-v1",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
@@ -28,7 +28,7 @@
     },
     {
         "index_type": "ChromaDB",
-        "query_model": "OpenAI",
+        "embedding_family": "OpenAI",
         "embedding_name": "text-embedding-3-small",
         "rag_type": "Standard",
         "llm_family": "Hugging Face",
@@ -37,7 +37,7 @@
     },
     {
         "index_type": "ChromaDB",
-        "query_model": "OpenAI",
+        "embedding_family": "OpenAI",
         "embedding_name": "text-embedding-3-small",
         "rag_type": "Parent-Child",
         "llm_family": "OpenAI",
@@ -46,7 +46,7 @@
     },
     {
         "index_type": "ChromaDB",
-        "query_model": "OpenAI",
+        "embedding_family": "OpenAI",
         "embedding_name": "text-embedding-3-small",
         "rag_type": "Summary",
         "llm_family": "OpenAI",
@@ -55,7 +55,7 @@
     },
     {
         "index_type": "Pinecone",
-        "query_model": "OpenAI",
+        "embedding_family": "OpenAI",
         "embedding_name": "text-embedding-3-large",
         "rag_type": "Standard",
         "llm_family": "Anthropic",
@@ -64,7 +64,7 @@
     },
     {
         "index_type": "Pinecone",
-        "query_model": "Voyage",
+        "embedding_family": "Voyage",
         "embedding_name": "voyage-large-2",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
@@ -73,7 +73,7 @@
     },
     {
         "index_type": "RAGatouille",
-        "query_model": "RAGatouille",
+        "embedding_family": "RAGatouille",
         "embedding_name": "colbert-ir/colbertv2.0",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
