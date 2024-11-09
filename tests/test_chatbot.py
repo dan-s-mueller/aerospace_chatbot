@@ -61,7 +61,9 @@ sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 
 # TODO add tests to check conversation history functionality
 # TODO add a test to check parent/child and summary lookup functionality (not just that it executes)
-# FIXME add test case which tries to delete an index that doesn't exist and one that does
+# TODO add upload file test
+# TODO add ap test from streamlit
+# TODO test retrieval of metadata vector from databases
 
 # Functions
 def permute_tests(test_data):
@@ -192,7 +194,7 @@ def setup_fixture():
     # Add mock services for testing
     mock_db_service = DatabaseService(
         db_type='ChromaDB',
-        local_db_path=LOCAL_DB_PATH
+        index_name='test-index'
     )
     
     mock_embedding_service = EmbeddingService(
@@ -248,13 +250,12 @@ def temp_dotenv(setup_fixture):
 ### Begin tests
 def test_validate_index_name(setup_fixture):
     """Test edge cases for validate_index_name function."""
-    from aerospace_chatbot.services.database import validate_index_name, DatabaseService
+    from aerospace_chatbot.services.database import validate_index_name
     from aerospace_chatbot.processing import DocumentProcessor
     
     # Test case 1: Empty index name
-    db_service = DatabaseService("ChromaDB", "test_path")
+    db_type='ChromaDB'
     doc_processor = DocumentProcessor(
-        db_service=db_service,
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type='Standard',
         chunk_size=400,
@@ -262,56 +263,56 @@ def test_validate_index_name(setup_fixture):
     )
     
     with pytest.raises(ValueError, match="Index name cannot be empty"):
-        validate_index_name("", db_service, doc_processor)
+        validate_index_name("", db_type, doc_processor)
 
     # Test case 2: Whitespace-only index name
     with pytest.raises(ValueError, match="Index name cannot be empty"):
-        validate_index_name("   ", db_service, doc_processor)
+        validate_index_name("   ", db_type, doc_processor)
 
     # Test case 3: ChromaDB invalid characters
     with pytest.raises(ValueError, match="can only contain alphanumeric characters"):
-        validate_index_name("test@index", db_service, doc_processor)
+        validate_index_name("test@index", db_type, doc_processor)
 
     # Test case 4: ChromaDB consecutive periods
     with pytest.raises(ValueError, match="can only contain alphanumeric characters, underscores, or hyphens"):
-        validate_index_name("test..index", db_service, doc_processor)
+        validate_index_name("test..index", db_type, doc_processor)
 
     # Test case 5: ChromaDB non-alphanumeric start/end
     with pytest.raises(ValueError, match="must start and end with an alphanumeric character"):
-        validate_index_name("-testindex-", db_service, doc_processor)
+        validate_index_name("-testindex-", db_type, doc_processor)
 
     # Test case 6: ChromaDB name too long
     with pytest.raises(ValueError, match="must be less than 63 characters"):
-        validate_index_name("a" * 64, db_service, doc_processor)
+        validate_index_name("a" * 64, db_type, doc_processor)
 
     # Test case 7: Pinecone name too long
-    pinecone_db = DatabaseService("Pinecone", "test_path")
-    doc_processor.db_service = pinecone_db
+    db_type='Pinecone'
+
     with pytest.raises(ValueError, match="must be less than 45 characters"):
-        validate_index_name("a" * 46, pinecone_db, doc_processor)
+        validate_index_name("a" * 46, db_type, doc_processor)
 
     # Test case 8: Summary RAG type without embedding service
     doc_processor.rag_type = "Summary"
     doc_processor.embedding_service = None
     with pytest.raises(ValueError, match="Embedding service with model name is required"):
-        validate_index_name("test-index", pinecone_db, doc_processor)
+        validate_index_name("test-index", db_type, doc_processor)
 
     # Test case 9: Valid cases with different RAG types
     doc_processor.embedding_service = setup_fixture['mock_embedding_service']
     
     # Standard RAG
     doc_processor.rag_type = "Standard"
-    result = validate_index_name("test-index", pinecone_db, doc_processor)
+    result = validate_index_name("test-index", db_type, doc_processor)
     assert result == "test-index-400-50"
     
     # Parent-Child RAG
     doc_processor.rag_type = "Parent-Child"
-    result = validate_index_name("test-index", pinecone_db, doc_processor)
+    result = validate_index_name("test-index", db_type, doc_processor)
     assert result == "test-index-parent-child-400-50"
     
     # Summary RAG
     doc_processor.rag_type = "Summary"
-    result = validate_index_name("test-index", pinecone_db, doc_processor)
+    result = validate_index_name("test-index", db_type, doc_processor)
     assert "test-index" in result
     assert "summary" in result
     assert "400-50" in result
@@ -319,13 +320,12 @@ def test_validate_index_name(setup_fixture):
     # Test case 10: Merged pages parameter
     doc_processor.rag_type = "Standard"
     doc_processor.merge_pages = 2
-    result = validate_index_name("test-index", pinecone_db, doc_processor)
+    result = validate_index_name("test-index", db_type, doc_processor)
     assert result == "test-index-2nm"
 # Test chunk docs
 def test_process_documents_standard(setup_fixture):
     '''Test document processing with standard RAG.'''
     doc_processor = DocumentProcessor(
-        db_service=setup_fixture['mock_db_service'],
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Standard'],
         chunk_method=setup_fixture['chunk_method'],
@@ -347,7 +347,6 @@ def test_process_documents_standard(setup_fixture):
 def test_process_docs_merge_nochunk(setup_fixture):
     """Test case for document processing with no chunking and merging."""
     doc_processor = DocumentProcessor(
-        db_service=setup_fixture['mock_db_service'],
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Standard'],
         chunk_method='None',
@@ -368,7 +367,6 @@ def test_process_docs_merge_nochunk(setup_fixture):
 def test_process_documents_nochunk(setup_fixture):
     '''Test document processing with no chunking.'''
     doc_processor = DocumentProcessor(
-        db_service=setup_fixture['mock_db_service'],
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Standard'],
         chunk_method='None',
@@ -390,7 +388,6 @@ def test_process_documents_nochunk(setup_fixture):
 def test_process_documents_parent_child(setup_fixture):
     '''Test document processing with parent-child RAG.'''
     doc_processor = DocumentProcessor(
-        db_service=setup_fixture['mock_db_service'],
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Parent-Child'],
         chunk_method=setup_fixture['chunk_method'],
@@ -414,7 +411,6 @@ def test_process_documents_parent_child(setup_fixture):
 def test_process_documents_summary(setup_fixture):
     '''Test document processing with summary RAG.'''
     doc_processor = DocumentProcessor(
-        db_service=setup_fixture['mock_db_service'],
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Summary'],
         chunk_method=setup_fixture['chunk_method'],
@@ -469,19 +465,18 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     
     db_service = DatabaseService(
         db_type=test_index['index_type'],
-        local_db_path=setup_fixture['LOCAL_DB_PATH']
+        index_name=index_name
     )
 
     # Clean up any existing database first
     try:
-        db_service.delete_index(index_name=index_name)
+        db_service.delete_index()
     except:
         pass  # Ignore errors if database doesn't exist
 
     # Test with environment variable local_db_path
     try:
         vectorstore = db_service.initialize_database(
-            index_name=index_name,
             embedding_service=embedding_service,
             rag_type=rag_type,
             namespace=db_service.namespace,
@@ -491,12 +486,12 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
         assert isinstance(vectorstore, test_index['expected_class'])
         
         # Cleanup
-        db_service.delete_index(index_name=index_name)
+        db_service.delete_index()
 
     except Exception as e:
         # If there is an error, be sure to delete the database
         try:
-            db_service.delete_index(index_name=index_name)
+            db_service.delete_index()
         except:
             pass
         raise e
@@ -506,11 +501,9 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     with pytest.raises(Exception):
         db_service = DatabaseService(
             db_type=test_index['index_type'],
-            index_name=index_name,
-            local_db_path=None
+            index_name=index_name
         )
         db_service.initialize_database(
-            index_name=index_name,
             embedding_service=embedding_service,
             rag_type=rag_type,
             namespace=db_service.namespace,
@@ -550,25 +543,24 @@ def test_delete_database(setup_fixture, test_index):
     
     db_service = DatabaseService(
         db_type=test_index['index_type'],
-        local_db_path=setup_fixture['LOCAL_DB_PATH']
+        index_name=index_name
     )
 
     # Clean up any existing test indexes first
     try:
-        db_service.delete_index(index_name=index_name)
+        db_service.delete_index()
     except Exception as e:
         print(f"Info: Cleanup of existing index failed (this is expected if index didn't exist): {str(e)}")
 
     # Test Case 1: Delete non-existent database
     try:
-        db_service.delete_index(index_name=index_name)
+        db_service.delete_index()
     except Exception as e:
         assert "does not exist" in str(e).lower() or "not found" in str(e).lower()
 
     # Test Case 2: Create and delete standard database
     try:
         vectorstore = db_service.initialize_database(
-            index_name=index_name,
             embedding_service=embedding_service,
             rag_type=rag_type,
             namespace=db_service.namespace,
@@ -577,7 +569,7 @@ def test_delete_database(setup_fixture, test_index):
         assert isinstance(vectorstore, test_index['expected_class'])
         
         # Delete the database
-        db_service.delete_index(index_name=index_name)
+        db_service.delete_index()
         
         # Verify deletion by checking if database exists
         if test_index['index_type'] == 'Pinecone':
@@ -593,7 +585,7 @@ def test_delete_database(setup_fixture, test_index):
     except Exception as e:
         # If test fails, ensure cleanup
         try:
-            db_service.delete_index(index_name=index_name)
+            db_service.delete_index()
         except:
             pass
         raise e
@@ -611,17 +603,23 @@ def test_database_setup_and_query(test_input, setup_fixture):
     # Get services
     db_service = DatabaseService(
         db_type=test['index_type'],
-        local_db_path=setup_fixture['LOCAL_DB_PATH']
+        index_name=index_name
     )
     query_model_service = parse_test_model('embedding', test)
     llm_service = parse_test_model('llm', test)
 
+    # Print query model service details
+    print("\nQuery Model Service Details:")
+    print(f"Model Name: {query_model_service.model_name}")
+    print(f"Model Type: {query_model_service.model_type}")
+    print(f"Embedding Dimension in test: {query_model_service.get_dimension()}")
+
     try:
         # Initialize the document processor with services
         doc_processor = DocumentProcessor(
-            db_service=db_service,
             embedding_service=query_model_service,
             rag_type=test['rag_type'],
+            chunk_method=setup_fixture['chunk_method'],
             chunk_size=setup_fixture['chunk_size'],
             chunk_overlap=setup_fixture['chunk_overlap'],
             llm_service=llm_service
@@ -650,7 +648,6 @@ def test_database_setup_and_query(test_input, setup_fixture):
         # Initialize QA model
         qa_model = QAModel(
             db_service=db_service,
-            embedding_service=query_model_service,
             llm_service=llm_service
         )
         print('QA model object created.')
@@ -668,14 +665,14 @@ def test_database_setup_and_query(test_input, setup_fixture):
         print('Query and alternative question successful!')
 
         # Delete the index
-        db_service.delete_index(index_name=index_name)
+        db_service.delete_index()
         if doc_processor.rag_type in ['Parent-Child', 'Summary']:
             lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
             assert not os.path.exists(lfs_path)  # Check that the local file store was deleted
         print('Database deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
-        db_service.delete_index(index_name=index_name)
+        db_service.delete_index()
         raise e
 
 # Test sidebar loading and secret keys
@@ -865,7 +862,7 @@ def test_get_docs_questions_df(setup_fixture):
     # Initialize services
     db_service = DatabaseService(
         db_type='ChromaDB',
-        local_db_path=setup_fixture['LOCAL_DB_PATH']
+        index_name=index_name
     )
     embedding_service = EmbeddingService(
         model_name='text-embedding-3-large',
@@ -879,7 +876,6 @@ def test_get_docs_questions_df(setup_fixture):
     try:
         # Initialize document processor
         doc_processor = DocumentProcessor(
-            db_service=db_service,
             embedding_service=embedding_service,
             llm_service=llm_service,
             chunk_size=setup_fixture['chunk_size'],
@@ -926,7 +922,7 @@ def test_add_clusters(setup_fixture):
     index_name = 'test-visualization'
     db_service = DatabaseService(
         db_type='ChromaDB',
-        local_db_path=setup_fixture['LOCAL_DB_PATH']
+        index_name=index_name
     )
     embedding_service = EmbeddingService(
         model_name='text-embedding-3-large',
@@ -940,7 +936,6 @@ def test_add_clusters(setup_fixture):
     try:
         # Initialize and process documents (same as previous test)
         doc_processor = DocumentProcessor(
-            db_service=db_service,
             embedding_service=embedding_service,
             llm_service=llm_service,
             chunk_size=setup_fixture['chunk_size'],

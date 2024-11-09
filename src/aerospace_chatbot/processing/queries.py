@@ -1,5 +1,7 @@
 """QA model and retrieval logic."""
 
+import os
+
 from ..core.cache import Dependencies
 from ..services.prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT, 
                                 DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS,
@@ -31,8 +33,7 @@ class QAModel:
 
         # Create a separate database service for query storage
         self.query_db_service = DatabaseService(
-            db_type=self.db_service.db_type,
-            local_db_path=self.db_service.local_db_path
+            db_type=self.db_service.db_type
         )
         
         # Initialize query vectorstore with the same embedding service as main db

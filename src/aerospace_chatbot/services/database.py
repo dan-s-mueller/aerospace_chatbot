@@ -1,9 +1,6 @@
 """Database service implementations."""
 
-from pathlib import Path
 import os, shutil
-import hashlib
-import json
 import re
 
 from ..core.cache import Dependencies, get_cache_decorator
@@ -14,38 +11,23 @@ cache_data = get_cache_decorator()
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
-    def __init__(self, db_type, local_db_path=None):
+    def __init__(self, db_type, index_name):
         self.db_type = db_type
-        self.local_db_path = local_db_path
+        self.index_name = index_name
         self.vectorstore = None
-        self.index_name = None
         self.embedding_service = None
         self.rag_type = None
         self.namespace = None
         self._deps = Dependencies()
         
-    def initialize_database(self, index_name, embedding_service, rag_type='Standard', namespace=None, clear=False):
-        """Initialize and store database connection.
-        
-        Args:
-            index_name (str): Name of the index to initialize. validate_index_name is not called automatically, use it before calling this function.            embedding_service (EmbeddingService): Service for generating embeddings
-            rag_type (str, optional): Type of RAG implementation. Defaults to 'Standard'
-            namespace (str, optional): Namespace for the index. Defaults to None
-            clear (bool, optional): Whether to delete existing index. Defaults to False
-                If True, will delete the index if it exists.
-                If False, will use existing index or create new one if it doesn't exist.
-        
-        Returns:
-            VectorStore: Initialized vector store instance
-            
-        Raises:
-            ValueError: If database type is not supported
-        """
-        self.index_name = index_name
+    def initialize_database(self, embedding_service, rag_type='Standard', namespace=None, clear=False):
+        """Initialize and store database connection."""
 
         self.embedding_service = embedding_service
         self.rag_type = rag_type
         self.namespace = namespace
+
+        print(f"Embedding Service in initialize_database: {embedding_service.get_embeddings()}")
 
         # Initialize the vectorstore based on database type
         if self.db_type == 'Pinecone':
@@ -58,14 +40,15 @@ class DatabaseService:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
         return self.vectorstore
-    def delete_index(self, index_name):
+    def delete_index(self):
         """Delete an index from the database."""
+        # Need to decide if a databaseprocessor can have multiple index names, this only processes the name assigned to the processor, assuming one per processor.
         # FIXME won't delete local filestore data
         if self.db_type == 'chromadb':
             _, chromadb, _ = self._deps.get_db_deps()
             
             try:
-                db_path = os.path.join(self.local_db_path, 'chromadb')
+                db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
                 client = chromadb.PersistentClient(path=str(db_path))
                 
                 collections = client.list_collections()
@@ -86,10 +69,72 @@ class DatabaseService:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
         elif self.db_type == 'RAGatouille':
             try:
-                ragatouille_path = os.path.join(self.local_db_path, '.ragatouille/colbert/indexes', self.index_name)
+                ragatouille_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes', self.index_name)
                 shutil.rmtree(ragatouille_path)
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
+    def index_documents(self,
+                       chunking_result,
+                       batch_size=100,
+                       clear=False):
+        """Index processed documents. This is where the index is initialized or created if required."""
+        OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
+        # TODO update with dependency cache
+        import streamlit as st
+
+        if self.show_progress:  
+            progress_text = "Document indexing in progress..."
+            my_bar = st.progress(0, text=progress_text)
+
+        print(f"Embedding Service in index_documents: {self.embedding_service.get_embeddings()}")
+        self.vectorstore = self.initialize_database(
+            embedding_service=self.embedding_service,
+            rag_type=self.rag_type,
+            namespace=self.namespace,
+            clear=clear
+        )
+
+        # Add index metadata
+        index_metadata = {}
+        if chunking_result.merge_pages is not None:
+            index_metadata['merge_pages'] = chunking_result.merge_pages
+        if chunking_result.chunk_method is not 'None':
+            index_metadata['chunk_method'] = chunking_result.chunk_method
+        if chunking_result.chunk_size is not None:
+            index_metadata['chunk_size'] = chunking_result.chunk_size
+        if chunking_result.chunk_overlap is not None:
+            index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
+        if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
+            index_metadata['query_model']= "OpenAI"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
+        elif isinstance(self.embedding_service.get_embeddings(), VoyageAIEmbeddings):
+            index_metadata['query_model'] = "Voyage"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
+        elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
+            index_metadata['query_model'] = "Hugging Face"
+            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
+        self._store_index_metadata(index_metadata)
+
+        # Index chunks in batches
+        for i in range(0, len(chunking_result.chunks), batch_size):
+            batch = chunking_result.chunks[i:i + batch_size]
+            batch_ids = [self._hash_metadata(chunk.metadata) for chunk in batch]
+            
+            if self.db_service.db_type == "Pinecone":
+                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.db_service.namespace)
+            else:
+                self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+
+            if self.show_progress:
+                progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+
+        # Handle parent documents or summaries if needed
+        if self.rag_type in ['Parent-Child', 'Summary']:
+            self._store_parent_docs(self.index_name, chunking_result, self.rag_type)
+
+        if self.show_progress:
+            my_bar.empty()
     def get_retriever(self, k=4):
         """Get configured retriever for the vectorstore."""
         self.retriever = None
@@ -105,10 +150,10 @@ class DatabaseService:
         else:
             raise NotImplementedError(f"RAG type {self.rag_type} not supported")
     def get_docs_questions_df(self, 
-                             index_name,
                              query_index_name,
                              embedding_service):
         """Get documents and questions from database as a DataFrame."""
+        # FIXME get query_index_name from databaseservice object.
         deps = Dependencies()
         pd, np, _, _ = deps.get_analysis_deps()
         
@@ -119,7 +164,7 @@ class DatabaseService:
         texts, embeddings, metadata = [], [], []
         
         # Get documents from main index
-        docs = self.get_documents(index_name)
+        docs = self.get_documents(self.index_name)
         for doc in docs:
             texts.append(doc.page_content)
             embeddings.append(doc.metadata.get('embedding', np.zeros(embedding_dim)))
@@ -190,7 +235,7 @@ class DatabaseService:
         if index_type == 'ChromaDB':
             try:
                 _, chromadb, _ = self._deps.get_db_deps()
-                client = chromadb.PersistentClient(path=str(self.local_db_path / 'chromadb'))
+                client = chromadb.PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
                 collections = client.list_collections()
                 
                 for collection in collections:
@@ -223,11 +268,11 @@ class DatabaseService:
                 
         elif index_type == 'RAGatouille':
             try:
-                index_path = self.local_db_path / '.ragatouille/colbert/indexes'
-                if index_path.exists():
-                    for item in index_path.iterdir():
-                        if item.is_dir() and item.name.startswith(base_name):
-                            name.append(item.name)
+                index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes')
+                if os.path.exists(index_path):
+                    for item in os.listdir(index_path):
+                        if os.path.isdir(os.path.join(index_path, item)) and item.startswith(base_name):
+                            name.append(item)
             except:
                 return []
         
@@ -246,6 +291,54 @@ class DatabaseService:
         
         return handler()
 
+    def copy_vectors(self, source_namespace, target_namespace, batch_size=100, show_progress=False):
+        # FIXME, moved over without testing from documents
+        """Copies vectors from a source Pinecone namespace to a target namespace."""
+        # TODO update with dependency cache
+        import streamlit as st
+        if self.db_type != 'Pinecone':
+            raise ValueError("Vector copying is only supported for Pinecone databases")
+            
+        # FIXME initialize database first, this function deosn't exist
+        index = self.get_index(self.index_name)
+        
+        if show_progress:
+            try:
+                progress_text = "Document merging in progress..."
+                my_bar = st.progress(0, text=progress_text)
+            except ImportError:
+                show_progress = False
+        
+        # Get list of all vector IDs
+        ids = []
+        for id_batch in index.list():
+            ids.extend(id_batch)
+            
+        # Process vectors in batches
+        for i in range(0, len(ids), batch_size):
+            # Fetch vectors
+            batch_ids = ids[i:i + batch_size]
+            fetch_response = index.fetch(batch_ids, namespace=source_namespace)
+            
+            # Transform fetched vectors for upsert
+            vectors_to_upsert = [
+                {
+                    'id': id,
+                    'values': vector_data['values'],
+                    'metadata': vector_data['metadata']
+                }
+                for id, vector_data in fetch_response['vectors'].items()
+            ]
+            
+            # Upsert vectors to target namespace
+            index.upsert(vectors=vectors_to_upsert, namespace=target_namespace)
+            
+            if show_progress:
+                progress_percentage = min(1.0, (i + batch_size) / len(ids))
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        
+        if show_progress:
+            my_bar.empty()
     def _get_pinecone_status(self):
         """Get status of Pinecone indexes."""
         api_key = os.getenv('PINECONE_API_KEY')
@@ -255,11 +348,11 @@ class DatabaseService:
         """Get status of ChromaDB collections."""
         _, chromadb, _ = self._deps.get_db_deps()
         
-        if not self.local_db_path:
+        if not os.getenv('LOCAL_DB_PATH'):
             return {'status': False, 'message': 'Local database path not set'}
         
         try:
-            db_path = self.local_db_path / 'chromadb'
+            db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
             client = chromadb.PersistentClient(path=str(db_path))
             collections = client.list_collections()
             if not collections:
@@ -270,15 +363,15 @@ class DatabaseService:
 
     def _get_ragatouille_status(self):
         """Get status of RAGatouille indexes."""
-        if not self.local_db_path:
+        if not os.getenv('LOCAL_DB_PATH'):
             return {'status': False, 'message': 'Local database path not set'}
         
         try:
-            index_path = self.local_db_path / '.ragatouille/colbert/indexes'
-            if not index_path.exists():
+            index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes')
+            if not os.path.exists(index_path):
                 return {'status': False, 'message': 'No indexes found'}
             
-            indexes = [item.name for item in index_path.iterdir() if item.is_dir()]
+            indexes = [item for item in os.listdir(index_path) if os.path.isdir(os.path.join(index_path, item))]
             if not indexes:
                 return {'status': False, 'message': 'No indexes found'}
             return {'status': True, 'indexes': indexes}
@@ -289,12 +382,15 @@ class DatabaseService:
         _, chromadb, _ = self._deps.get_db_deps()
         _, Chroma, _, _ = self._deps.get_vectorstore_deps()
         
-        db_path = os.path.join(self.local_db_path, 'chromadb')
+        db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
         os.makedirs(db_path, exist_ok=True)
-        client = chromadb.PersistentClient(path=str(db_path))
+        client = chromadb.PersistentClient(path=db_path)
         
         if clear:
-            self.delete_index(self.index_name)
+            self.delete_index()
+
+        print(f"Embedding Service in _init_chromadb: {self.embedding_service.get_embeddings()}")
+
         return Chroma(
             client=client,
             collection_name=self.index_name,
@@ -308,9 +404,9 @@ class DatabaseService:
 
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY')) # Need touse the native client since langchain can't upload a dummy embedding :(
         if clear:
-            self.delete_index(self.index_name)     
+            self.delete_index()     
         try:
-            pc.describe_index(self.index_name)
+            pc.describe_index()
         except:
             pc.create_index(
                 self.index_name,
@@ -333,9 +429,9 @@ class DatabaseService:
         """Initialize RAGatouille."""
         from ragatouille import RAGPretrainedModel
         
-        index_path = os.path.join(self.local_db_path, '.ragatouille')
+        index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille')
         if clear:
-            self.delete_index(self.index_name)
+            self.delete_index()
         return RAGPretrainedModel.from_pretrained(
             pretrained_model_name_or_path=self.embedding_service.model_name,
             index_root=index_path
@@ -378,7 +474,7 @@ class DatabaseService:
         MultiVectorRetriever = self._deps.get_core_deps()[1]
         
         lfs = LocalFileStore(
-            Path(self.local_db_path).resolve() / 'local_file_store' / self.index_name
+            os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
         )
         return MultiVectorRetriever(
             vectorstore=self.vectorstore,
@@ -402,8 +498,41 @@ class DatabaseService:
             search_kwargs['filter'] = filter_kwargs
             
         return search_kwargs
+    def _store_index_metadata(self, index_metadata):
+        """Store index metadata based on the database type."""
+
+        embedding_size = self.embedding_service.get_dimension()
+        metadata_vector = [1e-5] * embedding_size
+
+        if self.db_type == "Pinecone":
+            # TODO use cache dependency function
+            # TODO see if I can do this with langchain vectorstore, problem is I need to make a dunmmy embedding.
+            from pinecone import Pinecone as pinecone_client
+            
+            pc_native = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+            index = pc_native.Index(self.index_name)
+            index.upsert(vectors=[{
+                'id': 'db_metadata',
+                'values': metadata_vector,
+                'metadata': index_metadata
+            }])
+        
+        elif self.db_type == "Chroma":
+            # TODO use cache dependency function
+            from chromadb import PersistentClient
+            chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
+            index = chroma_native.get_collection(name=self.index_name)
+            index.add(
+                embeddings=[metadata_vector],
+                metadatas=[index_metadata],
+                ids=['db_metadata']
+            )
+
+        elif self.db_type == "RAGatouille":
+            # TODO add metadata storage for RAGatouille, maybe can use the same method as others
+            print("Warning: Metadata storage is not yet supported for RAGatouille indexes")
 def validate_index_name(base_index_name,
-                       db_service,
+                       db_type,
                        doc_processor):
     """Validate and format index name with optional parameters."""
     from ..processing.documents import DocumentProcessor
@@ -440,10 +569,11 @@ def validate_index_name(base_index_name,
             name += f"-{doc_processor.chunk_overlap}"
 
     # Database-specific validation
-    if db_service.db_type == "Pinecone":
+    if db_type == "Pinecone":
         if len(name) > 45:
             raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {name}")
-    elif db_service.db_type == "ChromaDB":
+    elif db_type == "ChromaDB":
+        print(f"ChromaDB name: {name}")
         if len(name) > 63:
             raise ValueError(f"The ChromaDB collection name must be less than 63 characters. Entry: {name}")
         if not name[0].isalnum() or not name[-1].isalnum():

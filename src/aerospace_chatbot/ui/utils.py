@@ -197,8 +197,7 @@ def _process_uploads(sb, temp_files):
     """Process uploaded files and merge them into the vector database."""
     # Initialize services
     db_service = DatabaseService(
-        db_type=sb['index_type'],
-        local_db_path=os.getenv('LOCAL_DB_PATH')
+        db_type=sb['index_type']
     )
     embedding_service = EmbeddingService(
         model_name=sb['embedding_name'],
