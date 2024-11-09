@@ -20,11 +20,10 @@ class DatabaseService:
         self.namespace = None
         self._deps = Dependencies()
         
-    def initialize_database(self, embedding_service, rag_type='Standard', namespace=None, clear=False):
+    def initialize_database(self, embedding_service, namespace=None, clear=False):
         """Initialize and store database connection."""
 
         self.embedding_service = embedding_service
-        self.rag_type = rag_type
         self.namespace = namespace
 
         print(f"Embedding Service in initialize_database: {embedding_service.get_embeddings()}")
@@ -78,6 +77,7 @@ class DatabaseService:
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
     def index_documents(self,
+                       rag_type,
                        chunking_result,
                        batch_size=100,
                        clear=False):
@@ -86,6 +86,8 @@ class DatabaseService:
         # TODO update with dependency cache
         import streamlit as st
 
+        self.rag_type = rag_type
+        
         if self.show_progress:  
             progress_text = "Document indexing in progress..."
             my_bar = st.progress(0, text=progress_text)

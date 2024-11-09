@@ -484,6 +484,7 @@ def test_process_documents_summary(setup_fixture):
 ])
 def test_initialize_database(monkeypatch, setup_fixture, test_index):
     '''Test the initialization of different types of databases.'''
+    # FIXME, work through where rag_type should be defined, it's a little messy at the moment. Probably belongs in the initialization of DatabaseService.
     index_name = 'test-index'
     rag_type = 'Standard'
 
@@ -497,6 +498,7 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
         db_type=test_index['index_type'],
         index_name=index_name
     )
+    db_service.rag_type = rag_type
 
     # Clean up any existing database first
     try:
@@ -508,7 +510,6 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     try:
         vectorstore = db_service.initialize_database(
             embedding_service=embedding_service,
-            rag_type=rag_type,
             namespace=db_service.namespace,
             clear=True
         )
@@ -533,9 +534,9 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
             db_type=test_index['index_type'],
             index_name=index_name
         )
+        db_service.rag_type = rag_type
         db_service.initialize_database(
             embedding_service=embedding_service,
-            rag_type=rag_type,
             namespace=db_service.namespace,
             clear=True
         )
@@ -657,7 +658,7 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
         # Process and index documents
         chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        doc_processor.index_documents(
+        db_service.index_documents(
             chunking_result=chunking_result,
             index_name=index_name,
             batch_size=setup_fixture['batch_size'],
