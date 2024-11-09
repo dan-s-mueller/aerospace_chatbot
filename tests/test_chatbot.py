@@ -776,7 +776,6 @@ def test_sidebar_manager_validate_config():
     # Test with empty config
     with pytest.raises(Exception):
         manager._validate_config({})
-
 def test_set_secrets_with_valid_input():
     '''Test case for set_secrets function with valid input.'''
     test_secrets = {
@@ -794,7 +793,6 @@ def test_set_secrets_with_valid_input():
     # Verify environment variables were set
     for key, value in test_secrets.items():
         assert os.environ[key] == value
-
 def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
     '''Test get_secrets with .env file'''
     # Create temporary .env file
@@ -819,7 +817,6 @@ def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
         assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
         assert secrets['HUGGINGFACEHUB_API_KEY'] == 'huggingface_key'
         assert secrets['ANTHROPIC_API_KEY'] == 'anthropic_key'
-
 def test_get_docs_questions_df(setup_fixture):
     """Test function for the get_docs_questions_df() method."""
     index_name = 'test-visualization'
@@ -882,7 +879,6 @@ def test_get_docs_questions_df(setup_fixture):
     except Exception as e:
         db_service.delete_index()
         raise e
-
 def test_add_clusters(setup_fixture):
     """Test function for the add_clusters function."""
     # Setup same as test_get_docs_questions_df

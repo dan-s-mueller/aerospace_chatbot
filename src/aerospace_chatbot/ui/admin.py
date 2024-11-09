@@ -23,7 +23,7 @@ class SidebarManager:
         if 'sidebar_state_initialized' not in st.session_state:
             elements = {
                 'index': ['index_selected', 'index_type'],
-                'embeddings': ['query_model', 'embedding_name', 'embedding_endpoint'],
+                'embeddings': ['embedding_model', 'embedding_name', 'embedding_endpoint'],
                 'rag': ['rag_type', 'rag_llm_source', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_source', 'llm_model', 'llm_endpoint'],
                 'model_options': ['temperature', 'output_level', 'k'],
@@ -76,14 +76,14 @@ class SidebarManager:
         if 'embedding_name' not in self.sb_out:
             # Find the database config by name
             db_config = next(db for db in self._config['databases'] if db['name'] == self.sb_out['index_type'])
-            query_model = db_config['embedding_models'][0]    # Default to first embedding model in config
-            self.sb_out['query_model'] = query_model
+            embedding_model = db_config['embedding_models'][0]    # Default to first embedding model in config
+            self.sb_out['embedding_model'] = embedding_model
             
             if self.sb_out['index_type'] == 'RAGatouille':
-                self.sb_out['embedding_name'] = query_model
+                self.sb_out['embedding_name'] = embedding_model
             else:
                 # Find the embedding config by name
-                embedding_config = next(e for e in self._config['embeddings'] if e['name'] == query_model)
+                embedding_config = next(e for e in self._config['embeddings'] if e['name'] == embedding_model)
                 self.sb_out['embedding_name'] = embedding_config['embedding_models'][0]  # Default to first embedding model in config
         
         if 'rag_type' not in self.sb_out:
@@ -93,10 +93,16 @@ class SidebarManager:
             )
     def _render_index_selection(self):
         """Render index selection section."""
+        # FIXME there's a problem here with the udpate I made to not select by index name, but by metadata. Need to add filtering by metadata and list indices.
         st.sidebar.title('Index Selected')
         
         # Initialize database service
-        db_service = DatabaseService(self.sb_out['index_type'], os.getenv('LOCAL_DB_PATH'))
+        db_service = DatabaseService(
+            self.sb_out['index_type'], 
+            self.sb_out['index_name'],
+            self.sb_out['rag_type'],
+            self.sb_out['embedding_model']
+        )
         
         # Get available indexes based on current settings
         available_indexes = db_service.get_available_indexes(
@@ -236,23 +242,23 @@ class SidebarManager:
         db_config = next(db for db in self._config['databases'] if db['name'] == self.sb_out['index_type'])
         
         if self.sb_out['index_type'] == 'RAGatouille':
-            self.sb_out['query_model'] = st.sidebar.selectbox(
+            self.sb_out['embedding_model'] = st.sidebar.selectbox(
                 'Hugging face rag models',
                 db_config['embedding_models'],
-                disabled=st.session_state.query_model_disabled,
+                disabled=st.session_state.embedding_model_disabled,
                 help="Models listed are compatible with the selected index type."
             )
-            self.sb_out['embedding_name'] = self.sb_out['query_model']
+            self.sb_out['embedding_name'] = self.sb_out['embedding_model']
         else:
-            self.sb_out['query_model'] = st.sidebar.selectbox(
+            self.sb_out['embedding_model'] = st.sidebar.selectbox(
                 'Embedding model family',
                 db_config['embedding_models'],
-                disabled=st.session_state.query_model_disabled,
+                disabled=st.session_state.embedding_model_disabled,
                 help="Model provider."
             )
             
             # Find the embedding config for the selected model
-            embedding_config = next(e for e in self._config['embeddings'] if e['name'] == self.sb_out['query_model'])
+            embedding_config = next(e for e in self._config['embeddings'] if e['name'] == self.sb_out['embedding_model'])
             
             self.sb_out['embedding_name'] = st.sidebar.selectbox(
                 'Embedding model',
@@ -279,7 +285,7 @@ class SidebarManager:
         
         # Only show relevant API key inputs based on selected models
         if ('llm_source' in self.sb_out and self.sb_out['llm_source'] == 'OpenAI') or \
-           ('query_model' in self.sb_out and self.sb_out['query_model'] == 'OpenAI'):
+           ('embedding_model' in self.sb_out and self.sb_out['embedding_model'] == 'OpenAI'):
             self.sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input(
                 'OpenAI API Key',
                 type='password',
@@ -295,7 +301,7 @@ class SidebarManager:
                 help='Anthropic API Key: https://console.anthropic.com/settings/keys'
             )
         
-        if 'query_model' in self.sb_out and self.sb_out['query_model'] == 'Voyage':
+        if 'embedding_model' in self.sb_out and self.sb_out['embedding_model'] == 'Voyage':
             self.sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input(
                 'Voyage API Key',
                 type='password',
@@ -312,7 +318,7 @@ class SidebarManager:
             )
         
         if ('llm_source' in self.sb_out and self.sb_out['llm_source'] == 'Hugging Face') or \
-           ('query_model' in self.sb_out and self.sb_out['query_model'] == 'Hugging Face'):
+           ('embedding_model' in self.sb_out and self.sb_out['embedding_model'] == 'Hugging Face'):
             self.sb_out['keys']['HUGGINGFACEHUB_API_KEY'] = st.sidebar.text_input(
                 'Hugging Face API Key',
                 type='password',

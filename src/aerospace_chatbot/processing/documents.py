@@ -49,16 +49,15 @@ class DocumentProcessor:
 
     def process_documents(self, documents, show_progress=False):
         """Process documents based on RAG type by chunking."""
-        self.show_progress = show_progress
 
-        cleaned_docs = self._load_and_clean_documents(documents)
+        cleaned_docs = self._load_and_clean_documents(documents, show_progress)
         
         if self.rag_type == 'Standard':
-            return self._process_standard(cleaned_docs)
+            return self._process_standard(cleaned_docs, show_progress)
         elif self.rag_type == 'Parent-Child':
-            return self._process_parent_child(cleaned_docs)
+            return self._process_parent_child(cleaned_docs, show_progress)
         elif self.rag_type == 'Summary':
-            return self._process_summary(cleaned_docs)
+            return self._process_summary(cleaned_docs, show_progress)
         else:
             raise ValueError(f"Unsupported RAG type: {self.rag_type}")
     @staticmethod
@@ -101,19 +100,21 @@ class DocumentProcessor:
     def stable_hash_meta(metadata):
         """Calculates the stable hash of the given metadata dictionary."""
         return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
-    def _load_and_clean_documents(self, documents):
+    def _load_and_clean_documents(self, documents, show_progress=False):
         """Load PDF documents and clean their contents."""
         # TODO use cache load function
         from langchain_community.document_loaders import PyPDFLoader
         
-        if self.show_progress:
+        if show_progress:
+            # TODO import from cache function
+            import streamlit as st
             progress_text = 'Reading documents...'
             my_bar = st.progress(0, text=progress_text)
         
         cleaned_docs = []
         with tempfile.TemporaryDirectory() as temp_dir:
             for i, doc in enumerate(documents):
-                if self.show_progress:
+                if show_progress:
                     progress_percentage = i / len(documents)
                     my_bar.progress(progress_percentage, text=f'Reading documents...{doc}...{progress_percentage*100:.2f}%')
 
@@ -154,13 +155,13 @@ class DocumentProcessor:
                 else:
                     cleaned_docs.extend(doc_pages)
         
-        if self.show_progress:
+        if show_progress:
             my_bar.empty()
         
         return cleaned_docs
-    def _process_standard(self, documents):
+    def _process_standard(self, documents, show_progress=False):
         """Process documents for standard RAG."""
-        chunks = self._chunk_documents(documents)
+        chunks = self._chunk_documents(documents, show_progress)
         return ChunkingResult(rag_type=self.rag_type,
                               pages=documents,
                               chunks=chunks, 
@@ -169,9 +170,9 @@ class DocumentProcessor:
                               merge_pages=self.merge_pages,
                               chunk_size=self.chunk_size,
                               chunk_overlap=self.chunk_overlap)
-    def _process_parent_child(self, documents):
+    def _process_parent_child(self, documents, show_progress=False):
         """Process documents for parent-child RAG."""
-        chunks, parent_chunks = self._chunk_documents(documents)
+        chunks, parent_chunks = self._chunk_documents(documents, show_progress)
 
         # chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
         return ChunkingResult(rag_type=self.rag_type,
@@ -181,16 +182,18 @@ class DocumentProcessor:
                               merge_pages=self.merge_pages,
                               chunk_size=self.chunk_size,
                               chunk_overlap=self.chunk_overlap)
-    def _process_summary(self, documents):
+    def _process_summary(self, documents, show_progress=False):
         """Process documents for summary RAG."""
         # TODO fix the dependencies, use cache
         from langchain_core.output_parsers import StrOutputParser
 
-        if self.show_progress:
+        if show_progress:
+            # TODO import from cache function
+            import streamlit as st
             progress_text = 'Chunking documents...'
             my_bar = st.progress(0, text=progress_text)
         
-        chunks = self._chunk_documents(documents)
+        chunks = self._chunk_documents(documents, show_progress)
 
         # Create unique ids for each chunk, set up chain
         id_key = "doc_id"
@@ -210,7 +213,7 @@ class DocumentProcessor:
             batch = chunks[i:i + batch_size]
             batch_summaries = chain.batch(batch, config={"max_concurrency": batch_size})
             summaries.extend(batch_summaries)
-            if self.show_progress:
+            if show_progress:
                 progress_percentage = i / len(chunks)
                 my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         
@@ -220,7 +223,7 @@ class DocumentProcessor:
             for i, summary in enumerate(summaries)
         ]        
 
-        if self.show_progress:
+        if show_progress:
             my_bar.empty()  
             
         return ChunkingResult(rag_type=self.rag_type,
@@ -233,18 +236,20 @@ class DocumentProcessor:
                               chunk_overlap=self.chunk_overlap,
         )
 
-    def _chunk_documents(self, documents):
+    def _chunk_documents(self, documents, show_progress=False):
         """Chunk documents using specified parameters."""
         # TODO import from cache function
         from langchain.text_splitter import RecursiveCharacterTextSplitter
-        if self.show_progress:
+        if show_progress:
+            # TODO import from cache function
+            import streamlit as st
             progress_text = 'Chunking documents...'
             my_bar = st.progress(0, text=progress_text)
 
         chunks = []
         if self.rag_type != 'Parent-Child':
             if self.chunk_method == 'None':
-                if self.show_progress:
+                if show_progress:
                     my_bar.empty()
                 return documents
             for i, doc in enumerate(documents):
@@ -256,11 +261,11 @@ class DocumentProcessor:
                     chunks.extend(page_chunks)  # Use extend to flatten the list
                 else:
                     raise NotImplementedError
-                if self.show_progress:
+                if show_progress:
                     progress_percentage = i / len(documents)
                     my_bar.progress(progress_percentage, text=f'Chunking documents...{progress_percentage*100:.2f}%')
             
-            if self.show_progress:
+            if show_progress:
                 my_bar.empty()
             return chunks
         elif self.rag_type == 'Parent-Child':
@@ -281,10 +286,10 @@ class DocumentProcessor:
                         for _doc in _chunks:
                             _doc.metadata[id_key] = _id
                         chunks.extend(_chunks)  # Use extend to flatten the list
-                    if self.show_progress:
+                    if show_progress:
                         progress_percentage = i / len(documents)
                         my_bar.progress(progress_percentage, text=f'Chunking parent-child documents...{progress_percentage*100:.2f}%')
-                if self.show_progress:
+                if show_progress:
                     my_bar.empty()
                 return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
             else:
@@ -298,7 +303,7 @@ class DocumentProcessor:
                         parent_chunks.extend(parent_page_chunks)  # Use extend to flatten the list
                     else:
                         raise NotImplementedError
-                    if self.show_progress:
+                    if show_progress:
                         progress_percentage = i / len(documents)
                         my_bar.progress(progress_percentage, text=f'Chunking parent documents...{progress_percentage*100:.2f}%')
                     
@@ -316,11 +321,11 @@ class DocumentProcessor:
                     for _doc in _chunks:
                         _doc.metadata[id_key] = _id
                     chunks.extend(_chunks)  # Use extend to flatten the list
-                    if self.show_progress:
+                    if show_progress:
                         progress_percentage = i / len(documents)
                         my_bar.progress(progress_percentage, text=f'Chunking child documents...{progress_percentage*100:.2f}%')
         
-                if self.show_progress:
+                if show_progress:
                     my_bar.empty()
                 return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
         else:

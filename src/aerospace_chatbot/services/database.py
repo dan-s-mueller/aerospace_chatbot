@@ -7,8 +7,6 @@ from pathlib import Path
 from ..core.cache import Dependencies, get_cache_decorator
 from ..services.prompts import CLUSTER_LABEL
 
-cache_data = get_cache_decorator()
-
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
@@ -24,8 +22,6 @@ class DatabaseService:
     def initialize_database(self, namespace=None, clear=False):
         """Initialize and store database connection."""
         self.namespace = namespace
-
-        print(f"Embedding Service in initialize_database: {self.embedding_service.get_embeddings()}")
 
         # Check if LOCAL_DB_PATH environment variable exists
         if not os.getenv('LOCAL_DB_PATH'):
@@ -116,8 +112,6 @@ class DatabaseService:
     def copy_vectors(self, source_namespace, target_namespace, batch_size=100, show_progress=False):
         # FIXME, moved over without testing from documents
         """Copies vectors from a source Pinecone namespace to a target namespace."""
-        # TODO update with dependency cache
-        import streamlit as st
         if self.db_type != 'Pinecone':
             raise ValueError("Vector copying is only supported for Pinecone databases")
             
@@ -126,6 +120,8 @@ class DatabaseService:
         
         if show_progress:
             try:
+                # TODO update with dependency cache
+                import streamlit as st
                 progress_text = "Document merging in progress..."
                 my_bar = st.progress(0, text=progress_text)
             except ImportError:
@@ -312,7 +308,6 @@ class DatabaseService:
         return self._cached_pinecone_status(api_key)
     
     @staticmethod
-    @cache_data
     def _cached_pinecone_status(api_key):
         """Helper function to cache the processed Pinecone status."""
         Pinecone, _, _ = Dependencies().get_db_deps()
@@ -377,8 +372,6 @@ class DatabaseService:
         
         if clear:
             self.delete_index()
-
-        print(f"Embedding Service in _init_chromadb: {self.embedding_service.get_embeddings()}")
 
         return Chroma(
             client=client,
@@ -558,7 +551,6 @@ class DatabaseService:
             if len(name) > 45:
                 raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {name}")
         elif self.db_type == "ChromaDB":
-            print(f"ChromaDB name: {name}")
             if len(name) > 63:
                 raise ValueError(f"The ChromaDB collection name must be less than 63 characters. Entry: {name}")
             if not name[0].isalnum() or not name[-1].isalnum():
@@ -574,9 +566,9 @@ class DatabaseService:
         from langchain.storage import LocalFileStore
         from langchain.retrievers.multi_vector import MultiVectorRetriever
         from ..processing.documents import DocumentProcessor
-        import streamlit as st
 
         if show_progress:  
+            import streamlit as st
             progress_text = "Document indexing in progress..."
             my_bar = st.progress(0, text=progress_text)
         
@@ -588,10 +580,9 @@ class DatabaseService:
                 
                 if self.db_type == "Pinecone":
                     self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
-                elif self.db_type == "Chroma":
+                elif self.db_type == "ChromaDB":
                     self.vectorstore.add_documents(documents=batch, ids=batch_ids)
                 elif self.db_type == "RAGatouille":
-
                     continue
                 else:
                     raise NotImplementedError
