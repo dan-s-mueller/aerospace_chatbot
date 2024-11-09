@@ -2,6 +2,7 @@
 
 import os, shutil
 import re
+from pathlib import Path
 
 from ..core.cache import Dependencies, get_cache_decorator
 from ..services.prompts import CLUSTER_LABEL
@@ -83,14 +84,7 @@ class DatabaseService:
         OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
         # TODO update with dependency cache
         import streamlit as st
-        from ..processing.documents import DocumentProcessor
 
-
-        if show_progress:  
-            progress_text = "Document indexing in progress..."
-            my_bar = st.progress(0, text=progress_text)
-
-        print(f"Embedding Service in index_documents: {self.embedding_service.get_embeddings()}")
         self.vectorstore = self.initialize_database(
             namespace=self.namespace,
             clear=clear
@@ -117,30 +111,10 @@ class DatabaseService:
             index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
         self._store_index_metadata(index_metadata)
 
-        # Validate index name and parameters
+        # Validate index name and parameters, upsert documents
         self._validate_index(chunking_result)
+        self._upsert_docs(chunking_result, batch_size, show_progress)
 
-        # Index chunks in batches
-        for i in range(0, len(chunking_result.chunks), batch_size):
-            batch = chunking_result.chunks[i:i + batch_size]
-            batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
-            
-            if self.db_type == "Pinecone":
-                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
-            else:
-                self.vectorstore.add_documents(documents=batch, ids=batch_ids)
-
-            if show_progress:
-                progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-
-        # Handle parent documents or summaries if needed
-        # FIXME this won't work, loop previous also needs updating
-        if self.rag_type in ['Parent-Child', 'Summary']:
-            self._store_parent_docs(chunking_result)
-
-        if show_progress:
-            my_bar.empty()
     def get_retriever(self, k=4):
         """Get configured retriever for the vectorstore."""
         self.retriever = None
@@ -155,6 +129,56 @@ class DatabaseService:
             self.retriever = self._get_multivector_retriever(search_kwargs)
         else:
             raise NotImplementedError(f"RAG type {self.rag_type} not supported")
+    
+    def copy_vectors(self, source_namespace, target_namespace, batch_size=100, show_progress=False):
+        # FIXME, moved over without testing from documents
+        """Copies vectors from a source Pinecone namespace to a target namespace."""
+        # TODO update with dependency cache
+        import streamlit as st
+        if self.db_type != 'Pinecone':
+            raise ValueError("Vector copying is only supported for Pinecone databases")
+            
+        # FIXME initialize database first, this function deosn't exist
+        index = self.get_index(self.index_name)
+        
+        if show_progress:
+            try:
+                progress_text = "Document merging in progress..."
+                my_bar = st.progress(0, text=progress_text)
+            except ImportError:
+                show_progress = False
+        
+        # Get list of all vector IDs
+        ids = []
+        for id_batch in index.list():
+            ids.extend(id_batch)
+            
+        # Process vectors in batches
+        for i in range(0, len(ids), batch_size):
+            # Fetch vectors
+            batch_ids = ids[i:i + batch_size]
+            fetch_response = index.fetch(batch_ids, namespace=source_namespace)
+            
+            # Transform fetched vectors for upsert
+            vectors_to_upsert = [
+                {
+                    'id': id,
+                    'values': vector_data['values'],
+                    'metadata': vector_data['metadata']
+                }
+                for id, vector_data in fetch_response['vectors'].items()
+            ]
+            
+            # Upsert vectors to target namespace
+            index.upsert(vectors=vectors_to_upsert, namespace=target_namespace)
+            
+            if show_progress:
+                progress_percentage = min(1.0, (i + batch_size) / len(ids))
+                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        
+        if show_progress:
+            my_bar.empty()
+    
     def get_docs_questions_df(self, 
                              query_index_name):
         """Get documents and questions from database as a DataFrame."""
@@ -298,55 +322,6 @@ class DatabaseService:
         
         return handler()
 
-    def copy_vectors(self, source_namespace, target_namespace, batch_size=100, show_progress=False):
-        # FIXME, moved over without testing from documents
-        """Copies vectors from a source Pinecone namespace to a target namespace."""
-        # TODO update with dependency cache
-        import streamlit as st
-        if self.db_type != 'Pinecone':
-            raise ValueError("Vector copying is only supported for Pinecone databases")
-            
-        # FIXME initialize database first, this function deosn't exist
-        index = self.get_index(self.index_name)
-        
-        if show_progress:
-            try:
-                progress_text = "Document merging in progress..."
-                my_bar = st.progress(0, text=progress_text)
-            except ImportError:
-                show_progress = False
-        
-        # Get list of all vector IDs
-        ids = []
-        for id_batch in index.list():
-            ids.extend(id_batch)
-            
-        # Process vectors in batches
-        for i in range(0, len(ids), batch_size):
-            # Fetch vectors
-            batch_ids = ids[i:i + batch_size]
-            fetch_response = index.fetch(batch_ids, namespace=source_namespace)
-            
-            # Transform fetched vectors for upsert
-            vectors_to_upsert = [
-                {
-                    'id': id,
-                    'values': vector_data['values'],
-                    'metadata': vector_data['metadata']
-                }
-                for id, vector_data in fetch_response['vectors'].items()
-            ]
-            
-            # Upsert vectors to target namespace
-            index.upsert(vectors=vectors_to_upsert, namespace=target_namespace)
-            
-            if show_progress:
-                progress_percentage = min(1.0, (i + batch_size) / len(ids))
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        
-        if show_progress:
-            my_bar.empty()
-    
     @staticmethod
     def _get_pinecone_status(self):
         """Get status of Pinecone indexes."""
@@ -566,7 +541,7 @@ class DatabaseService:
             if not doc_processor.llm_service:
                 raise ValueError("LLM service is required for Summary RAG type")
             
-            summary_model_name = doc_processor.embedding_service.model_name
+            summary_model_name = doc_processor.llm_service.model_name
             model_name_temp = summary_model_name.replace(".", "-").replace("/", "-").lower()
             model_name_temp = model_name_temp.split('/')[-1]  # Just get the model name, not org
             model_name_temp = model_name_temp[:3] + model_name_temp[-3:]  # First and last 3 characters
@@ -589,3 +564,66 @@ class DatabaseService:
                 raise ValueError(f"The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {name}")
             if ".." in name:
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
+
+    def _upsert_docs(self, chunking_result, batch_size, show_progress):
+        """Upsert documents. Used for all RAG types."""
+        # TODO update to use dependency cache
+        from langchain.storage import LocalFileStore
+        from langchain.retrievers.multi_vector import MultiVectorRetriever
+        from ..processing.documents import DocumentProcessor
+        import streamlit as st
+
+        if show_progress:  
+            progress_text = "Document indexing in progress..."
+            my_bar = st.progress(0, text=progress_text)
+        
+        if self.rag_type == 'Standard':
+            for i in range(0, len(chunking_result.chunks), batch_size):
+                batch = chunking_result.chunks[i:i + batch_size]
+                batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
+                
+                if self.db_type == "Pinecone":
+                    self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+                else:
+                    self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+
+                if show_progress:
+                    progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
+                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+        if self.rag_type == 'Parent-Child' or self.rag_type == 'Summary'    :
+            lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / self.index_name
+            store = LocalFileStore(lfs_path)
+            
+            id_key = "doc_id"
+            retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
+
+            if self.rag_type == 'Parent-Child':
+                chunks = chunking_result.chunks
+                pages = chunking_result.pages['parent_chunks']
+                doc_ids = chunking_result.pages['doc_ids']
+            elif self.rag_type == 'Summary':
+                chunks = chunking_result.summaries
+                pages = chunking_result.pages['docs']
+                doc_ids = chunking_result.pages['doc_ids']
+            else:
+                raise NotImplementedError
+
+            for i in range(0, len(chunks), batch_size):
+                batch = chunks[i:i + batch_size]
+                batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
+                
+                
+                if self.db_type == "Pinecone":
+                    self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+                else:
+                    self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+                
+                if show_progress:
+                    progress_percentage = i / len(chunks)
+                    my_bar.progress(progress_percentage, text=f'Document indexing in progress...{progress_percentage*100:.2f}%')
+            
+            # Index parent docs all at once
+            self.retriever.docstore.mset(list(zip(doc_ids, pages)))
+        
+        if show_progress:
+            my_bar.empty()
