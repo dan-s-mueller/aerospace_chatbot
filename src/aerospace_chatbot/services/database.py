@@ -11,22 +11,20 @@ cache_data = get_cache_decorator()
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
-    def __init__(self, db_type, rag_type, index_name):
+    def __init__(self, db_type, index_name, rag_type, embedding_service):
         self.db_type = db_type
-        self.rag_type = rag_type
         self.index_name = index_name
+        self.rag_type = rag_type
+        self.embedding_service = embedding_service
         self.vectorstore = None
-        self.embedding_service = None
         self.namespace = None
         self._deps = Dependencies()
         
-    def initialize_database(self, embedding_service, namespace=None, clear=False):
+    def initialize_database(self, namespace=None, clear=False):
         """Initialize and store database connection."""
-
-        self.embedding_service = embedding_service
         self.namespace = namespace
 
-        print(f"Embedding Service in initialize_database: {embedding_service.get_embeddings()}")
+        print(f"Embedding Service in initialize_database: {self.embedding_service.get_embeddings()}")
 
         # Check if LOCAL_DB_PATH environment variable exists
         if not os.getenv('LOCAL_DB_PATH'):
@@ -79,19 +77,21 @@ class DatabaseService:
     def index_documents(self,
                        chunking_result,
                        batch_size=100,
-                       clear=False):
+                       clear=False,
+                       show_progress=False):
         """Index processed documents. This is where the index is initialized or created if required."""
         OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
         # TODO update with dependency cache
         import streamlit as st
+        from ..processing.documents import DocumentProcessor
 
-        if self.show_progress:  
+
+        if show_progress:  
             progress_text = "Document indexing in progress..."
             my_bar = st.progress(0, text=progress_text)
 
         print(f"Embedding Service in index_documents: {self.embedding_service.get_embeddings()}")
         self.vectorstore = self.initialize_database(
-            embedding_service=self.embedding_service,
             namespace=self.namespace,
             clear=clear
         )
@@ -123,22 +123,23 @@ class DatabaseService:
         # Index chunks in batches
         for i in range(0, len(chunking_result.chunks), batch_size):
             batch = chunking_result.chunks[i:i + batch_size]
-            batch_ids = [self._hash_metadata(chunk.metadata) for chunk in batch]
+            batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
             
-            if self.db_service.db_type == "Pinecone":
-                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.db_service.namespace)
+            if self.db_type == "Pinecone":
+                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
             else:
                 self.vectorstore.add_documents(documents=batch, ids=batch_ids)
 
-            if self.show_progress:
+            if show_progress:
                 progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
                 my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
 
         # Handle parent documents or summaries if needed
+        # FIXME this won't work, loop previous also needs updating
         if self.rag_type in ['Parent-Child', 'Summary']:
             self._store_parent_docs(chunking_result)
 
-        if self.show_progress:
+        if show_progress:
             my_bar.empty()
     def get_retriever(self, k=4):
         """Get configured retriever for the vectorstore."""
@@ -155,15 +156,14 @@ class DatabaseService:
         else:
             raise NotImplementedError(f"RAG type {self.rag_type} not supported")
     def get_docs_questions_df(self, 
-                             query_index_name,
-                             embedding_service):
+                             query_index_name):
         """Get documents and questions from database as a DataFrame."""
         # FIXME get query_index_name from databaseservice object.
         deps = Dependencies()
         pd, np, _, _ = deps.get_analysis_deps()
         
         # Get embeddings dimension
-        embedding_dim = embedding_service.get_dimension()
+        embedding_dim = self.embedding_service.get_dimension()
         
         # Initialize empty arrays for data
         texts, embeddings, metadata = [], [], []
@@ -566,8 +566,8 @@ class DatabaseService:
             if not doc_processor.llm_service:
                 raise ValueError("LLM service is required for Summary RAG type")
             
-            model_name = doc_processor.embedding_service.model_name
-            model_name_temp = model_name.replace(".", "-").replace("/", "-").lower()
+            summary_model_name = doc_processor.embedding_service.model_name
+            model_name_temp = summary_model_name.replace(".", "-").replace("/", "-").lower()
             model_name_temp = model_name_temp.split('/')[-1]  # Just get the model name, not org
             model_name_temp = model_name_temp[:3] + model_name_temp[-3:]  # First and last 3 characters
             

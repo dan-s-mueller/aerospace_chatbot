@@ -33,15 +33,16 @@ class QAModel:
 
         # Create a separate database service for query storage
         self.query_db_service = DatabaseService(
-            db_type=self.db_service.db_type
+            db_type=self.db_service.db_type,
+            index_name=self.db_service.index_name + '-queries',
+            rag_type="Standard",
+            embedding_service=self.db_service.embedding_service
         )
         
         # Initialize query vectorstore with the same embedding service as main db
         self.query_db_service.initialize_database(
-            index_name=self.db_service.index_name + '-queries',  # separate index for queries, append -queries
-            embedding_service=self.db_service.embedding_service,
-            rag_type="Standard",
-            namespace=self.namespace
+            namespace=self.namespace,
+            clear=True
         )
         
         # Get retrievers from database services

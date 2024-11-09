@@ -350,15 +350,6 @@ class DocumentProcessor:
         return doc
 
     @staticmethod
-    def _hash_metadata(metadata):
-        """Create stable hash from metadata."""
-        import hashlib
-        import json
-        return hashlib.sha1(
-            json.dumps(metadata, sort_keys=True).encode()
-        ).hexdigest()
-
-    @staticmethod
     def _merge_pages(docs, n_pages):
         """Merge consecutive pages."""
         merged = []

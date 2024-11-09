@@ -251,7 +251,8 @@ def test_validate_index(setup_fixture):
     db_service = DatabaseService(
         db_type=db_type,
         index_name='',
-        rag_type='Standard'
+        rag_type='Standard',
+        embedding_service=setup_fixture['mock_embedding_service']
     )
 
     doc_processor = DocumentProcessor(
@@ -295,7 +296,8 @@ def test_validate_index(setup_fixture):
     db_service = DatabaseService(
         db_type=db_type,
         index_name='',
-        rag_type='Standard'
+        rag_type='Standard',
+        embedding_service=setup_fixture['mock_embedding_service']
     )
 
     with pytest.raises(ValueError, match="must be less than 45 characters"):
@@ -318,7 +320,8 @@ def test_validate_index(setup_fixture):
     db_service = DatabaseService(
         db_type=db_type,
         index_name=index_name,
-        rag_type='Standard'
+        rag_type='Standard',
+        embedding_service=setup_fixture['mock_embedding_service']
     )
     doc_processor.rag_type = db_service.rag_type
     db_service._validate_index(doc_processor)
@@ -328,7 +331,8 @@ def test_validate_index(setup_fixture):
     db_service = DatabaseService(
         db_type=db_type,
         index_name=index_name,
-        rag_type='Parent-Child'
+        rag_type='Parent-Child',
+        embedding_service=setup_fixture['mock_embedding_service']
     )
     doc_processor.rag_type = db_service.rag_type
     db_service._validate_index(doc_processor)
@@ -338,7 +342,8 @@ def test_validate_index(setup_fixture):
     db_service = DatabaseService(
         db_type=db_type,
         index_name=index_name,
-        rag_type='Summary'
+        rag_type='Summary',
+        embedding_service=setup_fixture['mock_embedding_service']
     )
     doc_processor.rag_type = db_service.rag_type
     doc_processor.llm_service = setup_fixture['mock_llm_service']
@@ -475,7 +480,7 @@ def test_process_documents_summary(setup_fixture):
         'expected_class': RAGPretrainedModel
     }
 ])
-def test_initialize_database(monkeypatch, setup_fixture, test_index):
+def test_initialize_database(monkeypatch, test_index):
     '''Test the initialization of different types of databases.'''
     # FIXME, work through where rag_type should be defined, it's a little messy at the moment. Probably belongs in the initialization of DatabaseService.
     index_name = 'test-index'
@@ -490,7 +495,8 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     db_service = DatabaseService(
         db_type=test_index['index_type'],
         index_name=index_name,
-        rag_type=rag_type
+        rag_type=rag_type,
+        embedding_service=embedding_service
     )
 
     # Clean up any existing database first
@@ -502,7 +508,6 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
     # Test with environment variable local_db_path
     try:
         vectorstore = db_service.initialize_database(
-            embedding_service=embedding_service,
             namespace=db_service.namespace,
             clear=True
         )
@@ -526,10 +531,10 @@ def test_initialize_database(monkeypatch, setup_fixture, test_index):
         db_service = DatabaseService(
             db_type=test_index['index_type'],
             index_name=index_name,
-            rag_type=rag_type
+            rag_type=rag_type,
+            embedding_service=embedding_service
         )
         db_service.initialize_database(
-            embedding_service=embedding_service,
             namespace=db_service.namespace,
             clear=True
         )
@@ -568,7 +573,8 @@ def test_delete_database(setup_fixture, test_index):
     db_service = DatabaseService(
         db_type=test_index['index_type'],
         index_name=index_name,
-        rag_type=rag_type
+        rag_type=rag_type,
+        embedding_service=embedding_service
     )
 
     # Clean up any existing test indexes first
@@ -586,7 +592,6 @@ def test_delete_database(setup_fixture, test_index):
     # Test Case 2: Create and delete standard database
     try:
         vectorstore = db_service.initialize_database(
-            embedding_service=embedding_service,
             namespace=db_service.namespace,
             clear=True
         )
@@ -624,25 +629,27 @@ def test_database_setup_and_query(test_input, setup_fixture):
     index_name = 'test' + str(test['id'])
     print(f'Starting test: {print_str}')
 
+    embedding_service = parse_test_model('embedding', test)
+    llm_service = parse_test_model('llm', test)
+
     # Get services
     db_service = DatabaseService(
         db_type=test['index_type'],
         index_name=index_name,
-        rag_type=test['rag_type']
+        rag_type=test['rag_type'],
+        embedding_service=embedding_service
     )
-    query_model_service = parse_test_model('embedding', test)
-    llm_service = parse_test_model('llm', test)
 
     # Print query model service details
     print("\nQuery Model Service Details:")
-    print(f"Model Name: {query_model_service.model_name}")
-    print(f"Model Type: {query_model_service.model_type}")
-    print(f"Embedding Dimension in test: {query_model_service.get_dimension()}")
+    print(f"Model Name: {embedding_service.model_name}")
+    print(f"Model Type: {embedding_service.model_type}")
+    print(f"Embedding Dimension in test: {embedding_service.get_dimension()}")
 
     try:
         # Initialize the document processor with services
         doc_processor = DocumentProcessor(
-            embedding_service=query_model_service,
+            embedding_service=embedding_service,
             rag_type=test['rag_type'],
             chunk_method=setup_fixture['chunk_method'],
             chunk_size=setup_fixture['chunk_size'],
@@ -660,11 +667,11 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
         # Verify the vectorstore type
         if db_service.db_type == 'ChromaDB':
-            assert isinstance(doc_processor.vectorstore, Chroma)
+            assert isinstance(db_service.vectorstore, Chroma)
         elif db_service.db_type == 'Pinecone':
-            assert isinstance(doc_processor.vectorstore, PineconeVectorStore)
+            assert isinstance(db_service.vectorstore, PineconeVectorStore)
         elif db_service.db_type == 'RAGatouille':
-            assert isinstance(doc_processor.vectorstore, RAGPretrainedModel)
+            assert isinstance(db_service.vectorstore, RAGPretrainedModel)
         print('Vectorstore created.')
 
         # Initialize QA model
@@ -864,11 +871,6 @@ def test_get_docs_questions_df(setup_fixture):
     index_name = 'test-visualization'
     
     # Initialize services
-    db_service = DatabaseService(
-        db_type='ChromaDB',
-        index_name=index_name,
-        rag_type='Standard'
-    )
     embedding_service = EmbeddingService(
         model_name='text-embedding-3-large',
         model_type='OpenAI'
@@ -876,6 +878,12 @@ def test_get_docs_questions_df(setup_fixture):
     llm_service = LLMService(
         model_name='gpt-4o-mini',
         model_type='OpenAI'
+    )
+    db_service = DatabaseService(
+        db_type='ChromaDB',
+        index_name=index_name,
+        rag_type='Standard',
+        embedding_service=embedding_service
     )
 
     try:
