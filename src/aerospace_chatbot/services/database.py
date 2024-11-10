@@ -158,45 +158,117 @@ class DatabaseService:
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
                 
-    def get_docs_questions_df(self, 
-                             query_index_name):
+    def get_docs_questions_df(self, query_index_name):
         """Get documents and questions from database as a DataFrame."""
         # FIXME, this requires a refactor from data_processing, it's missing the majority of the functionality
         # FIXME get query_index_name from databaseservice object.
+        
+        # deps = Dependencies()
+        # pd, np, _, _ = deps.get_analysis_deps()
+        # admin = deps.get_admin()
+        import pandas as pd
+        
+        # Check if query database exists
+        # FIXME, hack utils._display_database_status to get this
+        if self.db_type == 'ChromaDB':
+            collections = [collection.name for collection in admin.show_chroma_collections(format=False)['message']]
+        elif self.db_type == 'Pinecone':
+            collections = [collection for collection in admin.show_pinecone_indexes(format=False)['message']]
+        else:
+            raise ValueError(f"Unsupported database type: {self.db_type}")
+        
+        matching_collection = [collection for collection in collections if collection == query_index_name]
+        if len(matching_collection) > 1:
+            raise Exception('Matching collection not found or multiple matching collections found.')
+        try:
+            if not matching_collection:
+                raise Exception('Query database not found. Please create a query database using the Chatbot page and a selected index.')
+        except Exception as e:
+            import streamlit as st
+            st.warning(f"{e}")
+            st.stop()
+        
+        # import streamlit as st
+        # st.markdown(f"Query database found: {query_index_name}")
+
+        # Get documents dataframe
+        docs_df = self._get_docs_df()
+        docs_df["type"] = "doc"
+        # st.markdown(f"Retrieved docs from: {self.index_name}")
+
+        # Get questions dataframe
+        questions_df = self._get_questions_df(query_index_name)
+        questions_df["type"] = "question"
+        # st.markdown(f"Retrieved questions from: {query_index_name}")
+
+        # Process questions metadata
+        questions_df["num_sources"] = questions_df["sources"].apply(len)
+        questions_df["first_source"] = questions_df["sources"].apply(
+            lambda x: next(iter(x), None)
+        )
+
+        # Process document usage by questions
+        if len(questions_df):
+            docs_df["used_by_questions"] = docs_df["id"].apply(
+                lambda doc_id: questions_df[
+                    questions_df["sources"].apply(lambda sources: doc_id in sources)
+                ]["id"].tolist()
+            )
+        else:
+            docs_df["used_by_questions"] = [[] for _ in range(len(docs_df))]
+        
+        docs_df["used_by_num_questions"] = docs_df["used_by_questions"].apply(len)
+        docs_df["used_by_question_first"] = docs_df["used_by_questions"].apply(
+            lambda x: next(iter(x), None)
+        )
+
+        # Combine dataframes
+        df = pd.concat([docs_df, questions_df], ignore_index=True)
+        return df
+
+    def _get_docs_df(self):
+        """Helper method to get documents dataframe."""
         deps = Dependencies()
         pd, np, _, _ = deps.get_analysis_deps()
         
         # Get embeddings dimension
         embedding_dim = self.embedding_service.get_dimension()
         
-        # Initialize empty arrays for data
-        texts, embeddings, metadata = [], [], []
-        
         # Get documents from main index
         docs = self.get_documents(self.index_name)
-        for doc in docs:
-            texts.append(doc.page_content)
-            embeddings.append(doc.metadata.get('embedding', np.zeros(embedding_dim)))
-            metadata.append(doc.metadata)
         
-        # Get questions if they exist
+        # Create dataframe
+        return pd.DataFrame({
+            'id': [doc.metadata.get('id', '') for doc in docs],
+            'text': [doc.page_content for doc in docs],
+            'embedding': [doc.metadata.get('embedding', np.zeros(embedding_dim)) for doc in docs],
+            'metadata': [doc.metadata for doc in docs]
+        })
+
+    def _get_questions_df(self, query_index_name):
+        """Helper method to get questions dataframe."""
+        deps = Dependencies()
+        pd, np, _, _ = deps.get_analysis_deps()
+        
+        # Get embeddings dimension  
+        embedding_dim = self.embedding_service.get_dimension()
+        
         try:
             questions = self.get_documents(query_index_name)
-            for q in questions:
-                texts.append(q.page_content)
-                embeddings.append(q.metadata.get('embedding', np.zeros(embedding_dim)))
-                metadata.append(q.metadata)
-        except Exception:
-            pass  # No questions found
             
-        # Create DataFrame
-        df = pd.DataFrame({
-            'text': texts,
-            'embedding': embeddings,
-            'metadata': metadata
-        })
-        
-        return df
+            # Create dataframe
+            df = pd.DataFrame({
+                'id': [q.metadata.get('id', '') for q in questions],
+                'text': [q.page_content for q in questions],
+                'embedding': [q.metadata.get('embedding', np.zeros(embedding_dim)) for q in questions],
+                'metadata': [q.metadata for q in questions],
+                'answer': [q.metadata.get('answer', '') for q in questions],
+                'sources': [q.metadata.get('sources', '').split(',') for q in questions]
+            })
+            return df
+        except Exception:
+            return pd.DataFrame(columns=['id', 'text', 'embedding', 'metadata', 'answer', 'sources'])
+
     def add_clusters(self,
                     df,
                     n_clusters,
