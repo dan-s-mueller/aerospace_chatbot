@@ -1,9 +1,6 @@
 from .core import (
     Dependencies, 
-    cache_resource,
     ConfigurationError,
-    get_cache_decorator, 
-    get_cache_data_decorator,
     load_config,
     get_secrets,
     set_secrets
@@ -40,10 +37,7 @@ __version__ = "0.0.9"
 __all__ = [
     # Core
     'Dependencies', 
-    'cache_resource',
     'ConfigurationError',
-    'get_cache_decorator', 
-    'get_cache_data_decorator',
     'load_config',
     'get_secrets',
     'set_secrets',  

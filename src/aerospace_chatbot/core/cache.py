@@ -1,34 +1,34 @@
 """Centralized dependency management and caching."""
 
-def get_cache_decorator():
-    """Returns appropriate cache decorator based on environment"""
-    try:
-        import streamlit as st
-        return st.cache_resource
-    except ImportError:
-        # Return no-op decorator when not in Streamlit
-        return lambda *args, **kwargs: (lambda func: func)
-    except RuntimeError:
-        # Silently handle case when Streamlit runtime is not found
-        return lambda *args, **kwargs: (lambda func: func)
+# def get_cache_decorator():
+#     """Returns appropriate cache decorator based on environment"""
+#     try:
+#         import streamlit as st
+#         return st.cache_resource
+#     except ImportError:
+#         # Return no-op decorator when not in Streamlit
+#         return lambda *args, **kwargs: (lambda func: func)
+#     except RuntimeError:
+#         # Silently handle case when Streamlit runtime is not found
+#         return lambda *args, **kwargs: (lambda func: func)
 
-# Replace @st.cache_resource with dynamic decorator
-cache_resource = get_cache_decorator()
+# # Replace @st.cache_resource with dynamic decorator
+# cache_resource = get_cache_decorator()
 
-def get_cache_data_decorator():
-    """Returns appropriate cache_data decorator based on environment"""
-    try:
-        import streamlit as st
-        return st.cache_data
-    except ImportError:
-        # Return no-op decorator when not in Streamlit
-        return lambda *args, **kwargs: (lambda func: func)
-    except RuntimeError:
-        # Silently handle case when Streamlit runtime is not found
-        return lambda *args, **kwargs: (lambda func: func)
+# def get_cache_data_decorator():
+#     """Returns appropriate cache_data decorator based on environment"""
+#     try:
+#         import streamlit as st
+#         return st.cache_data
+#     except ImportError:
+#         # Return no-op decorator when not in Streamlit
+#         return lambda *args, **kwargs: (lambda func: func)
+#     except RuntimeError:
+#         # Silently handle case when Streamlit runtime is not found
+#         return lambda *args, **kwargs: (lambda func: func)
 
 # Replace @st.cache_data with dynamic decorator
-cache_data = get_cache_data_decorator()
+# cache_data = get_cache_data_decorator()
 
 class Dependencies:
     """Centralized dependency management with lazy loading."""
@@ -41,7 +41,7 @@ class Dependencies:
         return cls._instance
     
     @staticmethod
-    @cache_resource
+    # @cache_resource
     def get_llm_deps():
         """Load LLM dependencies."""
         from langchain_openai import ChatOpenAI
@@ -49,7 +49,7 @@ class Dependencies:
         return ChatOpenAI, ChatAnthropic
     
     @staticmethod
-    @cache_resource
+    # @cache_resource
     def get_embedding_deps():
         """Load embedding dependencies."""
         from langchain_openai import OpenAIEmbeddings
@@ -58,7 +58,7 @@ class Dependencies:
         return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
     
     @staticmethod
-    @cache_resource
+    # @cache_resource
     def get_db_deps():
         """Load database dependencies."""
         from pinecone import Pinecone as pinecone_client
@@ -67,7 +67,7 @@ class Dependencies:
         return pinecone_client, chromadb, ServerlessSpec
     
     @staticmethod
-    @cache_resource
+    # @cache_resource
     def get_vectorstore_deps():
         """Load vector store related dependencies."""
         from langchain_pinecone import PineconeVectorStore
@@ -77,7 +77,7 @@ class Dependencies:
         return PineconeVectorStore, Chroma, MultiVectorRetriever, LocalFileStore
     
     @staticmethod
-    @cache_resource
+    # @cache_resource
     def get_query_deps():
         """Load query processing related dependencies."""
         from operator import itemgetter
@@ -88,7 +88,7 @@ class Dependencies:
         return itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, ConversationBufferMemory, get_buffer_string
     
     @staticmethod
-    @cache_resource
+    # @cache_resource
     def get_analysis_deps():
         """Load analysis related dependencies."""
         import pandas as pd
@@ -98,7 +98,7 @@ class Dependencies:
         return pd, np, KMeans, Dataset
 
     @staticmethod
-    @cache_resource
+    # @cache_resource
     def get_pdf_deps():
         """Load PDF processing dependencies."""
         import fitz

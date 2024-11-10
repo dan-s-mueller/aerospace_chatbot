@@ -4,13 +4,11 @@ import streamlit as st
 import os, ast, tempfile
 from streamlit_pdf_viewer import pdf_viewer
 
-from ..core.cache import Dependencies, get_cache_data_decorator
+from ..core.cache import Dependencies
 from ..core.config import get_secrets
 from ..services.database import DatabaseService
 from ..services.embeddings import EmbeddingService
 from ..processing.documents import DocumentProcessor
-
-cache_data = get_cache_data_decorator()
 
 def setup_page_config(title: str = "Aerospace Chatbot", layout: str = "wide"):
     """Configure Streamlit page settings."""
@@ -230,7 +228,7 @@ def _process_uploads(sb, temp_files):
         target_namespace=st.session_state.user_upload,
         show_progress=True
     )
-@cache_data
+# @cache_data
 def _extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
     deps = Dependencies()

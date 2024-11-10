@@ -3,9 +3,12 @@
 import os, shutil
 import re
 from pathlib import Path
+import time
 
-from ..core.cache import Dependencies, get_cache_decorator
+from ..core.cache import Dependencies
 from ..services.prompts import CLUSTER_LABEL
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from pinecone.exceptions import NotFoundException, PineconeApiException
 
 class DatabaseService:
     """Handles database operations for different vector stores."""
@@ -37,50 +40,15 @@ class DatabaseService:
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
-        return self.vectorstore
-    def delete_index(self):
-        """Delete an index from the database."""
-        # Need to decide if a databaseprocessor can have multiple index names, this only processes the name assigned to the processor, assuming one per processor.
-        # FIXME won't delete local filestore data
-        if self.db_type == 'chromadb':
-            _, chromadb, _ = self._deps.get_db_deps()
-            
-            try:
-                db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
-                client = chromadb.PersistentClient(path=str(db_path))
-                
-                collections = client.list_collections()
-                if any(c.name == self.index_name for c in collections):
-                    client.delete_collection(self.index_name)
-            except Exception as e:
-                print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
-            
-        elif self.db_type == 'Pinecone':
-            pinecone_client, _, ServerlessSpec = self._deps.get_db_deps()
-   
-            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-            try:
-                # Only attempt deletion if index exists
-                if self.index_name in [idx.name for idx in pc.list_indexes()]:
-                    pc.delete_index(self.index_name)
-            except Exception as e:
-                print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
-        elif self.db_type == 'RAGatouille':
-            try:
-                ragatouille_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes', self.index_name)
-                shutil.rmtree(ragatouille_path)
-            except Exception as e:
-                print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
     def index_documents(self,
                        chunking_result,
                        batch_size=100,
                        clear=False,
                        show_progress=False):
         """Index processed documents. This is where the index is initialized or created if required."""
-        OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
 
         # Initialize database
-        self.vectorstore = self.initialize_database(
+        self.initialize_database(
             namespace=self.namespace,
             clear=clear
         )
@@ -116,14 +84,14 @@ class DatabaseService:
         # FIXME initialize database first, this function deosn't exist
         index = self.get_index(self.index_name)
         
-        if show_progress:
-            try:
-                # TODO update with dependency cache
-                import streamlit as st
-                progress_text = "Document merging in progress..."
-                my_bar = st.progress(0, text=progress_text)
-            except ImportError:
-                show_progress = False
+        # if show_progress:
+        #     try:
+        #         # TODO update with dependency cache
+        #         import streamlit as st
+        #         progress_text = "Document merging in progress..."
+        #         my_bar = st.progress(0, text=progress_text)
+        #     except ImportError:
+        #         show_progress = False
         
         # Get list of all vector IDs
         ids = []
@@ -149,13 +117,47 @@ class DatabaseService:
             # Upsert vectors to target namespace
             index.upsert(vectors=vectors_to_upsert, namespace=target_namespace)
             
-            if show_progress:
-                progress_percentage = min(1.0, (i + batch_size) / len(ids))
-                my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+            # if show_progress:
+            #     progress_percentage = min(1.0, (i + batch_size) / len(ids))
+            #     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         
-        if show_progress:
-            my_bar.empty()
-    
+        # if show_progress:
+        #     my_bar.empty()
+
+    def delete_index(self):
+        """Delete an index from the database."""
+        # Need to decide if a databaseprocessor can have multiple index names, this only processes the name assigned to the processor, assuming one per processor.
+        # FIXME won't delete local filestore data
+        if self.db_type == 'chromadb':
+            _, chromadb, _ = self._deps.get_db_deps()
+            
+            try:
+                db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
+                client = chromadb.PersistentClient(path=str(db_path))
+                
+                collections = client.list_collections()
+                if any(c.name == self.index_name for c in collections):
+                    client.delete_collection(self.index_name)
+            except Exception as e:
+                print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
+            
+        elif self.db_type == 'Pinecone':
+            pinecone_client, _, ServerlessSpec = self._deps.get_db_deps()
+   
+            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+            try:
+                # Only attempt deletion if index exists
+                if self.index_name in [idx.name for idx in pc.list_indexes()]:
+                    pc.delete_index(self.index_name)
+            except Exception as e:
+                print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
+        elif self.db_type == 'RAGatouille':
+            try:
+                ragatouille_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes', self.index_name)
+                shutil.rmtree(ragatouille_path)
+            except Exception as e:
+                print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
+                
     def get_docs_questions_df(self, 
                              query_index_name):
         """Get documents and questions from database as a DataFrame."""
@@ -234,14 +236,15 @@ class DatabaseService:
             token=os.getenv('HUGGINGFACEHUB_API_KEY')
         )
     @staticmethod
-    def get_available_indexes(db_type, embedding_name, rag_type):
+    def get_available_indexes(db_type, embedding_model, rag_type):
         """Get available indexes based on current settings."""
         # FIXME do this filtering based on index metadata, it won't work properly
         available_indexes = []
+        index_metadatas = []
 
         def _check_get_index_criteria(index_name):
             """Check if index meets RAG type criteria."""
-            if not index_name.endswith('-queries'):
+            if index_name.endswith('-queries'):
                 return False
                 
             return (rag_type == 'Parent-Child' and index_name.endswith('-parent-child')) or \
@@ -257,11 +260,11 @@ class DatabaseService:
             for index in indexes:
                 if not _check_get_index_criteria(index.name):
                     continue
-
                 collection = client.get_collection(index.name)
                 metadata = collection.get(ids=['db_metadata'])
-                if metadata and metadata[0]['metadata'].get('embedding_model') == embedding_name:
+                if metadata and metadata['metadatas'][0].get('embedding_model') == embedding_model:
                     available_indexes.append(index.name)
+                    index_metadatas.append(metadata['metadatas'][0])
 
         def _get_pinecone_indexes():
             """Get available Pinecone indexes."""
@@ -272,12 +275,11 @@ class DatabaseService:
             for index in indexes:
                 if not _check_get_index_criteria(index.name):
                     continue
-
                 index_obj = pc.Index(index.name)
                 metadata = index_obj.fetch(ids=['db_metadata'])
-                if metadata and metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_name:
+                if metadata and metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_model:
                     available_indexes.append(index.name)
-
+                    index_metadatas.append(metadata['vectors']['db_metadata']['metadata'])
         try:
             if db_type == 'ChromaDB':
                 _get_chromadb_indexes()
@@ -287,13 +289,13 @@ class DatabaseService:
                 index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes')
                 if os.path.exists(index_path):
                     for item in os.listdir(index_path):
-                        if os.path.isdir(os.path.join(index_path, item)):
-                            # FIXME check that there are actually files for the index in the directory
+                        index_dir = os.path.join(index_path, item)
+                        if os.path.isdir(index_dir) and os.listdir(index_dir):
                             available_indexes.append(item)
         except:
             return []
         
-        return available_indexes
+        return available_indexes, index_metadatas
     @staticmethod
     def get_database_status(self,db_type):
         """Get status of database indexes/collections."""
@@ -387,18 +389,30 @@ class DatabaseService:
             embedding_function=self.embedding_service.get_embeddings()
         )
     
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type((PineconeApiException, NotFoundException)),
+        reraise=True
+    )
     def _init_pinecone(self, clear=False):
         """Initialize Pinecone."""
         # Check if index exists
         pinecone_client, _, ServerlessSpec = self._deps.get_db_deps()
         PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
 
-        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY')) # Need touse the native client since langchain can't upload a dummy embedding :(
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY')) # Need to use the native client since langchain can't upload a dummy embedding :(
         if clear:
-            self.delete_index()     
+            self.delete_index()
+            # Wait until index is deleted
+            while self.index_name in [idx.name for idx in pc.list_indexes()]:
+                time.sleep(2)
+
+        # Try to describe the index
         try:
-            pc.describe_index()
-        except:
+            pc.describe_index(self.index_name)
+        except NotFoundException:
+            # Index doesn't exist, create it
             pc.create_index(
                 self.index_name,
                 dimension=self.embedding_service.get_dimension(),
@@ -407,6 +421,7 @@ class DatabaseService:
                     region='us-west-2'
                 )
             )
+        
         return PineconeVectorStore(
             index=pc.Index(self.index_name),
             index_name=self.index_name,
@@ -492,13 +507,13 @@ class DatabaseService:
         if chunking_result.chunk_overlap is not None:
             index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
         if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
-            index_metadata['query_model']= "OpenAI"
+            index_metadata['embedding_family']= "OpenAI"
             index_metadata['embedding_model'] = self.embedding_service.model_name
         elif isinstance(self.embedding_service.get_embeddings(), VoyageAIEmbeddings):
-            index_metadata['query_model'] = "Voyage"
+            index_metadata['embedding_family'] = "Voyage"
             index_metadata['embedding_model'] = self.embedding_service.model_name
         elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
-            index_metadata['query_model'] = "Hugging Face"
+            index_metadata['embedding_family'] = "Hugging Face"
             index_metadata['embedding_model'] = self.embedding_service.model_name
 
         embedding_size = self.embedding_service.get_dimension()
@@ -514,7 +529,7 @@ class DatabaseService:
                 'metadata': index_metadata
             }])
         
-        elif self.db_type == "Chroma":
+        elif self.db_type == "ChromaDB":
             chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
             index = chroma_native.get_collection(name=self.index_name)
             index.add(
@@ -568,17 +583,17 @@ class DatabaseService:
             if ".." in name:
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
 
-    def _upsert_docs(self, chunking_result, batch_size, show_progress, clear=False):
+    def _upsert_docs(self, chunking_result, batch_size, show_progress=False, clear=False):
         """Upsert documents. Used for all RAG types. Clear only used for RAGatouille."""
         # TODO update to use dependency cache
         from langchain.storage import LocalFileStore
         from langchain.retrievers.multi_vector import MultiVectorRetriever
         from ..processing.documents import DocumentProcessor
 
-        if show_progress:  
-            import streamlit as st
-            progress_text = "Document indexing in progress..."
-            my_bar = st.progress(0, text=progress_text)
+        # if show_progress:  
+        #     import streamlit as st
+        #     progress_text = "Document indexing in progress..."
+        #     my_bar = st.progress(0, text=progress_text)
         
         # Standard for pinecone and chroma
         if self.rag_type == 'Standard':
@@ -594,9 +609,9 @@ class DatabaseService:
                     continue
                 else:
                     raise NotImplementedError
-                if show_progress:
-                    progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
-                    my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
+                # if show_progress:
+                #     progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
+                #     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         
         # RAGatouille for all chunks at once
         if self.db_type == "RAGatouille":
@@ -615,7 +630,7 @@ class DatabaseService:
             if self.db_type == 'RAGatouille':
                 raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
             else:
-                lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / self.index_name
+                lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
                 store = LocalFileStore(lfs_path)
                 
                 id_key = "doc_id"
@@ -641,13 +656,13 @@ class DatabaseService:
                     else:
                         self.vectorstore.add_documents(documents=batch, ids=batch_ids)
                     
-                    if show_progress:
-                        progress_percentage = i / len(chunks)
-                        my_bar.progress(progress_percentage, text=f'Document indexing in progress...{progress_percentage*100:.2f}%')
+                    # if show_progress:
+                    #     progress_percentage = i / len(chunks)
+                    #     my_bar.progress(progress_percentage, text=f'Document indexing in progress...{progress_percentage*100:.2f}%')
                 
                 # Index parent docs all at once
                 retriever.docstore.mset(list(zip(doc_ids, pages)))
                 self.retriever = retriever
         
-        if show_progress:
-            my_bar.empty()
+        # if show_progress:
+        #     my_bar.empty()

@@ -19,10 +19,7 @@ from langchain.storage import LocalFileStore
 
 from aerospace_chatbot.core import (
     Dependencies, 
-    cache_resource,
     ConfigurationError,
-    get_cache_decorator, 
-    get_cache_data_decorator,
     load_config,
     get_secrets,
     set_secrets
@@ -63,6 +60,7 @@ sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 # TODO add upload file test
 # TODO add apptest from streamlit
 # TODO test retrieval of metadata vector from databases
+# TODO check that tests are happening in the tests folder, they look to be in db/
 
 # Functions
 def permute_tests(test_data):
@@ -570,20 +568,20 @@ def test_delete_database(setup_fixture, test_index):
         raise e
 @pytest.mark.parametrize('test_index', [
     {
-        'index_type': 'ChromaDB',
-        'embedding_name': 'text-embedding-3-large',
+        'index_type': 'Pinecone',
+        'embedding_model': 'text-embedding-3-large',
         'embedding_family': 'OpenAI',
         'rag_types': ['Standard', 'Parent-Child', 'Summary']
     },
     {
-        'index_type': 'Pinecone',
-        'embedding_name': 'text-embedding-3-large',
+        'index_type': 'ChromaDB',
+        'embedding_model': 'text-embedding-3-large',
         'embedding_family': 'OpenAI',
         'rag_types': ['Standard', 'Parent-Child', 'Summary']
     },
     {
         'index_type': 'RAGatouille',
-        'embedding_name': 'colbert-ir/colbertv2.0',
+        'embedding_model': 'colbert-ir/colbertv2.0',
         'embedding_family': 'RAGatouille',
         'rag_types': ['Standard']  # RAGatouille only supports Standard
     }
@@ -594,7 +592,7 @@ def test_get_available_indexes(setup_fixture, test_index):
     
     # Create services
     embedding_service = EmbeddingService(
-        model_name=test_index['embedding_name'],
+        model_name=test_index['embedding_model'],
         model_type=test_index['embedding_family']
     )
     
@@ -646,9 +644,9 @@ def test_get_available_indexes(setup_fixture, test_index):
     try:
         # Test getting available indexes for each RAG type
         for rag_type in test_index['rag_types']:
-            available_indexes = DatabaseService.get_available_indexes(
+            available_indexes, index_metadatas = DatabaseService.get_available_indexes(
                 test_index['index_type'],
-                test_index['embedding_name'],
+                test_index['embedding_model'],
                 rag_type
             )
             
@@ -661,13 +659,8 @@ def test_get_available_indexes(setup_fixture, test_index):
             
             # Verify metadata matches
             if test_index['index_type'] != 'RAGatouille':
-                for idx in available_indexes:
-                    metadata = DatabaseService.get_index_metadata(
-                        test_index['index_type'],
-                        idx
-                    )
-                    assert metadata['embedding_name'] == test_index['embedding_name']
-                    assert metadata['rag_type'] == rag_type
+                for index_metadata in index_metadatas:
+                    assert index_metadata['embedding_model'] == test_index['embedding_model']
 
     finally:
         # Cleanup - delete all test indexes

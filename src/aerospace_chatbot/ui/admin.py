@@ -54,7 +54,7 @@ class SidebarManager:
             self._ensure_dependencies()
 
             # Render GUI elements
-            self._render_index_selection()
+            self.available_indexes, self.index_metadatas = self._render_index_selection()
             self._render_llm()
             self._render_rag_type()    
             self._render_model_options()
@@ -97,7 +97,7 @@ class SidebarManager:
         st.sidebar.title('Index Selected')
         
         # Get available indexes based on current settings
-        available_indexes = DatabaseService.get_available_indexes(
+        available_indexes, index_metadatas = DatabaseService.get_available_indexes(
             self.sb_out['index_type'],
             self.sb_out['embedding_name'],
             self.sb_out['rag_type']
@@ -113,6 +113,8 @@ class SidebarManager:
             disabled=st.session_state.index_selected_disabled,
             help='Select the index to use for the application.'
         )
+
+        return available_indexes, index_metadatas
         
     def _render_llm(self):
         """Render LLM selection section."""

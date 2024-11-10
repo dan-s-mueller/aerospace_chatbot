@@ -6,22 +6,23 @@ from dotenv import load_dotenv, find_dotenv
 class ConfigurationError(Exception):
     """Raised when there are configuration related errors."""
     pass
-def get_cache_decorator():
-    """Returns appropriate cache decorator based on environment."""
-    try:
-        import streamlit as st
-        return st.cache_resource
-    except ImportError:
-        # Return no-op decorator when not in Streamlit
-        return lambda *args, **kwargs: (lambda func: func)
-def get_cache_data_decorator():
-    """Returns appropriate cache_data decorator based on environment."""
-    try:
-        import streamlit as st
-        return st.cache_data
-    except ImportError:
-        # Return no-op decorator when not in Streamlit
-        return lambda *args, **kwargs: (lambda func: func)
+# def get_cache_decorator():
+#     """Returns appropriate cache decorator based on environment."""
+#     try:
+#         import streamlit as st
+#         return st.cache_resource
+#     except ImportError:
+#         # Return no-op decorator when not in Streamlit
+#         return lambda *args, **kwargs: (lambda func: func)
+# def get_cache_data_decorator():
+#     """Returns appropriate cache_data decorator based on environment."""
+#     try:
+#         import streamlit as st
+#         return st.cache_data
+#     except ImportError:
+#         # Return no-op decorator when not in Streamlit
+#         return lambda *args, **kwargs: (lambda func: func)
+    
 def load_config(config_path):
     """Load configuration from file with caching. """
     if not os.path.exists(config_path):
