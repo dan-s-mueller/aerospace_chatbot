@@ -464,6 +464,8 @@ def get_docs_questions_df(db_service, query_db_service):
 
     def _process_chromadb_response(response, doc_type):
         """Process ChromaDB response into DataFrame."""
+        print(f"Response: {response}")
+
         if doc_type == 'document':
             # Filter out db_metadata document
             filtered_indices = [i for i, id in enumerate(response["ids"]) if id != 'db_metadata']

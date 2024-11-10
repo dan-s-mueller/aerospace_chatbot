@@ -980,7 +980,6 @@ def test_get_docs_questions_df(setup_fixture, test_index):
             "first_source", "used_by_questions", "used_by_num_questions",
             "used_by_question_first"
         ])
-        print(f" First 10 rows of dataframe: {df.head(10)}")
 
         # Cleanup
         db_service.delete_index()
