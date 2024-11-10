@@ -78,8 +78,6 @@ class DatabaseService:
                        show_progress=False):
         """Index processed documents. This is where the index is initialized or created if required."""
         OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
-        # TODO update with dependency cache
-        import streamlit as st
 
         # Initialize database
         self.vectorstore = self.initialize_database(
@@ -235,57 +233,67 @@ class DatabaseService:
             dataset_name, 
             token=os.getenv('HUGGINGFACEHUB_API_KEY')
         )
-    def get_available_indexes(self):
+    @staticmethod
+    def get_available_indexes(db_type, embedding_name, rag_type):
         """Get available indexes based on current settings."""
         # FIXME do this filtering based on index metadata, it won't work properly
-        name = []
-        base_name = self.embedding_service.model_name.replace('/', '-')
-        
-        if self.db_type == 'ChromaDB':
-            try:
-                _, chromadb, _ = self._deps.get_db_deps()
-                client = chromadb.PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
-                collections = client.list_collections()
+        available_indexes = []
+
+        def _check_get_index_criteria(index_name):
+            """Check if index meets RAG type criteria."""
+            if not index_name.endswith('-queries'):
+                return False
                 
-                for collection in collections:
-                    if not collection.name.startswith(base_name) or collection.name.endswith('-queries'):
-                        continue
-                        
-                    if (self.rag_type == 'Parent-Child' and collection.name.endswith('-parent-child')) or \
-                       (self.rag_type == 'Summary' and collection.name.endswith('-summary')) or \
-                       (self.rag_type == 'Standard' and not collection.name.endswith(('-parent-child', '-summary'))):
-                        name.append(collection.name)
-            except:
-                return []
-                
-        elif self.db_type == 'Pinecone':
-            try:
-                Pinecone, _, _ = self._deps.get_db_deps()
-                pc = Pinecone()
-                indexes = pc.list_indexes()
-                
-                for index in indexes:
-                    if not index.name.startswith(base_name) or index.name.endswith('-queries'):
-                        continue
-                        
-                    if (self.rag_type == 'Parent-Child' and index.name.endswith('-parent-child')) or \
-                       (self.rag_type == 'Summary' and index.name.endswith('-summary')) or \
-                       (self.rag_type == 'Standard' and not index.name.endswith(('-parent-child', '-summary'))):
-                        name.append(index.name)
-            except:
-                return []
-                
-        elif self.db_type == 'RAGatouille':
-            try:
+            return (rag_type == 'Parent-Child' and index_name.endswith('-parent-child')) or \
+                   (rag_type == 'Summary' and index_name.endswith('-summary')) or \
+                   (rag_type == 'Standard' and not index_name.endswith(('-parent-child', '-summary')))
+
+        def _get_chromadb_indexes():
+            """Get available ChromaDB indexes."""
+            import chromadb
+            client = chromadb.PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
+            indexes = client.list_collections()
+            
+            for index in indexes:
+                if not _check_get_index_criteria(index.name):
+                    continue
+
+                collection = client.get_collection(index.name)
+                metadata = collection.get(ids=['db_metadata'])
+                if metadata and metadata[0]['metadata'].get('embedding_model') == embedding_name:
+                    available_indexes.append(index.name)
+
+        def _get_pinecone_indexes():
+            """Get available Pinecone indexes."""
+            from pinecone import Pinecone
+            pc = Pinecone()
+            indexes = pc.list_indexes()
+            
+            for index in indexes:
+                if not _check_get_index_criteria(index.name):
+                    continue
+
+                index_obj = pc.Index(index.name)
+                metadata = index_obj.fetch(ids=['db_metadata'])
+                if metadata and metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_name:
+                    available_indexes.append(index.name)
+
+        try:
+            if db_type == 'ChromaDB':
+                _get_chromadb_indexes()
+            elif db_type == 'Pinecone':
+                _get_pinecone_indexes()
+            elif db_type == 'RAGatouille':
                 index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes')
                 if os.path.exists(index_path):
                     for item in os.listdir(index_path):
-                        if os.path.isdir(os.path.join(index_path, item)) and item.startswith(base_name):
-                            name.append(item)
-            except:
-                return []
+                        if os.path.isdir(os.path.join(index_path, item)):
+                            # FIXME check that there are actually files for the index in the directory
+                            available_indexes.append(item)
+        except:
+            return []
         
-        return name
+        return available_indexes
     @staticmethod
     def get_database_status(self,db_type):
         """Get status of database indexes/collections."""
@@ -485,13 +493,13 @@ class DatabaseService:
             index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
         if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
             index_metadata['query_model']= "OpenAI"
-            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
+            index_metadata['embedding_model'] = self.embedding_service.model_name
         elif isinstance(self.embedding_service.get_embeddings(), VoyageAIEmbeddings):
             index_metadata['query_model'] = "Voyage"
-            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model
+            index_metadata['embedding_model'] = self.embedding_service.model_name
         elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
             index_metadata['query_model'] = "Hugging Face"
-            index_metadata['embedding_model'] = self.embedding_service.get_embeddings().model_name
+            index_metadata['embedding_model'] = self.embedding_service.model_name
 
         embedding_size = self.embedding_service.get_dimension()
         metadata_vector = [1e-5] * embedding_size

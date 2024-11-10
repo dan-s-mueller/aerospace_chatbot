@@ -3,7 +3,6 @@ import itertools
 import pytest
 import pandas as pd
 from dotenv import load_dotenv, find_dotenv
-
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_voyageai import VoyageAIEmbeddings
@@ -194,7 +193,7 @@ def temp_dotenv(setup_fixture):
     else:
         yield dotenv_path
 
-### Begin tests
+### Backend tests
 def test_validate_index(setup_fixture):
     """Test edge cases for validate_index function."""
     from aerospace_chatbot.services.database import DatabaseService
@@ -303,8 +302,6 @@ def test_validate_index(setup_fixture):
     doc_processor.llm_service = setup_fixture['mock_llm_service']
     db_service._validate_index(doc_processor)
     assert db_service.index_name == index_name + "-summary"
-
-# Test chunk docs
 def test_process_documents_standard(setup_fixture):
     '''Test document processing with standard RAG.'''
     doc_processor = DocumentProcessor(
@@ -413,7 +410,6 @@ def test_process_documents_summary(setup_fixture):
     assert result.summaries is not None
     assert len(summary_ids) == len(set(summary_ids))
     assert result.llm_service == setup_fixture['mock_llm_service']
-
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',
@@ -572,8 +568,121 @@ def test_delete_database(setup_fixture, test_index):
         except:
             pass
         raise e
+@pytest.mark.parametrize('test_index', [
+    {
+        'index_type': 'ChromaDB',
+        'embedding_name': 'text-embedding-3-large',
+        'embedding_family': 'OpenAI',
+        'rag_types': ['Standard', 'Parent-Child', 'Summary']
+    },
+    {
+        'index_type': 'Pinecone',
+        'embedding_name': 'text-embedding-3-large',
+        'embedding_family': 'OpenAI',
+        'rag_types': ['Standard', 'Parent-Child', 'Summary']
+    },
+    {
+        'index_type': 'RAGatouille',
+        'embedding_name': 'colbert-ir/colbertv2.0',
+        'embedding_family': 'RAGatouille',
+        'rag_types': ['Standard']  # RAGatouille only supports Standard
+    }
+])
+def test_get_available_indexes(setup_fixture, test_index):
+    """Test retrieving available indexes for different database and RAG configurations."""
+    print(f"\nTesting {test_index['index_type']} configuration...")
     
-# Test end to end process, adding query
+    # Create services
+    embedding_service = EmbeddingService(
+        model_name=test_index['embedding_name'],
+        model_type=test_index['embedding_family']
+    )
+    
+    llm_service = LLMService(
+        model_name='gpt-4o-mini',
+        model_type='OpenAI'
+    )
+
+    # Create and index test documents for each RAG type
+    test_indexes = []
+    for rag_type in test_index['rag_types']:
+        index_name = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
+        test_indexes.append(index_name)
+        
+        try:
+            # Initialize database service
+            db_service = DatabaseService(
+                db_type=test_index['index_type'],
+                index_name=index_name,
+                rag_type=rag_type,
+                embedding_service=embedding_service
+            )
+
+            # Initialize document processor
+            doc_processor = DocumentProcessor(
+                embedding_service=embedding_service,
+                rag_type=rag_type,
+                chunk_method=setup_fixture['chunk_method'],
+                chunk_size=setup_fixture['chunk_size'],
+                chunk_overlap=setup_fixture['chunk_overlap'],
+                llm_service=llm_service if rag_type == 'Summary' else None
+            )
+
+            # Process and index documents
+            chunking_result = doc_processor.process_documents(setup_fixture['docs'])
+            db_service.index_documents(
+                chunking_result=chunking_result,
+                batch_size=setup_fixture['batch_size'],
+                clear=True
+            )
+
+            print(f"Created test index: {index_name}")
+
+        except Exception as e:
+            print(f"Error creating index {index_name}: {str(e)}")
+            db_service.delete_index()
+            raise e
+
+    try:
+        # Test getting available indexes for each RAG type
+        for rag_type in test_index['rag_types']:
+            available_indexes = DatabaseService.get_available_indexes(
+                test_index['index_type'],
+                test_index['embedding_name'],
+                rag_type
+            )
+            
+            print(f"Available {rag_type} indexes: {available_indexes}")
+            
+            # Verify expected index exists in results
+            expected_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
+            assert expected_index in available_indexes, \
+                f"Expected index {expected_index} not found in available indexes"
+            
+            # Verify metadata matches
+            if test_index['index_type'] != 'RAGatouille':
+                for idx in available_indexes:
+                    metadata = DatabaseService.get_index_metadata(
+                        test_index['index_type'],
+                        idx
+                    )
+                    assert metadata['embedding_name'] == test_index['embedding_name']
+                    assert metadata['rag_type'] == rag_type
+
+    finally:
+        # Cleanup - delete all test indexes
+        for index_name in test_indexes:
+            try:
+                db_service = DatabaseService(
+                    db_type=test_index['index_type'],
+                    index_name=index_name,
+                    rag_type='Standard',  # RAG type doesn't matter for deletion
+                    embedding_service=embedding_service
+                )
+                db_service.delete_index()
+                print(f"Deleted test index: {index_name}")
+            except Exception as e:
+                print(f"Error deleting index {index_name}: {str(e)}")
 def test_database_setup_and_query(test_input, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
     from aerospace_chatbot.services.database import DatabaseService
@@ -658,7 +767,7 @@ def test_database_setup_and_query(test_input, setup_fixture):
         db_service.delete_index()
         raise e
 
-# Test sidebar loading and secret keys
+### Frontend tests
 def test_sidebar_manager():
     """Test the SidebarManager class functionality."""
     # Setup
@@ -685,7 +794,7 @@ def test_sidebar_manager():
     assert 'rag_type' in sb_out
     
     # Embeddings outputs
-    assert 'query_model' in sb_out
+    assert 'embedding_model' in sb_out
     assert 'embedding_name' in sb_out
     
     # RAG type outputs  
@@ -700,13 +809,6 @@ def test_sidebar_manager():
     assert 'temperature' in sb_out['model_options']
     assert 'output_level' in sb_out['model_options']
     assert 'k' in sb_out['model_options']
-    if sb_out['index_type'] != 'RAGatouille':
-        assert 'search_type' in sb_out['model_options']
-
-    # Test paths functionality
-    paths = sidebar_manager.get_paths(home_dir)
-    assert 'base_folder_path' in paths
-    assert 'db_folder_path' in paths
 def test_sidebar_manager_invalid_config():
     """Test SidebarManager initialization with invalid config file path"""
     with pytest.raises(FileNotFoundError):

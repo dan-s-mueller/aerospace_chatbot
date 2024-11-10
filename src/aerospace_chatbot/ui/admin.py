@@ -96,16 +96,8 @@ class SidebarManager:
         # FIXME there's a problem here with the udpate I made to not select by index name, but by metadata. Need to add filtering by metadata and list indices.
         st.sidebar.title('Index Selected')
         
-        # Initialize database service
-        db_service = DatabaseService(
-            self.sb_out['index_type'], 
-            self.sb_out['index_name'],
-            self.sb_out['rag_type'],
-            self.sb_out['embedding_model']
-        )
-        
         # Get available indexes based on current settings
-        available_indexes = db_service.get_available_indexes(
+        available_indexes = DatabaseService.get_available_indexes(
             self.sb_out['index_type'],
             self.sb_out['embedding_name'],
             self.sb_out['rag_type']
