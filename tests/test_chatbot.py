@@ -529,18 +529,21 @@ def test_delete_database(setup_fixture, test_index):
     )
 
     # Clean up any existing test indexes first
+    print(f"Deleting existing indexes before test cases: {index_name}")
     try:
         db_service.delete_index()
     except Exception as e:
         print(f"Info: Cleanup of existing index failed (this is expected if index didn't exist): {str(e)}")
 
     # Test Case 1: Delete non-existent database
+    print(f"Deleting non-existent database: {index_name}")
     try:
         db_service.delete_index()
     except Exception as e:
         assert "does not exist" in str(e).lower() or "not found" in str(e).lower()
 
     # Test Case 2: Create and delete standard database
+    print(f"Creating and deleting standard database: {index_name}")
     try:
         db_service.initialize_database(
             namespace=db_service.namespace,
@@ -785,12 +788,14 @@ def test_database_setup_and_query(test_input, setup_fixture):
         assert alternate_question is not None
         print('Query and alternative question successful!')
 
-        # Delete the index
+        # Delete the indexes
         db_service.delete_index()
+        qa_model.query_db_service.delete_index()  # Delete the query database index
+        
         if doc_processor.rag_type in ['Parent-Child', 'Summary']:
             lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
             assert not os.path.exists(lfs_path)  # Check that the local file store was deleted
-        print('Database deleted.')
+        print('Databases deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
         db_service.delete_index()
@@ -975,6 +980,7 @@ def test_get_docs_questions_df(setup_fixture, test_index):
             "first_source", "used_by_questions", "used_by_num_questions",
             "used_by_question_first"
         ])
+        print(f" First 10 rows of dataframe: {df.head(10)}")
 
         # Cleanup
         db_service.delete_index()

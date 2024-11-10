@@ -113,7 +113,7 @@ class DatabaseService:
         """Delete an index from the database."""
         # Need to decide if a databaseprocessor can have multiple index names, this only processes the name assigned to the processor, assuming one per processor.
         # FIXME won't delete local filestore data
-        if self.db_type == 'chromadb':
+        if self.db_type == 'ChromaDB':
             _, chromadb, _ = self._deps.get_db_deps()
             
             try:
@@ -123,6 +123,8 @@ class DatabaseService:
                 collections = client.list_collections()
                 if any(c.name == self.index_name for c in collections):
                     client.delete_collection(self.index_name)
+                else:
+                    print(f"Warning: Collection {self.index_name} not found. No deletion performed.")
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
             
@@ -134,6 +136,9 @@ class DatabaseService:
                 # Only attempt deletion if index exists
                 if self.index_name in [idx.name for idx in pc.list_indexes()]:
                     pc.delete_index(self.index_name)
+                    print(f"Index {self.index_name} deleted")
+                else:
+                    print(f"Warning: Index {self.index_name} not found. No deletion performed.")
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
         elif self.db_type == 'RAGatouille':
@@ -428,9 +433,14 @@ def get_docs_questions_df(db_service, query_db_service):
     """Get documents and questions from database as a DataFrame."""
     deps = Dependencies()
     pd, _, _, _ = deps.get_analysis_deps()
+    # TODO use dependency cache
+    from pinecone import Pinecone as pinecone_client
     
-    def _fetch_pinecone_docs(index):
+    def _fetch_pinecone_docs(index_name):
         """Fetch documents from Pinecone in batches."""
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+        index = pc.Index(index_name)
+
         ids = []
         for id_batch in index.list():
             ids.extend(id_batch)
@@ -438,8 +448,10 @@ def get_docs_questions_df(db_service, query_db_service):
         docs = []
         chunk_size = 200
         for i in range(0, len(ids), chunk_size):
-            vector = index.fetch(ids[i:i+chunk_size])['vectors']
-            vector_data = [value for value in vector.values()]
+            vector=index.fetch(ids[i:i+chunk_size])['vectors']
+            vector_data = []
+            for _, value in vector.items():
+                vector_data.append(value)
             docs.extend(vector_data)
         return docs
 
@@ -449,7 +461,7 @@ def get_docs_questions_df(db_service, query_db_service):
             return pd.DataFrame({
                 "id": response["ids"],
                 "source": [metadata.get("source") for metadata in response["metadatas"]],
-                "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
+                "page": [int(metadata.get("page", -1)) for metadata in response["metadatas"]],
                 "metadata": response["metadatas"],
                 "document": response["documents"],
                 "embedding": response["embeddings"],
@@ -469,7 +481,7 @@ def get_docs_questions_df(db_service, query_db_service):
             return pd.DataFrame({
                 "id": [data['id'] for data in docs],
                 "source": [data['metadata']['source'] for data in docs],
-                "page": [data['metadata']['page'] for data in docs],
+                "page": [int(data['metadata']['page']) for data in docs],
                 "metadata": [{'page':data['metadata']['page'],'source':data['metadata']['source']} for data in docs],
                 "document": [data['metadata']['page_content'] for data in docs],
                 "embedding": [data['values'] for data in docs],
@@ -513,7 +525,7 @@ def get_docs_questions_df(db_service, query_db_service):
                 df = _process_chromadb_response(response, doc_type)
                 
             elif db_type == 'Pinecone':
-                docs = _fetch_pinecone_docs(vectorstore.index)
+                docs = _fetch_pinecone_docs(index_name)
                 df = _process_pinecone_response(docs, doc_type)
                 
             else:
