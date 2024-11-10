@@ -88,6 +88,7 @@ class QAModel:
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
         # If compatible type, upsert query into query database
+        # FIXME remove this long print
         print(f"Result: {self.result[-1]}")
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
             self.query_db_service.vectorstore.add_documents([self._question_as_doc(query, self.result[-1])])
