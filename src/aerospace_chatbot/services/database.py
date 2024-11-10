@@ -161,6 +161,7 @@ class DatabaseService:
     def get_docs_questions_df(self, 
                              query_index_name):
         """Get documents and questions from database as a DataFrame."""
+        # FIXME, this requires a refactor from data_processing, it's missing the majority of the functionality
         # FIXME get query_index_name from databaseservice object.
         deps = Dependencies()
         pd, np, _, _ = deps.get_analysis_deps()

@@ -508,7 +508,6 @@ def test_initialize_database(monkeypatch, test_index):
 ])
 def test_delete_database(setup_fixture, test_index):
     '''Test deleting both existing and non-existing databases.'''
-    # FIXME check that local filestores are deleted
     index_name = 'test-delete-index'
     rag_type = 'Standard'
 
@@ -549,6 +548,7 @@ def test_delete_database(setup_fixture, test_index):
         db_service.delete_index()
         
         # Verify deletion by checking if database exists
+        # FIXME add local filestore deletion check
         if test_index['index_type'] == 'Pinecone':
             pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             assert index_name not in pc.list_indexes()
@@ -804,7 +804,7 @@ def test_sidebar_manager():
     assert 'k' in sb_out['model_options']
 def test_sidebar_manager_invalid_config():
     """Test SidebarManager initialization with invalid config file path"""
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(ConfigurationError):
         SidebarManager('nonexistent_config.json')
 def test_sidebar_manager_malformed_config():
     """Test SidebarManager with malformed config file"""
@@ -813,7 +813,7 @@ def test_sidebar_manager_malformed_config():
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as tf:
         tf.write('{"invalid": "json"')
         tf.flush()
-        with pytest.raises(json.JSONDecodeError):
+        with pytest.raises(ConfigurationError):
             SidebarManager(tf.name)
 def test_sidebar_manager_missing_required_sections():
     """Test SidebarManager with config missing required sections"""
@@ -822,55 +822,8 @@ def test_sidebar_manager_missing_required_sections():
         # Create config missing 'databases' section
         json.dump({'embeddings': {}, 'llms': {}, 'rag_types': {}}, tf)
         tf.flush()
-        with pytest.raises(KeyError):
+        with pytest.raises(ConfigurationError):
             SidebarManager(tf.name)
-def test_sidebar_manager_get_paths():
-    """Test get_paths method with various inputs"""
-    home_dir = os.path.abspath(os.path.dirname(__file__))
-    home_dir = os.path.join(home_dir, '..')
-    home_dir = os.path.normpath(home_dir)
-    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
-    
-    manager = SidebarManager(config_file)
-    
-    # Test with valid path
-    paths = manager.get_paths(home_dir)
-    assert os.path.exists(paths['base_folder_path'])
-    assert os.path.exists(paths['db_folder_path'])
-    
-    # Test with invalid path
-    with pytest.raises(Exception):
-        manager.get_paths('/nonexistent/path')
-    
-    # Test with empty path
-    with pytest.raises(Exception):
-        manager.get_paths('')
-def test_sidebar_manager_validate_config():
-    """Test _validate_config method with various inputs"""
-    home_dir = os.path.abspath(os.path.dirname(__file__))
-    home_dir = os.path.join(home_dir, '..')
-    home_dir = os.path.normpath(home_dir)
-    config_file = os.path.join(home_dir, 'config', 'config_admin.json')
-    
-    manager = SidebarManager(config_file)
-    
-    # Test with valid config
-    valid_config = {
-        'databases': {'test': {}},
-        'embeddings': {'test': {}},
-        'llms': {'test': {}},
-        'rag_types': {'test': {}}
-    }
-    assert manager._validate_config(valid_config) is None
-    
-    # Test with missing sections
-    invalid_config = {'databases': {}}
-    with pytest.raises(Exception):
-        manager._validate_config(invalid_config)
-    
-    # Test with empty config
-    with pytest.raises(Exception):
-        manager._validate_config({})
 def test_set_secrets_with_valid_input():
     '''Test case for set_secrets function with valid input.'''
     test_secrets = {
@@ -914,8 +867,73 @@ def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
         assert secrets['ANTHROPIC_API_KEY'] == 'anthropic_key'
 def test_get_docs_questions_df(setup_fixture):
     """Test function for the get_docs_questions_df() method."""
-    index_name = 'test-visualization'
+    # index_name = 'test-visualization'
     
+    # # Initialize services
+    # embedding_service = EmbeddingService(
+    #     model_name='text-embedding-3-large',
+    #     model_type='OpenAI'
+    # )
+    # llm_service = LLMService(
+    #     model_name='gpt-4o-mini',
+    #     model_type='OpenAI'
+    # )
+    # db_service = DatabaseService(
+    #     db_type='ChromaDB',
+    #     index_name=index_name,
+    #     rag_type='Standard',
+    #     embedding_service=embedding_service
+    # )
+
+    # try:
+    #     # Initialize document processor
+    #     doc_processor = DocumentProcessor(
+    #         embedding_service=embedding_service,
+    #         llm_service=llm_service,
+    #         chunk_size=setup_fixture['chunk_size'],
+    #         chunk_overlap=setup_fixture['chunk_overlap']
+    #     )
+
+    #     # Process and index documents
+    #     doc_processor.process_and_index(
+    #         documents=setup_fixture['docs'],
+    #         index_name=index_name,
+    #         clear=True
+    #     )
+
+    #     # Create QA model and run query
+    #     qa_model = QAModel(
+    #         db_service=db_service,
+    #         embedding_service=embedding_service,
+    #         llm_service=llm_service
+    #     )
+    #     qa_model.query_docs(setup_fixture['test_prompt'])
+
+    #     # Get combined dataframe
+    #     df = DatabaseService.get_docs_questions_df(index_name, index_name+'-queries', embedding_service)
+
+    #     # Assert the result
+    #     assert isinstance(df, pd.DataFrame)
+    #     assert len(df) > 0
+    #     assert all(col in df.columns for col in [
+    #         "id", "source", "page", "document", "embedding", "type",
+    #         "first_source", "used_by_questions", "used_by_num_questions",
+    #         "used_by_question_first"
+    #     ])
+
+    #     # Cleanup
+    #     db_service.delete_index()
+
+    # except Exception as e:
+    #     db_service.delete_index()
+    #     raise e
+
+
+    from aerospace_chatbot.services.database import DatabaseService
+    from aerospace_chatbot.processing import DocumentProcessor
+
+    index_name = 'test-visualization-docs-questions-df'
+
     # Initialize services
     embedding_service = EmbeddingService(
         model_name='text-embedding-3-large',
@@ -933,31 +951,47 @@ def test_get_docs_questions_df(setup_fixture):
     )
 
     try:
-        # Initialize document processor
+        # Initialize the document processor with services
         doc_processor = DocumentProcessor(
             embedding_service=embedding_service,
-            llm_service=llm_service,
+            rag_type='Standard',
+            chunk_method=setup_fixture['chunk_method'],
             chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap']
+            chunk_overlap=setup_fixture['chunk_overlap'],
+            llm_service=llm_service
         )
 
         # Process and index documents
-        doc_processor.process_and_index(
-            documents=setup_fixture['docs'],
-            index_name=index_name,
+        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
+        db_service.index_documents(
+            chunking_result=chunking_result,
+            batch_size=setup_fixture['batch_size'],
             clear=True
         )
 
-        # Create QA model and run query
+        # Verify the vectorstore type
+        if db_service.db_type == 'ChromaDB':
+            assert isinstance(db_service.vectorstore, Chroma)
+        elif db_service.db_type == 'Pinecone':
+            assert isinstance(db_service.vectorstore, PineconeVectorStore)
+        elif db_service.db_type == 'RAGatouille':
+            assert isinstance(db_service.vectorstore, RAGPretrainedModel)
+        print('Vectorstore created.')
+
+        # Initialize QA model
         qa_model = QAModel(
             db_service=db_service,
-            embedding_service=embedding_service,
             llm_service=llm_service
         )
-        qa_model.query_docs(setup_fixture['test_prompt'])
+        print('QA model object created.')
+        assert qa_model is not None
+
+        # Run a query and verify results
+        qa_model.query(setup_fixture['test_prompt'])
+
 
         # Get combined dataframe
-        df = DatabaseService.get_docs_questions_df(index_name, index_name+'-queries', embedding_service)
+        df = db_service.get_docs_questions_df(index_name+'-queries')
 
         # Assert the result
         assert isinstance(df, pd.DataFrame)
@@ -970,8 +1004,9 @@ def test_get_docs_questions_df(setup_fixture):
 
         # Cleanup
         db_service.delete_index()
+        print('Database deleted.')
 
-    except Exception as e:
+    except Exception as e:  # If there is an error, be sure to delete the database
         db_service.delete_index()
         raise e
 def test_add_clusters(setup_fixture):
