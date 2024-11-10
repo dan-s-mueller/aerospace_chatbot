@@ -157,6 +157,7 @@ class DatabaseService:
         os.makedirs(db_path, exist_ok=True)
         client = chromadb.PersistentClient(path=db_path)
         
+        # TODO add logic to print when a new index is created, vs an existing one is initialized
         if clear:
             self.delete_index()
 
@@ -165,6 +166,7 @@ class DatabaseService:
             collection_name=self.index_name,
             embedding_function=self.embedding_service.get_embeddings()
         )
+        print(f"ChromaDB index {self.index_name} initialized")
     
     @retry(
         stop=stop_after_attempt(5),
@@ -198,6 +200,7 @@ class DatabaseService:
                     region='us-west-2'
                 )
             )
+            print(f"Pinecone index {self.index_name} created")
         
         self.vectorstore = PineconeVectorStore(
             index=pc.Index(self.index_name),
@@ -211,7 +214,8 @@ class DatabaseService:
     def _init_ragatouille(self, clear=False):
         """Initialize RAGatouille."""
         from ragatouille import RAGPretrainedModel
-        
+        # FIXME this will always create a new index
+
         index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille')
         if clear:
             self.delete_index()
@@ -219,6 +223,7 @@ class DatabaseService:
             pretrained_model_name_or_path=self.embedding_service.model_name,
             index_root=index_path
         )
+        print(f"RAGatouille index {self.index_name} initialized")
     
     def _get_standard_retriever(self, search_kwargs):
         """Get standard retriever based on index type."""
@@ -441,6 +446,8 @@ def get_docs_questions_df(db_service, query_db_service):
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         index = pc.Index(index_name)
 
+        print(f"Fetching documents from Pinecone index: {index_name}")
+
         ids = []
         for id_batch in index.list():
             ids.extend(id_batch)
@@ -458,40 +465,46 @@ def get_docs_questions_df(db_service, query_db_service):
     def _process_chromadb_response(response, doc_type):
         """Process ChromaDB response into DataFrame."""
         if doc_type == 'document':
+            # Filter out db_metadata document
+            filtered_indices = [i for i, id in enumerate(response["ids"]) if id != 'db_metadata']
+            
             return pd.DataFrame({
-                "id": response["ids"],
-                "source": [metadata.get("source") for metadata in response["metadatas"]],
-                "page": [int(metadata.get("page", -1)) for metadata in response["metadatas"]],
-                "metadata": response["metadatas"],
-                "document": response["documents"],
-                "embedding": response["embeddings"],
+                "id": [response["ids"][i] for i in filtered_indices],
+                "source": [response["metadatas"][i].get("source", "") for i in filtered_indices],
+                "page": [int(response["metadatas"][i].get("page", -1)) for i in filtered_indices],
+                "metadata": [response["metadatas"][i] for i in filtered_indices],
+                "document": [response["documents"][i] for i in filtered_indices],
+                "embedding": [response["embeddings"][i] for i in filtered_indices],
             })
         else:  # question
             return pd.DataFrame({
                 "id": response["ids"],
                 "question": response["documents"],
-                "answer": [metadata.get("answer") for metadata in response["metadatas"]],
-                "sources": [metadata.get("sources", "").split(",") for metadata in response["metadatas"]],
+                "answer": [metadata.get("answer", "") for metadata in response["metadatas"]],
+                "sources": [metadata.get("sources", "").split(",") if metadata.get("sources") else [] for metadata in response["metadatas"]],
                 "embedding": response["embeddings"],
             })
 
     def _process_pinecone_response(docs, doc_type):
         """Process Pinecone response into DataFrame."""
         if doc_type == 'document':
+            # Skip the db_metadata document
+            filtered_docs = [doc for doc in docs if doc['id'] != 'db_metadata']
+            
             return pd.DataFrame({
-                "id": [data['id'] for data in docs],
-                "source": [data['metadata']['source'] for data in docs],
-                "page": [int(data['metadata']['page']) for data in docs],
-                "metadata": [{'page':data['metadata']['page'],'source':data['metadata']['source']} for data in docs],
-                "document": [data['metadata']['page_content'] for data in docs],
-                "embedding": [data['values'] for data in docs],
+                "id": [data['id'] for data in filtered_docs],
+                "source": [data['metadata'].get('source', '') for data in filtered_docs],
+                "page": [int(data['metadata'].get('page', -1)) for data in filtered_docs],
+                "metadata": [data['metadata'] for data in filtered_docs],
+                "document": [data['metadata'].get('page_content', '') for data in filtered_docs],
+                "embedding": [data['values'] for data in filtered_docs],
             })
         else:  # question
             return pd.DataFrame({
                 "id": [data['id'] for data in docs],
-                "question": [data['metadata']['page_content'] for data in docs],
+                "question": [data['metadata'].get('page_content', '') for data in docs],
                 "answer": [data['metadata'].get('answer', '') for data in docs],
-                "sources": [data['metadata'].get('sources', '').split(',') for data in docs],
+                "sources": [data['metadata'].get('sources', '').split(',') if data['metadata'].get('sources') else [] for data in docs],
                 "embedding": [data['values'] for data in docs],
             })
 

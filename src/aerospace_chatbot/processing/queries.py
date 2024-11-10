@@ -40,6 +40,7 @@ class QAModel:
         )
         
         # Initialize query vectorstore with the same embedding service as main db
+        # FIXME, first check if this index exists, and if not, create it. Otherwise, use it.
         self.query_db_service.initialize_database(
             namespace=self.namespace,
             clear=True
@@ -160,12 +161,13 @@ class QAModel:
     @staticmethod
     def _question_as_doc(question, rag_answer):
         """Creates a Document object based on the given question and RAG answer."""
-        sources = [data.metadata for data in rag_answer['references']]
+        # Extract just the document IDs from the references
+        sources = [data.id for data in rag_answer['references']]
         return Document(
             page_content=question,
             metadata={
                 "answer": rag_answer['answer'].content,
-                "sources": ",".join(map(DocumentProcessor.stable_hash_meta, sources)),
+                "sources": ','.join(sources),  # Now sources is a list of IDs, no need to join
             },
         )
     def _get_standalone_question(self, question, chat_history):
