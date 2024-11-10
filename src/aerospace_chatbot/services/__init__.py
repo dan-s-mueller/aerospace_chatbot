@@ -1,6 +1,13 @@
 """Service layer for database, embeddings, and LLM interactions."""
 
-from .database import DatabaseService
+from .database import (
+    DatabaseService, 
+    get_docs_questions_df, 
+    add_clusters, 
+    export_to_hf_dataset, 
+    get_database_status,
+    get_available_indexes
+)
 from .embeddings import EmbeddingService
 from .llm import LLMService
 from .prompts import (
@@ -16,6 +23,11 @@ from .prompts import (
 
 __all__ = [
     'DatabaseService',
+    'get_docs_questions_df', 
+    'add_clusters', 
+    'export_to_hf_dataset', 
+    'get_database_status',
+    'get_available_indexes',
     'EmbeddingService',
     'LLMService',
     'CONDENSE_QUESTION_PROMPT',

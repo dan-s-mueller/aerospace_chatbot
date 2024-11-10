@@ -31,6 +31,11 @@ from aerospace_chatbot.processing import (
 )
 from aerospace_chatbot.services import (
     DatabaseService, 
+    get_docs_questions_df, 
+    add_clusters, 
+    export_to_hf_dataset, 
+    get_database_status,
+    get_available_indexes,
     EmbeddingService, 
     LLMService,
     CONDENSE_QUESTION_PROMPT,
@@ -59,8 +64,7 @@ sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 # TODO add a test to check parent/child and summary lookup functionality (not just that it executes)
 # TODO add upload file test
 # TODO add apptest from streamlit
-# TODO test retrieval of metadata vector from databases
-# TODO check that tests are happening in the tests folder, they look to be in db/
+# TODO test that prompts are formatted properly
 
 # Functions
 def permute_tests(test_data):
@@ -455,12 +459,12 @@ def test_initialize_database(monkeypatch, test_index):
 
     # Test with environment variable local_db_path
     try:
-        vectorstore = db_service.initialize_database(
+        db_service.initialize_database(
             namespace=db_service.namespace,
             clear=True
         )
 
-        assert isinstance(vectorstore, test_index['expected_class'])
+        assert isinstance(db_service.vectorstore, test_index['expected_class'])
         
         # Cleanup
         db_service.delete_index()
@@ -538,11 +542,11 @@ def test_delete_database(setup_fixture, test_index):
 
     # Test Case 2: Create and delete standard database
     try:
-        vectorstore = db_service.initialize_database(
+        db_service.initialize_database(
             namespace=db_service.namespace,
             clear=True
         )
-        assert isinstance(vectorstore, test_index['expected_class'])
+        assert isinstance(db_service.vectorstore, test_index['expected_class'])
         
         # Delete the database
         db_service.delete_index()
@@ -558,6 +562,15 @@ def test_delete_database(setup_fixture, test_index):
         elif test_index['index_type'] == 'RAGatouille':
             db_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'ragatouille', index_name)
             assert not os.path.exists(db_path)
+
+        # Verify index is not in available indexes
+        available_indexes, _ = get_available_indexes(
+            test_index['index_type'],
+            test_index['embedding_name'],
+            rag_type
+        )
+        assert index_name not in available_indexes, \
+            f"Deleted index {index_name} still appears in available indexes"
 
     except Exception as e:
         # If test fails, ensure cleanup
@@ -578,6 +591,7 @@ def test_delete_database(setup_fixture, test_index):
         'embedding_model': 'text-embedding-3-large',
         'embedding_family': 'OpenAI',
         'rag_types': ['Standard', 'Parent-Child', 'Summary']
+        # 'rag_types': ['Standard']
     },
     {
         'index_type': 'RAGatouille',
@@ -644,38 +658,60 @@ def test_get_available_indexes(setup_fixture, test_index):
     try:
         # Test getting available indexes for each RAG type
         for rag_type in test_index['rag_types']:
-            available_indexes, index_metadatas = DatabaseService.get_available_indexes(
-                test_index['index_type'],
-                test_index['embedding_model'],
-                rag_type
-            )
-            
-            print(f"Available {rag_type} indexes: {available_indexes}")
-            
-            # Verify expected index exists in results
-            expected_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
-            assert expected_index in available_indexes, \
-                f"Expected index {expected_index} not found in available indexes"
-            
-            # Verify metadata matches
-            if test_index['index_type'] != 'RAGatouille':
-                for index_metadata in index_metadatas:
-                    assert index_metadata['embedding_model'] == test_index['embedding_model']
-
-    finally:
-        # Cleanup - delete all test indexes
-        for index_name in test_indexes:
             try:
+                available_indexes, index_metadatas = get_available_indexes(
+                    test_index['index_type'],
+                    test_index['embedding_model'],
+                    rag_type
+                )
+                
+                print(f"Available {rag_type} indexes: {available_indexes}")
+                
+                # Verify expected index exists in results
+                expected_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
+                assert expected_index in available_indexes, \
+                    f"Expected index {expected_index} not found in available indexes"
+                
+                # Verify metadata matches
+                if test_index['index_type'] != 'RAGatouille':
+                    for index_metadata in index_metadatas:
+                        assert index_metadata['embedding_model'] == test_index['embedding_model']
+
+            except Exception as e:
+                print(f"Error during testing {rag_type}: {str(e)}")
+                raise e
+            
+            finally:
+                # Clean up the current test index
+                try:
+                    current_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
+                    db_service = DatabaseService(
+                        db_type=test_index['index_type'],
+                        index_name=current_index,
+                        rag_type=rag_type,
+                        embedding_service=embedding_service
+                    )
+                    db_service.delete_index()
+                    print(f"Deleted test index: {current_index}")
+                except Exception as e:
+                    print(f"Error deleting index {current_index}: {str(e)}")
+
+    except Exception as e:
+        # If there's an error in the outer loop, ensure all indexes are cleaned up
+        for rag_type in test_index['rag_types']:
+            try:
+                current_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
                 db_service = DatabaseService(
                     db_type=test_index['index_type'],
-                    index_name=index_name,
-                    rag_type='Standard',  # RAG type doesn't matter for deletion
+                    index_name=current_index,
+                    rag_type=rag_type,
                     embedding_service=embedding_service
                 )
                 db_service.delete_index()
-                print(f"Deleted test index: {index_name}")
-            except Exception as e:
-                print(f"Error deleting index {index_name}: {str(e)}")
+                print(f"Cleanup: Deleted test index: {current_index}")
+            except Exception as cleanup_error:
+                print(f"Error during cleanup of index {current_index}: {str(cleanup_error)}")
+        raise e
 def test_database_setup_and_query(test_input, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
     from aerospace_chatbot.services.database import DatabaseService
@@ -865,86 +901,33 @@ def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
         assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
         assert secrets['HUGGINGFACEHUB_API_KEY'] == 'huggingface_key'
         assert secrets['ANTHROPIC_API_KEY'] == 'anthropic_key'
-def test_get_docs_questions_df(setup_fixture):
+@pytest.mark.parametrize('test_index', [
+    {
+        'db_type': 'ChromaDB',
+        'embedding_family': 'OpenAI',
+        'embedding_name': 'text-embedding-3-large'
+    },
+    {
+        'db_type': 'Pinecone',
+        'embedding_family': 'OpenAI',
+        'embedding_name': 'text-embedding-3-large'
+    }
+])
+def test_get_docs_questions_df(setup_fixture, test_index):
     """Test function for the get_docs_questions_df() method."""
-    # index_name = 'test-visualization'
-    
-    # # Initialize services
-    # embedding_service = EmbeddingService(
-    #     model_name='text-embedding-3-large',
-    #     model_type='OpenAI'
-    # )
-    # llm_service = LLMService(
-    #     model_name='gpt-4o-mini',
-    #     model_type='OpenAI'
-    # )
-    # db_service = DatabaseService(
-    #     db_type='ChromaDB',
-    #     index_name=index_name,
-    #     rag_type='Standard',
-    #     embedding_service=embedding_service
-    # )
-
-    # try:
-    #     # Initialize document processor
-    #     doc_processor = DocumentProcessor(
-    #         embedding_service=embedding_service,
-    #         llm_service=llm_service,
-    #         chunk_size=setup_fixture['chunk_size'],
-    #         chunk_overlap=setup_fixture['chunk_overlap']
-    #     )
-
-    #     # Process and index documents
-    #     doc_processor.process_and_index(
-    #         documents=setup_fixture['docs'],
-    #         index_name=index_name,
-    #         clear=True
-    #     )
-
-    #     # Create QA model and run query
-    #     qa_model = QAModel(
-    #         db_service=db_service,
-    #         embedding_service=embedding_service,
-    #         llm_service=llm_service
-    #     )
-    #     qa_model.query_docs(setup_fixture['test_prompt'])
-
-    #     # Get combined dataframe
-    #     df = DatabaseService.get_docs_questions_df(index_name, index_name+'-queries', embedding_service)
-
-    #     # Assert the result
-    #     assert isinstance(df, pd.DataFrame)
-    #     assert len(df) > 0
-    #     assert all(col in df.columns for col in [
-    #         "id", "source", "page", "document", "embedding", "type",
-    #         "first_source", "used_by_questions", "used_by_num_questions",
-    #         "used_by_question_first"
-    #     ])
-
-    #     # Cleanup
-    #     db_service.delete_index()
-
-    # except Exception as e:
-    #     db_service.delete_index()
-    #     raise e
-
-
-    from aerospace_chatbot.services.database import DatabaseService
-    from aerospace_chatbot.processing import DocumentProcessor
-
-    index_name = 'test-visualization-docs-questions-df'
+    index_name = 'test-visualization'
 
     # Initialize services
     embedding_service = EmbeddingService(
-        model_name='text-embedding-3-large',
-        model_type='OpenAI'
+        model_name=test_index['embedding_name'],
+        model_type=test_index['embedding_family']
     )
     llm_service = LLMService(
         model_name='gpt-4o-mini',
         model_type='OpenAI'
     )
     db_service = DatabaseService(
-        db_type='ChromaDB',
+        db_type=test_index['db_type'],
         index_name=index_name,
         rag_type='Standard',
         embedding_service=embedding_service
@@ -969,29 +952,20 @@ def test_get_docs_questions_df(setup_fixture):
             clear=True
         )
 
-        # Verify the vectorstore type
-        if db_service.db_type == 'ChromaDB':
-            assert isinstance(db_service.vectorstore, Chroma)
-        elif db_service.db_type == 'Pinecone':
-            assert isinstance(db_service.vectorstore, PineconeVectorStore)
-        elif db_service.db_type == 'RAGatouille':
-            assert isinstance(db_service.vectorstore, RAGPretrainedModel)
-        print('Vectorstore created.')
-
         # Initialize QA model
         qa_model = QAModel(
             db_service=db_service,
             llm_service=llm_service
         )
-        print('QA model object created.')
-        assert qa_model is not None
 
-        # Run a query and verify results
+        # Run a query to create the query database
         qa_model.query(setup_fixture['test_prompt'])
 
-
         # Get combined dataframe
-        df = db_service.get_docs_questions_df(index_name+'-queries')
+        df = get_docs_questions_df(
+            db_service=db_service,  # Main document database service
+            query_db_service=qa_model.query_db_service  # Query database service from QA model
+        )
 
         # Assert the result
         assert isinstance(df, pd.DataFrame)
@@ -1004,69 +978,107 @@ def test_get_docs_questions_df(setup_fixture):
 
         # Cleanup
         db_service.delete_index()
-        print('Database deleted.')
+        qa_model.query_db_service.delete_index()
+        print(f'Database deleted: {test_index["db_type"]}')
 
     except Exception as e:  # If there is an error, be sure to delete the database
-        db_service.delete_index()
+        try:
+            db_service.delete_index()
+            qa_model.query_db_service.delete_index()
+        except:
+            pass
         raise e
-def test_add_clusters(setup_fixture):
+@pytest.mark.parametrize('test_index', [
+    {
+        'db_type': 'ChromaDB',
+        'embedding_family': 'OpenAI',
+        'embedding_name': 'text-embedding-3-large'
+    },
+    {
+        'db_type': 'Pinecone',
+        'embedding_family': 'OpenAI',
+        'embedding_name': 'text-embedding-3-large'
+    }
+])
+def test_add_clusters(setup_fixture, test_index):
     """Test function for the add_clusters function."""
-    # Setup same as test_get_docs_questions_df
     index_name = 'test-visualization'
-    db_service = DatabaseService(
-        db_type='ChromaDB',
-        index_name=index_name,
-        rag_type='Standard' 
-    )
+
+    # Initialize services
     embedding_service = EmbeddingService(
-        model_name='text-embedding-3-large',
-        model_type='OpenAI'
+        model_name=test_index['embedding_name'],
+        model_type=test_index['embedding_family']
     )
     llm_service = LLMService(
         model_name='gpt-4o-mini',
         model_type='OpenAI'
     )
+    db_service = DatabaseService(
+        db_type=test_index['db_type'],
+        index_name=index_name,
+        rag_type='Standard',
+        embedding_service=embedding_service
+    )
 
     try:
-        # Initialize and process documents (same as previous test)
+        # Initialize the document processor with services
         doc_processor = DocumentProcessor(
             embedding_service=embedding_service,
-            llm_service=llm_service,
+            rag_type='Standard',
+            chunk_method=setup_fixture['chunk_method'],
             chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap']
+            chunk_overlap=setup_fixture['chunk_overlap'],
+            llm_service=llm_service
         )
-        doc_processor.process_and_index(
-            documents=setup_fixture['docs'],
-            index_name=index_name,
+
+        # Process and index documents
+        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
+        db_service.index_documents(
+            chunking_result=chunking_result,
+            batch_size=setup_fixture['batch_size'],
             clear=True
         )
 
+        # Initialize QA model
         qa_model = QAModel(
             db_service=db_service,
-            embedding_service=embedding_service,
             llm_service=llm_service
         )
-        qa_model.query_docs(setup_fixture['test_prompt'])
 
-        df = DatabaseService.get_docs_questions_df(index_name, index_name+'-queries', embedding_service)
+        # Run a query to create the query database
+        qa_model.query(setup_fixture['test_prompt'])
+
+        # Get combined dataframe
+        df = get_docs_questions_df(
+            db_service=db_service,  # Main document database service
+            query_db_service=qa_model.query_db_service  # Query database service from QA model
+        )
+
+        # Test clustering without labels
+        n_clusters = 2
+        df_with_clusters = add_clusters(df, n_clusters)
+        assert len(df_with_clusters["Cluster"].unique()) == n_clusters
+        for cluster in df_with_clusters["Cluster"].unique():
+            assert len(df_with_clusters[df_with_clusters["Cluster"] == cluster]) >= 1
+
+        # Test clustering with labels
+        df_with_clusters = add_clusters(df, n_clusters, llm_service, 2)
+        assert len(df_with_clusters["Cluster"].unique()) == n_clusters
+        assert "Cluster_Label" in df_with_clusters.columns
+        assert df_with_clusters["Cluster_Label"].notnull().all()
+        assert df_with_clusters["Cluster_Label"].apply(lambda x: isinstance(x, str)).all()
+        for cluster in df_with_clusters["Cluster"].unique():
+            assert len(df_with_clusters[df_with_clusters["Cluster"] == cluster]) > 0
+
+        # Cleanup
         db_service.delete_index()
+        qa_model.query_db_service.delete_index()
+        print(f'Database deleted: {test_index["db_type"]}')
 
-    except Exception as e:
-        db_service.delete_index()
-        pytest.fail(f"Test failed with exception: {str(e)}")
-
-    # Test clustering without labels
-    n_clusters = 2
-    df_with_clusters = DatabaseService.add_clusters(df, n_clusters)
-    assert len(df_with_clusters["Cluster"].unique()) == n_clusters
-    for cluster in df_with_clusters["Cluster"].unique():
-        assert len(df_with_clusters[df_with_clusters["Cluster"] == cluster]) >= 1
-
-    # Test clustering with labels
-    df_with_clusters = DatabaseService.add_clusters(df, n_clusters, llm_service, 2)
-    assert len(df_with_clusters["Cluster"].unique()) == n_clusters
-    assert "Cluster_Label" in df_with_clusters.columns
-    assert df_with_clusters["Cluster_Label"].notnull().all()
-    assert df_with_clusters["Cluster_Label"].apply(lambda x: isinstance(x, str)).all()
-    for cluster in df_with_clusters["Cluster"].unique():
-        assert len(df_with_clusters[df_with_clusters["Cluster"] == cluster]) > 0
+    except Exception as e:  # If there is an error, be sure to delete the database
+        try:
+            db_service.delete_index()
+            qa_model.query_db_service.delete_index()
+        except:
+            pass
+        raise e

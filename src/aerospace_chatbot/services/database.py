@@ -4,6 +4,7 @@ import os, shutil
 import re
 from pathlib import Path
 import time
+import json
 
 from ..core.cache import Dependencies
 from ..services.prompts import CLUSTER_LABEL
@@ -19,6 +20,7 @@ class DatabaseService:
         self.rag_type = rag_type
         self.embedding_service = embedding_service
         self.vectorstore = None
+        self.retriever = None
         self.namespace = None
         self._deps = Dependencies()
         
@@ -32,19 +34,18 @@ class DatabaseService:
 
         # Initialize the vectorstore based on database type
         if self.db_type == 'Pinecone':
-            self.vectorstore = self._init_pinecone(clear=clear)
+            self._init_pinecone(clear=clear)
         elif self.db_type == 'ChromaDB':
-            self.vectorstore = self._init_chromadb(clear=clear)
+            self._init_chromadb(clear=clear)
         elif self.db_type == 'RAGatouille':
-            self.vectorstore = self._init_ragatouille(clear=clear)
+            self._init_ragatouille(clear=clear)
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
     def index_documents(self,
                        chunking_result,
                        batch_size=100,
-                       clear=False,
-                       show_progress=False):
+                       clear=False):
         """Index processed documents. This is where the index is initialized or created if required."""
 
         # Initialize database
@@ -58,7 +59,7 @@ class DatabaseService:
 
         # Validate index name and parameters, upsert documents
         self._validate_index(chunking_result)
-        self._upsert_docs(chunking_result, batch_size, show_progress, clear=clear)
+        self._upsert_docs(chunking_result, batch_size, clear=clear)
 
     def get_retriever(self, k=4):
         """Get configured retriever for the vectorstore."""
@@ -75,7 +76,7 @@ class DatabaseService:
         else:
             raise NotImplementedError(f"RAG type {self.rag_type} not supported")
     
-    def copy_vectors(self, source_namespace, target_namespace, batch_size=100, show_progress=False):
+    def copy_vectors(self, source_namespace, target_namespace, batch_size=100):
         # FIXME, moved over without testing from documents
         """Copies vectors from a source Pinecone namespace to a target namespace."""
         if self.db_type != 'Pinecone':
@@ -83,15 +84,6 @@ class DatabaseService:
             
         # FIXME initialize database first, this function deosn't exist
         index = self.get_index(self.index_name)
-        
-        # if show_progress:
-        #     try:
-        #         # TODO update with dependency cache
-        #         import streamlit as st
-        #         progress_text = "Document merging in progress..."
-        #         my_bar = st.progress(0, text=progress_text)
-        #     except ImportError:
-        #         show_progress = False
         
         # Get list of all vector IDs
         ids = []
@@ -116,13 +108,6 @@ class DatabaseService:
             
             # Upsert vectors to target namespace
             index.upsert(vectors=vectors_to_upsert, namespace=target_namespace)
-            
-            # if show_progress:
-            #     progress_percentage = min(1.0, (i + batch_size) / len(ids))
-            #     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
-        
-        # if show_progress:
-        #     my_bar.empty()
 
     def delete_index(self):
         """Delete an index from the database."""
@@ -142,7 +127,7 @@ class DatabaseService:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
             
         elif self.db_type == 'Pinecone':
-            pinecone_client, _, ServerlessSpec = self._deps.get_db_deps()
+            pinecone_client, _, _ = self._deps.get_db_deps()
    
             pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             try:
@@ -157,293 +142,7 @@ class DatabaseService:
                 shutil.rmtree(ragatouille_path)
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
-                
-    def get_docs_questions_df(self, query_index_name):
-        """Get documents and questions from database as a DataFrame."""
-        # FIXME, this requires a refactor from data_processing, it's missing the majority of the functionality
-        # FIXME get query_index_name from databaseservice object.
-        
-        # deps = Dependencies()
-        # pd, np, _, _ = deps.get_analysis_deps()
-        # admin = deps.get_admin()
-        import pandas as pd
-        
-        # Check if query database exists
-        # FIXME, hack utils._display_database_status to get this
-        if self.db_type == 'ChromaDB':
-            collections = [collection.name for collection in admin.show_chroma_collections(format=False)['message']]
-        elif self.db_type == 'Pinecone':
-            collections = [collection for collection in admin.show_pinecone_indexes(format=False)['message']]
-        else:
-            raise ValueError(f"Unsupported database type: {self.db_type}")
-        
-        matching_collection = [collection for collection in collections if collection == query_index_name]
-        if len(matching_collection) > 1:
-            raise Exception('Matching collection not found or multiple matching collections found.')
-        try:
-            if not matching_collection:
-                raise Exception('Query database not found. Please create a query database using the Chatbot page and a selected index.')
-        except Exception as e:
-            import streamlit as st
-            st.warning(f"{e}")
-            st.stop()
-        
-        # import streamlit as st
-        # st.markdown(f"Query database found: {query_index_name}")
 
-        # Get documents dataframe
-        docs_df = self._get_docs_df()
-        docs_df["type"] = "doc"
-        # st.markdown(f"Retrieved docs from: {self.index_name}")
-
-        # Get questions dataframe
-        questions_df = self._get_questions_df(query_index_name)
-        questions_df["type"] = "question"
-        # st.markdown(f"Retrieved questions from: {query_index_name}")
-
-        # Process questions metadata
-        questions_df["num_sources"] = questions_df["sources"].apply(len)
-        questions_df["first_source"] = questions_df["sources"].apply(
-            lambda x: next(iter(x), None)
-        )
-
-        # Process document usage by questions
-        if len(questions_df):
-            docs_df["used_by_questions"] = docs_df["id"].apply(
-                lambda doc_id: questions_df[
-                    questions_df["sources"].apply(lambda sources: doc_id in sources)
-                ]["id"].tolist()
-            )
-        else:
-            docs_df["used_by_questions"] = [[] for _ in range(len(docs_df))]
-        
-        docs_df["used_by_num_questions"] = docs_df["used_by_questions"].apply(len)
-        docs_df["used_by_question_first"] = docs_df["used_by_questions"].apply(
-            lambda x: next(iter(x), None)
-        )
-
-        # Combine dataframes
-        df = pd.concat([docs_df, questions_df], ignore_index=True)
-        return df
-
-    def _get_docs_df(self):
-        """Helper method to get documents dataframe."""
-        deps = Dependencies()
-        pd, np, _, _ = deps.get_analysis_deps()
-        
-        # Get embeddings dimension
-        embedding_dim = self.embedding_service.get_dimension()
-        
-        # Get documents from main index
-        docs = self.get_documents(self.index_name)
-        
-        # Create dataframe
-        return pd.DataFrame({
-            'id': [doc.metadata.get('id', '') for doc in docs],
-            'text': [doc.page_content for doc in docs],
-            'embedding': [doc.metadata.get('embedding', np.zeros(embedding_dim)) for doc in docs],
-            'metadata': [doc.metadata for doc in docs]
-        })
-
-    def _get_questions_df(self, query_index_name):
-        """Helper method to get questions dataframe."""
-        deps = Dependencies()
-        pd, np, _, _ = deps.get_analysis_deps()
-        
-        # Get embeddings dimension  
-        embedding_dim = self.embedding_service.get_dimension()
-        
-        try:
-            questions = self.get_documents(query_index_name)
-            
-            # Create dataframe
-            df = pd.DataFrame({
-                'id': [q.metadata.get('id', '') for q in questions],
-                'text': [q.page_content for q in questions],
-                'embedding': [q.metadata.get('embedding', np.zeros(embedding_dim)) for q in questions],
-                'metadata': [q.metadata for q in questions],
-                'answer': [q.metadata.get('answer', '') for q in questions],
-                'sources': [q.metadata.get('sources', '').split(',') for q in questions]
-            })
-            return df
-        except Exception:
-            return pd.DataFrame(columns=['id', 'text', 'embedding', 'metadata', 'answer', 'sources'])
-
-    def add_clusters(self,
-                    df,
-                    n_clusters,
-                    llm_service=None,
-                    docs_per_cluster: int = 10):
-        """Add cluster labels to DataFrame using KMeans clustering."""
-        deps = Dependencies()
-        pd, np, KMeans, _ = deps.get_analysis_deps()
-        
-        # Perform clustering
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-        df['cluster'] = kmeans.fit_predict(np.stack(df['embedding'].values))
-        
-        # Generate cluster labels using LLM if provided
-        if llm_service is not None:
-            cluster_labels = []
-            for i in range(n_clusters):
-                cluster_docs = df[df['cluster'] == i]['text'].head(docs_per_cluster).tolist()
-                prompt = CLUSTER_LABEL.format(
-                    documents="\n\n".join(cluster_docs),
-                    n=docs_per_cluster
-                )
-                response = llm_service.get_llm().invoke(prompt)
-                cluster_labels.append(response.content.strip())
-            
-            # Map cluster numbers to labels
-            cluster_map = {i: label for i, label in enumerate(cluster_labels)}
-            df['cluster_label'] = df['cluster'].map(cluster_map)
-        return df
-    def export_to_hf_dataset(self, df, dataset_name):
-        """Export DataFrame to Hugging Face dataset."""
-        deps = Dependencies()
-        _, _, _, Dataset = deps.get_analysis_deps()
-        
-        hf_dataset = Dataset.from_pandas(df)
-        hf_dataset.push_to_hub(
-            dataset_name, 
-            token=os.getenv('HUGGINGFACEHUB_API_KEY')
-        )
-    @staticmethod
-    def get_available_indexes(db_type, embedding_model, rag_type):
-        """Get available indexes based on current settings."""
-        # FIXME do this filtering based on index metadata, it won't work properly
-        available_indexes = []
-        index_metadatas = []
-
-        def _check_get_index_criteria(index_name):
-            """Check if index meets RAG type criteria."""
-            if index_name.endswith('-queries'):
-                return False
-                
-            return (rag_type == 'Parent-Child' and index_name.endswith('-parent-child')) or \
-                   (rag_type == 'Summary' and index_name.endswith('-summary')) or \
-                   (rag_type == 'Standard' and not index_name.endswith(('-parent-child', '-summary')))
-
-        def _get_chromadb_indexes():
-            """Get available ChromaDB indexes."""
-            import chromadb
-            client = chromadb.PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
-            indexes = client.list_collections()
-            
-            for index in indexes:
-                if not _check_get_index_criteria(index.name):
-                    continue
-                collection = client.get_collection(index.name)
-                metadata = collection.get(ids=['db_metadata'])
-                if metadata and metadata['metadatas'][0].get('embedding_model') == embedding_model:
-                    available_indexes.append(index.name)
-                    index_metadatas.append(metadata['metadatas'][0])
-
-        def _get_pinecone_indexes():
-            """Get available Pinecone indexes."""
-            from pinecone import Pinecone
-            pc = Pinecone()
-            indexes = pc.list_indexes()
-            
-            for index in indexes:
-                if not _check_get_index_criteria(index.name):
-                    continue
-                index_obj = pc.Index(index.name)
-                metadata = index_obj.fetch(ids=['db_metadata'])
-                if metadata and metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_model:
-                    available_indexes.append(index.name)
-                    index_metadatas.append(metadata['vectors']['db_metadata']['metadata'])
-        try:
-            if db_type == 'ChromaDB':
-                _get_chromadb_indexes()
-            elif db_type == 'Pinecone':
-                _get_pinecone_indexes()
-            elif db_type == 'RAGatouille':
-                index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes')
-                if os.path.exists(index_path):
-                    for item in os.listdir(index_path):
-                        index_dir = os.path.join(index_path, item)
-                        if os.path.isdir(index_dir) and os.listdir(index_dir):
-                            available_indexes.append(item)
-        except:
-            return []
-        
-        return available_indexes, index_metadatas
-    @staticmethod
-    def get_database_status(self,db_type):
-        """Get status of database indexes/collections."""
-        status_handlers = {
-            'Pinecone': self._get_pinecone_status,
-            'ChromaDB': self._get_chromadb_status,
-            'RAGatouille': self._get_ragatouille_status
-        }
-        
-        handler = status_handlers.get(db_type)
-        if not handler:
-            return {'status': False, 'message': f'Unsupported database type: {db_type}'}
-        
-        return handler()
-
-    @staticmethod
-    def _get_pinecone_status(self):
-        """Get status of Pinecone indexes."""
-        api_key = os.getenv('PINECONE_API_KEY')
-        return self._cached_pinecone_status(api_key)
-    
-    @staticmethod
-    def _cached_pinecone_status(api_key):
-        """Helper function to cache the processed Pinecone status."""
-        Pinecone, _, _ = Dependencies().get_db_deps()
-        
-        if not api_key:
-            return {'status': False, 'message': 'Pinecone API Key is not set'}
-        
-        try:
-            pc = Pinecone(api_key=api_key)
-            indexes = pc.list_indexes()
-            if len(indexes) == 0:
-                return {'status': False, 'message': 'No indexes found'}
-            # Convert indexes to list of names to avoid caching Pinecone objects
-            return {'status': True, 'indexes': [idx.name for idx in indexes]}
-        except Exception as e:
-            return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
-
-    @staticmethod
-    def _get_chromadb_status(self):
-        """Get status of ChromaDB collections."""
-        _, chromadb, _ = self._deps.get_db_deps()
-        
-        if not os.getenv('LOCAL_DB_PATH'):
-            return {'status': False, 'message': 'Local database path not set'}
-        
-        try:
-            db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
-            client = chromadb.PersistentClient(path=str(db_path))
-            collections = client.list_collections()
-            if not collections:
-                return {'status': False, 'message': 'No collections found'}
-            return {'status': True, 'indexes': collections}
-        except Exception as e:
-            return {'status': False, 'message': f'Error connecting to ChromaDB: {str(e)}'}
-
-    @staticmethod
-    def _get_ragatouille_status(self):
-        """Get status of RAGatouille indexes."""
-        if not os.getenv('LOCAL_DB_PATH'):
-            return {'status': False, 'message': 'Local database path not set'}
-        
-        try:
-            index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes')
-            if not os.path.exists(index_path):
-                return {'status': False, 'message': 'No indexes found'}
-            
-            indexes = [item for item in os.listdir(index_path) if os.path.isdir(os.path.join(index_path, item))]
-            if not indexes:
-                return {'status': False, 'message': 'No indexes found'}
-            return {'status': True, 'indexes': indexes}
-        except Exception as e:
-            return {'status': False, 'message': f'Error accessing RAGatouille indexes: {str(e)}'}
-        
     def _init_chromadb(self, clear=False):
         """Initialize ChromaDB."""
         _, chromadb, _ = self._deps.get_db_deps()
@@ -456,7 +155,7 @@ class DatabaseService:
         if clear:
             self.delete_index()
 
-        return Chroma(
+        self.vectorstore = Chroma(
             client=client,
             collection_name=self.index_name,
             embedding_function=self.embedding_service.get_embeddings()
@@ -495,7 +194,7 @@ class DatabaseService:
                 )
             )
         
-        return PineconeVectorStore(
+        self.vectorstore = PineconeVectorStore(
             index=pc.Index(self.index_name),
             index_name=self.index_name,
             embedding=self.embedding_service.get_embeddings(),
@@ -511,7 +210,7 @@ class DatabaseService:
         index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille')
         if clear:
             self.delete_index()
-        return RAGPretrainedModel.from_pretrained(
+        self.vectorstore = RAGPretrainedModel.from_pretrained(
             pretrained_model_name_or_path=self.embedding_service.model_name,
             index_root=index_path
         )
@@ -656,17 +355,12 @@ class DatabaseService:
             if ".." in name:
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
 
-    def _upsert_docs(self, chunking_result, batch_size, show_progress=False, clear=False):
+    def _upsert_docs(self, chunking_result, batch_size, clear=False):
         """Upsert documents. Used for all RAG types. Clear only used for RAGatouille."""
         # TODO update to use dependency cache
         from langchain.storage import LocalFileStore
         from langchain.retrievers.multi_vector import MultiVectorRetriever
         from ..processing.documents import DocumentProcessor
-
-        # if show_progress:  
-        #     import streamlit as st
-        #     progress_text = "Document indexing in progress..."
-        #     my_bar = st.progress(0, text=progress_text)
         
         # Standard for pinecone and chroma
         if self.rag_type == 'Standard':
@@ -682,9 +376,6 @@ class DatabaseService:
                     continue
                 else:
                     raise NotImplementedError
-                # if show_progress:
-                #     progress_percentage = min(1.0, (i + batch_size) / len(chunking_result.chunks))
-                #     my_bar.progress(progress_percentage, text=f'{progress_text}{progress_percentage*100:.2f}%')
         
         # RAGatouille for all chunks at once
         if self.db_type == "RAGatouille":
@@ -728,14 +419,333 @@ class DatabaseService:
                         self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
                     else:
                         self.vectorstore.add_documents(documents=batch, ids=batch_ids)
-                    
-                    # if show_progress:
-                    #     progress_percentage = i / len(chunks)
-                    #     my_bar.progress(progress_percentage, text=f'Document indexing in progress...{progress_percentage*100:.2f}%')
                 
                 # Index parent docs all at once
                 retriever.docstore.mset(list(zip(doc_ids, pages)))
                 self.retriever = retriever
+
+def get_docs_questions_df(db_service, query_db_service):
+    """Get documents and questions from database as a DataFrame."""
+    deps = Dependencies()
+    pd, _, _, _ = deps.get_analysis_deps()
+    
+    def _fetch_pinecone_docs(index):
+        """Fetch documents from Pinecone in batches."""
+        ids = []
+        for id_batch in index.list():
+            ids.extend(id_batch)
+            
+        docs = []
+        chunk_size = 200
+        for i in range(0, len(ids), chunk_size):
+            vector = index.fetch(ids[i:i+chunk_size])['vectors']
+            vector_data = [value for value in vector.values()]
+            docs.extend(vector_data)
+        return docs
+
+    def _process_chromadb_response(response, doc_type):
+        """Process ChromaDB response into DataFrame."""
+        if doc_type == 'document':
+            return pd.DataFrame({
+                "id": response["ids"],
+                "source": [metadata.get("source") for metadata in response["metadatas"]],
+                "page": [metadata.get("page", -1) for metadata in response["metadatas"]],
+                "metadata": response["metadatas"],
+                "document": response["documents"],
+                "embedding": response["embeddings"],
+            })
+        else:  # question
+            return pd.DataFrame({
+                "id": response["ids"],
+                "question": response["documents"],
+                "answer": [metadata.get("answer") for metadata in response["metadatas"]],
+                "sources": [metadata.get("sources", "").split(",") for metadata in response["metadatas"]],
+                "embedding": response["embeddings"],
+            })
+
+    def _process_pinecone_response(docs, doc_type):
+        """Process Pinecone response into DataFrame."""
+        if doc_type == 'document':
+            return pd.DataFrame({
+                "id": [data['id'] for data in docs],
+                "source": [data['metadata']['source'] for data in docs],
+                "page": [data['metadata']['page'] for data in docs],
+                "metadata": [{'page':data['metadata']['page'],'source':data['metadata']['source']} for data in docs],
+                "document": [data['metadata']['page_content'] for data in docs],
+                "embedding": [data['values'] for data in docs],
+            })
+        else:  # question
+            return pd.DataFrame({
+                "id": [data['id'] for data in docs],
+                "question": [data['metadata']['page_content'] for data in docs],
+                "answer": [data['metadata'].get('answer', '') for data in docs],
+                "sources": [data['metadata'].get('sources', '').split(',') for data in docs],
+                "embedding": [data['values'] for data in docs],
+            })
+
+    def _add_rag_columns(df, index_name):
+        """Add RAG-specific columns to document DataFrame if needed."""
+        rag_type = 'Standard'
+        if index_name.endswith('-parent-child'):
+            rag_type = 'Parent-Child'
+        elif index_name.endswith('-summary'):
+            rag_type = 'Summary'
+            
+        if rag_type != 'Standard':
+            json_data_list = []
+            for i, row in df.iterrows():
+                doc_id = row['metadata']['doc_id']
+                file_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', index_name, f"{doc_id}")
+                with open(file_path, "r") as f:
+                    json_data = json.load(f)
+                json_data = json_data['kwargs']['page_content']
+                json_data_list.append(json_data)
+                
+            column_name = 'parent-doc' if rag_type == 'Parent-Child' else 'original-doc'
+            df[column_name] = json_data_list
+        return df
+
+    def _get_dataframe_from_store(vectorstore, db_type, index_name, doc_type='document'):
+        """Common method to retrieve data from any vectorstore type and convert to DataFrame."""
+        try:
+            if db_type == 'ChromaDB':
+                response = vectorstore.get(include=["metadatas", "documents", "embeddings"])
+                df = _process_chromadb_response(response, doc_type)
+                
+            elif db_type == 'Pinecone':
+                docs = _fetch_pinecone_docs(vectorstore.index)
+                df = _process_pinecone_response(docs, doc_type)
+                
+            else:
+                raise ValueError(f"Unsupported database type: {db_type}")
+            
+            # Add RAG-specific columns if needed
+            if doc_type == 'document':
+                df = _add_rag_columns(df, index_name)
+                
+            return df
+            
+        except Exception as e:
+            print(f"Error getting {doc_type}s: {str(e)}")
+            columns = ['id', 'source', 'page', 'metadata', 'document', 'embedding'] if doc_type == 'document' else \
+                     ['id', 'question', 'answer', 'sources', 'embedding']
+            return pd.DataFrame(columns=columns)
+
+    # Check if database exists
+    db_status = get_database_status(db_service.db_type)
+    if not db_status['status']:
+        raise Exception('Unable to access database')
         
-        # if show_progress:
-        #     my_bar.empty()
+    if db_service.db_type == 'ChromaDB':
+        collections = [collection.name for collection in db_status['message']]
+    elif db_service.db_type == 'Pinecone':
+        collections = db_status['message']  # Already a list of index names
+    else:
+        raise ValueError(f"Unsupported database type: {db_service.db_type}. RAGatouille not supported.")
+    
+    matching_collection = [collection for collection in collections if collection == query_db_service.index_name]
+    if len(matching_collection) > 1:
+        raise Exception('Multiple matching query collections found.')
+    if not matching_collection:
+        raise Exception('Query database not found. Please create a query database using the Chatbot page and a selected index.')
+    
+    print(f"Query database found: {query_db_service.index_name}")
+
+    # Get documents and questions dataframes
+    docs_df = _get_dataframe_from_store(
+        db_service.vectorstore,
+        db_service.db_type,
+        db_service.index_name,
+        doc_type='document'
+    )
+    docs_df["type"] = "doc"
+    print(f"Retrieved docs from: {db_service.index_name}")
+
+    questions_df = _get_dataframe_from_store(
+        query_db_service.vectorstore,
+        query_db_service.db_type,
+        query_db_service.index_name,
+        doc_type='question'
+    )
+    questions_df["type"] = "question"
+    print(f"Retrieved questions from: {query_db_service.index_name}")
+
+    # Process relationships
+    questions_df["num_sources"] = questions_df["sources"].apply(len)
+    questions_df["first_source"] = questions_df["sources"].apply(
+        lambda x: next(iter(x), None)
+    )
+
+    if len(questions_df):
+        docs_df["used_by_questions"] = docs_df["id"].apply(
+            lambda doc_id: questions_df[
+                questions_df["sources"].apply(lambda sources: doc_id in sources)
+            ]["id"].tolist()
+        )
+    else:
+        docs_df["used_by_questions"] = [[] for _ in range(len(docs_df))]
+    
+    docs_df["used_by_num_questions"] = docs_df["used_by_questions"].apply(len)
+    docs_df["used_by_question_first"] = docs_df["used_by_questions"].apply(
+        lambda x: next(iter(x), None)
+    )
+
+    return pd.concat([docs_df, questions_df], ignore_index=True)
+
+def add_clusters(df, n_clusters, llm_service=None, docs_per_cluster: int = 10):
+    """Add cluster labels to DataFrame using KMeans clustering. Adding LLM service will generate cluster labels."""
+    deps = Dependencies()
+    _, np, KMeans, _ = deps.get_analysis_deps()
+    
+    # Perform clustering
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    df['cluster'] = kmeans.fit_predict(np.stack(df['embedding'].values))
+    
+    # Generate cluster labels using LLM if provided
+    if llm_service is not None:
+        cluster_labels = []
+        for i in range(n_clusters):
+            cluster_docs = df[df['cluster'] == i]['text'].head(docs_per_cluster).tolist()
+            prompt = CLUSTER_LABEL.format(
+                documents="\n\n".join(cluster_docs),
+                n=docs_per_cluster
+            )
+            response = llm_service.get_llm().invoke(prompt)
+            cluster_labels.append(response.content.strip())
+        
+        # Map cluster numbers to labels
+        cluster_map = {i: label for i, label in enumerate(cluster_labels)}
+        df['cluster_label'] = df['cluster'].map(cluster_map)
+    return df
+
+def export_to_hf_dataset(df, dataset_name):
+    """Export DataFrame to Hugging Face dataset."""
+    deps = Dependencies()
+    _, _, _, Dataset = deps.get_analysis_deps()
+    
+    hf_dataset = Dataset.from_pandas(df)
+    hf_dataset.push_to_hub(
+        dataset_name, 
+        token=os.getenv('HUGGINGFACEHUB_API_KEY')
+    )
+
+def get_available_indexes(db_type, embedding_model, rag_type):
+    """Get available indexes based on current settings."""
+    # Get database status
+    db_status = get_database_status(db_type)
+    
+    if not db_status['status']:
+        return [], []
+        
+    available_indexes = []
+    index_metadatas = []
+    
+    def _check_get_index_criteria(index_name):
+        """Check if index meets RAG type criteria."""
+        if index_name.endswith('-queries'):
+            return False
+            
+        return (rag_type == 'Parent-Child' and index_name.endswith('-parent-child')) or \
+                (rag_type == 'Summary' and index_name.endswith('-summary')) or \
+                (rag_type == 'Standard' and not index_name.endswith(('-parent-child', '-summary')))
+
+    def _process_chromadb_indexes():
+        """Process available ChromaDB indexes."""
+        _, chromadb, _ = Dependencies().get_db_deps()
+        client = chromadb.PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
+        
+        for index in db_status['message']:
+            if not _check_get_index_criteria(index.name):
+                continue
+            collection = client.get_collection(index.name)
+            metadata = collection.get(ids=['db_metadata'])
+            if metadata and metadata['metadatas'][0].get('embedding_model') == embedding_model:
+                available_indexes.append(index.name)
+                index_metadatas.append(metadata['metadatas'][0])
+
+    def _process_pinecone_indexes():
+        """Process available Pinecone indexes."""
+        from pinecone import Pinecone
+        pc = Pinecone()
+        
+        for index_name in db_status['message']:
+            if not _check_get_index_criteria(index_name):
+                continue
+            index_obj = pc.Index(index_name)
+            metadata = index_obj.fetch(ids=['db_metadata'])
+            if metadata and metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_model:
+                available_indexes.append(index_name)
+                index_metadatas.append(metadata['vectors']['db_metadata']['metadata'])
+
+    def _process_ragatouille_indexes():
+        """Process available RAGatouille indexes."""
+        for index_name in db_status['message']:
+            if _check_get_index_criteria(index_name):
+                available_indexes.append(index_name)
+                # RAGatouille doesn't support metadata storage currently
+                index_metadatas.append({})
+
+    try:
+        if db_type == 'ChromaDB':
+            _process_chromadb_indexes()
+        elif db_type == 'Pinecone':
+            _process_pinecone_indexes()
+        elif db_type == 'RAGatouille':
+            _process_ragatouille_indexes()
+    except Exception:
+        return [], []
+
+    return available_indexes, index_metadatas
+
+def get_database_status(db_type):
+    """Get status of database indexes/collections."""
+
+    if db_type == 'Pinecone':
+        return _get_pinecone_status()
+    elif db_type == 'ChromaDB':
+        return _get_chromadb_status()
+    elif db_type == 'RAGatouille':
+        return _get_ragatouille_status()
+    else:
+        return {'status': False, 'message': f'Unsupported database type: {db_type}'}
+
+def _get_pinecone_status():
+    """Get status of Pinecone indexes."""
+    
+    try:
+        from pinecone import Pinecone
+        pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+        indexes = pc.list_indexes()
+        if not indexes:
+            return {'status': False, 'message': 'No indexes found'}
+        return {'status': True, 'message': [idx.name for idx in indexes]}
+    except Exception as e:
+        return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
+
+def _get_chromadb_status():
+    """Get status of ChromaDB collections."""
+    try:
+        import chromadb
+        db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
+        client = chromadb.PersistentClient(path=str(db_path))
+        collections = client.list_collections()
+        if not collections:
+            return {'status': False, 'message': 'No collections found'}
+        return {'status': True, 'message': collections}
+    except Exception as e:
+        return {'status': False, 'message': f'Error connecting to ChromaDB: {str(e)}'}
+
+def _get_ragatouille_status():
+    """Get status of RAGatouille indexes."""
+    try:
+        index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes')
+        if not os.path.exists(index_path):
+            return {'status': False, 'message': 'No indexes found'}
+        
+        indexes = [item for item in os.listdir(index_path) 
+                    if os.path.isdir(os.path.join(index_path, item))]
+        if not indexes:
+            return {'status': False, 'message': 'No indexes found'}
+        return {'status': True, 'message': indexes}
+    except Exception as e:
+        return {'status': False, 'message': f'Error accessing RAGatouille indexes: {str(e)}'}

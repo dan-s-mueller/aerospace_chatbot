@@ -12,6 +12,11 @@ from .processing import (
 )
 from .services import (
     DatabaseService, 
+    get_docs_questions_df, 
+    add_clusters, 
+    export_to_hf_dataset, 
+    get_database_status,
+    get_available_indexes,
     EmbeddingService, 
     LLMService,
     CONDENSE_QUESTION_PROMPT,
@@ -44,6 +49,11 @@ __all__ = [
     
     # Services
     'DatabaseService',
+    'get_docs_questions_df', 
+    'add_clusters', 
+    'export_to_hf_dataset', 
+    'get_database_status',
+    'get_available_indexes',
     'EmbeddingService',
     'LLMService',
     'CONDENSE_QUESTION_PROMPT',
