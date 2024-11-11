@@ -138,7 +138,7 @@ CLUSTER_LABEL=PromptTemplate.from_template(template=
     """
     What theme do the following document chunks have in common?
 
-    Document chunks:\n{chunks}
+    Document chunks:\n{documents}
 
     Theme:
     """)    

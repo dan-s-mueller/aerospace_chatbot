@@ -650,7 +650,7 @@ def add_clusters(df, n_clusters, llm_service=None, docs_per_cluster: int = 10):
     if llm_service is not None:
         cluster_labels = []
         for i in range(n_clusters):
-            cluster_docs = df[df['cluster'] == i]['text'].head(docs_per_cluster).tolist()
+            cluster_docs = df[df['cluster'] == i]['document'].head(docs_per_cluster).tolist()
             prompt = CLUSTER_LABEL.format(
                 documents="\n\n".join(cluster_docs),
                 n=docs_per_cluster

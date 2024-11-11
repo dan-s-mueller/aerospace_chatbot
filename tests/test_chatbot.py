@@ -1097,18 +1097,18 @@ def test_add_clusters(setup_fixture, test_index):
         # Test clustering without labels
         n_clusters = 2
         df_with_clusters = add_clusters(df, n_clusters)
-        assert len(df_with_clusters["Cluster"].unique()) == n_clusters
-        for cluster in df_with_clusters["Cluster"].unique():
-            assert len(df_with_clusters[df_with_clusters["Cluster"] == cluster]) >= 1
+        assert len(df_with_clusters["cluster"].unique()) == n_clusters
+        for cluster in df_with_clusters["cluster"].unique():
+            assert len(df_with_clusters[df_with_clusters["cluster"] == cluster]) >= 1
 
         # Test clustering with labels
         df_with_clusters = add_clusters(df, n_clusters, llm_service, 2)
-        assert len(df_with_clusters["Cluster"].unique()) == n_clusters
-        assert "Cluster_Label" in df_with_clusters.columns
-        assert df_with_clusters["Cluster_Label"].notnull().all()
-        assert df_with_clusters["Cluster_Label"].apply(lambda x: isinstance(x, str)).all()
-        for cluster in df_with_clusters["Cluster"].unique():
-            assert len(df_with_clusters[df_with_clusters["Cluster"] == cluster]) > 0
+        assert len(df_with_clusters["cluster"].unique()) == n_clusters
+        assert "cluster_label" in df_with_clusters.columns
+        assert df_with_clusters["cluster_label"].notnull().all()
+        assert df_with_clusters["cluster_label"].apply(lambda x: isinstance(x, str)).all()
+        for cluster in df_with_clusters["cluster"].unique():
+            assert len(df_with_clusters[df_with_clusters["cluster"] == cluster]) > 0
 
         # Cleanup
         db_service.delete_index()
