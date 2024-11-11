@@ -8,8 +8,23 @@ import json
 
 from ..core.cache import Dependencies
 from ..services.prompts import CLUSTER_LABEL
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from pinecone.exceptions import NotFoundException, PineconeApiException
+
+from tenacity import (
+    retry, 
+    stop_after_attempt, 
+    wait_exponential, 
+    retry_if_exception_type,
+    wait_fixed
+)
+
+def pinecone_retry(func):
+    """Decorator for Pinecone operations with retry and rate limiting."""
+    return retry(
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(1) + wait_exponential(multiplier=1, min=2, max=10),  # Combines rate limit with backoff
+        reraise=True
+    )(func)
 
 class DatabaseService:
     """Handles database operations for different vector stores."""
@@ -109,21 +124,10 @@ class DatabaseService:
 
     def delete_index(self):
         """Delete an index from the database."""
-
-        # Delete local file store if using Parent-Child or Summary RAG
-        if self.rag_type in ['Parent-Child', 'Summary']:
-            try:
-                lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
-                if os.path.exists(lfs_path):
-                    shutil.rmtree(lfs_path)
-                    print(f"Local file store for {self.index_name} deleted")
-            except Exception as e:
-                print(f"Warning: Failed to delete local file store for {self.index_name}: {str(e)}")
-
-        # Delete vector store
-        if self.db_type == 'ChromaDB':
+        
+        def _delete_chromadb():
+            """Delete ChromaDB index."""
             _, chromadb, _ = self._deps.get_db_deps()
-            
             try:
                 db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
                 client = chromadb.PersistentClient(path=str(db_path))
@@ -135,13 +139,13 @@ class DatabaseService:
                     print(f"Warning: Collection {self.index_name} not found. No deletion performed.")
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
-            
-        elif self.db_type == 'Pinecone':
+
+        @pinecone_retry
+        def _delete_pinecone():
+            """Delete Pinecone index."""
             pinecone_client, _, _ = self._deps.get_db_deps()
-   
             pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             try:
-                # Only attempt deletion if index exists
                 if self.index_name in [idx.name for idx in pc.list_indexes()]:
                     pc.delete_index(self.index_name)
                     print(f"Index {self.index_name} deleted")
@@ -149,12 +153,34 @@ class DatabaseService:
                     print(f"Warning: Index {self.index_name} not found. No deletion performed.")
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
-        elif self.db_type == 'RAGatouille':
+
+        def _delete_ragatouille():
+            """Delete RAGatouille index."""
             try:
                 ragatouille_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille/colbert/indexes', self.index_name)
                 shutil.rmtree(ragatouille_path)
             except Exception as e:
                 print(f"Warning: Failed to delete index {self.index_name}: {str(e)}")
+
+        # Delete local file store if using Parent-Child or Summary RAG
+        if self.rag_type in ['Parent-Child', 'Summary']:
+            try:
+                lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+                if os.path.exists(lfs_path):
+                    shutil.rmtree(lfs_path)
+                    print(f"Local file store for {self.index_name} deleted")
+            except Exception as e:
+                print(f"Warning: Failed to delete local file store for {self.index_name}: {str(e)}")
+
+        # Delete vector store based on type
+        if self.db_type == 'ChromaDB':
+            _delete_chromadb()
+        elif self.db_type == 'Pinecone':
+            _delete_pinecone()
+        elif self.db_type == 'RAGatouille':
+            _delete_ragatouille()
+        else:
+            raise ValueError(f"Unsupported database type: {self.db_type}")
 
     def _init_chromadb(self, clear=False):
         """Initialize ChromaDB."""
@@ -323,8 +349,8 @@ class DatabaseService:
         embedding_size = self.embedding_service.get_dimension()
         metadata_vector = [1e-5] * embedding_size
 
-        if self.db_type == "Pinecone":
-            # TODO see if I can do this with langchain vectorstore, problem is I need to make a dunmmy embedding.
+        @pinecone_retry
+        def _store_pinecone_metadata():
             pc_native = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             index = pc_native.Index(self.index_name)
             index.upsert(vectors=[{
@@ -332,7 +358,9 @@ class DatabaseService:
                 'values': metadata_vector,
                 'metadata': index_metadata
             }])
-        
+
+        if self.db_type == "Pinecone":
+            _store_pinecone_metadata()
         elif self.db_type == "ChromaDB":
             chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
             index = chroma_native.get_collection(name=self.index_name)
@@ -345,6 +373,7 @@ class DatabaseService:
         elif self.db_type == "RAGatouille":
             # TODO add metadata storage for RAGatouille, maybe can use the same method as others
             print("Warning: Metadata storage is not yet supported for RAGatouille indexes")
+
     def _validate_index(self, doc_processor):
         """Validate and format index with parameters passed from DocumentProcessor. Does nothing if no exceptions are raised, unless RAG type is Parent-Child or Summary, which will append to index_name."""
 
@@ -388,11 +417,16 @@ class DatabaseService:
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
 
     def _upsert_docs(self, chunking_result, batch_size, clear=False):
-        """Upsert documents. Used for all RAG types. Clear only used for RAGatouille."""
-        # TODO update to use dependency cache
-        from langchain.storage import LocalFileStore
-        from langchain.retrievers.multi_vector import MultiVectorRetriever
+        """Upsert documents. Used for all RAG types."""
+        # TODO update dependency cache
         from ..processing.documents import DocumentProcessor
+        
+        @pinecone_retry
+        def _upsert_pinecone():
+            for i in range(0, len(chunking_result.chunks), batch_size):
+                batch = chunking_result.chunks[i:i + batch_size]
+                batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
+                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
         
         # Standard for pinecone and chroma
         if self.rag_type == 'Standard':
@@ -401,7 +435,7 @@ class DatabaseService:
                 batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
                 
                 if self.db_type == "Pinecone":
-                    self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+                    _upsert_pinecone()
                 elif self.db_type == "ChromaDB":
                     self.vectorstore.add_documents(documents=batch, ids=batch_ids)
                 elif self.db_type == "RAGatouille":
@@ -422,7 +456,11 @@ class DatabaseService:
             )
         
         # Parent-Child or Summary for pinecone and chroma
-        if self.rag_type == 'Parent-Child' or self.rag_type == 'Summary':
+        if self.rag_type in ['Parent-Child', 'Summary']:
+            # TODO update dependency cache
+            from langchain.storage import LocalFileStore
+            from langchain.retrievers.multi_vector import MultiVectorRetriever
+            
             if self.db_type == 'RAGatouille':
                 raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
             else:
@@ -451,7 +489,7 @@ class DatabaseService:
                     batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
                     
                     if self.db_type == "Pinecone":
-                        self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+                        _upsert_pinecone()
                     else:
                         self.vectorstore.add_documents(documents=batch, ids=batch_ids)
                 
@@ -466,8 +504,9 @@ def get_docs_questions_df(db_service, query_db_service):
     # TODO use dependency cache
     from pinecone import Pinecone as pinecone_client
     
+    @pinecone_retry
     def _fetch_pinecone_docs(index_name):
-        """Fetch documents from Pinecone in batches."""
+        """Fetch documents from Pinecone in batches with retry logic and rate limiting."""
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         index = pc.Index(index_name)
 

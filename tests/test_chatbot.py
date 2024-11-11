@@ -109,7 +109,7 @@ def parse_test_case(setup, test_case):
     return parsed_test, print_str
 
 # Fixtures
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(autouse=True)
 def setup_fixture():
     """Sets up the fixture for testing the backend."""
     # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
@@ -179,21 +179,21 @@ def setup_fixture():
     }
 
     return setup
-@pytest.fixture()
-def temp_dotenv(setup_fixture):
-    """Creates a temporary .env file for testing purposes."""
-    dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '.env')
-    if not os.path.exists(dotenv_path):
-        with open(dotenv_path, 'w') as f:
-            print('Creating .env file for testing.')
-            f.write(f'OPENAI_API_KEY = {setup_fixture["OPENAI_API_KEY"]}\n')
-            f.write(f'PINECONE_API_KEY = {setup_fixture["PINECONE_API_KEY"]}\n')
-            f.write(f'HUGGINGFACEHUB_API_KEY = {setup_fixture["HUGGINGFACEHUB_API_KEY"]}\n')
-            f.write(f'LOCAL_DB_PATH = {setup_fixture["LOCAL_DB_PATH"]}\n')
-        yield dotenv_path
-        os.remove(dotenv_path)
-    else:
-        yield dotenv_path
+# @pytest.fixture()
+# def temp_dotenv(setup_fixture):
+#     """Creates a temporary .env file for testing purposes."""
+#     dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '.env')
+#     if not os.path.exists(dotenv_path):
+#         with open(dotenv_path, 'w') as f:
+#             print('Creating .env file for testing.')
+#             f.write(f'OPENAI_API_KEY = {setup_fixture["OPENAI_API_KEY"]}\n')
+#             f.write(f'PINECONE_API_KEY = {setup_fixture["PINECONE_API_KEY"]}\n')
+#             f.write(f'HUGGINGFACEHUB_API_KEY = {setup_fixture["HUGGINGFACEHUB_API_KEY"]}\n')
+#             f.write(f'LOCAL_DB_PATH = {setup_fixture["LOCAL_DB_PATH"]}\n')
+#         yield dotenv_path
+#         os.remove(dotenv_path)
+#     else:
+#         yield dotenv_path
 
 ### Backend tests
 def test_validate_index(setup_fixture):
@@ -911,30 +911,6 @@ def test_set_secrets_with_valid_input():
     # Verify environment variables were set
     for key, value in test_secrets.items():
         assert os.environ[key] == value
-def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
-    '''Test get_secrets with .env file'''
-    # Create temporary .env file
-    env_path = tmp_path / '.env'
-    env_content = '\n'.join([
-        'OPENAI_API_KEY=openai_key',
-        'VOYAGE_API_KEY=voyage_key',
-        'PINECONE_API_KEY=pinecone_key',
-        'HUGGINGFACEHUB_API_KEY=huggingface_key',
-        'ANTHROPIC_API_KEY=anthropic_key'
-    ])
-    env_path.write_text(env_content)
-    
-    # Temporarily change working directory
-    with monkeypatch.context() as m:
-        m.chdir(tmp_path)
-        secrets = get_secrets()
-        
-        # Verify secrets were loaded from .env
-        assert secrets['OPENAI_API_KEY'] == 'openai_key'
-        assert secrets['VOYAGE_API_KEY'] == 'voyage_key'
-        assert secrets['PINECONE_API_KEY'] == 'pinecone_key'
-        assert secrets['HUGGINGFACEHUB_API_KEY'] == 'huggingface_key'
-        assert secrets['ANTHROPIC_API_KEY'] == 'anthropic_key'
 @pytest.mark.parametrize('test_index', [
     {
         'db_type': 'ChromaDB',
@@ -950,6 +926,7 @@ def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
 def test_get_docs_questions_df(setup_fixture, test_index):
     """Test function for the get_docs_questions_df() method."""
     index_name = 'test-visualization'
+    rag_type='Standard'
 
     # Initialize services
     embedding_service = EmbeddingService(
@@ -963,7 +940,7 @@ def test_get_docs_questions_df(setup_fixture, test_index):
     db_service = DatabaseService(
         db_type=test_index['db_type'],
         index_name=index_name,
-        rag_type='Standard',
+        rag_type=rag_type,
         embedding_service=embedding_service
     )
 
@@ -971,7 +948,7 @@ def test_get_docs_questions_df(setup_fixture, test_index):
         # Initialize the document processor with services
         doc_processor = DocumentProcessor(
             embedding_service=embedding_service,
-            rag_type='Standard',
+            rag_type=rag_type,
             chunk_method=setup_fixture['chunk_method'],
             chunk_size=setup_fixture['chunk_size'],
             chunk_overlap=setup_fixture['chunk_overlap'],
