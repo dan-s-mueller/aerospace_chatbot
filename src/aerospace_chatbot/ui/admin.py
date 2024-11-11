@@ -5,7 +5,7 @@ import os
 
 from ..core.config import load_config, ConfigurationError, get_secrets, set_secrets
 from ..core.cache import Dependencies
-from ..services.database import DatabaseService
+from ..services.database import DatabaseService, get_available_indexes
 
 class SidebarManager:
     """Manages the creation, state, and layout of the Streamlit sidebar."""
@@ -97,7 +97,7 @@ class SidebarManager:
         st.sidebar.title('Index Selected')
         
         # Get available indexes based on current settings
-        available_indexes, index_metadatas = DatabaseService.get_available_indexes(
+        available_indexes, index_metadatas = get_available_indexes(
             self.sb_out['index_type'],
             self.sb_out['embedding_name'],
             self.sb_out['rag_type']

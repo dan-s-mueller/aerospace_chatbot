@@ -147,7 +147,7 @@ def setup_fixture():
     rag_type = {rag: rag for rag in ['Standard', 'Parent-Child', 'Summary']}
     
     mock_embedding_service = EmbeddingService(
-        model_name='text-embedding-3-large',
+        model_name='text-embedding-3-small',
         model_type='OpenAI'
     )
 
@@ -416,7 +416,7 @@ def test_process_documents_summary(setup_fixture):
     {
         'index_type': 'Pinecone',
         'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-large',
+        'embedding_name': 'text-embedding-3-small',
         'expected_class': PineconeVectorStore
     },
     {
@@ -495,7 +495,7 @@ def test_initialize_database(monkeypatch, test_index):
     {
         'db_types': ['Pinecone', 'ChromaDB'],
         'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-large',
+        'embedding_name': 'text-embedding-3-small',
         'expected_classes': {
             'Pinecone': PineconeVectorStore,
             'ChromaDB': Chroma
@@ -606,16 +606,15 @@ def test_delete_database(setup_fixture, test_index):
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',
-        'embedding_model': 'text-embedding-3-large',
+        'embedding_model': 'text-embedding-3-small',
         'embedding_family': 'OpenAI',
         'rag_types': ['Standard', 'Parent-Child', 'Summary']
     },
     {
         'index_type': 'ChromaDB',
-        'embedding_model': 'text-embedding-3-large',
+        'embedding_model': 'text-embedding-3-small',
         'embedding_family': 'OpenAI',
         'rag_types': ['Standard', 'Parent-Child', 'Summary']
-        # 'rag_types': ['Standard']
     },
     {
         'index_type': 'RAGatouille',
@@ -642,7 +641,7 @@ def test_get_available_indexes(setup_fixture, test_index):
     # Create and index test documents for each RAG type
     test_indexes = []
     for rag_type in test_index['rag_types']:
-        index_name = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
+        index_name = f"test-{test_index['index_type'].lower()}"
         test_indexes.append(index_name)
         
         try:
@@ -683,6 +682,8 @@ def test_get_available_indexes(setup_fixture, test_index):
         # Test getting available indexes for each RAG type
         for rag_type in test_index['rag_types']:
             try:
+                index_name = f"test-{test_index['index_type'].lower()}"
+
                 available_indexes, index_metadatas = get_available_indexes(
                     test_index['index_type'],
                     test_index['embedding_model'],
@@ -690,9 +691,16 @@ def test_get_available_indexes(setup_fixture, test_index):
                 )
                 
                 print(f"Available {rag_type} indexes: {available_indexes}")
+                               
+                # Construct expected index name based on RAG type
+                if rag_type == 'Parent-Child':
+                    expected_index = f"{index_name}-parent-child"
+                elif rag_type == 'Summary':
+                    expected_index = f"{index_name}-summary"
+                else:  # Standard
+                    expected_index = index_name
                 
                 # Verify expected index exists in results
-                expected_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
                 assert expected_index in available_indexes, \
                     f"Expected index {expected_index} not found in available indexes"
                 
@@ -931,12 +939,12 @@ def test_get_secrets_with_dotenv(tmp_path, monkeypatch):
     {
         'db_type': 'ChromaDB',
         'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-large'
+        'embedding_name': 'text-embedding-3-small'
     },
     {
         'db_type': 'Pinecone',
         'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-large'
+        'embedding_name': 'text-embedding-3-small'
     }
 ])
 def test_get_docs_questions_df(setup_fixture, test_index):
@@ -1004,9 +1012,9 @@ def test_get_docs_questions_df(setup_fixture, test_index):
             "used_by_question_first"
         ])
         
-        # Check for exactly n_retrievals unique non-zero values in used_by_num_questions. Checks that the question matched to the sources it said it found. Sensitive to hash changes in stable_hash.
-        unique_nonzero = df[df['used_by_num_questions'] > 0]['used_by_num_questions'].nunique()
-        assert unique_nonzero == n_retrievals, f"Expected {n_retrievals} unique non-zero values in used_by_num_questions, but got {unique_nonzero}"
+        # Check that exactly n_retrievals sources were used (have non-zero values in used_by_num_questions)
+        nonzero_count = len(df[df['used_by_num_questions'] > 0])
+        assert nonzero_count == n_retrievals, f"Expected {n_retrievals} sources to have non-zero values in used_by_num_questions, but got {nonzero_count}"
 
         # Cleanup
         db_service.delete_index()
@@ -1024,12 +1032,12 @@ def test_get_docs_questions_df(setup_fixture, test_index):
     {
         'db_type': 'ChromaDB',
         'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-large'
+        'embedding_name': 'text-embedding-3-small'
     },
     {
         'db_type': 'Pinecone',
         'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-large'
+        'embedding_name': 'text-embedding-3-small'
     }
 ])
 def test_add_clusters(setup_fixture, test_index):
