@@ -60,11 +60,16 @@ from aerospace_chatbot.ui import (
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 
+# High priority updates:
+# FIXME test that prompts are formatted properly
+# FIXME add test for dependency caching
+# FIXME add upload file test
+
+# Low priority updates:
 # TODO add tests to check conversation history functionality
 # TODO add a test to check parent/child and summary lookup functionality (not just that it executes)
-# TODO add upload file test
 # TODO add apptest from streamlit
-# TODO test that prompts are formatted properly
+
 
 # Functions
 def permute_tests(test_data):
@@ -993,6 +998,10 @@ def test_get_docs_questions_df(setup_fixture, test_index):
             "first_source", "used_by_questions", "used_by_num_questions",
             "used_by_question_first"
         ])
+
+        # Verify there is at least one document and one question
+        assert len(df[df['type'] == 'doc']) > 0, "No documents found in DataFrame"
+        assert len(df[df['type'] == 'question']) > 0, "No questions found in DataFrame" # Indicates the question was not recorded properly
         
         # Check that exactly n_retrievals sources were used (have non-zero values in used_by_num_questions)
         nonzero_count = len(df[df['used_by_num_questions'] > 0])
