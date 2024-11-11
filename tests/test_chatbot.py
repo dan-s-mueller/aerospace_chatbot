@@ -491,97 +491,118 @@ def test_initialize_database(monkeypatch, test_index):
             clear=True
         )
 @pytest.mark.parametrize('test_index', [
+    # Combined Pinecone and ChromaDB tests
     {
-        'index_type': 'Pinecone',
+        'db_types': ['Pinecone', 'ChromaDB'],
         'embedding_family': 'OpenAI',
         'embedding_name': 'text-embedding-3-large',
-        'expected_class': PineconeVectorStore
+        'expected_classes': {
+            'Pinecone': PineconeVectorStore,
+            'ChromaDB': Chroma
+        },
+        'rag_types': ['Standard', 'Parent-Child', 'Summary']
     },
+    # RAGatouille test (Standard only)
     {
-        'index_type': 'ChromaDB',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-ada-002',
-        'expected_class': Chroma
-    },
-    {
-        'index_type': 'RAGatouille',
+        'db_types': ['RAGatouille'],
         'embedding_family': 'RAGatouille',
         'embedding_name': 'colbert-ir/colbertv2.0',
-        'expected_class': RAGPretrainedModel
+        'expected_classes': {
+            'RAGatouille': RAGPretrainedModel
+        },
+        'rag_types': ['Standard']
     }
 ])
 def test_delete_database(setup_fixture, test_index):
-    '''Test deleting both existing and non-existing databases.'''
+    '''Test deleting both existing and non-existing databases for different RAG types.'''
     index_name = 'test-delete-index'
-    rag_type = 'Standard'
+    
+    # For Parent-Child and Summary, we need an LLM service
+    llm_service = setup_fixture['mock_llm_service']
 
-    # Create services
+    # Create embedding service
     embedding_service = EmbeddingService(
         model_name=test_index['embedding_name'],
         model_type=test_index['embedding_family']
     )
     
-    db_service = DatabaseService(
-        db_type=test_index['index_type'],
-        index_name=index_name,
-        rag_type=rag_type,
-        embedding_service=embedding_service
-    )
+    # Loop through each database type and RAG type combination
+    for db_type in test_index['db_types']:
+        for rag_type in test_index['rag_types']:
+            print(f"\nTesting {db_type} with {rag_type} RAG type")
+            
+            db_service = DatabaseService(
+                db_type=db_type,
+                index_name=index_name,
+                rag_type=rag_type,
+                embedding_service=embedding_service
+            )
 
-    # Clean up any existing test indexes first
-    print(f"Deleting existing indexes before test cases: {index_name}")
-    try:
-        db_service.delete_index()
-    except Exception as e:
-        print(f"Info: Cleanup of existing index failed (this is expected if index didn't exist): {str(e)}")
+            # Clean up any existing test indexes first
+            print(f"Deleting existing indexes before test cases: {db_service.index_name}")
+            try:
+                db_service.delete_index()
+            except Exception as e:
+                print(f"Info: Cleanup of existing index failed (this is expected if index didn't exist): {str(e)}")
 
-    # Test Case 1: Delete non-existent database
-    print(f"Deleting non-existent database: {index_name}")
-    try:
-        db_service.delete_index()
-    except Exception as e:
-        assert "does not exist" in str(e).lower() or "not found" in str(e).lower()
+            # Test Case 1: Delete non-existent database
+            print(f"Deleting non-existent database: {db_service.index_name}")
+            try:
+                db_service.delete_index()
+            except Exception as e:
+                assert "does not exist" in str(e).lower() or "not found" in str(e).lower()
 
-    # Test Case 2: Create and delete standard database
-    print(f"Creating and deleting standard database: {index_name}")
-    try:
-        db_service.initialize_database(
-            namespace=db_service.namespace,
-            clear=True
-        )
-        assert isinstance(db_service.vectorstore, test_index['expected_class'])
-        
-        # Delete the database
-        db_service.delete_index()
-        
-        # Verify deletion by checking if database exists
-        # FIXME add local filestore deletion check
-        if test_index['index_type'] == 'Pinecone':
-            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-            assert index_name not in pc.list_indexes()
-        elif test_index['index_type'] == 'ChromaDB':
-            db_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], index_name)
-            assert not os.path.exists(db_path)
-        elif test_index['index_type'] == 'RAGatouille':
-            db_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'ragatouille', index_name)
-            assert not os.path.exists(db_path)
+            # Test Case 2: Create and delete database with specific RAG type
+            print(f"Creating and deleting {rag_type} database: {db_service.index_name}")
+            try:
+                db_service.initialize_database(
+                    namespace=db_service.namespace,
+                    clear=True
+                )
+                assert isinstance(db_service.vectorstore, test_index['expected_classes'][db_type])
+                
+                # Delete the database
+                db_service.delete_index()
+                
+                # Verify deletion by checking if database exists
+                if db_type == 'Pinecone':
+                    pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+                    assert db_service.index_name not in pc.list_indexes()
+                    
+                    # For Parent-Child and Summary, verify additional indexes are deleted
+                    if rag_type in ['Parent-Child', 'Summary']:
+                        lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
+                        assert not os.path.exists(lfs_path)
+                        
+                elif db_type == 'ChromaDB':
+                    db_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], db_service.index_name)
+                    assert not os.path.exists(db_path)
+                    
+                    # For Parent-Child and Summary, verify additional storage is deleted
+                    if rag_type in ['Parent-Child', 'Summary']:
+                        lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
+                        assert not os.path.exists(lfs_path)
+                        
+                elif db_type == 'RAGatouille':
+                    db_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'ragatouille', db_service.index_name)
+                    assert not os.path.exists(db_path)
 
-        # Verify index is not in available indexes
-        available_indexes, _ = get_available_indexes(
-            test_index['index_type'],
-            test_index['embedding_name'],
-            rag_type
-        )
-        assert index_name not in available_indexes, \
-            f"Deleted index {index_name} still appears in available indexes"
+                # Verify index is not in available indexes
+                available_indexes, _ = get_available_indexes(
+                    db_type,
+                    test_index['embedding_name'],
+                    rag_type
+                )
+                assert db_service.index_name not in available_indexes, \
+                    f"Deleted index {db_service.index_name} still appears in available indexes"
 
-    except Exception as e:
-        # If test fails, ensure cleanup
-        try:
-            db_service.delete_index()
-        except:
-            pass
-        raise e
+            except Exception as e:
+                # If test fails, ensure cleanup
+                try:
+                    db_service.delete_index()
+                except:
+                    pass
+                raise e
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',
@@ -958,9 +979,11 @@ def test_get_docs_questions_df(setup_fixture, test_index):
         )
 
         # Initialize QA model
+        n_retrievals = 4
         qa_model = QAModel(
             db_service=db_service,
-            llm_service=llm_service
+            llm_service=llm_service,
+            k=n_retrievals
         )
 
         # Run a query to create the query database
@@ -980,6 +1003,10 @@ def test_get_docs_questions_df(setup_fixture, test_index):
             "first_source", "used_by_questions", "used_by_num_questions",
             "used_by_question_first"
         ])
+        
+        # Check for exactly n_retrievals unique non-zero values in used_by_num_questions. Checks that the question matched to the sources it said it found. Sensitive to hash changes in stable_hash.
+        unique_nonzero = df[df['used_by_num_questions'] > 0]['used_by_num_questions'].nunique()
+        assert unique_nonzero == n_retrievals, f"Expected {n_retrievals} unique non-zero values in used_by_num_questions, but got {unique_nonzero}"
 
         # Cleanup
         db_service.delete_index()

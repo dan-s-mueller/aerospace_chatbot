@@ -49,16 +49,14 @@ class DatabaseService:
         """Index processed documents. This is where the index is initialized or created if required."""
 
         # Initialize database
+        self._validate_index(chunking_result)
         self.initialize_database(
             namespace=self.namespace,
             clear=clear
         )
 
-        # Add index metadata
+        # Add index metadata, upsert docs
         self._store_index_metadata(chunking_result)
-
-        # Validate index name and parameters, upsert documents
-        self._validate_index(chunking_result)
         self._upsert_docs(chunking_result, batch_size, clear=clear)
 
     def get_retriever(self, k=4):
@@ -111,8 +109,18 @@ class DatabaseService:
 
     def delete_index(self):
         """Delete an index from the database."""
-        # Need to decide if a databaseprocessor can have multiple index names, this only processes the name assigned to the processor, assuming one per processor.
-        # FIXME won't delete local filestore data
+
+        # Delete local file store if using Parent-Child or Summary RAG
+        if self.rag_type in ['Parent-Child', 'Summary']:
+            try:
+                lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+                if os.path.exists(lfs_path):
+                    shutil.rmtree(lfs_path)
+                    print(f"Local file store for {self.index_name} deleted")
+            except Exception as e:
+                print(f"Warning: Failed to delete local file store for {self.index_name}: {str(e)}")
+
+        # Delete vector store
         if self.db_type == 'ChromaDB':
             _, chromadb, _ = self._deps.get_db_deps()
             
@@ -153,20 +161,27 @@ class DatabaseService:
         _, chromadb, _ = self._deps.get_db_deps()
         _, Chroma, _, _ = self._deps.get_vectorstore_deps()
         
+        # Create ChromaDB directory
         db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
         os.makedirs(db_path, exist_ok=True)
         client = chromadb.PersistentClient(path=db_path)
         
-        # TODO add logic to print when a new index is created, vs an existing one is initialized
         if clear:
             self.delete_index()
+
+        # Create local file store directory if needed
+        if self.rag_type in ['Parent-Child', 'Summary']:
+            lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+            if not os.path.exists(lfs_path):
+                os.makedirs(lfs_path)
+                print(f"Created local file store directory at {lfs_path}")
 
         self.vectorstore = Chroma(
             client=client,
             collection_name=self.index_name,
             embedding_function=self.embedding_service.get_embeddings()
         )
-        print(f"ChromaDB index {self.index_name} initialized")
+        print(f"ChromaDB index {self.index_name} initialized or created.")
     
     @retry(
         stop=stop_after_attempt(5),
@@ -202,6 +217,13 @@ class DatabaseService:
             )
             print(f"Pinecone index {self.index_name} created")
         
+        # Create local file store directory if needed
+        if self.rag_type in ['Parent-Child', 'Summary']:
+            lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+            if not os.path.exists(lfs_path):
+                os.makedirs(lfs_path)
+                print(f"Created local file store directory at {lfs_path}")
+
         self.vectorstore = PineconeVectorStore(
             index=pc.Index(self.index_name),
             index_name=self.index_name,
@@ -405,7 +427,10 @@ class DatabaseService:
                 raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
             else:
                 lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+                if not os.path.exists(lfs_path):
+                    raise ValueError(f"Local file store path {lfs_path} does not exist. This should have been created during database initialization.")
                 store = LocalFileStore(lfs_path)
+                
                 
                 id_key = "doc_id"
                 retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
@@ -446,8 +471,6 @@ def get_docs_questions_df(db_service, query_db_service):
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         index = pc.Index(index_name)
 
-        print(f"Fetching documents from Pinecone index: {index_name}")
-
         ids = []
         for id_batch in index.list():
             ids.extend(id_batch)
@@ -464,7 +487,6 @@ def get_docs_questions_df(db_service, query_db_service):
 
     def _process_chromadb_response(response, doc_type):
         """Process ChromaDB response into DataFrame."""
-        print(f"Response: {response}")
 
         if doc_type == 'document':
             # Filter out db_metadata document
@@ -575,8 +597,6 @@ def get_docs_questions_df(db_service, query_db_service):
         raise Exception('Multiple matching query collections found.')
     if not matching_collection:
         raise Exception('Query database not found. Please create a query database using the Chatbot page and a selected index.')
-    
-    print(f"Query database found: {query_db_service.index_name}")
 
     # Get documents and questions dataframes
     docs_df = _get_dataframe_from_store(
@@ -586,7 +606,6 @@ def get_docs_questions_df(db_service, query_db_service):
         doc_type='document'
     )
     docs_df["type"] = "doc"
-    print(f"Retrieved docs from: {db_service.index_name}")
 
     questions_df = _get_dataframe_from_store(
         query_db_service.vectorstore,
@@ -595,7 +614,6 @@ def get_docs_questions_df(db_service, query_db_service):
         doc_type='question'
     )
     questions_df["type"] = "question"
-    print(f"Retrieved questions from: {query_db_service.index_name}")
 
     # Process relationships
     questions_df["num_sources"] = questions_df["sources"].apply(len)

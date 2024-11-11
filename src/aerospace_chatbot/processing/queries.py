@@ -88,8 +88,6 @@ class QAModel:
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
         # If compatible type, upsert query into query database
-        # FIXME remove this long print
-        print(f"Result: {self.result[-1]}")
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
             self.query_db_service.vectorstore.add_documents([self._question_as_doc(query, self.result[-1])])
     def generate_alternative_questions(self, prompt):
@@ -163,14 +161,21 @@ class QAModel:
     @staticmethod
     def _question_as_doc(question, rag_answer):
         """Creates a Document object based on the given question and RAG answer."""
-        # Extract just the document IDs from the references
-        # FIXME, this doesn't work because rag_answer does not return IDs for the documents.
-        sources = [data.id for data in rag_answer['references']]
+
+        # Convert any numeric values in document metadata to integers, otherwise stable_hash_meta will not find any matching documents.
+        # TODO this feels really fragile, but it's the best I can think of for now.
+        for i, doc in enumerate(rag_answer['references']):
+            for key, value in doc.metadata.items():
+                if isinstance(value, float) and not isinstance(value, (bool, int, str)):
+                    doc.metadata[key] = int(value)
+                    rag_answer['references'][i] = doc
+
+        sources = [DocumentProcessor.stable_hash_meta(doc.metadata) for doc in rag_answer['references']]
         return Document(
             page_content=question,
             metadata={
                 "answer": rag_answer['answer'].content,
-                # "sources": ','.join(sources),  # Now sources is a list of IDs, no need to join
+                "sources": ','.join(sources),  # Now sources is a list of IDs, no need to join
             },
         )
     def _get_standalone_question(self, question, chat_history):
