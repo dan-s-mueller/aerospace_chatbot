@@ -422,11 +422,8 @@ class DatabaseService:
         from ..processing.documents import DocumentProcessor
         
         @pinecone_retry
-        def _upsert_pinecone():
-            for i in range(0, len(chunking_result.chunks), batch_size):
-                batch = chunking_result.chunks[i:i + batch_size]
-                batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
-                self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+        def _upsert_pinecone(batch, batch_ids):
+            self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
         
         # Standard for pinecone and chroma
         if self.rag_type == 'Standard':
@@ -435,7 +432,7 @@ class DatabaseService:
                 batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
                 
                 if self.db_type == "Pinecone":
-                    _upsert_pinecone()
+                    _upsert_pinecone(batch, batch_ids)
                 elif self.db_type == "ChromaDB":
                     self.vectorstore.add_documents(documents=batch, ids=batch_ids)
                 elif self.db_type == "RAGatouille":
@@ -469,10 +466,10 @@ class DatabaseService:
                     raise ValueError(f"Local file store path {lfs_path} does not exist. This should have been created during database initialization.")
                 store = LocalFileStore(lfs_path)
                 
-                
                 id_key = "doc_id"
                 retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
 
+                # Get the appropriate chunks and pages based on RAG type
                 if self.rag_type == 'Parent-Child':
                     chunks = chunking_result.chunks
                     pages = chunking_result.pages['parent_chunks']
@@ -484,12 +481,13 @@ class DatabaseService:
                 else:
                     raise NotImplementedError
 
+                # Process chunks in batches
                 for i in range(0, len(chunks), batch_size):
                     batch = chunks[i:i + batch_size]
                     batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
                     
                     if self.db_type == "Pinecone":
-                        _upsert_pinecone()
+                        _upsert_pinecone(batch, batch_ids)
                     else:
                         self.vectorstore.add_documents(documents=batch, ids=batch_ids)
                 

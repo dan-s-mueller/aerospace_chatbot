@@ -980,6 +980,11 @@ def test_get_docs_questions_df(setup_fixture, test_index):
             query_db_service=qa_model.query_db_service  # Query database service from QA model
         )
 
+        # Export DataFrame to pickle for visualization testing
+        pickle_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], f"{index_name}-viz.pkl")
+        df.to_pickle(pickle_path)
+        print(f"Exported visualization DataFrame to {pickle_path}")
+
         # Assert the result
         assert isinstance(df, pd.DataFrame)
         assert len(df) > 0
