@@ -184,23 +184,6 @@ def setup_fixture():
     }
 
     return setup
-# @pytest.fixture()
-# def temp_dotenv(setup_fixture):
-#     """Creates a temporary .env file for testing purposes."""
-#     dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '.env')
-#     if not os.path.exists(dotenv_path):
-#         with open(dotenv_path, 'w') as f:
-#             print('Creating .env file for testing.')
-#             f.write(f'OPENAI_API_KEY = {setup_fixture["OPENAI_API_KEY"]}\n')
-#             f.write(f'PINECONE_API_KEY = {setup_fixture["PINECONE_API_KEY"]}\n')
-#             f.write(f'HUGGINGFACEHUB_API_KEY = {setup_fixture["HUGGINGFACEHUB_API_KEY"]}\n')
-#             f.write(f'LOCAL_DB_PATH = {setup_fixture["LOCAL_DB_PATH"]}\n')
-#         yield dotenv_path
-#         os.remove(dotenv_path)
-#     else:
-#         yield dotenv_path
-
-### Backend tests
 def test_validate_index(setup_fixture):
     """Test edge cases for validate_index function."""
     from aerospace_chatbot.services.database import DatabaseService
@@ -439,7 +422,6 @@ def test_process_documents_summary(setup_fixture):
 ])
 def test_initialize_database(monkeypatch, test_index):
     '''Test the initialization of different types of databases.'''
-    # FIXME, work through where rag_type should be defined, it's a little messy at the moment. Probably belongs in the initialization of DatabaseService.
     index_name = 'test-index'
     rag_type = 'Standard'
 
@@ -670,8 +652,8 @@ def test_get_available_indexes(setup_fixture, test_index):
 
             # Process and index documents
             chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-            db_service.index_documents(
-                chunking_result=chunking_result,
+            db_service.index_data(
+                data=chunking_result,
                 batch_size=setup_fixture['batch_size'],
                 clear=True
             )
@@ -788,8 +770,8 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
         # Process and index documents
         chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_documents(
-            chunking_result=chunking_result,
+        db_service.index_data(
+            data=chunking_result,
             batch_size=setup_fixture['batch_size'],
             clear=True
         )
@@ -962,8 +944,8 @@ def test_get_docs_questions_df(setup_fixture, test_index):
 
         # Process and index documents
         chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_documents(
-            chunking_result=chunking_result,
+        db_service.index_data(
+            data=chunking_result,
             batch_size=setup_fixture['batch_size'],
             clear=True
         )
@@ -1064,8 +1046,8 @@ def test_add_clusters(setup_fixture, test_index):
 
         # Process and index documents
         chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_documents(
-            chunking_result=chunking_result,
+        db_service.index_data(
+            data=chunking_result,
             batch_size=setup_fixture['batch_size'],
             clear=True
         )

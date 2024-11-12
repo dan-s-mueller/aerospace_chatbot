@@ -57,22 +57,28 @@ class DatabaseService:
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
-    def index_documents(self,
-                       chunking_result,
-                       batch_size=100,
-                       clear=False):
-        """Index processed documents. This is where the index is initialized or created if required."""
+    def index_data(self, data, batch_size=100,clear=False):
+        """
+        Index processed documents or questions. 
+        If data is ChunkingResult type, chunked documents are processed.
+        If data is a list of Documents, questions are processed. Questions are not chunked or processed, just validated and upserted.
+        This is where the index is initialized or created if required.
+        """
+        # TODO, move this to dependency cache
+        from ..processing.documents import ChunkingResult
 
         # Initialize database
-        self._validate_index(chunking_result)
+        self._validate_index(data)
         self.initialize_database(
             namespace=self.namespace,
             clear=clear
         )
 
         # Add index metadata, upsert docs
-        self._store_index_metadata(chunking_result)
-        self._upsert_docs(chunking_result, batch_size, clear=clear)
+        if isinstance(data, ChunkingResult):
+            # Only store metadata if documents are being indexed
+            self._store_index_metadata(data)
+        self._upsert_data(data, batch_size, clear=clear)
 
     def get_retriever(self, k=4):
         """Get configured retriever for the vectorstore."""
@@ -330,7 +336,7 @@ class DatabaseService:
         index_metadata = {}
         if chunking_result.merge_pages is not None:
             index_metadata['merge_pages'] = chunking_result.merge_pages
-        if chunking_result.chunk_method is not 'None':
+        if chunking_result.chunk_method != 'None':
             index_metadata['chunk_method'] = chunking_result.chunk_method
         if chunking_result.chunk_size is not None:
             index_metadata['chunk_size'] = chunking_result.chunk_size
@@ -359,6 +365,14 @@ class DatabaseService:
                 'metadata': index_metadata
             }])
 
+            # Check vector upload count. Always in default namespace.
+            stats = index.describe_index_stats()
+            initial_count = stats['total_vector_count'] 
+            if initial_count != 0:
+                raise ValueError(f"Initial count in {self.index_name} is {initial_count}, not 0. Cannot set metadata for index that already exists.")
+            print(f"Initial count in {self.index_name}: {initial_count}")
+            self._verify_pinecone_upload(index, 1)  # Should only be metadata
+
         if self.db_type == "Pinecone":
             _store_pinecone_metadata()
         elif self.db_type == "ChromaDB":
@@ -374,11 +388,19 @@ class DatabaseService:
             # TODO add metadata storage for RAGatouille, maybe can use the same method as others
             print("Warning: Metadata storage is not yet supported for RAGatouille indexes")
 
-    def _validate_index(self, doc_processor):
-        """Validate and format index with parameters passed from DocumentProcessor. Does nothing if no exceptions are raised, unless RAG type is Parent-Child or Summary, which will append to index_name."""
+    def _validate_index(self, data):
+        """
+        Validate and format index with parameters.
+        If data is a ChunkingResult type, 
+        Else it will only validate name (for question dbs).
+        Does nothing if no exceptions are raised, unless RAG type is Parent-Child or Summary, which will append to index_name.
+        """
+        # TODO update dependency cache
+        from ..processing.documents import ChunkingResult
 
-        if doc_processor.rag_type != self.rag_type:
-            raise ValueError(f"RAG type mismatch: DocumentProcessor has '{doc_processor.rag_type}' but DatabaseService has '{self.rag_type}'")
+        if isinstance(data, ChunkingResult):   
+            if data.rag_type != self.rag_type:
+                raise ValueError(f"RAG type mismatch: DocumentProcessor has '{data.rag_type}' but DatabaseService has '{self.rag_type}'")
         if not self.index_name or not self.index_name.strip():
             raise ValueError("Index name cannot be empty or contain only whitespace")
         
@@ -386,21 +408,19 @@ class DatabaseService:
         name = self.index_name.lower().strip()
         
         # Add RAG type suffix
-        if doc_processor.rag_type == 'Parent-Child':
-            name += '-parent-child'
-            self.index_name = name
-        elif doc_processor.rag_type == 'Summary':
-            if not doc_processor.llm_service:
-                raise ValueError("LLM service is required for Summary RAG type")
-            
-            summary_model_name = doc_processor.llm_service.model_name
-            model_name_temp = summary_model_name.replace(".", "-").replace("/", "-").lower()
-            model_name_temp = model_name_temp.split('/')[-1]  # Just get the model name, not org
-            model_name_temp = model_name_temp[:3] + model_name_temp[-3:]  # First and last 3 characters
-            
-            # Add hash of model name
-            name += "-summary"
-            self.index_name = name
+        if isinstance(data, ChunkingResult):
+            if data.rag_type == 'Parent-Child':
+                name += '-parent-child'
+                self.index_name = name
+            elif data.rag_type == 'Summary':
+                if not data.llm_service:
+                    raise ValueError("LLM service is required for Summary RAG type")
+                summary_model_name = data.llm_service.model_name
+                model_name_temp = summary_model_name.replace(".", "-").replace("/", "-").lower()
+                model_name_temp = model_name_temp.split('/')[-1]  # Just get the model name, not org
+                model_name_temp = model_name_temp[:3] + model_name_temp[-3:]  # First and last 3 characters
+                name += f"-{model_name_temp}-summary"
+                self.index_name = name
 
         # Database-specific validation
         if self.db_type == "Pinecone":
@@ -416,84 +436,133 @@ class DatabaseService:
             if ".." in name:
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
 
-    def _upsert_docs(self, chunking_result, batch_size, clear=False):
-        """Upsert documents. Used for all RAG types."""
+    def _upsert_data(self, data, batch_size, clear=False):
+        """Upsert documents or questions. Used for all RAG types."""
+        # FIXME add namespace argument to upsert to a specific namespace and verify upload
         # TODO update dependency cache
-        from ..processing.documents import DocumentProcessor
+        from ..processing.documents import ChunkingResult, DocumentProcessor        
+        from langchain_core.documents import Document
         
         @pinecone_retry
         def _upsert_pinecone(batch, batch_ids):
             self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
-        
-        # Standard for pinecone and chroma
-        if self.rag_type == 'Standard':
-            for i in range(0, len(chunking_result.chunks), batch_size):
-                batch = chunking_result.chunks[i:i + batch_size]
-                batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
-                
-                if self.db_type == "Pinecone":
-                    _upsert_pinecone(batch, batch_ids)
-                elif self.db_type == "ChromaDB":
-                    self.vectorstore.add_documents(documents=batch, ids=batch_ids)
-                elif self.db_type == "RAGatouille":
-                    continue
-                else:
-                    raise NotImplementedError
-        
-        # RAGatouille for all chunks at once
-        if self.db_type == "RAGatouille":
-            # Process all chunks at once for RAGatouille
-            self.vectorstore.index(
-                collection=[chunk.page_content for chunk in chunking_result.chunks],
-                document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in chunking_result.chunks],
-                index_name=self.index_name,
-                overwrite_index=clear,
-                split_documents=True,
-                document_metadatas=[chunk.metadata for chunk in chunking_result.chunks]
-            )
-        
-        # Parent-Child or Summary for pinecone and chroma
-        if self.rag_type in ['Parent-Child', 'Summary']:
-            # TODO update dependency cache
-            from langchain.storage import LocalFileStore
-            from langchain.retrievers.multi_vector import MultiVectorRetriever
-            
-            if self.db_type == 'RAGatouille':
-                raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
-            else:
-                lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
-                if not os.path.exists(lfs_path):
-                    raise ValueError(f"Local file store path {lfs_path} does not exist. This should have been created during database initialization.")
-                store = LocalFileStore(lfs_path)
-                
-                id_key = "doc_id"
-                retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
 
-                # Get the appropriate chunks and pages based on RAG type
-                if self.rag_type == 'Parent-Child':
-                    chunks = chunking_result.chunks
-                    pages = chunking_result.pages['parent_chunks']
-                    doc_ids = chunking_result.pages['doc_ids']
-                elif self.rag_type == 'Summary':
-                    chunks = chunking_result.summaries
-                    pages = chunking_result.pages['docs']
-                    doc_ids = chunking_result.pages['doc_ids']
-                else:
-                    raise NotImplementedError
+        if self.db_type == "Pinecone":
+            from pinecone import Pinecone as Pinecone
+            pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+            pc_index = pc.Index(self.index_name)
+            stats = pc_index.describe_index_stats()
+            initial_count = stats['total_vector_count']
+            if self.namespace:
+                initial_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)   
+            print(f"Initial count: {initial_count}")
 
-                # Process chunks in batches
-                for i in range(0, len(chunks), batch_size):
-                    batch = chunks[i:i + batch_size]
+        if isinstance(data, ChunkingResult):
+            # Chunked documents
+            # Standard for pinecone and chroma
+            if self.rag_type == 'Standard':
+                for i in range(0, len(data.chunks), batch_size):
+                    batch = data.chunks[i:i + batch_size]
                     batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
                     
                     if self.db_type == "Pinecone":
                         _upsert_pinecone(batch, batch_ids)
-                    else:
+                    elif self.db_type == "ChromaDB":
                         self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+                    elif self.db_type == "RAGatouille":
+                        continue
+                    else:
+                        raise NotImplementedError
+            
+            # RAGatouille for all chunks at once
+            if self.db_type == "RAGatouille":
+                # Process all chunks at once for RAGatouille
+                self.vectorstore.index(
+                    collection=[chunk.page_content for chunk in data.chunks],
+                    document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in data.chunks],
+                    index_name=self.index_name,
+                    overwrite_index=clear,
+                    split_documents=True,
+                    document_metadatas=[chunk.metadata for chunk in data.chunks]
+                )
+            
+            # Parent-Child or Summary for pinecone and chroma
+            if self.rag_type in ['Parent-Child', 'Summary']:
+                # TODO update dependency cache
+                from langchain.storage import LocalFileStore
+                from langchain.retrievers.multi_vector import MultiVectorRetriever
                 
-                # Index parent docs all at once
-                retriever.docstore.mset(list(zip(doc_ids, pages)))
-                self.retriever = retriever
+                if self.db_type == 'RAGatouille':
+                    raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
+                else:
+                    lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+                    if not os.path.exists(lfs_path):
+                        raise ValueError(f"Local file store path {lfs_path} does not exist. This should have been created during database initialization.")
+                    store = LocalFileStore(lfs_path)
+                    
+                    id_key = "doc_id"
+                    retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
+
+                    # Get the appropriate chunks and pages based on RAG type
+                    if self.rag_type == 'Parent-Child':
+                        chunks = data.chunks
+                        pages = data.pages['parent_chunks']
+                        doc_ids = data.pages['doc_ids']
+                    elif self.rag_type == 'Summary':
+                        chunks = data.summaries
+                        pages = data.pages['docs']
+                        doc_ids = data.pages['doc_ids']
+                    else:
+                        raise NotImplementedError
+
+                    # Process chunks in batches
+                    for i in range(0, len(chunks), batch_size):
+                        batch = chunks[i:i + batch_size]
+                        batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
+                        
+                        if self.db_type == "Pinecone":
+                            _upsert_pinecone(batch, batch_ids)
+                        else:
+                            self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+                    
+                    # Index parent docs all at once
+                    retriever.docstore.mset(list(zip(doc_ids, pages)))
+                    self.retriever = retriever
+        elif isinstance(data, list) and all(isinstance(item, Document) for item in data):
+            # Questions
+            if self.db_type in ["Pinecone", "ChromaDB"]:
+                self.vectorstore.add_documents(documents=data)
+            elif self.db_type == "RAGatouille":
+                print("Warning: RAGatouille does not support question databases.")
+            else:
+                raise NotImplementedError
+        else:
+            raise ValueError("Unsupported data formatting for upsert. Should either be a ChunkingResult or a list of Documents.")
+            
+        if self.db_type == "Pinecone":
+            if isinstance(data, ChunkingResult):
+                expected_count = initial_count+len(data.chunks)
+            else:
+                expected_count = initial_count+len(data)
+            self._verify_pinecone_upload(pc_index, expected_count)
+        
+    def _verify_pinecone_upload(self,index, expected_count):
+        """Verify that vectors were uploaded to Pinecone index."""
+        max_retries = 10
+        retry_count = 0
+        while retry_count < max_retries:
+            stats = index.describe_index_stats()
+            current_count = stats['total_vector_count']
+            if self.namespace:
+                current_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)            
+            if current_count == expected_count:
+                print(f"Successfully verified {current_count} vectors in index{f' namespace {self.namespace}' if self.namespace else ''}")
+                break
+            print(f"Waiting for vectors to be indexed... Current count: {current_count}, Expected: {expected_count}")
+            time.sleep(2)
+            retry_count += 1
+        if retry_count == max_retries:
+            print(f"Warning: Timeout waiting for vectors to be indexed. Current count: {current_count}, Expected: {expected_count}")    
 
 def get_docs_questions_df(db_service, query_db_service):
     """Get documents and questions from database as a DataFrame."""
@@ -508,10 +577,14 @@ def get_docs_questions_df(db_service, query_db_service):
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         index = pc.Index(index_name)
 
+        print(f'fetching {index_name} from Pinecone')
+
         ids = []
         for id_batch in index.list():
             ids.extend(id_batch)
+        print(f'ids length: {len(ids)}')
             
+        vectors_temp = []
         docs = []
         chunk_size = 200
         for i in range(0, len(ids), chunk_size):
@@ -519,7 +592,12 @@ def get_docs_questions_df(db_service, query_db_service):
             vector_data = []
             for _, value in vector.items():
                 vector_data.append(value)
+            vectors_temp.extend(vector)
             docs.extend(vector_data)
+
+        print(f'retrieved {len(docs)} documents')
+        print(f'vectors_temp length: {len(vectors_temp)}')
+        # print(vectors_temp)
         return docs
 
     def _process_chromadb_response(response, doc_type):
@@ -601,6 +679,10 @@ def get_docs_questions_df(db_service, query_db_service):
             elif db_type == 'Pinecone':
                 docs = _fetch_pinecone_docs(index_name)
                 df = _process_pinecone_response(docs, doc_type)
+
+                if doc_type == 'question':
+                    print(f'retrieved {len(docs)} questions')
+                    # print(docs)
                 
             else:
                 raise ValueError(f"Unsupported database type: {db_type}")

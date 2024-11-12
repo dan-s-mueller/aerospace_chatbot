@@ -214,9 +214,9 @@ def _process_uploads(sb, temp_files):
     # Process and index documents
     st.markdown("*Uploading user documents to namespace...*")
     chunking_result = doc_processor.process_documents(temp_files)
-    doc_processor.index_documents(
+    doc_processor.index_data(
         index_name=sb['index_selected'],
-        chunking_result=chunking_result,
+        data=chunking_result,
         namespace=st.session_state.user_upload,
         show_progress=True
     )

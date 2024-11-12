@@ -40,15 +40,14 @@ class QAModel:
         )
         
         # Initialize query vectorstore with the same embedding service as main db
-        # FIXME, first check if this index exists, and if not, create it. Otherwise, use it.
-        self.query_db_service.initialize_database(
-            namespace=self.namespace,
-            clear=True
-        )
+        # FIXME, first check if this index exists, and if not, create it. Otherwise, use it. I think I fixed this below, but check.
+        # self.query_db_service.initialize_database(
+        #     namespace=self.namespace,
+        #     clear=True
+        # )
         
         # Get retrievers from database services
         self.db_service.get_retriever(k=k)
-        self.query_db_service.get_retriever(k=k)
 
         # Initialize memory
         self.memory = ConversationBufferMemory(
@@ -89,7 +88,10 @@ class QAModel:
 
         # If compatible type, upsert query into query database
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
-            self.query_db_service.vectorstore.add_documents([self._question_as_doc(query, self.result[-1])])
+            print(f'upserting question into query database')
+            print(self._question_as_doc(query, self.result[-1]))
+            # TODO, check initialization of query database. It will use the existing one by default, no clear.
+            self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
     def generate_alternative_questions(self, prompt):
         """Generates alternative questions based on a prompt."""
         _, StrOutputParser, _, _, _, _ = self._deps.get_query_deps()
@@ -161,7 +163,6 @@ class QAModel:
     @staticmethod
     def _question_as_doc(question, rag_answer):
         """Creates a Document object based on the given question and RAG answer."""
-
         # Convert any numeric values in document metadata to integers, otherwise stable_hash_meta will not find any matching documents.
         # TODO this feels really fragile, but it's the best I can think of for now.
         for i, doc in enumerate(rag_answer['references']):
