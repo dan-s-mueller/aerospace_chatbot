@@ -1,6 +1,7 @@
 """QA model and retrieval logic."""
 
 import os
+import logging
 
 from ..core.cache import Dependencies
 from ..services.prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT, 
@@ -28,6 +29,7 @@ class QAModel:
         self.ai_response = ""
         self.result = []
         self.conversational_qa_chain = None
+        self.logger = logging.getLogger(__name__)
 
         _, _, _, _, ConversationBufferMemory, _ = self._deps.get_query_deps()
 

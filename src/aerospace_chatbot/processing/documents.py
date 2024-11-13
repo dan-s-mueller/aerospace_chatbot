@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from langchain_core.documents import Document
 from google.cloud import storage
 import tempfile
+import logging
 
 from ..core.cache import Dependencies
 from ..services.prompts import SUMMARIZE_TEXT
@@ -45,6 +46,7 @@ class DocumentProcessor:
         self.merge_pages = merge_pages
         self.llm_service = llm_service  # Only for rag_type=='Summary', otherwise ignored
         self._deps = Dependencies()
+        self.logger = logging.getLogger(__name__)
 
     def process_documents(self, documents):
         """Process documents based on RAG type by chunking."""

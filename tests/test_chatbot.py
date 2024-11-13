@@ -658,8 +658,6 @@ def test_get_available_indexes(setup_fixture, test_index):
                 clear=True
             )
 
-            print(f"Created test index: {index_name}")
-
         except Exception as e:
             print(f"Error creating index {index_name}: {str(e)}")
             db_service.delete_index()

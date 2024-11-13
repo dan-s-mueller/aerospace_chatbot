@@ -3,7 +3,8 @@ from .core import (
     ConfigurationError,
     load_config,
     get_secrets,
-    set_secrets
+    set_secrets,
+    setup_logging
 )
 from .processing import (
     DocumentProcessor, 
@@ -46,7 +47,7 @@ __all__ = [
     'load_config',
     'get_secrets',
     'set_secrets',  
-    
+    'setup_logging',
     # Services
     'DatabaseService',
     'get_docs_questions_df', 
