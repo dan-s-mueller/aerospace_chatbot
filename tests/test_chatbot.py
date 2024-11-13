@@ -2,6 +2,7 @@ import os, sys, json
 import itertools
 import pytest
 import pandas as pd
+import logging
 from dotenv import load_dotenv, find_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_anthropic import ChatAnthropic
@@ -117,14 +118,25 @@ def parse_test_case(setup, test_case):
 @pytest.fixture(autouse=True)
 def setup_fixture():
     """Sets up the fixture for testing the backend."""
-    # Pull api keys from .env file. If these do not exist, create a .env file in the root directory and add the following.
-    load_dotenv(find_dotenv(), override=True)
+    # Override environment variables first, before loading .env
+    os.environ['LOG_LEVEL'] = 'DEBUG'
+    os.environ['LOG_FILE'] = 'logs/test_chatbot.log'
+    logger = logging.getLogger(__name__)
+
+    # Setup logging with overridden values
+    from aerospace_chatbot.core.logging_config import setup_logging
+    logger = setup_logging()
+    
+    # Now load .env file (won't override existing environment variables)
+    load_dotenv(find_dotenv(), override=False)
+    
+    # Pull api keys from .env file
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
     VOYAGE_API_KEY = os.getenv('VOYAGE_API_KEY')
     HUGGINGFACEHUB_API_KEY = os.getenv('HUGGINGFACEHUB_API_KEY')
-    PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
-
+    PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')    
+    
     # Set environment variables from .env file. They are required for items tested here. This is done in the GUI setup.
     os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
     os.environ['ANTHROPIC_API_KEY'] = ANTHROPIC_API_KEY
@@ -164,6 +176,7 @@ def setup_fixture():
     )
 
     setup = {
+        'logger': logger,
         'OPENAI_API_KEY': OPENAI_API_KEY,
         'ANTHROPIC_API_KEY': ANTHROPIC_API_KEY,
         'VOYAGE_API_KEY': VOYAGE_API_KEY,
@@ -189,6 +202,9 @@ def test_validate_index(setup_fixture):
     from aerospace_chatbot.services.database import DatabaseService
     from aerospace_chatbot.processing import DocumentProcessor
     
+    logger = setup_fixture['logger']
+    logger.info("Starting validate_index test")
+
     # Test case 1: Empty index name
     db_type='ChromaDB'
     db_service = DatabaseService(
@@ -294,6 +310,9 @@ def test_validate_index(setup_fixture):
     assert db_service.index_name == index_name + "-summary"
 def test_process_documents_standard(setup_fixture):
     '''Test document processing with standard RAG.'''
+    logger = setup_fixture['logger']
+    logger.info("Starting process_documents_standard test")
+    
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Standard'],
@@ -315,6 +334,9 @@ def test_process_documents_standard(setup_fixture):
     assert result.splitters is not None
 def test_process_docs_merge_nochunk(setup_fixture):
     """Test case for document processing with no chunking and merging."""
+    logger = setup_fixture['logger']
+    logger.info("Starting process_docs_merge_nochunk test")
+    
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Standard'],
@@ -335,6 +357,9 @@ def test_process_docs_merge_nochunk(setup_fixture):
     assert result.splitters is None
 def test_process_documents_nochunk(setup_fixture):
     '''Test document processing with no chunking.'''
+    logger = setup_fixture['logger']
+    logger.info("Starting process_documents_nochunk test")
+    
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Standard'],
@@ -356,6 +381,9 @@ def test_process_documents_nochunk(setup_fixture):
     assert result.splitters is None
 def test_process_documents_parent_child(setup_fixture):
     '''Test document processing with parent-child RAG.'''
+    logger = setup_fixture['logger']
+    logger.info("Starting process_documents_parent_child test")
+    
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Parent-Child'],
@@ -379,6 +407,9 @@ def test_process_documents_parent_child(setup_fixture):
     assert result.splitters['child_splitter'] is not None
 def test_process_documents_summary(setup_fixture):
     '''Test document processing with summary RAG.'''
+    logger = setup_fixture['logger']
+    logger.info("Starting process_documents_summary test")
+    
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
         rag_type=setup_fixture['rag_type']['Summary'],
@@ -422,6 +453,9 @@ def test_process_documents_summary(setup_fixture):
 ])
 def test_initialize_database(monkeypatch, test_index):
     '''Test the initialization of different types of databases.'''
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting initialize_database test with {test_index['index_type']}")
+    
     index_name = 'test-index'
     rag_type = 'Standard'
 
@@ -502,6 +536,9 @@ def test_initialize_database(monkeypatch, test_index):
 ])
 def test_delete_database(setup_fixture, test_index):
     '''Test deleting both existing and non-existing databases for different RAG types.'''
+    logger = setup_fixture['logger']
+    logger.info(f"Starting delete_database test with {test_index['index_type']}")
+    
     index_name = 'test-delete-index'
     
     # For Parent-Child and Summary, we need an LLM service
@@ -612,7 +649,8 @@ def test_delete_database(setup_fixture, test_index):
 ])
 def test_get_available_indexes(setup_fixture, test_index):
     """Test retrieving available indexes for different database and RAG configurations."""
-    print(f"\nTesting {test_index['index_type']} configuration...")
+    logger = setup_fixture['logger']
+    logger.info(f"Starting get_available_indexes test with {test_index['index_type']}")
     
     # Create services
     embedding_service = EmbeddingService(
@@ -630,6 +668,7 @@ def test_get_available_indexes(setup_fixture, test_index):
     for rag_type in test_index['rag_types']:
         index_name = f"test-{test_index['index_type'].lower()}"
         test_indexes.append(index_name)
+        logger.info(f"Creating test index: {index_name} for {rag_type} RAG type")
         
         try:
             # Initialize database service
@@ -731,10 +770,13 @@ def test_get_available_indexes(setup_fixture, test_index):
         raise e
 def test_database_setup_and_query(test_input, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
+    logger = setup_fixture['logger']
+    test, print_str = parse_test_case(setup_fixture, test_input)
+    logger.info(f"Starting database_setup_and_query test: {print_str}")
+
     from aerospace_chatbot.services.database import DatabaseService
     from aerospace_chatbot.processing import DocumentProcessor
 
-    test, print_str = parse_test_case(setup_fixture, test_input)
     index_name = 'test' + str(test['id'])
     print(f'Starting test: {print_str}')
 
@@ -818,6 +860,9 @@ def test_database_setup_and_query(test_input, setup_fixture):
 ### Frontend tests
 def test_sidebar_manager():
     """Test the SidebarManager class functionality."""
+    logger = logging.getLogger(__name__)
+    logger.info("Starting sidebar_manager test")
+    
     # Setup
     home_dir = os.path.abspath(os.path.dirname(__file__))
     home_dir = os.path.join(home_dir, '..')
@@ -859,10 +904,16 @@ def test_sidebar_manager():
     assert 'k' in sb_out['model_options']
 def test_sidebar_manager_invalid_config():
     """Test SidebarManager initialization with invalid config file path"""
+    logger = logging.getLogger(__name__)
+    logger.info("Starting sidebar_manager_invalid_config test")
+    
     with pytest.raises(ConfigurationError):
         SidebarManager('nonexistent_config.json')
 def test_sidebar_manager_malformed_config():
     """Test SidebarManager with malformed config file"""
+    logger = logging.getLogger(__name__)
+    logger.info("Starting sidebar_manager_malformed_config test")
+    
     # Create a temporary malformed config file
     import tempfile
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as tf:
@@ -872,6 +923,9 @@ def test_sidebar_manager_malformed_config():
             SidebarManager(tf.name)
 def test_sidebar_manager_missing_required_sections():
     """Test SidebarManager with config missing required sections"""
+    logger = logging.getLogger(__name__)
+    logger.info("Starting sidebar_manager_missing_required_sections test")
+    
     import tempfile
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as tf:
         # Create config missing 'databases' section
@@ -881,6 +935,9 @@ def test_sidebar_manager_missing_required_sections():
             SidebarManager(tf.name)
 def test_set_secrets_with_valid_input():
     '''Test case for set_secrets function with valid input.'''
+    logger = logging.getLogger(__name__)
+    logger.info("Starting set_secrets_with_valid_input test")
+    
     test_secrets = {
         'OPENAI_API_KEY': 'openai_key',
         'VOYAGE_API_KEY': 'voyage_key',
@@ -910,6 +967,9 @@ def test_set_secrets_with_valid_input():
 ])
 def test_get_docs_questions_df(setup_fixture, test_index):
     """Test function for the get_docs_questions_df() method."""
+    logger = setup_fixture['logger']
+    logger.info(f"Starting get_docs_questions_df test with {test_index['db_type']}")
+    
     index_name = 'test-visualization'
     rag_type='Standard'
 
@@ -1013,6 +1073,9 @@ def test_get_docs_questions_df(setup_fixture, test_index):
 ])
 def test_add_clusters(setup_fixture, test_index):
     """Test function for the add_clusters function."""
+    logger = setup_fixture['logger']
+    logger.info(f"Starting add_clusters test with {test_index['db_type']}")
+    
     index_name = 'test-visualization'
 
     # Initialize services
