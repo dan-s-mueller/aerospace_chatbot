@@ -119,7 +119,7 @@ def parse_test_case(setup, test_case):
 def setup_fixture():
     """Sets up the fixture for testing the backend."""
     # Override environment variables first, before loading .env
-    os.environ['LOG_LEVEL'] = 'DEBUG'
+    os.environ['LOG_LEVEL'] = 'INFO'
     os.environ['LOG_FILE'] = 'logs/test_chatbot.log'
     logger = logging.getLogger(__name__)
 
@@ -666,15 +666,15 @@ def test_get_available_indexes(setup_fixture, test_index):
     # Create and index test documents for each RAG type
     test_indexes = []
     for rag_type in test_index['rag_types']:
-        index_name = f"test-{test_index['index_type'].lower()}"
-        test_indexes.append(index_name)
-        logger.info(f"Creating test index: {index_name} for {rag_type} RAG type")
+        index_name_initialized = f"test-{test_index['index_type'].lower()}"
+        test_indexes.append(index_name_initialized)
+        logger.info(f"Creating test index: {index_name_initialized} for {rag_type} RAG type")
         
         try:
             # Initialize database service
             db_service = DatabaseService(
                 db_type=test_index['index_type'],
-                index_name=index_name,
+                index_name=index_name_initialized,
                 rag_type=rag_type,
                 embedding_service=embedding_service
             )
@@ -706,8 +706,9 @@ def test_get_available_indexes(setup_fixture, test_index):
         # Test getting available indexes for each RAG type
         for rag_type in test_index['rag_types']:
             try:
-                index_name = f"test-{test_index['index_type'].lower()}"
+                index_name_checked = f"test-{test_index['index_type'].lower()}"
 
+                # FIXME, the get_available_indexes function is not returning anything
                 available_indexes, index_metadatas = get_available_indexes(
                     test_index['index_type'],
                     test_index['embedding_model'],
@@ -718,11 +719,11 @@ def test_get_available_indexes(setup_fixture, test_index):
                                
                 # Construct expected index name based on RAG type
                 if rag_type == 'Parent-Child':
-                    expected_index = f"{index_name}-parent-child"
+                    expected_index = f"{index_name_checked}-parent-child"
                 elif rag_type == 'Summary':
-                    expected_index = f"{index_name}-summary"
+                    expected_index = f"{index_name_checked}-summary"
                 else:  # Standard
-                    expected_index = index_name
+                    expected_index = index_name_checked
                 
                 # Verify expected index exists in results
                 assert expected_index in available_indexes, \

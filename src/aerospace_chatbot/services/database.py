@@ -393,7 +393,7 @@ class DatabaseService:
             # TODO add metadata storage for RAGatouille, maybe can use the same method as others
             self.logger.warning("Metadata storage is not yet supported for RAGatouille indexes")
 
-    def _validate_index(self, data):
+    def _validate_index(self, doc_processor):
         """
         Validate and format index with parameters.
         If data is a ChunkingResult type, 
@@ -401,11 +401,11 @@ class DatabaseService:
         Does nothing if no exceptions are raised, unless RAG type is Parent-Child or Summary, which will append to index_name.
         """
         # TODO update dependency cache
-        from ..processing.documents import ChunkingResult
+        from ..processing.documents import DocumentProcessor
 
-        if isinstance(data, ChunkingResult):   
-            if data.rag_type != self.rag_type:
-                raise ValueError(f"RAG type mismatch: DocumentProcessor has '{data.rag_type}' but DatabaseService has '{self.rag_type}'")
+        if isinstance(doc_processor, DocumentProcessor):
+            if doc_processor.rag_type != self.rag_type:
+                raise ValueError(f"RAG type mismatch: DocumentProcessor has '{doc_processor.rag_type}' but DatabaseService has '{self.rag_type}'")
         if not self.index_name or not self.index_name.strip():
             raise ValueError("Index name cannot be empty or contain only whitespace")
         
@@ -413,12 +413,12 @@ class DatabaseService:
         name = self.index_name.lower().strip()
         
         # Add RAG type suffix
-        if isinstance(data, ChunkingResult):
-            if data.rag_type == 'Parent-Child':
+        if isinstance(doc_processor, DocumentProcessor):
+            if doc_processor.rag_type == 'Parent-Child':
                 name += '-parent-child'
                 self.index_name = name
-            elif data.rag_type == 'Summary':
-                if not data.llm_service:
+            elif doc_processor.rag_type == 'Summary':
+                if not doc_processor.llm_service:
                     raise ValueError("LLM service is required for Summary RAG type")
                 # Simplified suffix for Summary RAG type
                 name += '-summary'
@@ -438,7 +438,7 @@ class DatabaseService:
             if ".." in name:
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
 
-    def _upsert_data(self, data, batch_size, clear=False):
+    def _upsert_data(self, upsert_data, batch_size, clear=False):
         """Upsert documents or questions. Used for all RAG types."""
         # FIXME add namespace argument to upsert to a specific namespace and verify upload
         # TODO update dependency cache
@@ -457,14 +457,13 @@ class DatabaseService:
             initial_count = stats['total_vector_count']
             if self.namespace:
                 initial_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)   
-            self.logger.info(f"Initial count: {initial_count}")
 
-        if isinstance(data, ChunkingResult):
+        if isinstance(upsert_data, ChunkingResult):
             # Chunked documents
             # Standard for pinecone and chroma
             if self.rag_type == 'Standard':
-                for i in range(0, len(data.chunks), batch_size):
-                    batch = data.chunks[i:i + batch_size]
+                for i in range(0, len(upsert_data.chunks), batch_size):
+                    batch = upsert_data.chunks[i:i + batch_size]
                     batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
                     
                     if self.db_type == "Pinecone":
@@ -480,12 +479,12 @@ class DatabaseService:
             if self.db_type == "RAGatouille":
                 # Process all chunks at once for RAGatouille
                 self.vectorstore.index(
-                    collection=[chunk.page_content for chunk in data.chunks],
-                    document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in data.chunks],
+                    collection=[chunk.page_content for chunk in upsert_data.chunks],
+                    document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in upsert_data.chunks],
                     index_name=self.index_name,
                     overwrite_index=clear,
                     split_documents=True,
-                    document_metadatas=[chunk.metadata for chunk in data.chunks]
+                    document_metadatas=[chunk.metadata for chunk in upsert_data.chunks]
                 )
             
             # Parent-Child or Summary for pinecone and chroma
@@ -507,13 +506,13 @@ class DatabaseService:
 
                     # Get the appropriate chunks and pages based on RAG type
                     if self.rag_type == 'Parent-Child':
-                        chunks = data.chunks
-                        pages = data.pages['parent_chunks']
-                        doc_ids = data.pages['doc_ids']
+                        chunks = upsert_data.chunks
+                        pages = upsert_data.pages['parent_chunks']
+                        doc_ids = upsert_data.pages['doc_ids']
                     elif self.rag_type == 'Summary':
-                        chunks = data.summaries
-                        pages = data.pages['docs']
-                        doc_ids = data.pages['doc_ids']
+                        chunks = upsert_data.summaries
+                        pages = upsert_data.pages['docs']
+                        doc_ids = upsert_data.pages['doc_ids']
                     else:
                         raise NotImplementedError
 
@@ -530,10 +529,10 @@ class DatabaseService:
                     # Index parent docs all at once
                     retriever.docstore.mset(list(zip(doc_ids, pages)))
                     self.retriever = retriever
-        elif isinstance(data, list) and all(isinstance(item, Document) for item in data):
+        elif isinstance(upsert_data, list) and all(isinstance(item, Document) for item in upsert_data):
             # Questions
             if self.db_type in ["Pinecone", "ChromaDB"]:
-                self.vectorstore.add_documents(documents=data)
+                self.vectorstore.add_documents(documents=upsert_data)
             elif self.db_type == "RAGatouille":
                 self.logger.warning("RAGatouille does not support question databases.")
             else:
@@ -542,10 +541,10 @@ class DatabaseService:
             raise ValueError("Unsupported data formatting for upsert. Should either be a ChunkingResult or a list of Documents.")
             
         if self.db_type == "Pinecone":
-            if isinstance(data, ChunkingResult):
-                expected_count = initial_count + len(data.summaries if self.rag_type == 'Summary' else data.chunks)
+            if isinstance(upsert_data, ChunkingResult):
+                expected_count = initial_count + len(upsert_data.summaries if self.rag_type == 'Summary' else upsert_data.chunks)
             else:
-                expected_count = initial_count+len(data)
+                expected_count = initial_count+len(upsert_data)
             self._verify_pinecone_upload(pc_index, expected_count)
         
     def _verify_pinecone_upload(self,index, expected_count):
