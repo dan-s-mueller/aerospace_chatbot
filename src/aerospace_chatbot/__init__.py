@@ -4,7 +4,7 @@ from .core import (
     load_config,
     get_secrets,
     set_secrets,
-    setup_logging
+    setup_logging,
 )
 from .processing import (
     DocumentProcessor, 

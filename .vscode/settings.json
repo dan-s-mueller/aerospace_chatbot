@@ -3,7 +3,8 @@
     "python.testing.pytestArgs": [
         "tests",
         "-v",
-        "-s"
+        "-s",
+        "--cache-clear"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,

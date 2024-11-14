@@ -10,7 +10,6 @@ import logging
 from ..core.cache import Dependencies
 from ..services.prompts import CLUSTER_LABEL
 from pinecone.exceptions import NotFoundException, PineconeApiException
-from ..core.logging_config import setup_logging
 
 from tenacity import (
     retry, 
@@ -19,8 +18,6 @@ from tenacity import (
     retry_if_exception_type,
     wait_fixed
 )
-
-# TODO add logging capability.
 
 def pinecone_retry(func):
     """Decorator for Pinecone operations with retry and rate limiting."""
@@ -425,6 +422,8 @@ class DatabaseService:
         # Add RAG type suffix
         if self.doc_type == 'question':
             name += '-queries'
+            self.index_name = name
+            self.logger.info(f"Adding query type suffix to index name: {name}")
         elif self.doc_type == 'document':
             if self.rag_type == 'Parent-Child':
                 name += '-parent-child'

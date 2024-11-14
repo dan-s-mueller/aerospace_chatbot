@@ -121,10 +121,9 @@ def setup_fixture():
     # Override environment variables first, before loading .env
     os.environ['LOG_LEVEL'] = 'INFO'
     os.environ['LOG_FILE'] = 'logs/test_chatbot.log'
-    logger = logging.getLogger(__name__)
-
+    
     # Setup logging with overridden values
-    from aerospace_chatbot.core.logging_config import setup_logging
+    from aerospace_chatbot.core.config import setup_logging
     logger = setup_logging()
     
     # Now load .env file (won't override existing environment variables)
@@ -893,8 +892,8 @@ def test_database_setup_and_query(test_input, setup_fixture):
         logger.info('Query and alternative question successful!')
 
         # Delete the indexes
-        # db_service.delete_index()
-        # qa_model.query_db_service.delete_index()  # Delete the query database index
+        db_service.delete_index()
+        qa_model.query_db_service.delete_index()  # Delete the query database index
         
         if doc_processor.rag_type in ['Parent-Child', 'Summary']:
             lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
@@ -902,7 +901,7 @@ def test_database_setup_and_query(test_input, setup_fixture):
         logger.info('Databases deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
-        # db_service.delete_index()
+        db_service.delete_index()
         raise e
 
 ### Frontend tests

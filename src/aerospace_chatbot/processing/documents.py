@@ -55,7 +55,7 @@ class DocumentProcessor:
         """Process documents based on RAG type by chunking."""
 
         cleaned_docs = self._load_and_clean_documents(documents)
-        
+        self.logger.info("Processing documents...")
         if self.rag_type == 'Standard':
             return self._process_standard(cleaned_docs)
         elif self.rag_type == 'Parent-Child':
@@ -154,6 +154,7 @@ class DocumentProcessor:
     def _process_standard(self, documents):
         """Process documents for standard RAG."""
         chunks = self._chunk_documents(documents)
+        self.logger.info(f"Number of chunks: {len(chunks)}")
         return ChunkingResult(rag_type=self.rag_type,
                               pages=documents,
                               chunks=chunks, 
@@ -165,7 +166,7 @@ class DocumentProcessor:
     def _process_parent_child(self, documents):
         """Process documents for parent-child RAG."""
         chunks, parent_chunks = self._chunk_documents(documents)
-
+        self.logger.info(f"Number of chunks: {len(chunks)}")
         return ChunkingResult(rag_type=self.rag_type,
                               pages=parent_chunks,
                               chunks=chunks, 
@@ -206,6 +207,7 @@ class DocumentProcessor:
             for i, summary in enumerate(summaries)
         ]        
             
+        self.logger.info(f"Number of summaries: {len(summary_docs)}")
         return ChunkingResult(rag_type=self.rag_type,
                               pages={'doc_ids':doc_ids,'docs':chunks},
                               summaries=summary_docs, 

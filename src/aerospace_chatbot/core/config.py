@@ -1,27 +1,15 @@
 """Configuration management and environment setup."""
 
 import os, json
+import logging
+import sys
+from pathlib import Path
+import warnings
 from dotenv import load_dotenv, find_dotenv
 
 class ConfigurationError(Exception):
     """Raised when there are configuration related errors."""
     pass
-# def get_cache_decorator():
-#     """Returns appropriate cache decorator based on environment."""
-#     try:
-#         import streamlit as st
-#         return st.cache_resource
-#     except ImportError:
-#         # Return no-op decorator when not in Streamlit
-#         return lambda *args, **kwargs: (lambda func: func)
-# def get_cache_data_decorator():
-#     """Returns appropriate cache_data decorator based on environment."""
-#     try:
-#         import streamlit as st
-#         return st.cache_data
-#     except ImportError:
-#         # Return no-op decorator when not in Streamlit
-#         return lambda *args, **kwargs: (lambda func: func)
     
 def load_config(config_path):
     """Load configuration from file with caching. """
@@ -64,3 +52,57 @@ def set_secrets(secrets):
                 raise ConfigurationError(f'{readable_name} is required.')
     
     return secrets
+
+def setup_logging():
+    """Configure logging based on environment variables.
+    
+    Environment Variables:
+        LOG_LEVEL: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
+        LOG_FILE: Path to log file (optional)
+        LOG_FORMAT: Custom log format (optional)
+    """
+    # Suppress Streamlit warning about missing ScriptRunContext
+    warnings.filterwarnings('ignore', message='.*missing ScriptRunContext.*')
+    
+    # Get settings from environment
+    log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+    log_file = os.getenv('LOG_FILE')
+    log_format = os.getenv('LOG_FORMAT', 
+        '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+    )
+
+    # Convert string log level to logging constant
+    numeric_level = getattr(logging, log_level, None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f'Invalid log level: {log_level}')
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    
+    # Clear any existing handlers
+    root_logger.handlers.clear()
+    
+    root_logger.setLevel(numeric_level)
+
+    # Create formatter
+    formatter = logging.Formatter(log_format)
+
+    # Always set up console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
+
+    # Optionally set up file handler
+    if log_file:
+        log_path = Path(log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
+
+    # Get the application logger
+    logger = logging.getLogger(__name__)
+    logger.propagate = False  # Prevent duplicate logs
+    
+    return logger 
