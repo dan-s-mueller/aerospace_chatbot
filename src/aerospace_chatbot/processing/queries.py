@@ -32,21 +32,17 @@ class QAModel:
         self.logger = logging.getLogger(__name__)
 
         _, _, _, _, ConversationBufferMemory, _ = self._deps.get_query_deps()
+        # FIXME, query database not being created. Note that I've commented out delete_index in the test!!!
 
         # Create a separate database service for query storage
         self.query_db_service = DatabaseService(
             db_type=self.db_service.db_type,
-            index_name=self.db_service.index_name + '-queries',
+            index_name=self.db_service.index_name,
             rag_type="Standard",
-            embedding_service=self.db_service.embedding_service
+            embedding_service=self.db_service.embedding_service,
+            doc_type='question'
         )
-        
-        # Initialize query vectorstore with the same embedding service as main db
-        # FIXME, first check if this index exists, and if not, create it. Otherwise, use it. I think I fixed this below, but check.
-        # self.query_db_service.initialize_database(
-        #     namespace=self.namespace,
-        #     clear=True
-        # )
+        self.query_db_service.initialize_database(clear=False)   # TODO decide if this should clear every time
         
         # Get retrievers from database services
         self.db_service.get_retriever(k=k)
@@ -68,6 +64,7 @@ class QAModel:
         self.memory.load_memory_variables({})
 
         # Add answer to response, create an array as more prompts come in
+        self.logger.info(f'Invoking QA chain with query: {query}')
         answer_result = self.conversational_qa_chain.invoke({'question': query})
         if not hasattr(self, 'result') or self.result is None:
             self.result = [answer_result]
@@ -90,9 +87,7 @@ class QAModel:
 
         # If compatible type, upsert query into query database
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
-            print(f'upserting question into query database')
-            print(self._question_as_doc(query, self.result[-1]))
-            # TODO, check initialization of query database. It will use the existing one by default, no clear.
+            self.logger.info(f'Upserting question into query database {self.query_db_service.index_name}')
             self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
     def generate_alternative_questions(self, prompt):
         """Generates alternative questions based on a prompt."""

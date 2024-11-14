@@ -2,6 +2,7 @@ import logging
 import sys
 from pathlib import Path
 import os
+import warnings
 
 def setup_logging():
     """Configure logging based on environment variables.
@@ -11,6 +12,9 @@ def setup_logging():
         LOG_FILE: Path to log file (optional)
         LOG_FORMAT: Custom log format (optional)
     """
+    # Suppress Streamlit warning about missing ScriptRunContext
+    warnings.filterwarnings('ignore', message='.*missing ScriptRunContext.*')
+    
     # Get settings from environment
     log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
     log_file = os.getenv('LOG_FILE')

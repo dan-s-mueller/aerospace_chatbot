@@ -33,19 +33,34 @@ def pinecone_retry(func):
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
-    def __init__(self, db_type, index_name, rag_type, embedding_service):
+    def __init__(self, db_type, index_name, rag_type, embedding_service, doc_type='document'):
+        """
+        Initialize DatabaseService.
+
+        Args:
+            db_type (str): Type of database ('Pinecone', 'ChromaDB', 'RAGatouille')
+            index_name (str): Name of the index
+            rag_type (str): Type of RAG ('Standard', 'Parent-Child', 'Summary')
+            embedding_service (EmbeddingService): Embedding service instance
+            doc_type (str, optional): Type of document ('document', 'question'). Defaults to 'document'.
+        """
         self.db_type = db_type
         self.index_name = index_name
         self.rag_type = rag_type
         self.embedding_service = embedding_service
+        self.doc_type = doc_type
         self.vectorstore = None
         self.retriever = None
         self.namespace = None
         self._deps = Dependencies()
         self.logger = logging.getLogger(__name__)
-        
+
     def initialize_database(self, namespace=None, clear=False):
-        """Initialize and store database connection."""
+        """
+        Initialize and store database connection."""
+
+        # Validate index name and RAG type
+        self._validate_index()
         self.namespace = namespace
 
         # Check if LOCAL_DB_PATH environment variable exists
@@ -62,28 +77,29 @@ class DatabaseService:
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
-    def index_data(self, data, batch_size=100,clear=False):
+    def index_data(self, data, batch_size=100):
         """
         Index processed documents or questions. 
         If data is ChunkingResult type, chunked documents are processed.
         If data is a list of Documents, questions are processed. Questions are not chunked or processed, just validated and upserted.
-        This is where the index is initialized or created if required.
+        Database must be initialized before calling this method.
         """
         # TODO, move this to dependency cache
         from ..processing.documents import ChunkingResult
+        from langchain_core.documents import Document
 
-        # Initialize database
-        self._validate_index(data)
-        self.initialize_database(
-            namespace=self.namespace,
-            clear=clear
-        )
+        if not self.vectorstore:
+            raise ValueError("Database not initialized. Call initialize_database() before indexing data.")
+
+        if not (isinstance(data, ChunkingResult) or (isinstance(data, list) and all(isinstance(d, Document) for d in data))):
+            raise TypeError("data must be either a ChunkingResult or a list of Documents")
 
         # Add index metadata, upsert docs
         if isinstance(data, ChunkingResult):
-            # Only store metadata if documents are being indexed
-            self._store_index_metadata(data)
-        self._upsert_data(data, batch_size, clear=clear)
+            if self.doc_type == 'document' and data.rag_type != self.rag_type:
+                raise ValueError(f"RAG type mismatch: ChunkingResult has '{data.rag_type}' but DatabaseService has '{self.rag_type}'")
+            self._store_index_metadata(data)    # Only store metadata if documents are being indexed
+        self._upsert_data(data, batch_size)
 
     def get_retriever(self, k=4):
         """Get configured retriever for the vectorstore."""
@@ -393,35 +409,28 @@ class DatabaseService:
             # TODO add metadata storage for RAGatouille, maybe can use the same method as others
             self.logger.warning("Metadata storage is not yet supported for RAGatouille indexes")
 
-    def _validate_index(self, doc_processor):
+    def _validate_index(self):
         """
         Validate and format index with parameters.
-        If data is a DocumentProcessor type, the document processor is validated against the database service.
-        Else it will only validate name (for question dbs).
-        Does nothing if no exceptions are raised, unless RAG type is Parent-Child or Summary, which will append to index_name.
+        Does nothing if no exceptions are raised, unless:
+          RAG type is Parent-Child or Summary, which will append to index_name.
+          doc_type is question, which will append 'queries' to index_name.
         """
-        # TODO update dependency cache
-        from ..processing.documents import DocumentProcessor
-
-        if isinstance(doc_processor, DocumentProcessor):
-            if doc_processor.rag_type != self.rag_type:
-                raise ValueError(f"RAG type mismatch: DocumentProcessor has '{doc_processor.rag_type}' but DatabaseService has '{self.rag_type}'")
         if not self.index_name or not self.index_name.strip():
             raise ValueError("Index name cannot be empty or contain only whitespace")
-        
+
         # Clean the base name
         name = self.index_name.lower().strip()
         
         # Add RAG type suffix
-        if isinstance(doc_processor, DocumentProcessor):
-            if doc_processor.rag_type == 'Parent-Child':
+        if self.doc_type == 'question':
+            name += '-queries'
+        elif self.doc_type == 'document':
+            if self.rag_type == 'Parent-Child':
                 name += '-parent-child'
                 self.index_name = name
                 self.logger.info(f"Adding RAG type suffix to index name: {name}")
-            elif doc_processor.rag_type == 'Summary':
-                if not doc_processor.llm_service:
-                    raise ValueError("LLM service is required for Summary RAG type")
-                # Simplified suffix for Summary RAG type
+            elif self.rag_type == 'Summary':
                 name += '-summary'
                 self.index_name = name
                 self.logger.info(f"Adding RAG type suffix to index name: {name}")
@@ -440,7 +449,7 @@ class DatabaseService:
             if ".." in name:
                 raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
 
-    def _upsert_data(self, upsert_data, batch_size, clear=False):
+    def _upsert_data(self, upsert_data, batch_size):
         """Upsert documents or questions. Used for all RAG types."""
         # FIXME add namespace argument to upsert to a specific namespace and verify upload
         # TODO update dependency cache
@@ -484,7 +493,6 @@ class DatabaseService:
                     collection=[chunk.page_content for chunk in upsert_data.chunks],
                     document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in upsert_data.chunks],
                     index_name=self.index_name,
-                    overwrite_index=clear,
                     split_documents=True,
                     document_metadatas=[chunk.metadata for chunk in upsert_data.chunks]
                 )

@@ -48,6 +48,9 @@ class DocumentProcessor:
         self._deps = Dependencies()
         self.logger = logging.getLogger(__name__)
 
+        if self.rag_type == 'Summary' and not self.llm_service:
+            raise ValueError("LLM service is required for Summary RAG type")
+
     def process_documents(self, documents):
         """Process documents based on RAG type by chunking."""
 
