@@ -396,7 +396,7 @@ class DatabaseService:
     def _validate_index(self, doc_processor):
         """
         Validate and format index with parameters.
-        If data is a ChunkingResult type, 
+        If data is a DocumentProcessor type, the document processor is validated against the database service.
         Else it will only validate name (for question dbs).
         Does nothing if no exceptions are raised, unless RAG type is Parent-Child or Summary, which will append to index_name.
         """
@@ -417,12 +417,14 @@ class DatabaseService:
             if doc_processor.rag_type == 'Parent-Child':
                 name += '-parent-child'
                 self.index_name = name
+                self.logger.info(f"Adding RAG type suffix to index name: {name}")
             elif doc_processor.rag_type == 'Summary':
                 if not doc_processor.llm_service:
                     raise ValueError("LLM service is required for Summary RAG type")
                 # Simplified suffix for Summary RAG type
                 name += '-summary'
                 self.index_name = name
+                self.logger.info(f"Adding RAG type suffix to index name: {name}")
 
         # Database-specific validation
         if self.db_type == "Pinecone":
@@ -789,8 +791,12 @@ def export_to_hf_dataset(df, dataset_name):
 
 def get_available_indexes(db_type, embedding_model, rag_type):
     """Get available indexes based on current settings."""
+    logger = logging.getLogger(__name__)
+
     # Get database status
     db_status = get_database_status(db_type)
+
+    logger.info(f"Database status in get_available_indexes for {db_type}, {embedding_model}, {rag_type}: {db_status}")
     
     if not db_status['status']:
         return [], []
@@ -883,6 +889,7 @@ def _get_pinecone_status():
 def _get_chromadb_status():
     """Get status of ChromaDB collections."""
     try:
+        # TODO use dependency caching
         import chromadb
         db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
         client = chromadb.PersistentClient(path=str(db_path))

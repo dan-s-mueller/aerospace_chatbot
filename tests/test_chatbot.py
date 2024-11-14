@@ -667,9 +667,7 @@ def test_get_available_indexes(setup_fixture, test_index):
     test_indexes = []
     for rag_type in test_index['rag_types']:
         index_name_initialized = f"test-{test_index['index_type'].lower()}"
-        test_indexes.append(index_name_initialized)
         logger.info(f"Creating test index: {index_name_initialized} for {rag_type} RAG type")
-        
         try:
             # Initialize database service
             db_service = DatabaseService(
@@ -696,79 +694,87 @@ def test_get_available_indexes(setup_fixture, test_index):
                 batch_size=setup_fixture['batch_size'],
                 clear=True
             )
+            test_indexes.append(db_service.index_name)
 
         except Exception as e:
-            print(f"Error creating index {index_name}: {str(e)}")
+            print(f"Error creating index {index_name_initialized}: {str(e)}")
             db_service.delete_index()
             raise e
 
-    try:
-        # Test getting available indexes for each RAG type
-        for rag_type in test_index['rag_types']:
-            try:
-                index_name_checked = f"test-{test_index['index_type'].lower()}"
+    # try:
+    # Test getting available indexes for each RAG type
+    for i, rag_type in enumerate(test_index['rag_types']):
+        logger.info(f"Testing for getting available indexes for {rag_type} RAG type")
+        try:
+            index_name_checked = f"test-{test_index['index_type'].lower()}"
 
-                # FIXME, the get_available_indexes function is not returning anything
-                available_indexes, index_metadatas = get_available_indexes(
-                    test_index['index_type'],
-                    test_index['embedding_model'],
-                    rag_type
-                )
-                
-                print(f"Available {rag_type} indexes: {available_indexes}")
-                               
-                # Construct expected index name based on RAG type
-                if rag_type == 'Parent-Child':
-                    expected_index = f"{index_name_checked}-parent-child"
-                elif rag_type == 'Summary':
-                    expected_index = f"{index_name_checked}-summary"
-                else:  # Standard
-                    expected_index = index_name_checked
-                
-                # Verify expected index exists in results
-                assert expected_index in available_indexes, \
-                    f"Expected index {expected_index} not found in available indexes"
-                
-                # Verify metadata matches
-                if test_index['index_type'] != 'RAGatouille':
-                    for index_metadata in index_metadatas:
-                        assert index_metadata['embedding_model'] == test_index['embedding_model']
-
-            except Exception as e:
-                print(f"Error during testing {rag_type}: {str(e)}")
-                raise e
+            # FIXME, the get_available_indexes function is not returning anything
+            available_indexes, index_metadatas = get_available_indexes(
+                test_index['index_type'],
+                test_index['embedding_model'],
+                rag_type
+            )
+                            
+            # Construct expected index name based on RAG type
+            if rag_type == 'Parent-Child':
+                expected_index = f"{index_name_checked}-parent-child"
+            elif rag_type == 'Summary':
+                expected_index = f"{index_name_checked}-summary"
+            else:  # Standard
+                expected_index = index_name_checked
             
-            finally:
-                # Clean up the current test index
-                try:
-                    current_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
-                    db_service = DatabaseService(
-                        db_type=test_index['index_type'],
-                        index_name=current_index,
-                        rag_type=rag_type,
-                        embedding_service=embedding_service
-                    )
-                    db_service.delete_index()
-                    print(f"Deleted test index: {current_index}")
-                except Exception as e:
-                    print(f"Error deleting index {current_index}: {str(e)}")
+            logger.info(f"Available {rag_type} indexes: {available_indexes}. Checking for {expected_index}")
+            
+            # Verify expected index exists in results
+            assert expected_index in available_indexes, \
+                f"Expected index {expected_index} not found in available indexes"
+            
+            # Verify metadata matches
+            if test_index['index_type'] != 'RAGatouille':
+                for index_metadata in index_metadatas:
+                    assert index_metadata['embedding_model'] == test_index['embedding_model']
 
-    except Exception as e:
-        # If there's an error in the outer loop, ensure all indexes are cleaned up
-        for rag_type in test_index['rag_types']:
+        except Exception as e:
+            db_service = DatabaseService(
+                db_type=test_index['index_type'],
+                index_name=test_indexes[i],
+                rag_type=rag_type,
+                embedding_service=embedding_service
+            )
+            db_service.delete_index()
+            logger.error(f"Cleanup: Deleted test index: {test_indexes[i]}")
+            raise e
+        
+        finally:
+            # Clean up the current test index
             try:
-                current_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
                 db_service = DatabaseService(
                     db_type=test_index['index_type'],
-                    index_name=current_index,
+                    index_name=test_indexes[i],
                     rag_type=rag_type,
                     embedding_service=embedding_service
                 )
                 db_service.delete_index()
-                print(f"Cleanup: Deleted test index: {current_index}")
-            except Exception as cleanup_error:
-                print(f"Error during cleanup of index {current_index}: {str(cleanup_error)}")
-        raise e
+                logger.error(f"Deleted test index: {test_indexes[i]}")
+            except Exception as e:
+                logger.error(f"Error deleting index {test_indexes[i]}: {str(e)}")
+
+    # except Exception as e:
+    #     # If there's an error in the outer loop, ensure all indexes are cleaned up
+    #     for rag_type in test_index['rag_types']:
+    #         try:
+                # current_index = f"test-{test_index['index_type'].lower()}-{rag_type.lower()}"
+                # db_service = DatabaseService(
+                #     db_type=test_index['index_type'],
+                #     index_name=current_index,
+                #     rag_type=rag_type,
+                #     embedding_service=embedding_service
+                # )
+                # db_service.delete_index()
+                # logger.error(f"Cleanup: Deleted test index: {current_index}")
+        #     except Exception as cleanup_error:
+        #         logger.error(f"Error during cleanup of index {current_index}: {str(cleanup_error)}")
+        # raise e
 def test_database_setup_and_query(test_input, setup_fixture):
     '''Tests the entire process of initializing a database, upserting documents, and deleting a database.'''
     logger = setup_fixture['logger']
