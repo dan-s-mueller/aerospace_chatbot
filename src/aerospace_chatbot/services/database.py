@@ -635,6 +635,7 @@ class DatabaseService:
         stable_count_checks = 0
         
         while retry_count < max_retries:
+            time.sleep(5)   # Added delay to reduce likelihood of overlap with delayed delete responses
             stats = index.describe_index_stats()
             current_count = stats['total_vector_count']
             if self.namespace:
@@ -651,13 +652,14 @@ class DatabaseService:
             else:
                 stable_count_checks = 0
                 
+            # TODO explore making this a check if current count is greater than or equal to expected count
             if current_count == expected_count:
                 self.logger.info(f"Successfully verified {current_count} vectors in Pinecone index{f' namespace {self.namespace}' if self.namespace else ''}")
                 break
                 
             self.logger.info(f"Waiting for vectors to be indexed in Pinecone... Current count: {current_count}, Expected: {expected_count}")
             last_count = current_count
-            time.sleep(4)  # Increased from 2
+            time.sleep(4) 
             retry_count += 1
             
         if retry_count == max_retries:
