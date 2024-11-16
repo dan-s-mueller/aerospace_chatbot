@@ -1,7 +1,7 @@
 """Admin interface components."""
 
 import streamlit as st
-import os
+import os, logging
 
 from ..core.config import load_config, ConfigurationError, get_secrets, set_secrets
 from ..core.cache import Dependencies
@@ -17,6 +17,7 @@ class SidebarManager:
         self.sb_out = {}
         self._check_local_db_path()
         self.initialize_session_state()
+        self.logger = logging.getLogger(__name__)
         
     def initialize_session_state(self):
         """Initialize session state for all sidebar elements."""
@@ -93,15 +94,16 @@ class SidebarManager:
             )
     def _render_index_selection(self):
         """Render index selection section."""
-        # FIXME there's a problem here with the udpate I made to not select by index name, but by metadata. Need to add filtering by metadata and list indices.
         st.sidebar.title('Index Selected')
         
         # Get available indexes based on current settings
+        self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out.get('index_type'), self.sb_out.get('embedding_name'), self.sb_out.get('rag_type')}")
         available_indexes, index_metadatas = get_available_indexes(
             self.sb_out['index_type'],
             self.sb_out['embedding_name'],
             self.sb_out['rag_type']
         )
+        self.logger.info(f"Available indexes for sidebar: {available_indexes}")
         
         if not available_indexes:
             st.warning('No compatible collections found.')

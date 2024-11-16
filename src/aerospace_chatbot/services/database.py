@@ -654,8 +654,8 @@ class DatabaseService:
             else:
                 stable_count_checks = 0
                 
-            # TODO explore making this a check if current count is greater than or equal to expected count
-            if current_count == expected_count:
+            # TODO explore making this a check of the exact count. I found that the count was sometimes greater than expected due to latency in the Pinecone API.
+            if current_count >= expected_count:
                 self.logger.info(f"Successfully verified {current_count} vectors in Pinecone index{f' namespace {self.namespace}' if self.namespace else ''}")
                 break
                 
@@ -892,77 +892,112 @@ def export_to_hf_dataset(df, dataset_name):
         token=os.getenv('HUGGINGFACEHUB_API_KEY')
     )
 
-def get_available_indexes(db_type, embedding_model, rag_type):
-    """Get available indexes based on current settings."""
+def get_available_indexes(db_type, embedding_model=None, rag_type=None):
+    """Get available indexes based on current settings. If embedding_model or rag_type are None, 
+    returns all indexes without filtering on those criteria."""
     logger = logging.getLogger(__name__)
 
-    # Get database status
-    db_status = get_database_status(db_type)
-
-    logger.info(f"Database status in get_available_indexes for {db_type}, {embedding_model}, {rag_type}: {db_status}")
-    
-    if not db_status['status']:
-        return [], []
-        
-    available_indexes = []
-    index_metadatas = []
-    
-    def _check_get_index_criteria(index_name):
-        """Check if index meets RAG type criteria."""
+    def _check_get_index_criteria(index_name, rag_type, embedding_model):
+        """Check if index meets criteria for inclusion."""
+        # Never include query indexes when filtering
         if index_name.endswith('-queries'):
             return False
             
-        return (rag_type == 'Parent-Child' and index_name.endswith('-parent-child')) or \
-                (rag_type == 'Summary' and index_name.endswith('-summary')) or \
+        # Check RAG type criteria if specified
+        if rag_type is not None:
+            rag_matches = (
+                (rag_type == 'Parent-Child' and index_name.endswith('-parent-child')) or
+                (rag_type == 'Summary' and index_name.endswith('-summary')) or
                 (rag_type == 'Standard' and not index_name.endswith(('-parent-child', '-summary')))
+            )
+            if not rag_matches:
+                return False
+                
+        return True
 
     def _process_chromadb_indexes():
         """Process available ChromaDB indexes."""
         _, chromadb, _ = Dependencies().get_db_deps()
         client = chromadb.PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
         
+        available_indexes = []
+        index_metadatas = []
+        
         for index in db_status['message']:
-            if not _check_get_index_criteria(index.name):
+            # First check if index meets basic criteria
+            if not _check_get_index_criteria(index.name, rag_type, embedding_model):
                 continue
+                
             collection = client.get_collection(index.name)
             metadata = collection.get(ids=['db_metadata'])
-            if metadata and metadata['metadatas'][0].get('embedding_model') == embedding_model:
+            
+            # Check embedding model if specified
+            if metadata and (embedding_model is None or metadata['metadatas'][0].get('embedding_model') == embedding_model):
                 available_indexes.append(index.name)
                 index_metadatas.append(metadata['metadatas'][0])
+                
+        return available_indexes, index_metadatas
 
     def _process_pinecone_indexes():
         """Process available Pinecone indexes."""
         from pinecone import Pinecone
         pc = Pinecone()
         
+        available_indexes = []
+        index_metadatas = []
+        
         for index_name in db_status['message']:
-            if not _check_get_index_criteria(index_name):
+            # First check if index meets basic criteria
+            if not _check_get_index_criteria(index_name, rag_type, embedding_model):
                 continue
+                
             index_obj = pc.Index(index_name)
             metadata = index_obj.fetch(ids=['db_metadata'])
-            if metadata and metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_model:
+            
+            # Check embedding model if specified
+            if metadata and (embedding_model is None or metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_model):
                 available_indexes.append(index_name)
                 index_metadatas.append(metadata['vectors']['db_metadata']['metadata'])
+                
+        return available_indexes, index_metadatas
 
     def _process_ragatouille_indexes():
         """Process available RAGatouille indexes."""
+        available_indexes = []
+        index_metadatas = []
+        
         for index_name in db_status['message']:
-            if _check_get_index_criteria(index_name):
-                available_indexes.append(index_name)
-                # RAGatouille doesn't support metadata storage currently
-                index_metadatas.append({})
+            # First check if index meets basic criteria
+            if not _check_get_index_criteria(index_name, rag_type, embedding_model):
+                continue
+                
+            available_indexes.append(index_name)
+            # RAGatouille doesn't support metadata storage currently
+            index_metadatas.append({})
+            
+        return available_indexes, index_metadatas
 
-    try:
-        if db_type == 'ChromaDB':
-            _process_chromadb_indexes()
-        elif db_type == 'Pinecone':
-            _process_pinecone_indexes()
-        elif db_type == 'RAGatouille':
-            _process_ragatouille_indexes()
-    except Exception:
+    # Get database status
+    db_status = get_database_status(db_type)
+    logger.info(f"Database status in get_available_indexes for {db_type}, {embedding_model}, {rag_type}: {db_status}")
+    
+    if not db_status['status']:
         return [], []
-
-    return available_indexes, index_metadatas
+        
+    try:
+        # Get filtered list of indexes based on database type and criteria
+        if db_type == 'ChromaDB':
+            available_indexes, index_metadatas = _process_chromadb_indexes()
+        elif db_type == 'Pinecone':
+            available_indexes, index_metadatas = _process_pinecone_indexes()
+        elif db_type == 'RAGatouille':
+            available_indexes, index_metadatas = _process_ragatouille_indexes()
+            
+        return available_indexes, index_metadatas
+        
+    except Exception as e:
+        logger.error(f"Error in get_available_indexes: {str(e)}")
+        return [], []
 
 def get_database_status(db_type):
     """Get status of database indexes/collections."""

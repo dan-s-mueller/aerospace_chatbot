@@ -3,14 +3,15 @@ import streamlit as st
 
 from aerospace_chatbot.ui import SidebarManager, show_connection_status
 from aerospace_chatbot.processing import DocumentProcessor
-from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService, validate_index_name
-
-# TODO add index name somewhere in gui
+from aerospace_chatbot.services import (
+    EmbeddingService, 
+    LLMService, 
+    DatabaseService, 
+    get_available_indexes
+)
 
 # Page setup
 st.title('📓 Database Processing')
-current_directory = os.path.dirname(os.path.abspath(__file__))
-home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 
 # Initialize SidebarManager
 sidebar_manager = SidebarManager(st.session_state.config_file)
@@ -26,8 +27,18 @@ st.subheader('Create and load into a vector database')
 # Initialize services
 embedding_service = EmbeddingService(
     model_name=sb['embedding_name'],
-    model_type=sb['query_model']
+    model_type=sb['embedding_model']
 )
+
+# Initialize LLM service if using Summary RAG
+llm_service = None
+if sb['rag_type'] == 'Summary':
+    llm_service = LLMService(
+        model_name=sb['rag_llm_model'],
+        model_type=sb['rag_llm_source'],
+        temperature=sb['model_options']['temperature'],
+        max_tokens=sb['model_options']['output_level']
+    )
 
 # Find docs
 # FIXME add option for local documents
@@ -39,7 +50,6 @@ try:
         st.warning("No Google Cloud Storage buckets found. Please ensure you have access to at least one bucket in your Google Cloud project.")
         st.stop()
         
-    # TODO add tag filtering for buckets
     bucket_name = st.selectbox('Select Google Cloud Storage bucket',
                              options=st.session_state.buckets,
                              help='Select a Google Cloud Storage bucket containing PDFs')
@@ -106,27 +116,21 @@ with st.expander("Options",expanded=True):
         sb['model_options']['output_level'] = st.number_input('Summary model max output tokens', min_value=50, step=10, value=4000,
                                             help='Max output tokens for LLM. Concise: 50, Verbose: >1000. Limit depends on model.')
 
-# Initialize services for document processing
+# Initialize database service
 db_service = DatabaseService(
     db_type=sb['index_type'],
-    local_db_path=os.getenv('LOCAL_DB_PATH')
+    index_name=st.session_state.index_name,
+    rag_type=sb['rag_type'],
+    embedding_service=embedding_service,
+    doc_type='document'
 )
-if sb['rag_type'] == 'Summary':
-    llm_service = LLMService(
-        model_name=sb['rag_llm_model'],
-        model_type=sb['rag_llm_source'],
-        temperature=sb['model_options']['temperature'],
-        max_tokens=sb['model_options']['output_level']
-    )
-else:
-    llm_service = None
 
 # Add a button to run the function
 if st.button('Load docs into vector database'):
-    start_time = time.time()    
+    start_time = time.time()
 
+    # Initialize document processor
     doc_processor = DocumentProcessor(
-        db_service=db_service,
         embedding_service=embedding_service,
         rag_type=sb['rag_type'],
         chunk_method=chunk_method,
@@ -136,19 +140,27 @@ if st.button('Load docs into vector database'):
         llm_service=llm_service
     )
 
-    # Process documents
-    chunking_result = doc_processor.process_documents(
-        documents=docs,
-        show_progress=True
-    )
-    st.session_state.index_name=validate_index_name(st.session_state.index_name, db_service, doc_processor)
-    # Index documents
-    doc_processor.index_documents(
-        chunking_result=chunking_result,
-        index_name=st.session_state.index_name,
-        batch_size=batch_size,
-        clear=clear_database
-    )
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
+    try:
+        # Initialize database
+        db_service.initialize_database(clear=clear_database)
+        
+        # Process documents
+        chunking_result = doc_processor.process_documents(documents=docs)
+                
+        # Index documents
+        db_service.index_data(
+            data=chunking_result,
+            batch_size=batch_size
+        )
+        
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
+        
+    except Exception as e:
+        st.error(f"Error processing documents: {str(e)}")
+        # Try to clean up on failure
+        try:
+            db_service.delete_index()
+        except:
+            pass

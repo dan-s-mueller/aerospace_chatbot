@@ -105,8 +105,8 @@ def process_uploads(sb, temp_files):
     logger.info("Processing and uploading user documents...")
 
     embedding_service = EmbeddingService(
-        model_name=sb['embedding_model'],
-        model_type=sb['embedding_family']
+        model_name=sb['embedding_name'],
+        model_type=sb['embedding_model']
     )
 
     # Get available indexes and their metadata using the standalone function
@@ -116,8 +116,12 @@ def process_uploads(sb, temp_files):
         rag_type=sb['rag_type']
     )
 
+    logger.info(f"Available indexes: {available_indexes}")
+    logger.info(f"Index metadatas: {index_metadatas}")
+    logger.info(f"Selected index: {sb['index_selected']}")
+
     if sb['index_selected'] not in available_indexes:
-        raise ValueError(f"Selected index {sb['index_selected']} not found for compatible index type {sb['index_type']}, rag type {sb['rag_type']}, and embedding model {sb['embedding_model']}")
+        raise ValueError(f"Selected index {sb.get('index_selected')} not found for compatible index type {sb.get('index_type')}, rag type {sb.get('rag_type')}, and embedding model {sb.get('embedding_model')}")
     else:
         logger.info(f"Selected index {sb['index_selected']} found for compatible index type {sb['index_type']}, rag type {sb['rag_type']}, and embedding model {sb['embedding_model']}")
 
@@ -193,26 +197,25 @@ def _display_database_status(delete_buttons=False):
         st.error("Local database path not set")
         return
 
-    db_services = {
-        'Pinecone': DatabaseService('Pinecone', os.getenv('LOCAL_DB_PATH')),
-        'ChromaDB': DatabaseService('ChromaDB', os.getenv('LOCAL_DB_PATH')),
-        'RAGatouille': DatabaseService('RAGatouille', os.getenv('LOCAL_DB_PATH'))
-    }
+    db_types = ['Pinecone', 'ChromaDB', 'RAGatouille']
+    rag_types = ['Standard', 'Parent-Child', 'Summary']
     
     # Display status for each database type
-    for db_type, service in db_services.items():
-        st.markdown(f"**{db_type} {'Indexes' if db_type != 'ChromaDB' else 'Collections'}:**")
-        status = service.get_database_status(db_type)
-        
-        if status['status']:
-            for index in status['indexes']:
-                # Handle different index name formats
-                index_name = index.name if hasattr(index, 'name') else index
-                st.markdown(f"- `{index_name}` ✅")
-                if delete_buttons:
-                    _handle_index_deletion(db_type, index_name, service)
-        else:
-            st.markdown(f"- {status['message']} ❌")
+    for db_type in db_types:
+        for rag_type in rag_types:
+            st.markdown(f"**{db_type}, {rag_type}:**")
+            available_indexes, index_metadatas = get_available_indexes(db_type, sb['embedding_model'], rag_type)
+            status = service.get_database_status(db_type)
+            
+            if status['status']:
+                for index in status['indexes']:
+                    # Handle different index name formats
+                    index_name = index.name if hasattr(index, 'name') else index
+                    st.markdown(f"- `{index_name}` ✅")
+                    if delete_buttons:
+                        _handle_index_deletion(db_type, index_name, service)
+            else:
+                st.markdown(f"- {status['message']} ❌")
 
     # Show database path
     st.markdown(f"**Local database path:** `{os.getenv('LOCAL_DB_PATH')}`")
