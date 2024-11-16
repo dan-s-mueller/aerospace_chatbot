@@ -81,8 +81,14 @@ with chat_section:
 
     # Left column for chat
     with chat_col:
-        # Input always at top
-        prompt = st.chat_input("Prompt here")
+        # Check if there's a selected question from button click
+        if 'selected_question' in st.session_state:
+            prompt = st.session_state.selected_question
+            # Clear it so it doesn't trigger again
+            del st.session_state.selected_question
+        else:
+            # Regular chat input
+            prompt = st.chat_input("Prompt here")
         if st.button('Restart session'):
             _reset_conversation()
             st.rerun()
@@ -178,14 +184,21 @@ with chat_section:
             last_message = st.session_state.messages[0]  # Get most recent message
             
             # Alternative questions section at the top
-            if 'alternative_questions' in last_message:
-                st.markdown("💡 Alternative Questions")
-                st.info(body=last_message['alternative_questions'])
+            with st.container():
+                if 'alternative_questions' in last_message:
+                    st.markdown("💡 Alternative Questions", help="Click on a question to use as a prompt.")
+                    # Replace st.info with buttons for each question
+                    for question in last_message['alternative_questions']:
+                        if st.button(f"🔄 {question}", key=f"btn_{hash(question)}"):
+                            # Store the question in session state
+                            st.session_state.selected_question = question
+                            st.rerun()
             
-            # Sources section below
-            if 'sources' in last_message:
-                st.markdown("📓 Source Documents from Last Response")
-                display_sources(last_message['sources'])
+            # Source documents section below
+            with st.container():
+                if 'sources' in last_message:
+                    st.markdown("📚 Source Documents")
+                    display_sources(last_message['sources'])
 
         # If we're processing a new message, show its info too
         if prompt:

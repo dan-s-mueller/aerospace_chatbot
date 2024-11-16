@@ -104,7 +104,11 @@ class QAModel:
                 | self.llm_service.get_llm()
                 | StrOutputParser()
             )
-        alternative_questions=chain.invoke(invoke_dict)
+        alternative_questions = chain.invoke(invoke_dict)
+        self.logger.info(f'Generated alternative questions: {alternative_questions}')
+        # Split the string into a list of questions, removing empty strings and stripping whitespace
+        alternative_questions = [question.strip() for question in alternative_questions.split('\n') if question.strip()]
+        self.logger.info(f'Alternative questions split up: {alternative_questions}')
         return alternative_questions
     def _setup_memory(self):
         """Initialize conversation memory."""
