@@ -1,12 +1,12 @@
 """UI utility functions."""
 
 import streamlit as st
-import os, ast, tempfile
+import os, ast, tempfile, logging
 from streamlit_pdf_viewer import pdf_viewer
 
 from ..core.cache import Dependencies
 from ..core.config import get_secrets
-from ..services.database import DatabaseService
+from ..services.database import DatabaseService, get_available_indexes
 from ..services.embeddings import EmbeddingService
 from ..processing.documents import DocumentProcessor
 
@@ -94,15 +94,7 @@ def handle_file_upload(sb):
             "When you restart the chat, you'll have to re-upload your documents."
         )
 def get_or_create_spotlight_viewer(df, port: int = 9000):
-    """Create or get existing Spotlight viewer instance.
-    
-    Args:
-        df: pandas DataFrame containing the data to visualize
-        port: port number to run the viewer on (default: 9000)
-        
-    Returns:
-        Spotlight viewer instance
-    """
+    """Create or get existing Spotlight viewer instance."""
     deps = Dependencies()
     spotlight = deps.get_spotlight()
     
@@ -113,11 +105,13 @@ def get_or_create_spotlight_viewer(df, port: int = 9000):
         open_browser=False
     )
     return viewer
+
 def _display_api_key_status():
     """Display API key status."""
     secrets = get_secrets()
     markdown_str = "\n".join([f"- {name}: {'✅' if secret else '❌'}" for name, secret in secrets.items()])
     st.markdown(markdown_str)
+
 def _display_database_status(delete_buttons=False):
     """Display database status and management options."""
     if not os.getenv('LOCAL_DB_PATH'):
@@ -147,6 +141,7 @@ def _display_database_status(delete_buttons=False):
 
     # Show database path
     st.markdown(f"**Local database path:** `{os.getenv('LOCAL_DB_PATH')}`")
+
 def _handle_index_deletion(db_type, index_name, db_service):
     """Handle deletion of database indexes."""
     if st.button(f'Delete {index_name}', help='This is permanent!'):
@@ -157,20 +152,15 @@ def _handle_index_deletion(db_type, index_name, db_service):
             st.rerun()  # Refresh the page to show updated status
         except Exception as e:
             st.error(f"Error deleting index: {str(e)}")
+
 def _determine_rag_type(index_name):
-    """Determine RAG type from index name.
-    
-    Args:
-        index_name: Name of the index
-        
-    Returns:
-        RAG type ('Parent-Child', 'Summary', or 'Standard')
-    """
+    """Determine RAG type from index name."""
     if index_name.endswith('-parent-child'):
         return 'Parent-Child'
     elif '-summary-' in index_name or index_name.endswith('-summary'):
         return 'Summary'
     return 'Standard'
+
 def _validate_upload_settings(sb):
     """Validate RAG type and index type settings."""
     if sb['rag_type'] != "Standard":
@@ -182,6 +172,7 @@ def _validate_upload_settings(sb):
     
     st.write("Upload parameters set to standard values, hard coded for now...standard only")
     return True
+
 def _save_uploads_to_temp(uploaded_files):
     """Save uploaded files to temporary directory."""
     temp_files = []
@@ -191,48 +182,84 @@ def _save_uploads_to_temp(uploaded_files):
             temp_file.write(uploaded_file.read())
         temp_files.append(temp_path)
     return temp_files
+
 def _process_uploads(sb, temp_files):
     """Process uploaded files and merge them into the vector database."""
-    # Initialize services
-    db_service = DatabaseService(
-        db_type=sb['index_type']
-    )
-    embedding_service = EmbeddingService(
-        model_name=sb['embedding_name'],
-        model_type=sb['query_model']
-    )
-    # Initialize document processor
-    doc_processor = DocumentProcessor(
-        db_service=db_service,
-        embedding_service=embedding_service
-    )
+    logger = logging.getLogger(__name__)
     
     # Generate unique identifier
-    st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
-    st.markdown("*Processing and uploading user documents...*")
+    user_upload=f"user_upload_{os.urandom(3).hex()}"
+    logger.info(f"User upload ID: {user_upload}")
+    logger.info("Processing and uploading user documents...")
+
+    embedding_service = EmbeddingService(
+        model_name=sb['embedding_model'],
+        model_type=sb['embedding_family']
+    )
+
+    # Get available indexes and their metadata using the standalone function
+    available_indexes, index_metadatas = get_available_indexes(
+        db_type=sb['index_type'],
+        embedding_model=sb['embedding_model'],
+        rag_type=sb['rag_type']
+    )
+
+    if sb['index_selected'] not in available_indexes:
+        raise ValueError(f"Selected index {sb['index_selected']} not found for compatible index type {sb['index_type']}, rag type {sb['rag_type']}, and embedding model {sb['embedding_model']}")
+    else:
+        logger.info(f"Selected index {sb['index_selected']} found for compatible index type {sb['index_type']}, rag type {sb['rag_type']}, and embedding model {sb['embedding_model']}")
+
+    # Get metadata for the selected index
+    selected_metadata = index_metadatas[available_indexes.index(sb['index_selected'])]
+    # Convert any float values to int
+    for key, value in selected_metadata.items():
+        if isinstance(value, float):
+            selected_metadata[key] = int(value)
+    
+    if not selected_metadata:
+        raise ValueError(f"No metadata found for index {sb['index_selected']}")
+    else:
+        logger.info(f"Metadata found for index {sb['index_selected']}")
+
+    # Initialize services
+    db_service = DatabaseService(
+        db_type=sb['index_type'],
+        index_name=sb['index_selected'],
+        rag_type=sb['rag_type'],
+        embedding_service=embedding_service,
+        doc_type='document'
+    )
+    db_service.initialize_database(namespace=user_upload)
+    logger.info(f"Initialized database with namespace {db_service.namespace}")
+
+    # Initialize document processor with default values if metadata fields don't exist
+    doc_processor = DocumentProcessor(
+        embedding_service=embedding_service,
+        rag_type=sb['rag_type'],
+        chunk_method=selected_metadata['chunk_method'],
+        chunk_size=selected_metadata.get('chunk_size', None),
+        chunk_overlap=selected_metadata.get('chunk_overlap', None),
+        merge_pages=selected_metadata.get('merge_pages', None)
+    )
     
     # Process and index documents
-    st.markdown("*Uploading user documents to namespace...*")
+    logger.info("Uploading user documents to namespace...")
     chunking_result = doc_processor.process_documents(temp_files)
-    doc_processor.index_data(
-        index_name=sb['index_selected'],
-        data=chunking_result,
-        namespace=st.session_state.user_upload,
-        show_progress=True
+    db_service.index_data(
+        data=chunking_result
     )
     # Copy vectors to merge namespaces
-    st.markdown("*Merging user document with existing documents...*")
-    doc_processor.copy_vectors(
-        index_name=sb['index_selected'],
-        source_namespace=None,
-        target_namespace=st.session_state.user_upload,
-        show_progress=True
+    logger.info("Merging user document with existing documents...")
+    db_service.copy_vectors(
+        source_namespace=None
     )
-# @cache_data
+    logger.info("Merged user document with existing documents.")
+    return user_upload
+
 def _extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
-    deps = Dependencies()
-    fitz, requests = deps.get_pdf_deps()
+    import fitz
+    import requests
     
     try:
         response = requests.get(url)

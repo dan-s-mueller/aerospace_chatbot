@@ -113,19 +113,39 @@ class DatabaseService:
         else:
             raise NotImplementedError(f"RAG type {self.rag_type} not supported")
     
-    def copy_vectors(self, source_namespace, target_namespace, batch_size=100):
-        # FIXME, moved over without testing from documents
-        """Copies vectors from a source Pinecone namespace to a target namespace."""
+    def copy_vectors(self, source_namespace, batch_size=100):
+        """Copies vectors from a source Pinecone namespace into the namespace assigned to the DatabaseService instance."""
+        from pinecone import Pinecone as pinecone_client
+
         if self.db_type != 'Pinecone':
             raise ValueError("Vector copying is only supported for Pinecone databases")
             
-        # FIXME initialize database first, this function deosn't exist
-        index = self.get_index(self.index_name)
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+        index = pc.Index(self.index_name)
+        
+        # Verify source namespace exists and get vector count
+        stats = index.describe_index_stats()
+        source_ns_key = "" if source_namespace is None else source_namespace
+        if source_ns_key not in stats['namespaces']:
+            raise ValueError(f"Source namespace '{source_namespace}' does not exist in index {self.index_name}")
+        
+        if source_namespace is None:
+            source_count = stats['namespaces']['']['vector_count']
+        else:
+            source_count = stats['namespaces'][source_namespace]['vector_count']
+
+        if self.namespace is None:
+            current_count = stats['namespaces']['']['vector_count']
+        else:
+            current_count = stats['namespaces'][self.namespace]['vector_count']
+        expected_count = source_count + current_count
+        self.logger.info(f"Expected count after copy into {self.namespace}: {expected_count}")
         
         # Get list of all vector IDs
         ids = []
-        for id_batch in index.list():
+        for id_batch in index.list(namespace=source_namespace):
             ids.extend(id_batch)
+        self.logger.info(f"Copying {len(ids)} vectors from {source_namespace} to {self.namespace}")
             
         # Process vectors in batches
         for i in range(0, len(ids), batch_size):
@@ -144,7 +164,11 @@ class DatabaseService:
             ]
             
             # Upsert vectors to target namespace
-            index.upsert(vectors=vectors_to_upsert, namespace=target_namespace)
+            index.upsert(vectors=vectors_to_upsert, namespace=self.namespace)
+
+        # Verify the upload was successful
+        self._verify_pinecone_upload(index, expected_count)
+        self.logger.info(f"Copied {len(ids)} vectors from {source_namespace} to {self.namespace}")
 
     def delete_index(self):
         """Delete an index from the database."""
@@ -377,17 +401,38 @@ class DatabaseService:
         def _store_pinecone_metadata():
             pc_native = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             index = pc_native.Index(self.index_name)
+            
+            # Check if metadata vector already exists
+            try:
+                existing_metadata = index.fetch(ids=['db_metadata'])
+                if 'db_metadata' in existing_metadata['vectors']:
+                    # Extract existing metadata
+                    db_metadata = existing_metadata['vectors']['db_metadata']['metadata']
+                    
+                    # Check for mismatches between existing and new metadata
+                    mismatched_keys = []
+                    for key, value in db_metadata.items():
+                        if key in index_metadata and index_metadata[key] != value:
+                            mismatched_keys.append(f"{key}: expected '{value}', found '{index_metadata[key]}'")
+                    
+                    if mismatched_keys:
+                        raise ValueError(f"Metadata mismatch in {self.index_name}. Mismatched values: {', '.join(mismatched_keys)}")
+                    
+                    self.logger.warning(f"Metadata vector already exists in {self.index_name}, skipping metadata upsert")
+                    return
+            except Exception as e:
+                self.logger.debug(f"No existing metadata found in {self.index_name}: {str(e)}")
+            
+            # Proceed with metadata upsert if none exists
             index.upsert(vectors=[{
                 'id': 'db_metadata',
                 'values': metadata_vector,
                 'metadata': index_metadata
             }])
 
-            # Check vector upload count. Always in default namespace.
+            # Verify upload was successful
             stats = index.describe_index_stats()
-            initial_count = stats['total_vector_count'] 
-            if initial_count != 0:
-                raise ValueError(f"Initial count in {self.index_name} is {initial_count}, not 0. Cannot set metadata for index that already exists.")
+            initial_count = stats['total_vector_count']
             self.logger.info(f"Initial count in {self.index_name}: {initial_count}")
             self._verify_pinecone_upload(index, 1)  # Should only be metadata
 
@@ -396,6 +441,29 @@ class DatabaseService:
         elif self.db_type == "ChromaDB":
             chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
             index = chroma_native.get_collection(name=self.index_name)
+            
+            # Check if metadata vector already exists
+            try:
+                existing_metadata = index.get(ids=['db_metadata'])
+                if existing_metadata['ids']:
+                    # Extract existing metadata
+                    db_metadata = existing_metadata['metadatas'][0]
+                    
+                    # Check for mismatches between existing and new metadata
+                    mismatched_keys = []
+                    for key, value in db_metadata.items():
+                        if key in index_metadata and index_metadata[key] != value:
+                            mismatched_keys.append(f"{key}: expected '{value}', found '{index_metadata[key]}'")
+                    
+                    if mismatched_keys:
+                        raise ValueError(f"Metadata mismatch in {self.index_name}. Mismatched values: {', '.join(mismatched_keys)}")
+                    
+                    self.logger.warning(f"Metadata vector already exists in {self.index_name}, skipping metadata upsert")
+                    return
+            except Exception as e:
+                self.logger.debug(f"No existing metadata found in {self.index_name}: {str(e)}")
+            
+            # Proceed with metadata upsert if none exists
             index.add(
                 embeddings=[metadata_vector],
                 metadatas=[index_metadata],
@@ -556,7 +624,7 @@ class DatabaseService:
                 expected_count = initial_count+len(upsert_data)
             self._verify_pinecone_upload(pc_index, expected_count)
         
-    def _verify_pinecone_upload(self,index, expected_count):
+    def _verify_pinecone_upload(self, index, expected_count):
         """Verify that vectors were uploaded to Pinecone index."""
         max_retries = 10
         retry_count = 0

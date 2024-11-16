@@ -41,11 +41,13 @@ from aerospace_chatbot.services import (
     LLMService,
     CONDENSE_QUESTION_PROMPT,
     QA_PROMPT,
-    DEFAULT_DOCUMENT_PROMPT,
+    QA_WSOURCES_PROMPT,
+    QA_GENERATE_PROMPT,
+    SUMMARIZE_TEXT,
     GENERATE_SIMILAR_QUESTIONS,
     GENERATE_SIMILAR_QUESTIONS_W_CONTEXT,
     CLUSTER_LABEL,
-    SUMMARIZE_TEXT
+    DEFAULT_DOCUMENT_PROMPT,
 )
 from aerospace_chatbot.ui import (
     SidebarManager,
@@ -56,15 +58,15 @@ from aerospace_chatbot.ui import (
     handle_file_upload,
     get_or_create_spotlight_viewer
 )
+from aerospace_chatbot.ui.utils import _process_uploads
 
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 
 # High priority updates:
-# FIXME test that prompts are formatted properly
-# FIXME add test for dependency caching
 # FIXME add upload file test
+# TODO add test to upsert data in an existing index with different metadata/chunking parameters/db_metadata
 
 # Low priority updates:
 # TODO add tests to check conversation history functionality
@@ -1087,7 +1089,6 @@ def test_get_docs_questions_df(setup_fixture, test_index):
         assert len(df[df['type'] == 'question']) > 0, "No questions found in DataFrame" # Indicates the question was not recorded properly
         
         # Check that exactly n_retrievals sources were used (have non-zero values in used_by_num_questions)
-        nonzero_count = len(df[df['used_by_num_questions'] > 0])
         assert nonzero_count == n_retrievals, f"Expected {n_retrievals} sources to have non-zero values in used_by_num_questions, but got {nonzero_count}"
 
         # Cleanup
@@ -1199,6 +1200,106 @@ def test_add_clusters(setup_fixture, test_index):
         try:
             db_service.delete_index()
             qa_model.query_db_service.delete_index()
+        except:
+            pass
+        raise e
+
+def test_prompt_templates():
+    """Test that prompt templates have expected input variables."""
+    # Test CONDENSE_QUESTION_PROMPT
+    assert set(CONDENSE_QUESTION_PROMPT.input_variables) == {"chat_history", "question"}
+
+    # Test QA_PROMPT
+    assert set(QA_PROMPT.input_variables) == {"question", "context"}
+
+    # Test QA_WSOURCES_PROMPT
+    assert set(QA_WSOURCES_PROMPT.input_variables) == {"question", "summaries"}
+
+    # Test QA_GENERATE_PROMPT
+    assert set(QA_GENERATE_PROMPT.input_variables) == {"num_questions_per_chunk", "context_str"}
+
+    # Test SUMMARIZE_TEXT
+    assert set(SUMMARIZE_TEXT.input_variables) == {"doc"}
+
+    # Test GENERATE_SIMILAR_QUESTIONS
+    assert set(GENERATE_SIMILAR_QUESTIONS.input_variables) == {"question"}
+
+    # Test GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
+    assert set(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT.input_variables) == {"question", "context"}
+
+    # Test CLUSTER_LABEL
+    assert set(CLUSTER_LABEL.input_variables) == {"documents"}
+
+    # Test DEFAULT_DOCUMENT_PROMPT
+    assert set(DEFAULT_DOCUMENT_PROMPT.input_variables) == {"page_content"}
+
+def test_process_user_doc_uploads(setup_fixture):
+    """Test processing and merging user uploads into existing database."""
+    logger = setup_fixture['logger']
+    logger.info("Starting process_user_doc_uploads test")
+
+    # Create mock sidebar settings
+    mock_sb = {
+        'index_type': 'Pinecone',
+        'index_selected': 'test-process-uploads',
+        'rag_type': 'Standard',
+        'embedding_model': 'text-embedding-3-small',
+        'embedding_family': 'OpenAI'
+    }
+    upsert_docs = [os.path.join(os.path.abspath(os.path.dirname(__file__)), '1999_honnen_reocr.pdf')]
+
+    try:
+        # First create and populate initial database with setup docs
+        embedding_service = EmbeddingService(
+            model_name=mock_sb['embedding_model'],
+            model_type=mock_sb['embedding_family']
+        )
+        
+        db_service = DatabaseService(
+            db_type=mock_sb['index_type'],
+            index_name=mock_sb['index_selected'],
+            rag_type=mock_sb['rag_type'],
+            embedding_service=embedding_service,
+            doc_type='document'
+        )
+
+        # Initialize database and index setup docs
+        db_service.initialize_database(clear=True)
+        
+        doc_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=mock_sb['rag_type'],
+            chunk_method=setup_fixture['chunk_method'],
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap']
+        )
+        
+        # Process and index initial documents
+        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
+        db_service.index_data(
+            data=chunking_result,
+            batch_size=setup_fixture['batch_size']
+        )     
+        
+        # Process the "uploaded" docs
+        user_upload = _process_uploads(mock_sb, upsert_docs)
+        logger.info(f"User upload from _process_uploads: {user_upload}")
+
+        # Verify documents were indexed in new namespace
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+        index = pc.Index(mock_sb['index_selected'])
+        stats = index.describe_index_stats()
+        logger.info(f"Index stats: {stats}")
+        assert stats['namespaces'][user_upload]['vector_count'] > 0
+        
+        # Cleanup
+        db_service.delete_index()
+
+    except Exception as e:
+        # Ensure cleanup on failure
+        try:
+            db_service.delete_index()
+            print(f"Error: {e}")
         except:
             pass
         raise e

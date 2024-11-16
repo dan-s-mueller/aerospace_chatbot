@@ -54,13 +54,13 @@ def set_secrets(secrets):
     return secrets
 
 def setup_logging():
-    """Configure logging based on environment variables.
-    
-    Environment Variables:
-        LOG_LEVEL: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
-        LOG_FILE: Path to log file (optional)
-        LOG_FORMAT: Custom log format (optional)
-    """
+    """Configure logging based on environment variables."""
+    import warnings
+    import os
+    import sys
+    from pathlib import Path
+    import logging
+
     # Suppress Streamlit warning about missing ScriptRunContext
     warnings.filterwarnings('ignore', message='.*missing ScriptRunContext.*')
     
@@ -68,7 +68,7 @@ def setup_logging():
     log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
     log_file = os.getenv('LOG_FILE')
     log_format = os.getenv('LOG_FORMAT', 
-        '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 
     # Convert string log level to logging constant
@@ -76,33 +76,48 @@ def setup_logging():
     if not isinstance(numeric_level, int):
         raise ValueError(f'Invalid log level: {log_level}')
 
-    # Configure root logger
+    # Reset all existing loggers
+    logging.shutdown()
     root_logger = logging.getLogger()
-    
-    # Clear any existing handlers
     root_logger.handlers.clear()
     
+    # Disable existing loggers
+    logging.getLogger('aerospace_chatbot').handlers.clear()
+    
+    # Configure the root logger first
     root_logger.setLevel(numeric_level)
-
+    
     # Create formatter
     formatter = logging.Formatter(log_format)
 
-    # Always set up console handler
+    # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
+    console_handler.setLevel(numeric_level)
     root_logger.addHandler(console_handler)
 
-    # Optionally set up file handler
+    # File handler if specified
     if log_file:
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(formatter)
+        file_handler.setLevel(numeric_level)
         root_logger.addHandler(file_handler)
 
-    # Get the application logger
-    logger = logging.getLogger(__name__)
-    logger.propagate = False  # Prevent duplicate logs
+    # Configure the aerospace_chatbot logger
+    logger = logging.getLogger('aerospace_chatbot')
+    logger.setLevel(numeric_level)
+    logger.propagate = True  # Allow propagation to root logger
+    
+    # Explicitly configure test logger if we're in a test environment
+    if 'pytest' in sys.modules:
+        test_logger = logging.getLogger('tests')
+        test_logger.setLevel(numeric_level)
+        test_logger.propagate = True
+    
+    # Print confirmation of logging setup
+    root_logger.info("Logging configured successfully")
     
     return logger 
