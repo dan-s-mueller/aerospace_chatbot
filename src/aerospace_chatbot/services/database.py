@@ -403,38 +403,33 @@ class DatabaseService:
             index = pc_native.Index(self.index_name)
             
             # Check if metadata vector already exists
-            try:
-                existing_metadata = index.fetch(ids=['db_metadata'])
-                if 'db_metadata' in existing_metadata['vectors']:
-                    # Extract existing metadata
-                    db_metadata = existing_metadata['vectors']['db_metadata']['metadata']
-                    
-                    # Check for mismatches between existing and new metadata
-                    mismatched_keys = []
-                    for key, value in db_metadata.items():
-                        if key in index_metadata and index_metadata[key] != value:
-                            mismatched_keys.append(f"{key}: expected '{value}', found '{index_metadata[key]}'")
-                    
-                    if mismatched_keys:
-                        raise ValueError(f"Metadata mismatch in {self.index_name}. Mismatched values: {', '.join(mismatched_keys)}")
-                    
-                    self.logger.warning(f"Metadata vector already exists in {self.index_name}, skipping metadata upsert")
-                    return
-            except Exception as e:
-                self.logger.debug(f"No existing metadata found in {self.index_name}: {str(e)}")
+            existing_metadata = index.fetch(ids=['db_metadata'])
+            if 'db_metadata' in existing_metadata['vectors']:
+                # Extract existing metadata
+                db_metadata = existing_metadata['vectors']['db_metadata']['metadata']
+                self.logger.info(f"Found existing metadata in {self.index_name}: {db_metadata}")
+                
+                # Check for mismatches between existing and new metadata
+                mismatched_keys = []
+                for key, value in db_metadata.items():
+                    if key in index_metadata and index_metadata[key] != value:
+                        mismatched_keys.append(f"{key}: expected '{value}', found '{index_metadata[key]}'")
+                
+                if mismatched_keys:
+                    raise ValueError(f"Metadata mismatch in {self.index_name}. Mismatched values: {', '.join(mismatched_keys)}")
+                
+                self.logger.warning(f"Metadata vector already exists in {self.index_name}, skipping metadata upsert")
+                return
             
             # Proceed with metadata upsert if none exists
+            self.logger.info(f"No existing metadata found in {self.index_name}, adding metadata: {index_metadata}")
             index.upsert(vectors=[{
                 'id': 'db_metadata',
                 'values': metadata_vector,
                 'metadata': index_metadata
             }])
-
-            # Verify upload was successful
-            stats = index.describe_index_stats()
-            initial_count = stats['total_vector_count']
-            self.logger.info(f"Initial count in {self.index_name}: {initial_count}")
-            self._verify_pinecone_upload(index, 1)  # Should only be metadata
+            self._verify_pinecone_upload(index, 1)
+            self.logger.info(f"Successfully added metadata to {self.index_name}")
 
         if self.db_type == "Pinecone":
             _store_pinecone_metadata()
@@ -442,36 +437,37 @@ class DatabaseService:
             chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
             index = chroma_native.get_collection(name=self.index_name)
             
-            # Check if metadata vector already exists
-            try:
-                existing_metadata = index.get(ids=['db_metadata'])
-                if existing_metadata['ids']:
-                    # Extract existing metadata
-                    db_metadata = existing_metadata['metadatas'][0]
-                    
-                    # Check for mismatches between existing and new metadata
-                    mismatched_keys = []
-                    for key, value in db_metadata.items():
-                        if key in index_metadata and index_metadata[key] != value:
-                            mismatched_keys.append(f"{key}: expected '{value}', found '{index_metadata[key]}'")
-                    
-                    if mismatched_keys:
-                        raise ValueError(f"Metadata mismatch in {self.index_name}. Mismatched values: {', '.join(mismatched_keys)}")
-                    
-                    self.logger.warning(f"Metadata vector already exists in {self.index_name}, skipping metadata upsert")
-                    return
-            except Exception as e:
-                self.logger.debug(f"No existing metadata found in {self.index_name}: {str(e)}")
+            # Get existing metadata
+            existing_metadata = index.get(ids=['db_metadata'])
+            
+            # If metadata exists, check for mismatches
+            if existing_metadata['ids']:
+                # Extract existing metadata
+                db_metadata = existing_metadata['metadatas'][0]
+                self.logger.info(f"Found existing metadata in {self.index_name}: {db_metadata}")
+                
+                # Check for mismatches between existing and new metadata
+                mismatched_keys = []
+                for key, value in db_metadata.items():
+                    if key in index_metadata and index_metadata[key] != value:
+                        mismatched_keys.append(f"{key}: expected '{value}', found '{index_metadata[key]}'")
+                
+                if mismatched_keys:
+                    raise ValueError(f"Metadata mismatch in {self.index_name}. Mismatched values: {', '.join(mismatched_keys)}")
+                
+                self.logger.warning(f"Metadata vector already exists in {self.index_name}, skipping metadata upsert")
+                return
             
             # Proceed with metadata upsert if none exists
+            self.logger.info(f"No existing metadata found in {self.index_name}, adding metadata: {index_metadata}")
             index.add(
                 embeddings=[metadata_vector],
                 metadatas=[index_metadata],
                 ids=['db_metadata']
             )
+            self.logger.info(f"Successfully added metadata to {self.index_name}")
 
         elif self.db_type == "RAGatouille":
-            # TODO add metadata storage for RAGatouille, maybe can use the same method as others
             self.logger.warning("Metadata storage is not yet supported for RAGatouille indexes")
 
     def _validate_index(self):
@@ -506,6 +502,8 @@ class DatabaseService:
         if self.db_type == "Pinecone":
             if len(name) > 45:
                 raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {name}")
+            if '_' in name:
+                raise ValueError(f"The Pinecone index name cannot contain underscores. Entry: {name}")
         elif self.db_type == "ChromaDB":
             if len(name) > 63:
                 raise ValueError(f"The ChromaDB collection name must be less than 63 characters. Entry: {name}")
@@ -535,6 +533,7 @@ class DatabaseService:
             initial_count = stats['total_vector_count']
             if self.namespace:
                 initial_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)   
+            self.logger.info(f"Initial vector count: {initial_count}")
 
         if isinstance(upsert_data, ChunkingResult):
             # Chunked documents

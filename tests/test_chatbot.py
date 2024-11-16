@@ -65,7 +65,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 
 # High priority updates:
-# FIXME add upload file test
 # TODO add test to upsert data in an existing index with different metadata/chunking parameters/db_metadata
 
 # Low priority updates:
@@ -120,7 +119,19 @@ def parse_test_case(setup, test_case):
 @pytest.fixture(autouse=True)
 def setup_fixture():
     """Sets up the fixture for testing the backend."""
-    # Override environment variables first, before loading .env
+    # Store original environment variables
+    original_env = {
+        'OPENAI_API_KEY': os.environ.get('OPENAI_API_KEY'),
+        'ANTHROPIC_API_KEY': os.environ.get('ANTHROPIC_API_KEY'),
+        'VOYAGE_API_KEY': os.environ.get('VOYAGE_API_KEY'),
+        'HUGGINGFACEHUB_API_KEY': os.environ.get('HUGGINGFACEHUB_API_KEY'),
+        'PINECONE_API_KEY': os.environ.get('PINECONE_API_KEY'),
+        'LOG_LEVEL': os.environ.get('LOG_LEVEL'),
+        'LOG_FILE': os.environ.get('LOG_FILE'),
+        'LOCAL_DB_PATH': os.environ.get('LOCAL_DB_PATH')
+    }
+
+    # Override environment variables first
     os.environ['LOG_LEVEL'] = 'INFO'
     os.environ['LOG_FILE'] = 'logs/test_chatbot.log'
     
@@ -131,22 +142,20 @@ def setup_fixture():
     # Now load .env file (won't override existing environment variables)
     load_dotenv(find_dotenv(), override=False)
     
-    # Pull api keys from .env file
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
-    VOYAGE_API_KEY = os.getenv('VOYAGE_API_KEY')
-    HUGGINGFACEHUB_API_KEY = os.getenv('HUGGINGFACEHUB_API_KEY')
-    PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')    
+    # Set mock API keys
+    mock_keys = {
+        'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
+        'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY'),
+        'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY'),
+        'HUGGINGFACEHUB_API_KEY': os.getenv('HUGGINGFACEHUB_API_KEY'),
+        'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY')
+    }
     
-    # Set environment variables from .env file. They are required for items tested here. This is done in the GUI setup.
-    os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
-    os.environ['ANTHROPIC_API_KEY'] = ANTHROPIC_API_KEY
-    os.environ['VOYAGE_API_KEY'] = VOYAGE_API_KEY
-    os.environ['HUGGINGFACEHUB_API_KEY'] = HUGGINGFACEHUB_API_KEY
-    os.environ['PINECONE_API_KEY'] = PINECONE_API_KEY
+    # Set environment variables
+    for key, value in mock_keys.items():
+        os.environ[key] = value
 
-    LOCAL_DB_PATH = os.path.abspath(os.path.dirname(__file__))   # Default to the test path for easy cleanup.
-    # Set default to environment variable
+    LOCAL_DB_PATH = os.path.abspath(os.path.dirname(__file__))
     os.environ['LOCAL_DB_PATH'] = LOCAL_DB_PATH
     
     # Fixed inputs
@@ -178,11 +187,7 @@ def setup_fixture():
 
     setup = {
         'logger': logger,
-        'OPENAI_API_KEY': OPENAI_API_KEY,
-        'ANTHROPIC_API_KEY': ANTHROPIC_API_KEY,
-        'VOYAGE_API_KEY': VOYAGE_API_KEY,
-        'HUGGINGFACEHUB_API_KEY': HUGGINGFACEHUB_API_KEY,
-        'PINECONE_API_KEY': PINECONE_API_KEY,
+        **mock_keys,
         'LOCAL_DB_PATH': LOCAL_DB_PATH,
         'docs': docs,
         'chunk_method': chunk_method,
@@ -197,7 +202,14 @@ def setup_fixture():
         'mock_llm_service': mock_llm_service
     }
 
-    return setup
+    yield setup
+
+    # Restore original environment variables after test
+    for key, value in original_env.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
 def test_validate_index(setup_fixture):
     """Test edge cases for validate_index function."""
     from aerospace_chatbot.services.database import DatabaseService
@@ -751,7 +763,7 @@ def test_get_available_indexes(setup_fixture, test_index):
             test_indexes.append(db_service.index_name)
 
         except Exception as e:
-            print(f"Error creating index {index_name_initialized}: {str(e)}")
+            logger.error(f"Error creating index {index_name_initialized}: {str(e)}")
             db_service.delete_index()
             raise e
 
@@ -1019,7 +1031,7 @@ def test_get_docs_questions_df(setup_fixture, test_index):
     logger = setup_fixture['logger']
     logger.info(f"Starting get_docs_questions_df test with {test_index['db_type']}")
     
-    index_name = 'test-visualization-df_export'
+    index_name = 'test-viz-df-export'
     rag_type='Standard'
 
     # Initialize services
@@ -1089,12 +1101,13 @@ def test_get_docs_questions_df(setup_fixture, test_index):
         assert len(df[df['type'] == 'question']) > 0, "No questions found in DataFrame" # Indicates the question was not recorded properly
         
         # Check that exactly n_retrievals sources were used (have non-zero values in used_by_num_questions)
+        nonzero_count = len(df[df['used_by_num_questions'] > 0])
         assert nonzero_count == n_retrievals, f"Expected {n_retrievals} sources to have non-zero values in used_by_num_questions, but got {nonzero_count}"
 
         # Cleanup
         db_service.delete_index()
         qa_model.query_db_service.delete_index()
-        print(f'Database deleted: {test_index["db_type"]}')
+        logger.info(f'Database deleted: {test_index["db_type"]}')
 
     except Exception as e:  # If there is an error, be sure to delete the database
         try:
@@ -1194,7 +1207,7 @@ def test_add_clusters(setup_fixture, test_index):
         # Cleanup
         db_service.delete_index()
         qa_model.query_db_service.delete_index()
-        print(f'Database deleted: {test_index["db_type"]}')
+        logger.info(f'Database deleted: {test_index["db_type"]}')
 
     except Exception as e:  # If there is an error, be sure to delete the database
         try:
@@ -1299,7 +1312,183 @@ def test_process_user_doc_uploads(setup_fixture):
         # Ensure cleanup on failure
         try:
             db_service.delete_index()
-            print(f"Error: {e}")
+        except:
+            pass
+        raise e
+
+@pytest.mark.parametrize('test_index', [
+    {
+        'db_type': 'ChromaDB',
+        'embedding_family': 'OpenAI',
+        'embedding_name': 'text-embedding-3-small'
+    },
+    {
+        'db_type': 'Pinecone',
+        'embedding_family': 'OpenAI',
+        'embedding_name': 'text-embedding-3-small'
+    }
+])
+def test_index_with_different_parameters(setup_fixture, test_index):
+    """Test that an exception is raised when indexing documents with different chunking parameters."""
+    logger = setup_fixture['logger']
+    logger.info(f"Starting index_with_different_parameters test with {test_index['db_type']}")
+    
+    index_name = 'test-different-params'
+    rag_type = 'Standard'
+
+    # Initialize services
+    embedding_service = EmbeddingService(
+        model_name=test_index['embedding_name'],
+        model_type=test_index['embedding_family']
+    )
+
+    db_service = DatabaseService(
+        db_type=test_index['db_type'],
+        index_name=index_name,
+        rag_type=rag_type,
+        embedding_service=embedding_service,
+        doc_type='document'
+    )
+
+    try:
+        # Test Case 1: Initialize with chunking and try to add unchunked/merged docs
+        logger.info("Test Case 1: Chunked vs Unchunked")
+        
+        # Initialize database with chunking parameters
+        initial_chunk_size = 400
+        initial_chunk_overlap = 50
+        initial_chunk_method = 'character_recursive'
+        
+        db_service.initialize_database(clear=True)
+        
+        # Process and index initial documents with chunking
+        doc_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            chunk_method=initial_chunk_method,
+            chunk_size=initial_chunk_size,
+            chunk_overlap=initial_chunk_overlap
+        )
+        
+        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
+        db_service.index_data(
+            data=chunking_result,
+            batch_size=setup_fixture['batch_size']
+        )
+
+        # Try to add unchunked documents
+        unchunked_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            chunk_method='None'  # No chunking
+        )
+        
+        unchunked_result = unchunked_processor.process_documents(setup_fixture['docs'])
+        
+        with pytest.raises(ValueError):
+            db_service.index_data(
+                data=unchunked_result,
+                batch_size=setup_fixture['batch_size']
+            )
+
+        # Try to add merged documents
+        merged_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            chunk_method='None',
+            merge_pages=2  # Merge every 2 pages
+        )
+        
+        merged_result = merged_processor.process_documents(setup_fixture['docs'])
+        
+        with pytest.raises(ValueError):
+            db_service.index_data(
+                data=merged_result,
+                batch_size=setup_fixture['batch_size']
+            )
+
+        # Test Case 2: Initialize with no chunking and try to add chunked docs
+        logger.info("Test Case 2: Unchunked vs Chunked")
+        
+        # Reinitialize database with no chunking
+        db_service.delete_index()
+        db_service.initialize_database(clear=True)
+        
+        # Process and index initial documents without chunking
+        unchunked_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            chunk_method='None'
+        )
+        
+        unchunked_result = unchunked_processor.process_documents(setup_fixture['docs'])
+        db_service.index_data(
+            data=unchunked_result,
+            batch_size=setup_fixture['batch_size']
+        )
+
+        # Try to add chunked documents
+        chunked_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            chunk_method='character_recursive',
+            chunk_size=400,
+            chunk_overlap=50
+        )
+        
+        chunked_result = chunked_processor.process_documents(setup_fixture['docs'])
+        
+        with pytest.raises(ValueError):
+            db_service.index_data(
+                data=chunked_result,
+                batch_size=setup_fixture['batch_size']
+            )
+
+        # Test Case 3: Initialize with merged docs and try to add differently processed docs
+        logger.info("Test Case 3: Merged vs Other Processing")
+        
+        # Reinitialize database with merged documents
+        db_service.delete_index()
+        db_service.initialize_database(clear=True)
+        
+        # Process and index initial merged documents
+        merged_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            chunk_method='None',
+            merge_pages=2
+        )
+        
+        merged_result = merged_processor.process_documents(setup_fixture['docs'])
+        db_service.index_data(
+            data=merged_result,
+            batch_size=setup_fixture['batch_size']
+        )
+
+        # Try to add documents with different merge settings
+        different_merge_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=rag_type,
+            chunk_method='None',
+            merge_pages=3  # Different merge setting
+        )
+        
+        different_merge_result = different_merge_processor.process_documents(setup_fixture['docs'])
+        
+        with pytest.raises(ValueError):
+            db_service.index_data(
+                data=different_merge_result,
+                batch_size=setup_fixture['batch_size']
+            )
+
+        # Cleanup
+        db_service.delete_index()
+        logger.info(f'Database deleted: {test_index["db_type"]}')
+
+    except Exception as e:
+        # If there is an error, be sure to delete the database
+        try:
+            db_service.delete_index()
         except:
             pass
         raise e
