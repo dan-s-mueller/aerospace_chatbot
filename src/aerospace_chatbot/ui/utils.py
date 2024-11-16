@@ -202,30 +202,37 @@ def _display_database_status(delete_buttons=False):
     
     # Display status for each database type
     for db_type in db_types:
-        for rag_type in rag_types:
-            st.markdown(f"**{db_type}, {rag_type}:**")
-            available_indexes, index_metadatas = get_available_indexes(db_type, sb['embedding_model'], rag_type)
-            status = service.get_database_status(db_type)
-            
-            if status['status']:
-                for index in status['indexes']:
-                    # Handle different index name formats
-                    index_name = index.name if hasattr(index, 'name') else index
-                    st.markdown(f"- `{index_name}` ✅")
-                    if delete_buttons:
-                        _handle_index_deletion(db_type, index_name, service)
-            else:
-                st.markdown(f"- {status['message']} ❌")
+        st.markdown(f"**{db_type}:**")
+        available_indexes, _ = get_available_indexes(db_type)
+        
+        if available_indexes:
+            for index_name in available_indexes:
+                st.markdown(f"- `{index_name}` ✅")
+                if delete_buttons:
+                    _handle_index_deletion(db_type, index_name)
+        else:
+            st.markdown(f"- No indexes found ❌")
 
     # Show database path
     st.markdown(f"**Local database path:** `{os.getenv('LOCAL_DB_PATH')}`")
 
-def _handle_index_deletion(db_type, index_name, db_service):
+def _handle_index_deletion(db_type, index_name):
     """Handle deletion of database indexes."""
     if st.button(f'Delete {index_name}', help='This is permanent!'):
         try:
             rag_type = _determine_rag_type(index_name)
-            db_service.delete_index(db_type, index_name, rag_type)
+            if index_name.endswith('-queries'):
+                doc_type = 'question'
+            else:
+                doc_type = 'document'
+            db_service = DatabaseService(
+                db_type=db_type,
+                index_name=index_name,
+                rag_type=rag_type,
+                embedding_service=None,
+                doc_type=doc_type
+            )
+            db_service.delete_index()
             st.success(f"Successfully deleted {index_name}")
             st.rerun()  # Refresh the page to show updated status
         except Exception as e:
