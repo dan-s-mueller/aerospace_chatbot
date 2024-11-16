@@ -4,38 +4,25 @@ import pytest
 import pandas as pd
 import logging
 from dotenv import load_dotenv, find_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_voyageai import VoyageAIEmbeddings
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 from pinecone import Pinecone as pinecone_client
-import chromadb
 from ragatouille import RAGPretrainedModel
 
 from langchain_pinecone import PineconeVectorStore
 from langchain_chroma import Chroma
-from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.storage import LocalFileStore
 
 from aerospace_chatbot.core import (
-    Dependencies, 
     ConfigurationError,
-    load_config,
-    get_secrets,
     set_secrets
 )
 from aerospace_chatbot.processing import (
     DocumentProcessor, 
-    QAModel,
-    ChunkingResult
+    QAModel
 )
 from aerospace_chatbot.services import (
     DatabaseService, 
     get_docs_questions_df, 
-    add_clusters, 
-    export_to_hf_dataset, 
-    get_database_status,
+    add_clusters,
     get_available_indexes,
     EmbeddingService, 
     LLMService,
@@ -50,22 +37,13 @@ from aerospace_chatbot.services import (
     DEFAULT_DOCUMENT_PROMPT,
 )
 from aerospace_chatbot.ui import (
-    SidebarManager,
-    setup_page_config,
-    display_chat_history, 
-    display_sources, 
-    show_connection_status,
-    handle_file_upload,
-    get_or_create_spotlight_viewer
+    SidebarManager
 )
 from aerospace_chatbot.ui.utils import _process_uploads
 
 # Import local variables
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
-
-# High priority updates:
-# TODO add test to upsert data in an existing index with different metadata/chunking parameters/db_metadata
 
 # Low priority updates:
 # TODO add tests to check conversation history functionality

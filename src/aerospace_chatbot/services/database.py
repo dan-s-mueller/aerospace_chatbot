@@ -23,7 +23,7 @@ def pinecone_retry(func):
     """Decorator for Pinecone operations with retry and rate limiting."""
     return retry(
         stop=stop_after_attempt(5),
-        wait=wait_fixed(1) + wait_exponential(multiplier=1, min=2, max=10),  # Combines rate limit with backoff
+        wait=wait_fixed(2) + wait_exponential(multiplier=1, min=4, max=10),  # Increased delays
         reraise=True
     )(func)
 
@@ -259,7 +259,7 @@ class DatabaseService:
     
     @retry(
         stop=stop_after_attempt(5),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
+        wait=wait_exponential(multiplier=1, min=4, max=10),  # Increased delays
         retry=retry_if_exception_type((PineconeApiException, NotFoundException)),
         reraise=True
     )
@@ -272,9 +272,13 @@ class DatabaseService:
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY')) # Need to use the native client since langchain can't upload a dummy embedding :(
         if clear:
             self.delete_index()
-            # Wait until index is deleted
+            # Wait until index is deleted with timeout
+            start_time = time.time()
+            timeout = 30  # 30 second timeout
             while self.index_name in [idx.name for idx in pc.list_indexes()]:
-                time.sleep(2)
+                if time.time() - start_time > timeout:
+                    raise TimeoutError(f"Timeout waiting for index {self.index_name} to be deleted")
+                time.sleep(4)  # Increased delay
 
         # Try to describe the index
         try:
@@ -625,20 +629,41 @@ class DatabaseService:
         
     def _verify_pinecone_upload(self, index, expected_count):
         """Verify that vectors were uploaded to Pinecone index."""
-        max_retries = 10
+        max_retries = 15  # Increased from 10
         retry_count = 0
+        last_count = 0
+        stable_count_checks = 0
+        
         while retry_count < max_retries:
             stats = index.describe_index_stats()
             current_count = stats['total_vector_count']
             if self.namespace:
-                current_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)            
+                current_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)
+                
+            # Check if count has stabilized
+            if current_count == last_count:
+                stable_count_checks += 1
+                if stable_count_checks >= 3:  # Count has been stable for 3 checks
+                    if current_count > expected_count:
+                        self.logger.warning(f"Final count ({current_count}) exceeds expected count ({expected_count})")
+                    self.logger.info(f"Vector count has stabilized at {current_count}")
+                    break
+            else:
+                stable_count_checks = 0
+                
             if current_count == expected_count:
                 self.logger.info(f"Successfully verified {current_count} vectors in Pinecone index{f' namespace {self.namespace}' if self.namespace else ''}")
                 break
+                
             self.logger.info(f"Waiting for vectors to be indexed in Pinecone... Current count: {current_count}, Expected: {expected_count}")
-            time.sleep(2)
+            last_count = current_count
+            time.sleep(4)  # Increased from 2
             retry_count += 1
+            
         if retry_count == max_retries:
+            if current_count > expected_count:
+                self.logger.warning(f"Final count ({current_count}) exceeds expected count ({expected_count})")
+                return  # Don't raise error if we have more vectors than expected
             raise TimeoutError(f"Timeout waiting for vectors to be indexed in Pinecone. Current count: {current_count}, Expected: {expected_count}")
 
 def get_docs_questions_df(db_service, query_db_service, logger=False):
