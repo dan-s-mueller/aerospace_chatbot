@@ -19,6 +19,8 @@ from tenacity import (
     wait_fixed
 )
 
+# TODO remove the dependency setup I have or clean up with cursor. Do a speed test.
+
 def pinecone_retry(func):
     """Decorator for Pinecone operations with retry and rate limiting."""
     return retry(

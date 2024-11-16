@@ -11,6 +11,8 @@ import logging
 from ..core.cache import Dependencies
 from ..services.prompts import SUMMARIZE_TEXT
 
+# TODO remove the dependency setup I have or clean up with cursor. Do a speed test.
+
 @dataclass
 class ChunkingResult:
     """Container for chunking results."""
