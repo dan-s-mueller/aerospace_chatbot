@@ -1,7 +1,9 @@
 """Core functionality for the aerospace chatbot."""
 
 from .cache import (
-    Dependencies
+    Dependencies,
+    cache_data,
+    cache_resource
 )
 from .config import (
     ConfigurationError,
@@ -13,6 +15,8 @@ from .config import (
 
 __all__ = [
     'Dependencies',
+    'cache_data',
+    'cache_resource',
     'ConfigurationError',
     'load_config',
     'get_secrets',

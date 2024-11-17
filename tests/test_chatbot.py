@@ -83,8 +83,8 @@ def parse_test_case(setup, test_case):
     parsed_test = {
         'id': test_case['id'],
         'index_type': setup['index_type'][test_case['index_type']],
-        'embedding_family': test_case['embedding_family'],
         'embedding_name': test_case['embedding_name'],
+        'embedding_model': test_case['embedding_model'],
         'rag_type': setup['rag_type'][test_case['rag_type']],
         'llm_family': test_case['llm_family'],
         'llm': test_case['llm']
@@ -152,13 +152,13 @@ def setup_fixture():
     rag_type = {rag: rag for rag in ['Standard', 'Parent-Child', 'Summary']}
     
     mock_embedding_service = EmbeddingService(
-        model_name='text-embedding-3-small',
-        model_type='OpenAI'
+        model_service='OpenAI',
+        model='text-embedding-3-small'
     )
 
     mock_llm_service = LLMService(
-        model_name='gpt-4o-mini',
-        model_type='OpenAI',
+        model_service='OpenAI',
+        model='gpt-4o-mini',
         temperature=0,
         max_tokens=5000
     )
@@ -421,20 +421,20 @@ def test_process_documents_summary(setup_fixture):
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-small',
+        'embedding_name': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small',
         'expected_class': PineconeVectorStore
     },
     {
         'index_type': 'ChromaDB',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-ada-002',
+        'embedding_name': 'OpenAI',
+        'embedding_model': 'text-embedding-ada-002',
         'expected_class': Chroma
     },
     {
         'index_type': 'RAGatouille',
-        'embedding_family': 'RAGatouille',
-        'embedding_name': 'colbert-ir/colbertv2.0',
+        'embedding_name': 'RAGatouille',
+        'embedding_model': 'colbert-ir/colbertv2.0',
         'expected_class': RAGPretrainedModel
     }
 ])
@@ -448,8 +448,8 @@ def test_initialize_database(monkeypatch, test_index):
 
     # Create services
     embedding_service = EmbeddingService(
-        model_name=test_index['embedding_name'],
-        model_type=test_index['embedding_family']
+        model_service=test_index['embedding_name'],
+        model=test_index['embedding_model']
     )
     
     db_service = DatabaseService(
@@ -531,8 +531,8 @@ def test_delete_database(setup_fixture, test_index):
 
     # Create embedding service
     embedding_service = EmbeddingService(
-        model_name=test_index['embedding_name'],
-        model_type=test_index['embedding_family']
+        model_service=test_index['embedding_name'],
+        model=test_index['embedding_model']
     )
     
     # Loop through each database type and RAG type combination
@@ -697,13 +697,13 @@ def test_get_available_indexes(setup_fixture, test_index):
     
     # Create services
     embedding_service = EmbeddingService(
-        model_name=test_index['embedding_model'],
-        model_type=test_index['embedding_family']
+        model_service=test_index['embedding_name'],
+        model=test_index['embedding_model']
     )
     
     llm_service = LLMService(
-        model_name='gpt-4o-mini',
-        model_type='OpenAI'
+        model_service='OpenAI',
+        model='gpt-4o-mini'
     )
 
     # Create and index test documents for each RAG type
@@ -834,12 +834,12 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
     # Get services
     embedding_service = EmbeddingService(
-        model_name=test['embedding_name'],
-        model_type=test['embedding_family']
+        model_service=test['embedding_name'],
+        model=test['embedding_model']
     )
     llm_service = LLMService(
-        model_name=test['llm'],
-        model_type=test['llm_family']
+        model_service=test['llm_family'],
+        model=test['llm']
     )
 
     db_service = DatabaseService(
@@ -1030,12 +1030,12 @@ def test_get_docs_questions_df(setup_fixture, test_index):
 
     # Initialize services
     embedding_service = EmbeddingService(
-        model_name=test_index['embedding_name'],
-        model_type=test_index['embedding_family']
+        model_service=test_index['embedding_name'],
+        model=test_index['embedding_model']
     )
     llm_service = LLMService(
-        model_name='gpt-4o-mini',
-        model_type='OpenAI'
+        model_service='OpenAI',
+        model='gpt-4o-mini'
     )
     db_service = DatabaseService(
         db_type=test_index['db_type'],
@@ -1131,12 +1131,12 @@ def test_add_clusters(setup_fixture, test_index):
 
     # Initialize services
     embedding_service = EmbeddingService(
-        model_name=test_index['embedding_name'],
-        model_type=test_index['embedding_family']
+        model_service=test_index['embedding_name'],
+        model=test_index['embedding_model']
     )
     llm_service = LLMService(
-        model_name='gpt-4o-mini',
-        model_type='OpenAI'
+        model_service='OpenAI',
+        model='gpt-4o-mini'
     )
     db_service = DatabaseService(
         db_type=test_index['db_type'],
@@ -1251,15 +1251,15 @@ def test_process_user_doc_uploads(setup_fixture):
         'index_selected': 'test-process-uploads',
         'rag_type': 'Standard',
         'embedding_model': 'text-embedding-3-small',
-        'embedding_family': 'OpenAI'
+        'embedding_name': 'OpenAI'
     }
     upsert_docs = [os.path.join(os.path.abspath(os.path.dirname(__file__)), '1999_honnen_reocr.pdf')]
 
     try:
         # First create and populate initial database with setup docs
         embedding_service = EmbeddingService(
-            model_name=mock_sb['embedding_model'],
-            model_type=mock_sb['embedding_family']
+            model_service=mock_sb['embedding_name'],
+            model=mock_sb['embedding_model']
         )
         
         db_service = DatabaseService(
@@ -1289,8 +1289,8 @@ def test_process_user_doc_uploads(setup_fixture):
         )     
         
         # Process the "uploaded" docs
-        user_upload = _process_uploads(mock_sb, upsert_docs)
-        logger.info(f"User upload from _process_uploads: {user_upload}")
+        user_upload = process_uploads(mock_sb, upsert_docs)
+        logger.info(f"User upload from process_uploads: {user_upload}")
 
         # Verify documents were indexed in new namespace
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
@@ -1332,8 +1332,8 @@ def test_index_with_different_parameters(setup_fixture, test_index):
 
     # Initialize services
     embedding_service = EmbeddingService(
-        model_name=test_index['embedding_name'],
-        model_type=test_index['embedding_family']
+        model_service=test_index['embedding_name'],
+        model=test_index['embedding_model']
     )
 
     db_service = DatabaseService(

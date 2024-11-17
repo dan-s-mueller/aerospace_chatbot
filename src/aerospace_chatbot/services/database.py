@@ -7,7 +7,7 @@ import time
 import json
 import logging
 
-from ..core.cache import Dependencies
+from ..core.cache import Dependencies, cache_data
 from ..services.prompts import CLUSTER_LABEL
 from pinecone.exceptions import NotFoundException, PineconeApiException
 
@@ -392,13 +392,13 @@ class DatabaseService:
             index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
         if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
             index_metadata['embedding_family']= "OpenAI"
-            index_metadata['embedding_model'] = self.embedding_service.model_name
+            index_metadata['embedding_model'] = self.embedding_service.model
         elif isinstance(self.embedding_service.get_embeddings(), VoyageAIEmbeddings):
             index_metadata['embedding_family'] = "Voyage"
-            index_metadata['embedding_model'] = self.embedding_service.model_name
+            index_metadata['embedding_model'] = self.embedding_service.model
         elif isinstance(self.embedding_service.get_embeddings(), HuggingFaceInferenceAPIEmbeddings):
             index_metadata['embedding_family'] = "Hugging Face"
-            index_metadata['embedding_model'] = self.embedding_service.model_name
+            index_metadata['embedding_model'] = self.embedding_service.model
 
         embedding_size = self.embedding_service.get_dimension()
         metadata_vector = [1e-5] * embedding_size
@@ -897,7 +897,7 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
     returns all indexes without filtering on those criteria."""
     logger = logging.getLogger(__name__)
 
-    def _check_get_index_criteria(index_name, rag_type, embedding_model):
+    def _check_get_index_criteria(index_name, rag_type):
         """Check if index meets criteria for inclusion."""
         # Never include query indexes when filtering
         if index_name.endswith('-queries'):
@@ -925,7 +925,7 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
         
         for index in db_status['message']:
             # First check if index meets basic criteria
-            if not _check_get_index_criteria(index.name, rag_type, embedding_model):
+            if not _check_get_index_criteria(index.name, rag_type):
                 continue
                 
             collection = client.get_collection(index.name)
@@ -948,7 +948,7 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
         
         for index_name in db_status['message']:
             # First check if index meets basic criteria
-            if not _check_get_index_criteria(index_name, rag_type, embedding_model):
+            if not _check_get_index_criteria(index_name, rag_type):
                 continue
                 
             index_obj = pc.Index(index_name)
@@ -968,7 +968,7 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
         
         for index_name in db_status['message']:
             # First check if index meets basic criteria
-            if not _check_get_index_criteria(index_name, rag_type, embedding_model):
+            if not _check_get_index_criteria(index_name, rag_type,):
                 continue
                 
             available_indexes.append(index_name)

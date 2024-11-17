@@ -8,7 +8,7 @@ from google.cloud import storage
 import tempfile
 import logging
 
-from ..core.cache import Dependencies
+from ..core.cache import Dependencies, cache_data
 from ..services.prompts import SUMMARIZE_TEXT
 
 # TODO remove the dependency setup I have or clean up with cursor. Do a speed test.
@@ -105,10 +105,12 @@ class DocumentProcessor:
             return pdf_files
         except Exception as e:
             raise Exception(f"Error accessing GCS bucket: {str(e)}")
+    
     @staticmethod
     def stable_hash_meta(metadata):
         """Calculates the stable hash of the given metadata dictionary."""
         return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
+    
     def _load_and_clean_documents(self, documents):
         """Load PDF documents and clean their contents."""
         # TODO use cache load function

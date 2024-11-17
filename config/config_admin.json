@@ -3,52 +3,52 @@
         
         {
             "name": "Pinecone",
-            "embedding_models": ["OpenAI", "Voyage"]
+            "embedding_services": ["OpenAI", "Voyage"]
         },
         {
             "name": "ChromaDB",
-            "embedding_models": ["OpenAI","Hugging Face"]
+            "embedding_services": ["OpenAI","Hugging Face"]
         },
         {
             "name": "RAGatouille",
-            "embedding_models": ["colbert-ir/colbertv2.0"]
+            "embedding_services": ["colbert-ir/colbertv2.0"]
         }
     ],
     "embeddings": [
         {
-            "name": "OpenAI",
-            "embedding_models": ["text-embedding-3-large",
+            "service": "OpenAI",
+            "models": ["text-embedding-3-large",
                                  "text-embedding-3-small"]
         },
         {
-            "name": "Voyage",
-            "embedding_models": ["voyage-3",
+            "service": "Voyage",
+            "models": ["voyage-3",
                                  "voyage-3-lite"]
         },
         {
-            "name": "Hugging Face",
-            "embedding_models": ["mixedbread-ai/mxbai-embed-large-v1",
-                                 "Dedicated Endpoint"]
+            "service": "Hugging Face",
+            "models": ["mixedbread-ai/mxbai-embed-large-v1",
+                       "Dedicated Endpoint"]
         }
     ],
     "llms": [
         {
-            "name": "OpenAI",
+            "service": "OpenAI",
             "models": ["gpt-4o",
                        "gpt-4o-mini",
                        "gpt-4"]
         },
         {
-            "name": "Anthropic",
+            "service": "Anthropic",
             "models": ["claude-3-5-sonnet-latest"]
         },
         {
-            "name": "Hugging Face",
+            "service": "Hugging Face",
             "models": ["mistralai/Mistral-7B-Instruct-v0.2",
                        "Dedicated Endpoint"]
         },
         {
-            "name": "LM Studio (local)"
+            "service": "LM Studio (local)"
         }
     ],
     "rag_types": ["Standard",

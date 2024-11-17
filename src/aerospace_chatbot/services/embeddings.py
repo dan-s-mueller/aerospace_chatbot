@@ -1,7 +1,7 @@
 """Embedding service implementations."""
 
 import os
-from ..core.cache import Dependencies
+from ..core.cache import Dependencies, cache_resource
 
 # TODO add cohere embeddings
 # TODO add rerank https://medium.com/@myscale/enhancing-advanced-rag-systems-using-reranking-with-langchain-523a0b840311
@@ -9,9 +9,9 @@ from ..core.cache import Dependencies
 class EmbeddingService:
     """Manages embedding model operations."""
     
-    def __init__(self, model_name, model_type):
-        self.model_name = model_name
-        self.model_type = model_type
+    def __init__(self, model_service, model):
+        self.model_service = model_service
+        self.model = model
         self._embeddings = None
         self._deps = Dependencies()
         
@@ -20,20 +20,20 @@ class EmbeddingService:
         if self._embeddings is None:
             OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
             
-            if self.model_type == 'OpenAI':
+            if self.model_service == 'OpenAI':
                 self._embeddings = OpenAIEmbeddings(
-                    model=self.model_name,
+                    model=self.model,
                     openai_api_key=os.getenv('OPENAI_API_KEY')
                 )
-            elif self.model_type == 'Voyage':
+            elif self.model_service == 'Voyage':
                 self._embeddings = VoyageAIEmbeddings(
-                    model=self.model_name,
+                    model=self.model,
                     voyage_api_key=os.getenv('VOYAGE_API_KEY'),
                     truncation=False
                 )
-            elif self.model_type == 'Hugging Face':
+            elif self.model_service == 'Hugging Face':
                 self._embeddings = HuggingFaceInferenceAPIEmbeddings(
-                    model_name=self.model_name,
+                    model_name=self.model,
                     api_key=os.getenv('HUGGINGFACEHUB_API_KEY')
                 )
                 
@@ -60,8 +60,8 @@ class EmbeddingService:
         }
         
         try:
-            return dimensions[self.model_type][self.model_name]
+            return dimensions[self.model_service][self.model]
         except KeyError:
             raise NotImplementedError(
-                f"The embedding model '{self.model_name}' for type '{self.model_type}' is not available in config"
+                f"The embedding model '{self.model}' for type '{self.model_service}' is not available in config"
             )

@@ -121,13 +121,13 @@ with chat_section:
                         
                         # Initialize services
                         embedding_service = EmbeddingService(
-                            model_name=sb['embedding_name'],
-                            model_type=sb['embedding_model']
+                            model_service=sb['embedding_name'],
+                            model=sb['embedding_model']
                         )
                         
                         llm_service = LLMService(
-                            model_name=sb['llm_model'],
-                            model_type=sb['llm_source'],
+                            model_service=sb['llm_source'],
+                            model=sb['llm_model'],
                             temperature=sb['model_options']['temperature'],
                             max_tokens=sb['model_options']['output_level']
                         )

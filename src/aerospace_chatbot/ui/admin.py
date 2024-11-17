@@ -24,9 +24,9 @@ class SidebarManager:
         if 'sidebar_state_initialized' not in st.session_state:
             elements = {
                 'index': ['index_selected', 'index_type'],
-                'embeddings': ['embedding_model', 'embedding_name', 'embedding_endpoint'],
-                'rag': ['rag_type', 'rag_llm_source', 'rag_llm_model', 'rag_endpoint'],
-                'llm': ['llm_source', 'llm_model', 'llm_endpoint'],
+                'embeddings': ['embedding_service', 'embedding_model', 'embedding_endpoint'],
+                'rag': ['rag_type', 'rag_llm_service', 'rag_llm_model', 'rag_endpoint'],
+                'llm': ['llm_service', 'llm_model', 'llm_endpoint'],
                 'model_options': ['temperature', 'output_level', 'k'],
                 'api_keys': ['openai_key', 'anthropic_key', 'hf_key', 'voyage_key', 'pinecone_key']
             }
@@ -74,18 +74,20 @@ class SidebarManager:
             # Get first database name from the list
             self.sb_out['index_type'] = self._config['databases'][0]['name']    # Default to first database type in config
         
-        if 'embedding_name' not in self.sb_out:
+        if 'embedding_service' not in self.sb_out:
             # Find the database config by name
             db_config = next(db for db in self._config['databases'] if db['name'] == self.sb_out['index_type'])
-            embedding_model = db_config['embedding_models'][0]    # Default to first embedding model in config
-            self.sb_out['embedding_model'] = embedding_model
+            embedding_service = db_config['embedding_services'][0]    # Default to first embedding service in config
+            self.sb_out['embedding_service'] = embedding_service
             
             if self.sb_out['index_type'] == 'RAGatouille':
-                self.sb_out['embedding_name'] = embedding_model
+                self.sb_out['embedding_model'] = embedding_service
             else:
                 # Find the embedding config by name
-                embedding_config = next(e for e in self._config['embeddings'] if e['name'] == embedding_model)
-                self.sb_out['embedding_name'] = embedding_config['embedding_models'][0]  # Default to first embedding model in config
+                embedding_config = next(e for e in self._config['embeddings'] if e['service'] == embedding_service)
+                self.sb_out['embedding_model'] = embedding_config['models'][0]  # Default to first embedding model in config
+            
+            self.logger.info(f"Embedding service: {self.sb_out['embedding_service']}, embedding model: {self.sb_out['embedding_model']}")
         
         if 'rag_type' not in self.sb_out:
             self.sb_out['rag_type'] = (
@@ -97,10 +99,10 @@ class SidebarManager:
         st.sidebar.title('Index Selected')
         
         # Get available indexes based on current settings
-        self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out.get('index_type'), self.sb_out.get('embedding_name'), self.sb_out.get('rag_type')}")
+        self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out.get('index_type'), self.sb_out.get('embedding_model'), self.sb_out.get('rag_type')}")
         available_indexes, index_metadatas = get_available_indexes(
             self.sb_out['index_type'],
-            self.sb_out['embedding_name'],
+            self.sb_out['embedding_model'],
             self.sb_out['rag_type']
         )
         self.logger.info(f"Available indexes for sidebar: {available_indexes}")
@@ -122,15 +124,15 @@ class SidebarManager:
         """Render LLM selection section."""
         st.sidebar.title('Language Model')
         
-        llm_sources = [llm['name'] for llm in self._config['llms']]
-        self.sb_out['llm_source'] = st.sidebar.selectbox(
+        llm_sources = [llm['service'] for llm in self._config['llms']]
+        self.sb_out['llm_service'] = st.sidebar.selectbox(
             'LLM Provider',
             llm_sources,
-            disabled=st.session_state.llm_source_disabled
+            disabled=st.session_state.llm_service_disabled
         )
         
         # Find the LLM config by name
-        llm_config = next(llm for llm in self._config['llms'] if llm['name'] == self.sb_out['llm_source'])
+        llm_config = next(llm for llm in self._config['llms'] if llm['service'] == self.sb_out['llm_service'])
         models = llm_config.get('models', [])  # Use get() in case 'models' key doesn't exist
         self.sb_out['llm_model'] = st.sidebar.selectbox(
             'Model',
@@ -164,7 +166,7 @@ class SidebarManager:
         self.sb_out['rag_llm_source'] = st.sidebar.selectbox(
             'RAG LLM model',
             list(self._config['llms'].keys()),
-            disabled=st.session_state.rag_llm_source_disabled,
+            disabled=st.session_state.rag_llm_service_disabled,
             help='Select the LLM model for RAG.'
         )
         
@@ -244,26 +246,26 @@ class SidebarManager:
                 disabled=st.session_state.embedding_model_disabled,
                 help="Models listed are compatible with the selected index type."
             )
-            self.sb_out['embedding_name'] = self.sb_out['embedding_model']
+            self.sb_out['embedding_model'] = self.sb_out['embedding_model']
         else:
-            self.sb_out['embedding_model'] = st.sidebar.selectbox(
-                'Embedding model family',
-                db_config['embedding_models'],
-                disabled=st.session_state.embedding_model_disabled,
+            self.sb_out['embedding_service'] = st.sidebar.selectbox(
+                'Embedding model service',
+                db_config['embedding_services'],
+                disabled=st.session_state.embedding_service_disabled,
                 help="Model provider."
             )
             
             # Find the embedding config for the selected model
-            embedding_config = next(e for e in self._config['embeddings'] if e['name'] == self.sb_out['embedding_model'])
+            embedding_config = next(e for e in self._config['embeddings'] if e['service'] == self.sb_out['embedding_service'])
             
-            self.sb_out['embedding_name'] = st.sidebar.selectbox(
+            self.sb_out['embedding_model'] = st.sidebar.selectbox(
                 'Embedding model',
-                embedding_config['embedding_models'],
-                disabled=st.session_state.embedding_name_disabled,
+                embedding_config['models'],
+                disabled=st.session_state.embedding_model_disabled,
                 help="Models listed are compatible with the selected index type."
             )
             
-            if self.sb_out['embedding_name'] == "Dedicated Endpoint":
+            if self.sb_out['embedding_model'] == "Dedicated Endpoint":
                 self.sb_out['embedding_hf_endpoint'] = st.sidebar.text_input(
                     'Dedicated endpoint URL',
                     '',

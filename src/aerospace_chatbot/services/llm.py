@@ -1,18 +1,18 @@
 """LLM service implementations."""
 
 import os
-from ..core.cache import Dependencies
+from ..core.cache import Dependencies, cache_resource
 
 class LLMService:
     """Manages LLM operations."""
     
     def __init__(self, 
-                 model_name,
-                 model_type,
+                 model_service,
+                 model,
                  temperature=0.1,
                  max_tokens=5000):
-        self.model_name = model_name
-        self.model_type = model_type
+        self.model_service = model_service
+        self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
         self._llm = None
@@ -23,41 +23,41 @@ class LLMService:
         if self._llm is None:
             ChatOpenAI, ChatAnthropic = self._deps.get_llm_deps()
             
-            if self.model_type == 'OpenAI':
+            if self.model_service == 'OpenAI':
                 self._llm = ChatOpenAI(
-                    model_name=self.model_name,
+                    model=self.model,
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                     openai_api_key=os.getenv('OPENAI_API_KEY'),
-                    tags=[self.model_name]
+                    tags=[self.model]
                 )
-            elif self.model_type == 'Anthropic':
+            elif self.model_service == 'Anthropic':
                 self._llm = ChatAnthropic(
-                    model=self.model_name,
+                    model=self.model,
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                     api_key=os.getenv('ANTHROPIC_API_KEY'),
-                    tags=[self.model_name]
+                    tags=[self.model]
                 )
-            elif self.model_type == 'Hugging Face':
+            elif self.model_service == 'Hugging Face':
                 hf_endpoint = 'https://api-inference.huggingface.co/v1'
                 self._llm = ChatOpenAI(
                     base_url=hf_endpoint,
-                    model=self.model_name,
+                    model=self.model,
                     api_key=os.getenv('HUGGINGFACEHUB_API_KEY'),
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
-                    tags=[self.model_name]
+                    tags=[self.model]
                 )
             # TODO Test local llm with lm studio
-            elif self.model_type == 'LM Studio (local)':
+            elif self.model_service == 'LM Studio (local)':
                 self._llm = ChatOpenAI(
-                    base_url=self.model_name,  # For local LLMs
+                    base_url=self.model,  # For local LLMs
                     temperature=self.temperature,
                     max_tokens=self.max_tokens,
                     openai_api_key=os.getenv('OPENAI_API_KEY'),
-                    tags=[self.model_name]
+                    tags=[self.model]
                 )
             else:
-                raise ValueError(f"Unsupported LLM type: {self.model_type}")
+                raise ValueError(f"Unsupported LLM type: {self.model_service}")
         return self._llm

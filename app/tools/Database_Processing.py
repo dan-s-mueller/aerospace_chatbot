@@ -26,16 +26,16 @@ st.subheader('Create and load into a vector database')
 
 # Initialize services
 embedding_service = EmbeddingService(
-    model_name=sb['embedding_name'],
-    model_type=sb['embedding_model']
+    model_service=sb['embedding_name'],
+    model=sb['embedding_model']
 )
 
 # Initialize LLM service if using Summary RAG
 llm_service = None
 if sb['rag_type'] == 'Summary':
     llm_service = LLMService(
-        model_name=sb['rag_llm_model'],
-        model_type=sb['rag_llm_source'],
+        model_service=sb['rag_llm_source'],
+        model=sb['rag_llm_model'],
         temperature=sb['model_options']['temperature'],
         max_tokens=sb['model_options']['output_level']
     )

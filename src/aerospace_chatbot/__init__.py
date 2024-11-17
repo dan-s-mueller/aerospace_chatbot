@@ -1,5 +1,7 @@
 from .core import (
     Dependencies, 
+    cache_data,
+    cache_resource,
     ConfigurationError,
     load_config,
     get_secrets,
@@ -43,6 +45,8 @@ __version__ = "0.0.9"
 __all__ = [
     # Core
     'Dependencies', 
+    'cache_data',
+    'cache_resource',
     'ConfigurationError',
     'load_config',
     'get_secrets',
