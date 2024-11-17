@@ -1,18 +1,13 @@
 """Document processing and chunking logic."""
 
-import hashlib, json
+import hashlib, json, re
 from typing import List, Optional, Any
 from dataclasses import dataclass
-from langchain_core.documents import Document
-from google.cloud import storage
 import tempfile
 import logging
 
 from ..core.cache import Dependencies, cache_data
 from ..services.prompts import SUMMARIZE_TEXT
-
-# TODO remove the dependency setup I have or clean up with cursor. Do a speed test.
-# TODO look at more advanced document parsers, docling
 
 @dataclass
 class ChunkingResult:
@@ -26,7 +21,7 @@ class ChunkingResult:
     chunk_size: Optional[int] = None
     chunk_overlap: Optional[int] = None
     parent_chunks: Optional[List[Any]] = None
-    summaries: Optional[List[Document]] = None
+    summaries: Optional[List[Any]] = None
     llm_service: Optional[Any] = None
 
 class DocumentProcessor:
@@ -70,6 +65,8 @@ class DocumentProcessor:
     @staticmethod
     def list_available_buckets():
         """Lists all available buckets in the GCS project."""
+        _, _, storage = Dependencies.Storage.get_db_clients()
+
         try:
             # Initialize the GCS client
             storage_client = storage.Client()
@@ -83,6 +80,8 @@ class DocumentProcessor:
     @staticmethod
     def list_bucket_pdfs(bucket_name: str):
         """Lists all PDF files in a Google Cloud Storage bucket."""
+        _, _, storage = Dependencies.Storage.get_db_clients()
+
         logger = logging.getLogger(__name__)
         try:
             # Initialize the GCS client
@@ -113,8 +112,8 @@ class DocumentProcessor:
     
     def _load_and_clean_documents(self, documents):
         """Load PDF documents and clean their contents."""
-        # TODO use cache load function
-        from langchain_community.document_loaders import PyPDFLoader
+        Document, _, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
+        _, _, storage = Dependencies.Storage.get_db_clients()
         
         cleaned_docs = []
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -194,8 +193,8 @@ class DocumentProcessor:
                               chunk_overlap=self.chunk_overlap)
     def _process_summary(self, documents):
         """Process documents for summary RAG."""
-        # TODO fix the dependencies, use cache
-        from langchain_core.output_parsers import StrOutputParser
+        StrOutputParser, = Dependencies.LLM.get_output_parsers()
+        Document, _, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
         
         chunks = self._chunk_documents(documents)
 
@@ -237,8 +236,7 @@ class DocumentProcessor:
 
     def _chunk_documents(self, documents):
         """Chunk documents using specified parameters."""
-        # TODO import from cache function
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        RecursiveCharacterTextSplitter, = Dependencies.Document.get_splitters()
 
         chunks = []
         if self.rag_type != 'Parent-Child':
@@ -305,7 +303,6 @@ class DocumentProcessor:
     @staticmethod
     def _sanitize_page(doc):
         """Clean up page content and metadata."""
-        import re
         
         # Clean up content
         content = doc.page_content
@@ -329,6 +326,8 @@ class DocumentProcessor:
     @staticmethod
     def _merge_pages(docs, n_pages):
         """Merge consecutive pages."""
+        Document, _, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
+
         merged = []
         for i in range(0, len(docs), n_pages):
             batch = docs[i:i + n_pages]
@@ -344,6 +343,8 @@ class DocumentProcessor:
     @staticmethod
     def _upload_to_gcs(bucket_name, file_path, local_file_path):
         """Upload a file to Google Cloud Storage."""
+        _, _, storage = Dependencies.Storage.get_db_clients()
+
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(file_path)

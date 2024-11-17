@@ -10,8 +10,6 @@ from ..services.database import DatabaseService, get_available_indexes
 from ..services.embeddings import EmbeddingService
 from ..processing.documents import DocumentProcessor
 
-# TODO remove the dependency setup I have or clean up with cursor. Do a speed test.
-
 def setup_page_config(title: str = "Aerospace Chatbot", layout: str = "wide"):
     """Configure Streamlit page settings."""
     st.set_page_config(
@@ -29,7 +27,6 @@ def display_chat_history(history, show_metadata = False):
                     st.json(msg["metadata"])
 def display_sources(sources, expanded=False):
     """Display reference sources in an expander with PDF preview functionality."""
-    # TODO add relevancy score to sources returned
     with st.container():
         with st.spinner('Bringing you source documents...'):
             for source in sources:

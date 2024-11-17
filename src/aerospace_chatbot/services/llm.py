@@ -16,12 +16,11 @@ class LLMService:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self._llm = None
-        self._deps = Dependencies()
         
     def get_llm(self):
         """Get or create LLM instance."""
         if self._llm is None:
-            ChatOpenAI, ChatAnthropic = self._deps.get_llm_deps()
+            ChatOpenAI, ChatAnthropic = Dependencies.LLM.get_models()
             
             if self.model_service == 'OpenAI':
                 self._llm = ChatOpenAI(

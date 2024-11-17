@@ -1,6 +1,5 @@
 """QA model and retrieval logic."""
 
-import os
 import logging
 
 from ..core.cache import Dependencies
@@ -9,7 +8,6 @@ from ..services.prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT,
                                 GENERATE_SIMILAR_QUESTIONS_W_CONTEXT)
 from ..services.database import DatabaseService
 from ..processing.documents import DocumentProcessor
-from langchain_core.documents import Document
 
 class QAModel:
     """Handles question answering and retrieval."""
@@ -22,14 +20,14 @@ class QAModel:
         self.db_service = db_service
         self.llm_service = llm_service
         self.k = k
-        self._deps = Dependencies()
         self.sources = []
         self.ai_response = ""
         self.result = []
         self.conversational_qa_chain = None
         self.logger = logging.getLogger(__name__)
 
-        _, _, _, _, ConversationBufferMemory, _ = self._deps.get_query_deps()
+        # Get chain utilities
+        _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
 
         # Create a separate database service for query storage
         self.query_db_service = DatabaseService(
@@ -88,7 +86,7 @@ class QAModel:
             self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
     def generate_alternative_questions(self, prompt):
         """Generates alternative questions based on a prompt."""
-        _, StrOutputParser, _, _, _, _ = self._deps.get_query_deps()
+        _, StrOutputParser, _, _, _, _ = Dependencies.LLM.get_chain_utils()
         if self.ai_response:
             prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
             invoke_dict={'question':prompt,'context':self.ai_response}
@@ -109,7 +107,7 @@ class QAModel:
         return alternative_questions
     def _setup_memory(self):
         """Initialize conversation memory."""
-        _, _, _, _, ConversationBufferMemory, _= self._deps.get_query_deps()
+        _, _, _, _, ConversationBufferMemory, _, _, _= Dependencies.LLM.get_chain_utils()
         self.memory = ConversationBufferMemory(
             return_messages=True,
             output_key='answer',
@@ -117,8 +115,7 @@ class QAModel:
         )
     def _define_qa_chain(self):
         """Defines the conversational QA chain."""
-        # Get dependencies
-        itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string = self._deps.get_query_deps()
+        itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
         
         # This adds a 'memory' key to the input object
         loaded_memory = RunnablePassthrough.assign(
@@ -152,8 +149,9 @@ class QAModel:
         return loaded_memory | standalone_question | retrieved_documents | answer
     def _combine_documents(self, docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator='\n\n'):
         """Combines a list of documents into a single string using the format_document function."""
+        _, _, _, _, _, _, _, format_document = Dependencies.LLM.get_chain_utils()
+        
         # Format each document using the cached format_document function
-        from langchain.schema import format_document
         doc_strings = [format_document(doc, document_prompt) for doc in docs]
         
         # Join the formatted strings with the separator
@@ -161,7 +159,8 @@ class QAModel:
     @staticmethod
     def _question_as_doc(question, rag_answer):
         """Creates a Document object based on the given question and RAG answer."""
-        # Convert any numeric values in document metadata to integers, otherwise stable_hash_meta will not find any matching documents.
+        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+
         # TODO this feels really fragile, but it's the best I can think of for now.
         for i, doc in enumerate(rag_answer['references']):
             for key, value in doc.metadata.items():
@@ -179,7 +178,7 @@ class QAModel:
         )
     def _get_standalone_question(self, question, chat_history):
         """Generate standalone question from conversation context."""
-        _, _, _, _, _, get_buffer_string = self._deps.get_query_deps()
+        _, _, _, _, _, get_buffer_string = Dependencies.LLM.get_chain_utils()
 
         if not chat_history:
             return question

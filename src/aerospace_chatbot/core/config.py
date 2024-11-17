@@ -1,10 +1,6 @@
 """Configuration management and environment setup."""
 
 import os, json
-import logging
-import sys
-from pathlib import Path
-import warnings
 from dotenv import load_dotenv, find_dotenv
 
 class ConfigurationError(Exception):

@@ -7,7 +7,7 @@ import time
 import json
 import logging
 
-from ..core.cache import Dependencies, cache_data
+from ..core.cache import Dependencies
 from ..services.prompts import CLUSTER_LABEL
 from pinecone.exceptions import NotFoundException, PineconeApiException
 
@@ -18,8 +18,6 @@ from tenacity import (
     retry_if_exception_type,
     wait_fixed
 )
-
-# TODO remove the dependency setup I have or clean up with cursor. Do a speed test.
 
 def pinecone_retry(func):
     """Decorator for Pinecone operations with retry and rate limiting."""
@@ -51,7 +49,6 @@ class DatabaseService:
         self.vectorstore = None
         self.retriever = None
         self.namespace = None
-        self._deps = Dependencies()
         self.logger = logging.getLogger(__name__)
 
     def initialize_database(self, namespace=None, clear=False):
@@ -83,9 +80,8 @@ class DatabaseService:
         If data is a list of Documents, questions are processed. Questions are not chunked or processed, just validated and upserted.
         Database must be initialized before calling this method.
         """
-        # TODO, move this to dependency cache
         from ..processing.documents import ChunkingResult
-        from langchain_core.documents import Document
+        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
 
         if not self.vectorstore:
             raise ValueError("Database not initialized. Call initialize_database() before indexing data.")
@@ -117,7 +113,7 @@ class DatabaseService:
     
     def copy_vectors(self, source_namespace, batch_size=100):
         """Copies vectors from a source Pinecone namespace into the namespace assigned to the DatabaseService instance."""
-        from pinecone import Pinecone as pinecone_client
+        pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
 
         if self.db_type != 'Pinecone':
             raise ValueError("Vector copying is only supported for Pinecone databases")
@@ -177,10 +173,11 @@ class DatabaseService:
         
         def _delete_chromadb():
             """Delete ChromaDB index."""
-            _, chromadb, _ = self._deps.get_db_deps()
+            _, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
+            
             try:
                 db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
-                client = chromadb.PersistentClient(path=str(db_path))
+                client = PersistentClient(path=str(db_path))
                 
                 collections = client.list_collections()
                 if any(c.name == self.index_name for c in collections):
@@ -193,7 +190,8 @@ class DatabaseService:
         @pinecone_retry
         def _delete_pinecone():
             """Delete Pinecone index."""
-            pinecone_client, _, _ = self._deps.get_db_deps()
+            pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
+            
             pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             try:
                 if self.index_name in [idx.name for idx in pc.list_indexes()]:
@@ -234,13 +232,13 @@ class DatabaseService:
 
     def _init_chromadb(self, clear=False):
         """Initialize ChromaDB."""
-        _, chromadb, _ = self._deps.get_db_deps()
-        _, Chroma, _, _ = self._deps.get_vectorstore_deps()
+        _, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
+        _, Chroma, _ = Dependencies.Storage.get_vector_stores()
         
         # Create ChromaDB directory
         db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
         os.makedirs(db_path, exist_ok=True)
-        client = chromadb.PersistentClient(path=db_path)
+        client = PersistentClient(path=db_path)
         
         if clear:
             self.delete_index()
@@ -267,9 +265,8 @@ class DatabaseService:
     )
     def _init_pinecone(self, clear=False):
         """Initialize Pinecone."""
-        # Check if index exists
-        pinecone_client, _, ServerlessSpec = self._deps.get_db_deps()
-        PineconeVectorStore, _, _, _ = self._deps.get_vectorstore_deps()
+        pinecone_client, _, ServerlessSpec, _ = Dependencies.Storage.get_db_clients()
+        PineconeVectorStore, _, _ = Dependencies.Storage.get_vector_stores()
 
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY')) # Need to use the native client since langchain can't upload a dummy embedding :(
         if clear:
@@ -315,7 +312,7 @@ class DatabaseService:
 
     def _init_ragatouille(self, clear=False):
         """Initialize RAGatouille."""
-        from ragatouille import RAGPretrainedModel
+        RAGPretrainedModel, _ = Dependencies.Storage.get_rag_models()
         # FIXME this will always create a new index
 
         index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille')
@@ -342,10 +339,8 @@ class DatabaseService:
             raise ValueError(f"Unsupported database type: {self.db_type}")
     def _get_multivector_retriever(self, search_kwargs):
         """Get multi-vector retriever for Parent-Child or Summary RAG types."""
-        # FIXME check that hashing/indexing with parent/child is working. Doesn't look like it is. See documents.py for chunking hashing.
-        # TODO update to use dependency cache
-        from langchain.storage import LocalFileStore
-        from langchain.retrievers.multi_vector import MultiVectorRetriever
+        LocalFileStore, = Dependencies.Storage.get_file_stores()
+        _, _, MultiVectorRetriever = Dependencies.Storage.get_vector_stores()
         
         lfs = LocalFileStore(
             os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
@@ -374,12 +369,8 @@ class DatabaseService:
         return search_kwargs
     def _store_index_metadata(self, chunking_result):
         """Store index metadata based on the database type."""
-        # TODO update dependency cache
-        from langchain_openai import OpenAIEmbeddings
-        from langchain_voyageai import VoyageAIEmbeddings
-        from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-        from pinecone import Pinecone as pinecone_client
-        from chromadb import PersistentClient
+        OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = Dependencies.Embeddings.get_models()
+        pinecone_client, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
 
         index_metadata = {}
         if chunking_result.merge_pages is not None:
@@ -522,18 +513,17 @@ class DatabaseService:
 
     def _upsert_data(self, upsert_data, batch_size):
         """Upsert documents or questions. Used for all RAG types."""
-        # FIXME add namespace argument to upsert to a specific namespace and verify upload
-        # TODO update dependency cache
-        from ..processing.documents import ChunkingResult, DocumentProcessor        
-        from langchain_core.documents import Document
+        from ..processing.documents import DocumentProcessor, ChunkingResult
+        _, _, _, Document = Dependencies.LLM.get_chain_utils()
         
         @pinecone_retry
         def _upsert_pinecone(batch, batch_ids):
             self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
 
         if self.db_type == "Pinecone":
-            from pinecone import Pinecone as Pinecone
-            pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+            pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
+
+            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))            
             pc_index = pc.Index(self.index_name)
             stats = pc_index.describe_index_stats()
             initial_count = stats['total_vector_count']
@@ -571,9 +561,8 @@ class DatabaseService:
             
             # Parent-Child or Summary for pinecone and chroma
             if self.rag_type in ['Parent-Child', 'Summary']:
-                # TODO update dependency cache
-                from langchain.storage import LocalFileStore
-                from langchain.retrievers.multi_vector import MultiVectorRetriever
+                LocalFileStore, = Dependencies.Storage.get_file_stores()
+                _, _, MultiVectorRetriever = Dependencies.Storage.get_vector_stores()
                 
                 if self.db_type == 'RAGatouille':
                     raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
@@ -672,10 +661,8 @@ class DatabaseService:
 
 def get_docs_questions_df(db_service, query_db_service, logger=False):
     """Get documents and questions from database as a DataFrame."""
-    deps = Dependencies()
-    pd, _, _, _ = deps.get_analysis_deps()
-    # TODO use dependency cache
-    from pinecone import Pinecone as pinecone_client
+    pd, _, _, _ = Dependencies.Analysis.get_tools()
+    pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
     
     @pinecone_retry
     def _fetch_pinecone_docs(index_name):
@@ -856,9 +843,8 @@ def get_docs_questions_df(db_service, query_db_service, logger=False):
     return pd.concat([docs_df, questions_df], ignore_index=True)
 
 def add_clusters(df, n_clusters, llm_service=None, docs_per_cluster: int = 10):
-    """Add cluster labels to DataFrame using KMeans clustering. Adding LLM service will generate cluster labels."""
-    deps = Dependencies()
-    _, np, KMeans, _ = deps.get_analysis_deps()
+    """Add cluster labels to DataFrame using KMeans clustering."""
+    _, np, KMeans, _ = Dependencies.Analysis.get_tools()
     
     # Perform clustering
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
@@ -883,8 +869,7 @@ def add_clusters(df, n_clusters, llm_service=None, docs_per_cluster: int = 10):
 
 def export_to_hf_dataset(df, dataset_name):
     """Export DataFrame to Hugging Face dataset."""
-    deps = Dependencies()
-    _, _, _, Dataset = deps.get_analysis_deps()
+    _, _, _, Dataset = Dependencies.Analysis.get_tools()
     
     hf_dataset = Dataset.from_pandas(df)
     hf_dataset.push_to_hub(
@@ -917,8 +902,9 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
 
     def _process_chromadb_indexes():
         """Process available ChromaDB indexes."""
-        _, chromadb, _ = Dependencies().get_db_deps()
-        client = chromadb.PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
+        _, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
+
+        client = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
         
         available_indexes = []
         index_metadatas = []
@@ -940,8 +926,9 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
 
     def _process_pinecone_indexes():
         """Process available Pinecone indexes."""
-        from pinecone import Pinecone
-        pc = Pinecone()
+        pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
+        
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         
         available_indexes = []
         index_metadatas = []
@@ -1015,7 +1002,8 @@ def _get_pinecone_status():
     """Get status of Pinecone indexes."""
     
     try:
-        from pinecone import Pinecone
+        pc, _, _, Pinecone = Dependencies.Storage.get_db_clients()
+
         pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
         indexes = pc.list_indexes()
         if not indexes:
@@ -1027,10 +1015,10 @@ def _get_pinecone_status():
 def _get_chromadb_status():
     """Get status of ChromaDB collections."""
     try:
-        # TODO use dependency caching
-        import chromadb
+        _, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
+        
         db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
-        client = chromadb.PersistentClient(path=str(db_path))
+        client = PersistentClient(path=str(db_path))
         collections = client.list_collections()
         if not collections:
             return {'status': False, 'message': 'No collections found'}

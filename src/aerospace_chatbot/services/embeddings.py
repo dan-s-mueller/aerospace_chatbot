@@ -3,9 +3,6 @@
 import os
 from ..core.cache import Dependencies, cache_resource
 
-# TODO add cohere embeddings
-# TODO add rerank https://medium.com/@myscale/enhancing-advanced-rag-systems-using-reranking-with-langchain-523a0b840311
-
 class EmbeddingService:
     """Manages embedding model operations."""
     
@@ -13,12 +10,11 @@ class EmbeddingService:
         self.model_service = model_service
         self.model = model
         self._embeddings = None
-        self._deps = Dependencies()
         
     def get_embeddings(self):
         """Get or create embedding model instance."""
         if self._embeddings is None:
-            OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = self._deps.get_embedding_deps()
+            OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = Dependencies.Embeddings.get_models()
             
             if self.model_service == 'OpenAI':
                 self._embeddings = OpenAIEmbeddings(
