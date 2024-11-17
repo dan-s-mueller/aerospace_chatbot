@@ -127,40 +127,41 @@ db_service = DatabaseService(
 
 # Add a button to run the function
 if st.button('Load docs into vector database'):
-    start_time = time.time()
+    with st.spinner('Processing and loading documents into vector database...'):
+        start_time = time.time()
 
-    # Initialize document processor
-    doc_processor = DocumentProcessor(
-        embedding_service=embedding_service,
-        rag_type=sb['rag_type'],
-        chunk_method=chunk_method,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        merge_pages=n_merge_pages if merge_pages else None,
-        llm_service=llm_service
-    )
-
-    try:
-        # Initialize database
-        db_service.initialize_database(clear=clear_database)
-        
-        # Process documents
-        chunking_result = doc_processor.process_documents(documents=docs)
-                
-        # Index documents
-        db_service.index_data(
-            data=chunking_result,
-            batch_size=batch_size
+        # Initialize document processor
+        doc_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            rag_type=sb['rag_type'],
+            chunk_method=chunk_method,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            merge_pages=n_merge_pages if merge_pages else None,
+            llm_service=llm_service
         )
-        
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
-        
-    except Exception as e:
-        st.error(f"Error processing documents: {str(e)}")
-        # Try to clean up on failure
+
         try:
-            db_service.delete_index()
-        except:
-            pass
+            # Initialize database
+            db_service.initialize_database(clear=clear_database)
+            
+            # Process documents
+            chunking_result = doc_processor.process_documents(documents=docs)
+                    
+            # Index documents
+            db_service.index_data(
+                data=chunking_result,
+                batch_size=batch_size
+            )
+            
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            st.markdown(f":heavy_check_mark: Loaded docs in {elapsed_time:.2f} seconds")
+            
+        except Exception as e:
+            st.error(f"Error processing documents: {str(e)}")
+            # Try to clean up on failure
+            try:
+                db_service.delete_index()
+            except:
+                pass

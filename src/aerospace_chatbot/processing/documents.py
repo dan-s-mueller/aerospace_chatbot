@@ -114,6 +114,7 @@ class DocumentProcessor:
         cleaned_docs = []
         with tempfile.TemporaryDirectory() as temp_dir:
             for i, doc in enumerate(documents):
+                self.logger.info(f"Processing document {i+1} of {len(documents)}: {doc}")
 
                 # Handle GCS URLs
                 if doc.startswith('gs://'):
@@ -227,7 +228,7 @@ class DocumentProcessor:
 
         chunks = []
         if self.rag_type != 'Parent-Child':
-            if self.chunk_method == 'None':
+            if self.chunk_method == 'None' or self.chunk_method is None:
                 return documents
             for i, doc in enumerate(documents):
                 if self.chunk_method == 'character_recursive':

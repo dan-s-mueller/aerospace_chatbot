@@ -19,6 +19,7 @@ if 'pdf_urls' not in st.session_state:
     st.session_state.pdf_urls = []
 if 'user_upload' not in st.session_state:
     st.session_state.user_upload = None
+logger.info(f"Initial user_upload value: {st.session_state.user_upload}")
 
 def _reset_conversation():
     """Resets the conversation by clearing the session state variables related to the chatbot."""
@@ -73,28 +74,45 @@ with info_section:
 with upload_section:
     if len(st.session_state.get('messages', [])) == 0:
         with st.expander("Upload files to existing database", expanded=True):
-            st.session_state.user_upload = handle_file_upload(sb)
-
+            # Only call handle_file_upload if we don't already have a user_upload value
+            if not st.session_state.user_upload:
+                upload_result = handle_file_upload(sb)
+                if upload_result:  # Only update if we got a new upload ID
+                    st.session_state.user_upload = upload_result
+    if st.session_state.user_upload:
+        st.markdown(
+            f""":white_check_mark: Merged! Your upload ID: `{st.session_state.user_upload}`.
+                This will be used for this chat session to also include your documents.
+                When you restart the chat, you'll have to re-upload your documents.
+                """
+        )
+logger.info(f"Upload section - Final user_upload value: {st.session_state.user_upload}")
 # Chat section
 with chat_section:
     chat_col, sources_col = st.columns([1, 1])
 
     # Left column for chat
     with chat_col:
-        # Check if there's a selected question from button click
-        if 'selected_question' in st.session_state:
-            prompt = st.session_state.selected_question
-            # Clear it so it doesn't trigger again
-            del st.session_state.selected_question
-        else:
-            # Regular chat input
-            prompt = st.chat_input("Prompt here")
+        # Move the upload ID message outside of the chat flow
+        if st.session_state.user_upload:
+            st.info(f"Using merged user documents with index. Your upload ID: `{st.session_state.user_upload}`")
+            
         if st.button('Restart session'):
             _reset_conversation()
             st.rerun()
+            
+        # Regular chat input and message processing below
+        if 'selected_question' in st.session_state:
+            prompt = st.session_state.selected_question
+            del st.session_state.selected_question
+        else:
+            prompt = st.chat_input("Prompt here")
+            logger.info(f"Prompt: {prompt}")
+            logger.info(f"User upload: {st.session_state.user_upload}")
         
         # If there's a new prompt, process it first
         if prompt:
+            logger.info(f"Before prompt processing - user_upload: {st.session_state.user_upload}")
             # Show processing message first
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
@@ -126,6 +144,7 @@ with chat_section:
                             doc_type='document'
                         )
                         
+                        # TODO see if I can store the db_service object in session state, same for embedding_service and llm_service
                         try:
                             db_service.initialize_database(
                                 namespace=st.session_state.user_upload
@@ -139,8 +158,7 @@ with chat_section:
                             st.session_state.qa_model_obj = QAModel(
                                 db_service=db_service,
                                 llm_service=llm_service,
-                                k=sb['model_options']['k'],
-                                namespace=st.session_state.user_upload
+                                k=sb['model_options']['k']
                             )
 
                         st.write('*Searching vector database, generating prompt...*')
@@ -152,6 +170,7 @@ with chat_section:
                         response_time = time.time() - t_start
                         
                         # Add messages to session state in correct order
+                        logger.info(f"Sources: {st.session_state.qa_model_obj.sources[-1]}")
                         st.session_state.messages.insert(0, {
                             'role': 'assistant', 
                             'content': ai_response, 
@@ -164,7 +183,6 @@ with chat_section:
                         st.rerun()
                 except Exception as e:
                     st.error(f"An error occurred: {str(e)}")
-                    _reset_conversation()
                     st.stop()
         
         # Always show message history

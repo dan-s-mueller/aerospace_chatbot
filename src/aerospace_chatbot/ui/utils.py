@@ -86,14 +86,8 @@ def handle_file_upload(sb):
     
     if st.button('Upload your docs into vector database'):
         with st.spinner('Uploading and merging your documents with the database...'):
-            process_uploads(sb, temp_files)
-
-    if st.session_state.user_upload:
-        st.markdown(
-            f":white_check_mark: Merged! Your upload ID: `{st.session_state.user_upload}`. "
-            "This will be used for this chat session to also include your documents. "
-            "When you restart the chat, you'll have to re-upload your documents."
-        )
+            user_upload = process_uploads(sb, temp_files)
+            return user_upload
 
 def process_uploads(sb, temp_files):
     """Process uploaded files and merge them into the vector database."""
@@ -112,7 +106,7 @@ def process_uploads(sb, temp_files):
     # Get available indexes and their metadata using the standalone function
     available_indexes, index_metadatas = get_available_indexes(
         db_type=sb['index_type'],
-        embedding_model=sb['embedding_model'],
+        embedding_model=sb['embedding_name'],
         rag_type=sb['rag_type']
     )
 
@@ -152,7 +146,7 @@ def process_uploads(sb, temp_files):
     doc_processor = DocumentProcessor(
         embedding_service=embedding_service,
         rag_type=sb['rag_type'],
-        chunk_method=selected_metadata['chunk_method'],
+        chunk_method=selected_metadata.get('chunk_method', None),
         chunk_size=selected_metadata.get('chunk_size', None),
         chunk_overlap=selected_metadata.get('chunk_overlap', None),
         merge_pages=selected_metadata.get('merge_pages', None)

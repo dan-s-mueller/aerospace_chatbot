@@ -17,13 +17,11 @@ class QAModel:
     def __init__(self,
                  db_service,
                  llm_service,
-                 k=4,
-                 namespace=None):
+                 k=4):
         """Initialize QA model with necessary services."""
         self.db_service = db_service
         self.llm_service = llm_service
         self.k = k
-        self.namespace = namespace
         self._deps = Dependencies()
         self.sources = []
         self.ai_response = ""
@@ -32,7 +30,6 @@ class QAModel:
         self.logger = logging.getLogger(__name__)
 
         _, _, _, _, ConversationBufferMemory, _ = self._deps.get_query_deps()
-        # FIXME, query database not being created. Note that I've commented out delete_index in the test!!!
 
         # Create a separate database service for query storage
         self.query_db_service = DatabaseService(
