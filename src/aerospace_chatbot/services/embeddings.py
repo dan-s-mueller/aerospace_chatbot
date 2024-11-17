@@ -47,8 +47,8 @@ class EmbeddingService:
                 'text-embedding-3-large': 3072,
             },
             'Voyage': {
-                'voyage-large-2': 1536,
-                'voyage-large-2-instruct': 1024
+                'voyage-3': 1024,
+                'voyage-3-lite': 512
             },
             'Hugging Face': {
                 'sentence-transformers/all-MiniLM-L6-v2': 384,

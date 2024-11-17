@@ -135,7 +135,7 @@ class DocumentProcessor:
                     blob.download_to_filename(local_path)
                     doc_local_temp = local_path
                 else:
-                    raise NotImplementedError(f"Only google cloud storage is currently supported for document processing.")
+                    doc_local_temp = doc_in
 
                 # Load and process the PDF
                 loader = PyPDFLoader(doc_local_temp)
@@ -149,8 +149,9 @@ class DocumentProcessor:
                         doc_pages.append(doc_page)
 
                 # Set the metadata source key to the original document path
-                for doc_page in doc_pages:
-                    doc_page.metadata['source'] = doc_in.replace('gs://', '')
+                if doc_in.startswith('gs://'):
+                    for doc_page in doc_pages:
+                        doc_page.metadata['source'] = doc_in.replace('gs://', '')
 
                 # Merge pages if option is selected
                 if self.merge_pages is not None:

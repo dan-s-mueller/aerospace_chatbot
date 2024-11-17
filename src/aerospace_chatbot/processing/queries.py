@@ -17,7 +17,7 @@ class QAModel:
     def __init__(self,
                  db_service,
                  llm_service,
-                 k=4):
+                 k=8):
         """Initialize QA model with necessary services."""
         self.db_service = db_service
         self.llm_service = llm_service

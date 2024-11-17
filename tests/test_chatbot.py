@@ -160,7 +160,7 @@ def setup_fixture():
         model_name='gpt-4o-mini',
         model_type='OpenAI',
         temperature=0,
-        max_tokens=1000
+        max_tokens=5000
     )
 
     setup = {
