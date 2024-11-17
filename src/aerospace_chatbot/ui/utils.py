@@ -47,7 +47,7 @@ def display_sources(sources, expanded=False):
                 pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
                 
                 if pdf_source and page is not None:
-                    selected_url = f"https://storage.googleapis.com/aerospace_mechanisms_chatbot_demo/{pdf_source}"
+                    selected_url = f"https://storage.googleapis.com/{pdf_source}"
                     st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
 
                     with st.expander(":memo: View"):
