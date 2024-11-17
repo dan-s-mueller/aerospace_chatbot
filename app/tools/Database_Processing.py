@@ -41,7 +41,7 @@ if sb['rag_type'] == 'Summary':
     )
 
 # Find docs
-# FIXME add option for local documents
+# TODO add option for local documents
 st.session_state.buckets = None
 try:
     st.session_state.buckets = DocumentProcessor.list_available_buckets()

@@ -83,6 +83,7 @@ class DocumentProcessor:
     @staticmethod
     def list_bucket_pdfs(bucket_name: str):
         """Lists all PDF files in a Google Cloud Storage bucket."""
+        logger = logging.getLogger(__name__)
         try:
             # Initialize the GCS client
             storage_client = storage.Client()
@@ -99,7 +100,8 @@ class DocumentProcessor:
                 for blob in blobs 
                 if blob.name.endswith('.pdf')
             ]
-            
+            logger.info(f"Number of PDFs found: {len(pdf_files)}")
+            logger.info(f"PDFs found: {pdf_files}")
             return pdf_files
         except Exception as e:
             raise Exception(f"Error accessing GCS bucket: {str(e)}")
@@ -114,14 +116,16 @@ class DocumentProcessor:
         
         cleaned_docs = []
         with tempfile.TemporaryDirectory() as temp_dir:
-            for i, doc in enumerate(documents):
-                self.logger.info(f"Processing document {i+1} of {len(documents)}: {doc}")
+            for i, doc_in in enumerate(documents):
+                self.logger.info(f"Processing document {i+1} of {len(documents)}: {doc_in}")
 
                 # Handle GCS URLs
-                if doc.startswith('gs://'):
+                if doc_in.startswith('gs://'):
                     # Parse bucket and blob name
-                    bucket_name = doc.split('/')[2]
-                    blob_name = '/'.join(doc.split('/')[3:])
+                    bucket_name = doc_in.split('/')[2]
+                    blob_name = '/'.join(doc_in.split('/')[3:])
+                    self.logger.info(f"Bucket name: {bucket_name}")
+                    self.logger.info(f"Blob name: {blob_name}")
                     
                     # Download file from GCS
                     storage_client = storage.Client()
@@ -129,10 +133,12 @@ class DocumentProcessor:
                     blob = bucket.blob(blob_name)
                     local_path = f"{temp_dir}/{blob_name.split('/')[-1]}"
                     blob.download_to_filename(local_path)
-                    doc = local_path
+                    doc_local_temp = local_path
+                else:
+                    raise NotImplementedError(f"Only google cloud storage is currently supported for document processing.")
 
                 # Load and process the PDF
-                loader = PyPDFLoader(doc)
+                loader = PyPDFLoader(doc_local_temp)
                 doc_page_data = loader.load()
 
                 # Clean up page info, update some metadata
@@ -141,6 +147,10 @@ class DocumentProcessor:
                     doc_page = self._sanitize_page(doc_page)
                     if doc_page is not None:
                         doc_pages.append(doc_page)
+
+                # Set the metadata source key to the original document path
+                for doc_page in doc_pages:
+                    doc_page.metadata['source'] = doc_in.replace('gs://', '')
 
                 # Merge pages if option is selected
                 if self.merge_pages is not None:
