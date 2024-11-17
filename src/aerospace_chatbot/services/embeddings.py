@@ -3,6 +3,8 @@
 import os
 from ..core.cache import Dependencies
 
+# TODO add cohere embeddings
+
 class EmbeddingService:
     """Manages embedding model operations."""
     
