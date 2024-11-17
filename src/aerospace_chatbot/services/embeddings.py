@@ -4,6 +4,7 @@ import os
 from ..core.cache import Dependencies
 
 # TODO add cohere embeddings
+# TODO add rerank https://medium.com/@myscale/enhancing-advanced-rag-systems-using-reranking-with-langchain-523a0b840311
 
 class EmbeddingService:
     """Manages embedding model operations."""

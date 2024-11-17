@@ -38,9 +38,6 @@ def _reset_conversation():
     st.session_state.user_upload = None
     return None
 
-# Page setup
-# st.title('🚀 Aerospace Chatbot')
-
 # Create fixed containers
 header = st.container()
 info_section = st.container()
