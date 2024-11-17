@@ -22,7 +22,8 @@
         },
         {
             "name": "Voyage",
-            "embedding_models": ["voyage-large-2"]
+            "embedding_models": ["voyage-3",
+                                 "voyage-3-lite"]
         },
         {
             "name": "Hugging Face",
