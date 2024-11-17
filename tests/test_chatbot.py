@@ -839,7 +839,7 @@ def test_database_setup_and_query(test_input, setup_fixture):
     )
     llm_service = LLMService(
         model_service=test['llm_service'],
-        model=test['llm']
+        model=test['llm_model']
     )
 
     db_service = DatabaseService(

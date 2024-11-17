@@ -100,14 +100,14 @@ def process_uploads(sb, temp_files):
     logger.info("Processing and uploading user documents...")
 
     embedding_service = EmbeddingService(
-        model_service=sb['embedding_name'],
+        model_service=sb['embedding_service'],
         model=sb['embedding_model']
     )
 
     # Get available indexes and their metadata using the standalone function
     available_indexes, index_metadatas = get_available_indexes(
         db_type=sb['index_type'],
-        embedding_model=sb['embedding_name'],
+        embedding_model=sb['embedding_model'],
         rag_type=sb['rag_type']
     )
 

@@ -322,7 +322,7 @@ class DatabaseService:
         if clear:
             self.delete_index()
         self.vectorstore = RAGPretrainedModel.from_pretrained(
-            pretrained_model_name_or_path=self.embedding_service.model_name,
+            pretrained_model_name_or_path=self.embedding_service.model,
             index_root=index_path
         )
         self.logger.info(f"RAGatouille index {self.index_name} initialized")
