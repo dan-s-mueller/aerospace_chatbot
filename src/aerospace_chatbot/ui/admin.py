@@ -187,9 +187,9 @@ class SidebarManager:
             'Max output tokens',
             min_value=50,
             step=10,
-            value=1000,
+            value=5000,
             disabled=st.session_state.output_level_disabled,
-            help='Max output tokens for LLM. Concise: 50, Verbose: 1000. Limit depends on model.'
+            help='Max output tokens for LLM. Concise: 50, Verbose: 1000+. Limit depends on model.'
         )
         
         st.sidebar.title('Retrieval Options')
@@ -197,9 +197,9 @@ class SidebarManager:
             'Number of items per prompt',
             min_value=1,
             step=1,
-            value=4,
+            value=8,
             disabled=st.session_state.k_disabled,
-            help='Number of items to retrieve per query.'
+            help='Number of items to retrieve per query. Many retrievals max exceed model context window.'
         )
         
         if self.sb_out['index_type'] != 'RAGatouille':

@@ -65,7 +65,7 @@
     {
         "index_type": "Pinecone",
         "embedding_family": "Voyage",
-        "embedding_name": "voyage-large-2",
+        "embedding_name": "voyage-3",
         "rag_type": "Standard",
         "llm_family": "OpenAI",
         "llm": "gpt-4o-mini",
