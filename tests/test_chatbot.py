@@ -83,11 +83,11 @@ def parse_test_case(setup, test_case):
     parsed_test = {
         'id': test_case['id'],
         'index_type': setup['index_type'][test_case['index_type']],
-        'embedding_name': test_case['embedding_name'],
+        'embedding_service': test_case['embedding_service'],
         'embedding_model': test_case['embedding_model'],
         'rag_type': setup['rag_type'][test_case['rag_type']],
-        'llm_family': test_case['llm_family'],
-        'llm': test_case['llm']
+        'llm_service': test_case['llm_service'],
+        'llm_model': test_case['llm_model']
     }
     print_str = ', '.join(f'{key}: {value}' for key, value in test_case.items())
 
@@ -421,19 +421,19 @@ def test_process_documents_summary(setup_fixture):
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',
-        'embedding_name': 'OpenAI',
+        'embedding_service': 'OpenAI',
         'embedding_model': 'text-embedding-3-small',
         'expected_class': PineconeVectorStore
     },
     {
         'index_type': 'ChromaDB',
-        'embedding_name': 'OpenAI',
+        'embedding_service': 'OpenAI',
         'embedding_model': 'text-embedding-ada-002',
         'expected_class': Chroma
     },
     {
         'index_type': 'RAGatouille',
-        'embedding_name': 'RAGatouille',
+        'embedding_service': 'RAGatouille',
         'embedding_model': 'colbert-ir/colbertv2.0',
         'expected_class': RAGPretrainedModel
     }
@@ -448,7 +448,7 @@ def test_initialize_database(monkeypatch, test_index):
 
     # Create services
     embedding_service = EmbeddingService(
-        model_service=test_index['embedding_name'],
+        model_service=test_index['embedding_service'],
         model=test_index['embedding_model']
     )
     
@@ -503,8 +503,8 @@ def test_initialize_database(monkeypatch, test_index):
     # Combined Pinecone and ChromaDB tests
     {
         'db_types': ['Pinecone', 'ChromaDB'],
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-small',
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small',
         'expected_classes': {
             'Pinecone': PineconeVectorStore,
             'ChromaDB': Chroma
@@ -514,8 +514,8 @@ def test_initialize_database(monkeypatch, test_index):
     # RAGatouille test (Standard only)
     {
         'db_types': ['RAGatouille'],
-        'embedding_family': 'RAGatouille',
-        'embedding_name': 'colbert-ir/colbertv2.0',
+        'embedding_service': 'RAGatouille',
+        'embedding_model': 'colbert-ir/colbertv2.0',
         'expected_classes': {
             'RAGatouille': RAGPretrainedModel
         },
@@ -531,7 +531,7 @@ def test_delete_database(setup_fixture, test_index):
 
     # Create embedding service
     embedding_service = EmbeddingService(
-        model_service=test_index['embedding_name'],
+        model_service=test_index['embedding_service'],
         model=test_index['embedding_model']
     )
     
@@ -600,7 +600,7 @@ def test_delete_database(setup_fixture, test_index):
                 # Verify index is not in available indexes
                 available_indexes, _ = get_available_indexes(
                     db_type,
-                    test_index['embedding_name'],
+                    test_index['embedding_model'],
                     rag_type
                 )
                 assert db_service.index_name not in available_indexes, \
@@ -673,20 +673,20 @@ def test_rag_type_mismatch(setup_fixture):
 @pytest.mark.parametrize('test_index', [
     {
         'index_type': 'Pinecone',
+        'embedding_service': 'OpenAI',
         'embedding_model': 'text-embedding-3-small',
-        'embedding_family': 'OpenAI',
         'rag_types': ['Standard', 'Parent-Child', 'Summary']
     },
     {
         'index_type': 'ChromaDB',
+        'embedding_service': 'OpenAI',
         'embedding_model': 'text-embedding-3-small',
-        'embedding_family': 'OpenAI',
         'rag_types': ['Standard', 'Parent-Child', 'Summary']
     },
     {
         'index_type': 'RAGatouille',
+        'embedding_service': 'RAGatouille',
         'embedding_model': 'colbert-ir/colbertv2.0',
-        'embedding_family': 'RAGatouille',
         'rag_types': ['Standard']  # RAGatouille only supports Standard
     }
 ])
@@ -697,7 +697,7 @@ def test_get_available_indexes(setup_fixture, test_index):
     
     # Create services
     embedding_service = EmbeddingService(
-        model_service=test_index['embedding_name'],
+        model_service=test_index['embedding_service'],
         model=test_index['embedding_model']
     )
     
@@ -834,11 +834,11 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
     # Get services
     embedding_service = EmbeddingService(
-        model_service=test['embedding_name'],
+        model_service=test['embedding_service'],
         model=test['embedding_model']
     )
     llm_service = LLMService(
-        model_service=test['llm_family'],
+        model_service=test['llm_service'],
         model=test['llm']
     )
 
@@ -938,18 +938,17 @@ def test_sidebar_manager(setup_fixture):
     # Verify all outputs are present since everything is rendered
     # Core dependencies
     assert 'index_type' in sb_out
-    assert 'embedding_name' in sb_out
     assert 'rag_type' in sb_out
     
     # Embeddings outputs
+    assert 'embedding_service' in sb_out
     assert 'embedding_model' in sb_out
-    assert 'embedding_name' in sb_out
     
     # RAG type outputs  
     assert 'rag_type' in sb_out
     
     # LLM outputs
-    assert 'llm_source' in sb_out
+    assert 'llm_service' in sb_out
     assert 'llm_model' in sb_out
     
     # Model options outputs
@@ -1011,13 +1010,13 @@ def test_set_secrets_with_valid_input(setup_fixture):
 @pytest.mark.parametrize('test_index', [
     {
         'db_type': 'ChromaDB',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-small'
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
     },
     {
         'db_type': 'Pinecone',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-small'
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
     }
 ])
 def test_get_docs_questions_df(setup_fixture, test_index):
@@ -1030,7 +1029,7 @@ def test_get_docs_questions_df(setup_fixture, test_index):
 
     # Initialize services
     embedding_service = EmbeddingService(
-        model_service=test_index['embedding_name'],
+        model_service=test_index['embedding_service'],
         model=test_index['embedding_model']
     )
     llm_service = LLMService(
@@ -1113,13 +1112,13 @@ def test_get_docs_questions_df(setup_fixture, test_index):
 @pytest.mark.parametrize('test_index', [
     {
         'db_type': 'ChromaDB',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-small'
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
     },
     {
         'db_type': 'Pinecone',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-small'
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
     }
 ])
 def test_add_clusters(setup_fixture, test_index):
@@ -1131,7 +1130,7 @@ def test_add_clusters(setup_fixture, test_index):
 
     # Initialize services
     embedding_service = EmbeddingService(
-        model_service=test_index['embedding_name'],
+        model_service=test_index['embedding_service'],
         model=test_index['embedding_model']
     )
     llm_service = LLMService(
@@ -1250,15 +1249,15 @@ def test_process_user_doc_uploads(setup_fixture):
         'index_type': 'Pinecone',
         'index_selected': 'test-process-uploads',
         'rag_type': 'Standard',
+        'embedding_service': 'OpenAI',
         'embedding_model': 'text-embedding-3-small',
-        'embedding_name': 'OpenAI'
     }
     upsert_docs = [os.path.join(os.path.abspath(os.path.dirname(__file__)), '1999_honnen_reocr.pdf')]
 
     try:
         # First create and populate initial database with setup docs
         embedding_service = EmbeddingService(
-            model_service=mock_sb['embedding_name'],
+            model_service=mock_sb['embedding_service'],
             model=mock_sb['embedding_model']
         )
         
@@ -1313,13 +1312,13 @@ def test_process_user_doc_uploads(setup_fixture):
 @pytest.mark.parametrize('test_index', [
     {
         'db_type': 'ChromaDB',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-small'
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
     },
     {
         'db_type': 'Pinecone',
-        'embedding_family': 'OpenAI',
-        'embedding_name': 'text-embedding-3-small'
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
     }
 ])
 def test_index_with_different_parameters(setup_fixture, test_index):
@@ -1332,7 +1331,7 @@ def test_index_with_different_parameters(setup_fixture, test_index):
 
     # Initialize services
     embedding_service = EmbeddingService(
-        model_service=test_index['embedding_name'],
+        model_service=test_index['embedding_service'],
         model=test_index['embedding_model']
     )
 
