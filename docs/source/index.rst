@@ -6,9 +6,8 @@ Aerospace Chatbot
     :caption: Get Started
     :titlesonly:
 
-    help/overview
-    help/user_guide
-    help/evaluation
+    help/functionality
+    help/configs
 
 .. toctree::
     :hidden:
@@ -27,24 +26,10 @@ Aerospace Chatbot
 
    Aerospace discipline-specific chatbots and AI tools.
 
-Deployed apps
--------------
-
-See :doc:`help/deployments`.
-
 Project links
 -------------
 
 - `Github Repository <https://github.com/dan-s-mueller/aerospace_chatbot>`_
-
-
-What does aerospace_chatbot do?
--------------------------------
-
-Refer to the :doc:`help/overview` for a detailed description of the chatbot's functionality and purpose.
-
-A capability matrix is also located in :doc:`help/user_guide`
-
 
 Contribute
 ----------
@@ -92,3 +77,26 @@ The main files in the repository required for dependencies are:
 - ``poetry install`` to install all dependencies
 
 The instructions are tailored to unix-based systems, modify as needed for Windows.
+
+Compatibility Matrix
+--------------------
+
+This matrix gives options for the user, depending on what the objective is. Proprietary data sources likely want air gapped solutions run locally, vs. collaborative teams with non-proprietary sources likely want remotely hosted options.
+
++-------------------------+-----------------------+------------------------------------------------+----------------------+
+| Feature                 | Index Type            | Embedding Model                                | LLM                  |
++=========================+=======================+================================================+======================+
+| Remotely hosted         | Pinecone              | colbert-ir/colbertv2.0 (Hugging Face RAG Model)| OpenAI, Hugging Face |
++-------------------------+-----------------------+------------------------------------------------+----------------------+
+| Open source             | ChromaDB, RAGatouille | colbert-ir/colbertv2.0 (Hugging Face RAG Model)| Hugging Face         |
++-------------------------+-----------------------+------------------------------------------------+----------------------+
+| Proprietary             | Pinecone              | OpenAI, Voyage                                 | OpenAI               |
++-------------------------+-----------------------+------------------------------------------------+----------------------+
+| Air gapped (fully local)| ChromaDB, RAGatouille | colbert-ir/colbertv2.0 (Hugging Face RAG Model)| LM Studio            |
++-------------------------+-----------------------+------------------------------------------------+----------------------+
+| RAG type: Standard      | Any                   | Any                                            | Any                  |
++-------------------------+-----------------------+------------------------------------------------+----------------------+
+| RAG type: Parent-Child  | ChromaDB, Pinecone    | OpenAI, Voyage                                 | Any                  |
++-------------------------+-----------------------+------------------------------------------------+----------------------+
+| RAG type: Summary       | ChromaDB, Pinecone    | OpenAI, Voyage                                 | Any                  |
++-------------------------+-----------------------+------------------------------------------------+----------------------+
