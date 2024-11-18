@@ -113,7 +113,7 @@ class DatabaseService:
     
     def copy_vectors(self, source_namespace, batch_size=100):
         """Copies vectors from a source Pinecone namespace into the namespace assigned to the DatabaseService instance."""
-        pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
+        pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
 
         if self.db_type != 'Pinecone':
             raise ValueError("Vector copying is only supported for Pinecone databases")
@@ -173,7 +173,7 @@ class DatabaseService:
         
         def _delete_chromadb():
             """Delete ChromaDB index."""
-            _, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
+            _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
             
             try:
                 db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
@@ -190,7 +190,7 @@ class DatabaseService:
         @pinecone_retry
         def _delete_pinecone():
             """Delete Pinecone index."""
-            pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
+            pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
             
             pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             try:
@@ -232,8 +232,8 @@ class DatabaseService:
 
     def _init_chromadb(self, clear=False):
         """Initialize ChromaDB."""
-        _, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
-        _, Chroma, _ = Dependencies.Storage.get_vector_stores()
+        _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
+        _, Chroma, _, _ = Dependencies.Storage.get_vector_stores()
         
         # Create ChromaDB directory
         db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
@@ -265,8 +265,8 @@ class DatabaseService:
     )
     def _init_pinecone(self, clear=False):
         """Initialize Pinecone."""
-        pinecone_client, _, ServerlessSpec, _ = Dependencies.Storage.get_db_clients()
-        PineconeVectorStore, _, _ = Dependencies.Storage.get_vector_stores()
+        pinecone_client, _, ServerlessSpec, _, _ = Dependencies.Storage.get_db_clients()
+        PineconeVectorStore, _, _, _ = Dependencies.Storage.get_vector_stores()
 
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY')) # Need to use the native client since langchain can't upload a dummy embedding :(
         if clear:
@@ -312,16 +312,21 @@ class DatabaseService:
 
     def _init_ragatouille(self, clear=False):
         """Initialize RAGatouille."""
-        RAGPretrainedModel, _ = Dependencies.Storage.get_rag_models()
-        # FIXME this will always create a new index
+        _, _, _, _, RAGPretrainedModel = Dependencies.Storage.get_db_clients()
 
+        # FIXME this will always create a new index
         index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille')
         if clear:
             self.delete_index()
-        self.vectorstore = RAGPretrainedModel.from_pretrained(
-            pretrained_model_name_or_path=self.embedding_service.model,
-            index_root=index_path
-        )
+            self.vectorstore = RAGPretrainedModel.from_pretrained(
+                pretrained_model_name_or_path=self.embedding_service.model,
+                index_root=index_path
+            )
+        else:
+            self.vectorstore = RAGPretrainedModel.from_index(
+                index_path=os.path.join(index_path, 'colbert/indexes', 
+                                        self.index_name)
+            )
         self.logger.info(f"RAGatouille index {self.index_name} initialized")
     
     def _get_standard_retriever(self, search_kwargs):
@@ -339,8 +344,7 @@ class DatabaseService:
             raise ValueError(f"Unsupported database type: {self.db_type}")
     def _get_multivector_retriever(self, search_kwargs):
         """Get multi-vector retriever for Parent-Child or Summary RAG types."""
-        LocalFileStore, = Dependencies.Storage.get_file_stores()
-        _, _, MultiVectorRetriever = Dependencies.Storage.get_vector_stores()
+        _, _, MultiVectorRetriever, LocalFileStore = Dependencies.Storage.get_vector_stores()
         
         lfs = LocalFileStore(
             os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
@@ -370,7 +374,7 @@ class DatabaseService:
     def _store_index_metadata(self, chunking_result):
         """Store index metadata based on the database type."""
         OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = Dependencies.Embeddings.get_models()
-        pinecone_client, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
+        pinecone_client, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
 
         index_metadata = {}
         if chunking_result.merge_pages is not None:
@@ -514,14 +518,14 @@ class DatabaseService:
     def _upsert_data(self, upsert_data, batch_size):
         """Upsert documents or questions. Used for all RAG types."""
         from ..processing.documents import DocumentProcessor, ChunkingResult
-        _, _, _, Document = Dependencies.LLM.get_chain_utils()
+        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
         
         @pinecone_retry
         def _upsert_pinecone(batch, batch_ids):
             self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
 
         if self.db_type == "Pinecone":
-            pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
+            pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
 
             pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))            
             pc_index = pc.Index(self.index_name)
@@ -561,8 +565,7 @@ class DatabaseService:
             
             # Parent-Child or Summary for pinecone and chroma
             if self.rag_type in ['Parent-Child', 'Summary']:
-                LocalFileStore, = Dependencies.Storage.get_file_stores()
-                _, _, MultiVectorRetriever = Dependencies.Storage.get_vector_stores()
+                _, _, MultiVectorRetriever, LocalFileStore = Dependencies.Storage.get_vector_stores()
                 
                 if self.db_type == 'RAGatouille':
                     raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
@@ -662,7 +665,7 @@ class DatabaseService:
 def get_docs_questions_df(db_service, query_db_service, logger=False):
     """Get documents and questions from database as a DataFrame."""
     pd, _, _, _ = Dependencies.Analysis.get_tools()
-    pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
+    pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
     
     @pinecone_retry
     def _fetch_pinecone_docs(index_name):
@@ -902,7 +905,7 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
 
     def _process_chromadb_indexes():
         """Process available ChromaDB indexes."""
-        _, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
+        _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
 
         client = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
         
@@ -926,7 +929,7 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
 
     def _process_pinecone_indexes():
         """Process available Pinecone indexes."""
-        pinecone_client, _, _, _ = Dependencies.Storage.get_db_clients()
+        pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
         
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         
@@ -1002,9 +1005,9 @@ def _get_pinecone_status():
     """Get status of Pinecone indexes."""
     
     try:
-        pc, _, _, Pinecone = Dependencies.Storage.get_db_clients()
+        pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
 
-        pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         indexes = pc.list_indexes()
         if not indexes:
             return {'status': False, 'message': 'No indexes found'}
@@ -1015,7 +1018,7 @@ def _get_pinecone_status():
 def _get_chromadb_status():
     """Get status of ChromaDB collections."""
     try:
-        _, _, _, PersistentClient = Dependencies.Storage.get_db_clients()
+        _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
         
         db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
         client = PersistentClient(path=str(db_path))

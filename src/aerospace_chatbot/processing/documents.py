@@ -65,7 +65,7 @@ class DocumentProcessor:
     @staticmethod
     def list_available_buckets():
         """Lists all available buckets in the GCS project."""
-        _, _, storage = Dependencies.Storage.get_db_clients()
+        _, _, storage, _ = Dependencies.Document.get_processors()
 
         try:
             # Initialize the GCS client
@@ -80,7 +80,7 @@ class DocumentProcessor:
     @staticmethod
     def list_bucket_pdfs(bucket_name: str):
         """Lists all PDF files in a Google Cloud Storage bucket."""
-        _, _, storage = Dependencies.Storage.get_db_clients()
+        _, _, storage, _ = Dependencies.Document.get_processors()
 
         logger = logging.getLogger(__name__)
         try:
@@ -112,8 +112,8 @@ class DocumentProcessor:
     
     def _load_and_clean_documents(self, documents):
         """Load PDF documents and clean their contents."""
-        Document, _, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
-        _, _, storage = Dependencies.Storage.get_db_clients()
+        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+        _, _, storage, PyPDFLoader = Dependencies.Document.get_processors()
         
         cleaned_docs = []
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -193,8 +193,7 @@ class DocumentProcessor:
                               chunk_overlap=self.chunk_overlap)
     def _process_summary(self, documents):
         """Process documents for summary RAG."""
-        StrOutputParser, = Dependencies.LLM.get_output_parsers()
-        Document, _, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
+        _, StrOutputParser, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
         
         chunks = self._chunk_documents(documents)
 
@@ -236,7 +235,7 @@ class DocumentProcessor:
 
     def _chunk_documents(self, documents):
         """Chunk documents using specified parameters."""
-        RecursiveCharacterTextSplitter, = Dependencies.Document.get_splitters()
+        RecursiveCharacterTextSplitter = Dependencies.Document.get_splitters()
 
         chunks = []
         if self.rag_type != 'Parent-Child':
@@ -326,7 +325,7 @@ class DocumentProcessor:
     @staticmethod
     def _merge_pages(docs, n_pages):
         """Merge consecutive pages."""
-        Document, _, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
+        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
 
         merged = []
         for i in range(0, len(docs), n_pages):
@@ -343,7 +342,7 @@ class DocumentProcessor:
     @staticmethod
     def _upload_to_gcs(bucket_name, file_path, local_file_path):
         """Upload a file to Google Cloud Storage."""
-        _, _, storage = Dependencies.Storage.get_db_clients()
+        _, _, storage, _ = Dependencies.Document.get_processors()
 
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)

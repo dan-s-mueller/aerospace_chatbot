@@ -86,7 +86,7 @@ class QAModel:
             self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
     def generate_alternative_questions(self, prompt):
         """Generates alternative questions based on a prompt."""
-        _, StrOutputParser, _, _, _, _ = Dependencies.LLM.get_chain_utils()
+        _, StrOutputParser, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
         if self.ai_response:
             prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
             invoke_dict={'question':prompt,'context':self.ai_response}
@@ -107,7 +107,7 @@ class QAModel:
         return alternative_questions
     def _setup_memory(self):
         """Initialize conversation memory."""
-        _, _, _, _, ConversationBufferMemory, _, _, _= Dependencies.LLM.get_chain_utils()
+        _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
         self.memory = ConversationBufferMemory(
             return_messages=True,
             output_key='answer',
@@ -178,7 +178,7 @@ class QAModel:
         )
     def _get_standalone_question(self, question, chat_history):
         """Generate standalone question from conversation context."""
-        _, _, _, _, _, get_buffer_string = Dependencies.LLM.get_chain_utils()
+        _, _, _, _, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
 
         if not chat_history:
             return question

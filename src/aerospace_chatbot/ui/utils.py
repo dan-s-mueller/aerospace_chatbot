@@ -262,8 +262,7 @@ def _save_uploads_to_temp(uploaded_files):
 
 def _extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
-    import fitz
-    import requests
+    fitz, requests, _, _ = Dependencies.Document.get_processors()
     
     try:
         response = requests.get(url)

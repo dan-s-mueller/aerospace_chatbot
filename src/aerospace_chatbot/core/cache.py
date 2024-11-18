@@ -9,8 +9,7 @@ def get_cache_decorator():
             return st.cache_resource
         raise RuntimeError("Not in Streamlit environment")
     except (ImportError, RuntimeError):
-        from functools import lru_cache
-        return lru_cache(maxsize=None)
+        return lambda func: func    # Do nothing
 
 def get_cache_data_decorator():
     """Returns appropriate cache_data decorator based on environment"""
@@ -21,8 +20,7 @@ def get_cache_data_decorator():
             return st.cache_data
         raise RuntimeError("Not in Streamlit environment")
     except (ImportError, RuntimeError):
-        from functools import lru_cache
-        return lru_cache(maxsize=100)
+        return lambda func: func    # Do nothing
 
 
 cache_resource = get_cache_decorator()  # Replace @st.cache_resource with dynamic decorator
@@ -46,7 +44,11 @@ class Dependencies:
         @staticmethod
         @cache_resource
         def get_models():
-            """Load LLM model dependencies."""
+            """Load LLM model dependencies.
+            
+            Returns:
+                tuple: ChatOpenAI, ChatAnthropic
+            """
             from langchain_openai import ChatOpenAI
             from langchain_anthropic import ChatAnthropic
             return ChatOpenAI, ChatAnthropic
@@ -54,7 +56,11 @@ class Dependencies:
         @staticmethod
         @cache_resource
         def get_chain_utils():
-            """Load LLM chain utilities."""
+            """Load LLM chain utilities.
+            
+            Returns:
+                tuple: itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, ConversationBufferMemory, get_buffer_string, Document, format_document
+            """
             from operator import itemgetter
             from langchain_core.output_parsers import StrOutputParser
             from langchain_core.runnables import RunnableLambda, RunnablePassthrough
@@ -68,7 +74,11 @@ class Dependencies:
         @staticmethod
         @cache_resource
         def get_models():
-            """Load embedding model dependencies."""
+            """Load embedding model dependencies.
+            
+            Returns:
+                tuple: OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
+            """
             from langchain_openai import OpenAIEmbeddings
             from langchain_voyageai import VoyageAIEmbeddings
             from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
@@ -78,34 +88,40 @@ class Dependencies:
         @staticmethod
         @cache_resource
         def get_vector_stores():
-            """Load vector store dependencies."""
+            """Load vector store dependencies.
+            
+            Returns:
+                tuple: PineconeVectorStore, Chroma, MultiVectorRetriever
+            """
             from langchain_pinecone import PineconeVectorStore
             from langchain_chroma import Chroma
             from langchain.retrievers.multi_vector import MultiVectorRetriever
-            return PineconeVectorStore, Chroma, MultiVectorRetriever
+            from langchain.storage import LocalFileStore
+            return PineconeVectorStore, Chroma, MultiVectorRetriever, LocalFileStore
 
         @staticmethod
         @cache_resource
         def get_db_clients():
-            """Load database client dependencies."""
+            """Load database client dependencies.
+            
+            Returns:
+                tuple: pinecone_client, chromadb, ServerlessSpec, PersistentClient, RAGPretrainedModel
+            """
             from pinecone import Pinecone as pinecone_client
             import chromadb
             from pinecone import ServerlessSpec
             from chromadb import PersistentClient
-            return pinecone_client, chromadb, ServerlessSpec, PersistentClient
-            
-        @staticmethod
-        @cache_resource
-        def get_file_stores():
-            """Load file storage dependencies."""
-            from langchain.storage import LocalFileStore
-            return LocalFileStore
-
+            from ragatouille import RAGPretrainedModel
+            return pinecone_client, chromadb, ServerlessSpec, PersistentClient, RAGPretrainedModel
     class Analysis:
         @staticmethod
         @cache_resource
         def get_tools():
-            """Load analysis and data processing dependencies."""
+            """Load analysis and data processing dependencies.
+            
+            Returns:
+                tuple: pandas, numpy, KMeans, Dataset
+            """
             import pandas as pd
             import numpy as np
             from sklearn.cluster import KMeans
@@ -116,8 +132,24 @@ class Dependencies:
         @staticmethod
         @cache_resource
         def get_processors():
-            """Load document processing dependencies."""
+            """Load document processing dependencies.
+            
+            Returns:
+                tuple: fitz, requests, storage, PyPDFLoader
+            """
             import fitz
             import requests
             from google.cloud import storage
-            return fitz, requests, storage
+            from langchain_community.document_loaders import PyPDFLoader
+            return fitz, requests, storage, PyPDFLoader
+
+        @staticmethod
+        @cache_resource
+        def get_splitters():
+            """Load document splitting dependencies.
+            
+            Returns:
+                RecursiveCharacterTextSplitter
+            """
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            return RecursiveCharacterTextSplitter
