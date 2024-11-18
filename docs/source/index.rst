@@ -13,10 +13,14 @@ Aerospace Chatbot
 .. toctree::
     :hidden:
     :caption: API Reference
-    :glob:
     :titlesonly:
+    :includehidden:
 
-    modules/api
+    modules/core
+    modules/processing
+    modules/services
+    modules/ui
+    modules/tests
     indices_and_tables
 
 .. rst-class:: lead
@@ -32,8 +36,6 @@ Project links
 -------------
 
 - `Github Repository <https://github.com/dan-s-mueller/aerospace_chatbot>`_
-- `Langsmith Project <https://smith.langchain.com/>`_ > HF_Aerospace_Chatbot_AMS
-- `Langsmith Prompts <https://smith.langchain.com/hub/my-prompts?organizationId=45eb8917-7353-4296-978d-bb461fc45c65>`_
 
 
 What does aerospace_chatbot do?
