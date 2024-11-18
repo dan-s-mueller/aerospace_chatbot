@@ -13,7 +13,7 @@ Aerospace Chatbot
 .. toctree::
     :hidden:
     :caption: API Reference
-    :titlesonly:
+    :maxdepth: 2
     :includehidden:
 
     modules/core
