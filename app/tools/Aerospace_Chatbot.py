@@ -8,8 +8,6 @@ from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseSer
 
 logger = setup_logging()
 
-# FIXME EXTREMELY slow load time, but tailor import usage now that I have dependencies set up properly
-
 # Initialize session state variables if they don't exist
 if 'sb' not in st.session_state:
     st.session_state.sidebar_manager = None
