@@ -316,48 +316,60 @@ class SidebarManager:
         """Render secret keys configuration section."""
         self.sb_out['keys'] = {}
         st.sidebar.title('Secret keys', help='See Home page under Connection Status for status of keys.')
-        st.sidebar.markdown('If .env file is in directory, will use that first.')
+        
+        # Get existing secrets from environment
+        existing_secrets = get_secrets()
         
         # Only show relevant API key inputs based on selected models
         if ('llm_service' in self.sb_out and self.sb_out['llm_service'] == 'OpenAI') or \
-           ('embedding_model' in self.sb_out and self.sb_out['embedding_model'] == 'OpenAI'):
-            self.sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input(
+           ('embedding_service' in self.sb_out and self.sb_out['embedding_service'] == 'OpenAI'):
+            key = 'OPENAI_API_KEY'
+            self.sb_out['keys'][key] = st.sidebar.text_input(
                 'OpenAI API Key',
-                type='password',
-                disabled=st.session_state.openai_key_disabled,
+                value='.env' if key in existing_secrets else '',
+                disabled=key in existing_secrets or st.session_state.openai_key_disabled,
+                type='default' if key in existing_secrets else 'password',  # Show text if from .env
                 help='OpenAI API Key: https://platform.openai.com/api-keys'
             )
         
         if 'llm_service' in self.sb_out and self.sb_out['llm_service'] == 'Anthropic':
-            self.sb_out['keys']['ANTHROPIC_API_KEY'] = st.sidebar.text_input(
+            key = 'ANTHROPIC_API_KEY'
+            self.sb_out['keys'][key] = st.sidebar.text_input(
                 'Anthropic API Key',
-                type='password',
-                disabled=st.session_state.anthropic_key_disabled,
+                value='.env' if key in existing_secrets else '',
+                disabled=key in existing_secrets or st.session_state.anthropic_key_disabled,
+                type='default' if key in existing_secrets else 'password',
                 help='Anthropic API Key: https://console.anthropic.com/settings/keys'
             )
         
-        if 'embedding_model' in self.sb_out and self.sb_out['embedding_model'] == 'Voyage':
-            self.sb_out['keys']['VOYAGE_API_KEY'] = st.sidebar.text_input(
+        if 'embedding_service' in self.sb_out and self.sb_out['embedding_service'] == 'Voyage':
+            key = 'VOYAGE_API_KEY'
+            self.sb_out['keys'][key] = st.sidebar.text_input(
                 'Voyage API Key',
-                type='password',
-                disabled=st.session_state.voyage_key_disabled,
+                value='.env' if key in existing_secrets else '',
+                disabled=key in existing_secrets or st.session_state.voyage_key_disabled,
+                type='default' if key in existing_secrets else 'password',
                 help='Voyage API Key: https://dash.voyageai.com/api-keys'
             )
         
         if 'index_type' in self.sb_out and self.sb_out['index_type'] == 'Pinecone':
-            self.sb_out['keys']['PINECONE_API_KEY'] = st.sidebar.text_input(
+            key = 'PINECONE_API_KEY'
+            self.sb_out['keys'][key] = st.sidebar.text_input(
                 'Pinecone API Key',
-                type='password',
-                disabled=st.session_state.pinecone_key_disabled,
+                value='.env' if key in existing_secrets else '',
+                disabled=key in existing_secrets or st.session_state.pinecone_key_disabled,
+                type='default' if key in existing_secrets else 'password',
                 help='Pinecone API Key: https://www.pinecone.io/'
             )
         
         if ('llm_service' in self.sb_out and self.sb_out['llm_service'] == 'Hugging Face') or \
-           ('embedding_model' in self.sb_out and self.sb_out['embedding_model'] == 'Hugging Face'):
-            self.sb_out['keys']['HUGGINGFACEHUB_API_KEY'] = st.sidebar.text_input(
+           ('embedding_service' in self.sb_out and self.sb_out['embedding_service'] == 'Hugging Face'):
+            key = 'HUGGINGFACEHUB_API_KEY'
+            self.sb_out['keys'][key] = st.sidebar.text_input(
                 'Hugging Face API Key',
-                type='password',
-                disabled=st.session_state.hf_key_disabled,
+                value='.env' if key in existing_secrets else '',
+                disabled=key in existing_secrets or st.session_state.hf_key_disabled,
+                type='default' if key in existing_secrets else 'password',
                 help='Hugging Face API Key: https://huggingface.co/settings/tokens'
             )
         
