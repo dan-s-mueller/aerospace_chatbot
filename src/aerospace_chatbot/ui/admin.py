@@ -14,7 +14,9 @@ class SidebarManager:
         self._config_file = config_file
         self._config = load_config(self._config_file)
         self._deps = Dependencies()
-        self.sb_out = {}
+        self.sb_out = st.session_state.get('sb', {})
+        if self.sb_out is None:
+            self.sb_out = {}
         self._check_local_db_path()
         self.initialize_session_state()
         self.logger = logging.getLogger(__name__)
@@ -51,17 +53,28 @@ class SidebarManager:
     def render_sidebar(self):
         """Render the complete sidebar based on enabled options."""
         try:
-            # Initialize all dependencies before rendering
+            # Sync any changed values from session state first
+            for key in ['index_type', 'rag_type', 'embedding_model', 'embedding_service']:
+                if f'{key}_select' in st.session_state:
+                    self.sb_out[key] = st.session_state[f'{key}_select']
+            
+            # Initialize remaining dependencies
             self._ensure_dependencies()
+
+            # Log the current state before rendering
+            self.logger.info(f"Starting sidebar render with settings: {self.sb_out}")
 
             # Render GUI elements
             self.available_indexes, self.index_metadatas = self._render_index_selection()
-            self._render_llm()
             self._render_rag_type()    
+            self._render_llm()
             self._render_model_options()
             self._render_vector_database()
             self._render_embeddings()
             self._render_secret_keys()
+
+            # Update session state with final values
+            st.session_state.sb = self.sb_out
             return self.sb_out
         except ConfigurationError as e:
             st.error(f"Configuration error: {e}")
@@ -99,7 +112,7 @@ class SidebarManager:
         st.sidebar.title('Index Selected')
         
         # Get available indexes based on current settings
-        self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out.get('index_type'), self.sb_out.get('embedding_model'), self.sb_out.get('rag_type')}")
+        self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out}")
         available_indexes, index_metadatas = get_available_indexes(
             self.sb_out['index_type'],
             self.sb_out['embedding_model'],
@@ -108,21 +121,24 @@ class SidebarManager:
         self.logger.info(f"Available indexes for sidebar: {available_indexes}")
         
         if not available_indexes:
-            st.warning('No compatible collections found.')
-            return
-            
+            st.warning('No compatible collections found with current settings.')
+            return [], {}  # Return empty lists instead of None
+        
+        # Only show indexes that match the current settings
         self.sb_out['index_selected'] = st.sidebar.selectbox(
             'Index selected', 
             available_indexes,
             disabled=st.session_state.index_selected_disabled,
-            help='Select the index to use for the application.'
+            help='Select the index to use for the application.',
+            key='index_selected_select'  # Add unique key
         )
-
+        
+        self.logger.info(f"Index selected: {self.sb_out['index_selected']}")
         return available_indexes, index_metadatas
         
     def _render_llm(self):
         """Render LLM selection section."""
-        st.sidebar.title('Language Model')
+        st.sidebar.title('Large Language Model')
         
         llm_services = [llm['service'] for llm in self._config['llms']]
         self.sb_out['llm_service'] = st.sidebar.selectbox(
@@ -139,27 +155,36 @@ class SidebarManager:
             models,
             disabled=st.session_state.llm_model_disabled
         )
-        
+        self.logger.info(f"LLM service: {self.sb_out['llm_service']}, LLM model: {self.sb_out['llm_model']}")
+
     def _render_rag_type(self):
         """Render RAG type configuration section."""
         st.sidebar.title('RAG Type')
         if self.sb_out['index_type'] == 'RAGatouille':
-            self.sb_out['rag_type'] = st.sidebar.selectbox(
+            rag_type = st.sidebar.selectbox(
                 'RAG type',
                 ['Standard'],
                 disabled=st.session_state.rag_type_disabled,
-                help='Only Standard is available for RAGatouille.'
+                help='Only Standard is available for RAGatouille.',
+                key='rag_type_select'
             )
         else:
-            self.sb_out['rag_type'] = st.sidebar.selectbox(
+            rag_type = st.sidebar.selectbox(
                 'RAG type',
                 self._config['rag_types'],
                 disabled=st.session_state.rag_type_disabled,
-                help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.'
+                help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.',
+                key='rag_type_select'
             )
-            
-            if self.sb_out['rag_type'] == 'Summary':
-                self._render_rag_llm_config()
+        
+        # Update both local state and session state immediately
+        self.sb_out['rag_type'] = rag_type
+        st.session_state.sb = self.sb_out
+        
+        if rag_type == 'Summary':
+            self._render_rag_llm_config()
+
+        self.logger.info(f"RAG type: {self.sb_out['rag_type']}")
 
     def _render_rag_llm_config(self):
         """Render RAG LLM configuration section."""
@@ -171,6 +196,8 @@ class SidebarManager:
         )
         
         self._render_llm_model_selection('rag_')
+
+        self.logger.info(f"RAG LLM service: {self.sb_out['rag_llm_service']}")
 
     def _render_model_options(self):
         """Render model options section."""
@@ -217,6 +244,8 @@ class SidebarManager:
                 'temperature': temperature
             }
 
+        self.logger.info(f"Model options: {self.sb_out['model_options']}")
+
     def _render_vector_database(self):
         """Render vector database section."""
         st.sidebar.title('Vector Database Type')
@@ -231,6 +260,8 @@ class SidebarManager:
             help='Select the type of index to use.'
         )
 
+        self.logger.info(f"Index type: {self.sb_out['index_type']}")
+
     def _render_embeddings(self):
         """Render embeddings configuration section."""
         st.sidebar.title('Embeddings', 
@@ -240,19 +271,22 @@ class SidebarManager:
         db_config = next(db for db in self._config['databases'] if db['name'] == self.sb_out['index_type'])
         
         if self.sb_out['index_type'] == 'RAGatouille':
+            # For RAGatouille, use embedding_services directly as models
             self.sb_out['embedding_model'] = st.sidebar.selectbox(
-                'Hugging face rag models',
-                db_config['embedding_models'],
+                'Embedding model',
+                db_config['embedding_services'],  # Use embedding_services instead of embedding_models
                 disabled=st.session_state.embedding_model_disabled,
-                help="Models listed are compatible with the selected index type."
+                help="Models listed are compatible with the selected index type.",
+                key='embedding_model_select'
             )
-            self.sb_out['embedding_model'] = self.sb_out['embedding_model']
+            self.sb_out['embedding_service'] = 'RAGatouille'  # Set a default service for RAGatouille
         else:
             self.sb_out['embedding_service'] = st.sidebar.selectbox(
                 'Embedding service',
                 db_config['embedding_services'],
                 disabled=st.session_state.embedding_service_disabled,
-                help="Model provider."
+                help="Model provider.",
+                key='embedding_service_select'
             )
             
             # Find the embedding config for the selected model
@@ -262,7 +296,8 @@ class SidebarManager:
                 'Embedding model',
                 embedding_config['models'],
                 disabled=st.session_state.embedding_model_disabled,
-                help="Models listed are compatible with the selected index type."
+                help="Models listed are compatible with the selected index type.",
+                key='embedding_model_select'
             )
             
             if self.sb_out['embedding_model'] == "Dedicated Endpoint":
@@ -274,6 +309,8 @@ class SidebarManager:
                 )
             else:
                 self.sb_out['embedding_hf_endpoint'] = None
+
+        self.logger.info(f"Embedding service: {self.sb_out['embedding_service']}, embedding model: {self.sb_out['embedding_model']}")
 
     def _render_secret_keys(self):
         """Render secret keys configuration section."""

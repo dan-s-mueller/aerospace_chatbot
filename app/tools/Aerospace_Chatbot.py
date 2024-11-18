@@ -13,6 +13,9 @@ logger = setup_logging()
 # FIXME chatbot still displays if there are no indexes matching selected service/model
 
 # Initialize session state variables if they don't exist
+if 'sb' not in st.session_state:
+    st.session_state.sidebar_manager = None
+    st.session_state.sb = None
 if 'messages' not in st.session_state:
     st.session_state.messages = []
 if 'message_id' not in st.session_state:
@@ -49,8 +52,21 @@ upload_section = st.container()
 chat_section = st.container()
 
 # Initialize SidebarManager first (since other components might depend on it)
-sidebar_manager = SidebarManager(st.session_state.config_file)
-sb = sidebar_manager.render_sidebar()
+if 'sidebar_state_initialized' not in st.session_state:
+    st.session_state.sidebar_manager = SidebarManager(st.session_state.config_file)
+    st.session_state.sb = {}
+
+# Get previous state for comparison
+previous_state = st.session_state.sb.copy()
+
+# Render sidebar
+st.session_state.sb = st.session_state.sidebar_manager.render_sidebar()
+
+# Check if critical values changed
+if (previous_state.get('index_type') != st.session_state.sb.get('index_type') or
+    previous_state.get('rag_type') != st.session_state.sb.get('rag_type') or
+    previous_state.get('embedding_model') != st.session_state.sb.get('embedding_model')):
+    st.rerun()
 
 # Header section
 with header:
@@ -77,7 +93,7 @@ with upload_section:
         with st.expander("Upload files to existing database", expanded=True):
             # Only call handle_file_upload if we don't already have a user_upload value
             if not st.session_state.user_upload:
-                upload_result = handle_file_upload(sb)
+                upload_result = handle_file_upload(st.session_state.sb)
                 if upload_result:  # Only update if we got a new upload ID
                     st.session_state.user_upload = upload_result
     if st.session_state.user_upload:
@@ -125,22 +141,22 @@ with chat_section:
                         
                         # Initialize services
                         embedding_service = EmbeddingService(
-                            model_service=sb['embedding_service'],
-                            model=sb['embedding_model']
+                            model_service=st.session_state.sb['embedding_service'],
+                            model=st.session_state.sb['embedding_model']
                         )
                         
                         llm_service = LLMService(
-                            model_service=sb['llm_service'],
-                            model=sb['llm_model'],
-                            temperature=sb['model_options']['temperature'],
-                            max_tokens=sb['model_options']['output_level']
+                            model_service=st.session_state.sb['llm_service'],
+                            model=st.session_state.sb['llm_model'],
+                            temperature=st.session_state.sb['model_options']['temperature'],
+                            max_tokens=st.session_state.sb['model_options']['output_level']
                         )
                         
                         # Initialize database service
                         db_service = DatabaseService(
-                            db_type=sb['index_type'],
-                            index_name=sb['index_selected'],
-                            rag_type=sb['rag_type'],
+                            db_type=st.session_state.sb['index_type'],
+                            index_name=st.session_state.sb['index_selected'],
+                            rag_type=st.session_state.sb['rag_type'],
                             embedding_service=embedding_service,
                             doc_type='document'
                         )
@@ -158,7 +174,7 @@ with chat_section:
                             st.session_state.qa_model_obj = QAModel(
                                 db_service=db_service,
                                 llm_service=llm_service,
-                                k=sb['model_options']['k']
+                                k=st.session_state.sb['model_options']['k']
                             )
 
                         st.write('*Searching vector database, generating prompt...*')
