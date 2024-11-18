@@ -1,5 +1,3 @@
-"""Core functionality for the aerospace chatbot."""
-
 from .cache import (
     Dependencies,
     cache_data,

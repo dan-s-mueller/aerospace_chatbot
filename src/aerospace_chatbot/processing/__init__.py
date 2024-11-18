@@ -1,5 +1,3 @@
-"""Document and query processing functionality."""
-
 from .documents import (
     DocumentProcessor, 
     ChunkingResult

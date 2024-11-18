@@ -1,5 +1,3 @@
-"""UI components for the aerospace chatbot."""
-
 from .admin import SidebarManager
 from .utils import (
     setup_page_config,

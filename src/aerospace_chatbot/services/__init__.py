@@ -1,5 +1,3 @@
-"""Service layer for database, embeddings, and LLM interactions."""
-
 from .database import (
     DatabaseService, 
     get_docs_questions_df, 
