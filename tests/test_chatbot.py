@@ -901,7 +901,8 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
         # Delete the indexes
         db_service.delete_index()
-        qa_model.query_db_service.delete_index()  # Delete the query database index
+        if db_service.db_type in ['ChromaDB', 'Pinecone']:
+            qa_model.query_db_service.delete_index()  # Delete the query database index
         
         if doc_processor.rag_type in ['Parent-Child', 'Summary']:
             lfs_path = os.path.join(setup_fixture['LOCAL_DB_PATH'], 'local_file_store', index_name)
@@ -910,6 +911,8 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
     except Exception as e:  # If there is an error, be sure to delete the database
         db_service.delete_index()
+        if db_service.db_type in ['ChromaDB', 'Pinecone']:
+            qa_model.query_db_service.delete_index()  # Delete the query database index
         raise e
 
 ### Frontend tests

@@ -141,7 +141,6 @@ with chat_section:
                             doc_type='document'
                         )
                         
-                        # TODO see if I can store the db_service object in session state, same for embedding_service and llm_service
                         try:
                             db_service.initialize_database(
                                 namespace=st.session_state.user_upload

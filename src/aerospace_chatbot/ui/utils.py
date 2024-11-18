@@ -68,8 +68,6 @@ def show_connection_status(expanded = True, delete_buttons = False):
         
         # Database Status and Management
         st.markdown("**Database Status:**")
-        # FIXME the delete buttons don't work
-        # TODO make one todo button with a select box to delete it
         _display_database_status(delete_buttons)
 def handle_file_upload(sb):
     """Handle file upload functionality for the chatbot."""

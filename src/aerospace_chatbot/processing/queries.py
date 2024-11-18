@@ -30,14 +30,15 @@ class QAModel:
         _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
 
         # Create a separate database service for query storage
-        self.query_db_service = DatabaseService(
-            db_type=self.db_service.db_type,
-            index_name=self.db_service.index_name,
-            rag_type="Standard",
-            embedding_service=self.db_service.embedding_service,
-            doc_type='question'
-        )
-        self.query_db_service.initialize_database(clear=False)   # TODO decide if this should clear every time
+        if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
+            self.query_db_service = DatabaseService(
+                db_type=self.db_service.db_type,
+                index_name=self.db_service.index_name,
+                rag_type="Standard",
+                embedding_service=self.db_service.embedding_service,
+                doc_type='question'
+            )
+            self.query_db_service.initialize_database(clear=False)   # TODO decide if this should clear every time
         
         # Get retrievers from database services
         self.db_service.get_retriever(k=k)
