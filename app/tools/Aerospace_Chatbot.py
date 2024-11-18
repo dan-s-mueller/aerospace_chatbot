@@ -78,9 +78,7 @@ with info_section:
                 """)
         st.subheader("Aerospace Mechanisms Chatbot")
         st.markdown("""
-        This is a beta version of the Aerospace Chatbot. The tool comes loaded with a subset of the [Aerospace Mechanisms Symposia](https://aeromechanisms.com/past-symposia/) papers. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)
-        
-        To enable optimal retrieval, each paper has had Optical Character Recognition (OCR) reperformed using the latest release of [OCR my PDF](https://ocrmypdf.readthedocs.io/en/latest/).
+        This is a beta version of the Aerospace Chatbot. The tool comes loaded with a subset of the [Aerospace Mechanisms Symposia](https://aeromechanisms.com/past-symposia/) papers. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)        
         """)
 
 # Upload section - Only visible when no messages

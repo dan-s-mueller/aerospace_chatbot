@@ -11,9 +11,7 @@ Sidebar
 ^^^^^^^
 In each app there is a sidebar which is used to apply settings. The sidebar is dynamic and will only show the settings that are relevant to the app. Each selectable item has a hover over help button describing what the item does. For demos, the sidebar has limited functionality.
 
-.. image:: ../images/sidebar.png
-  :alt: Home
-  :align: center
+.. TODO: Add sidebar image
 
 Options which require further explination are described below. LLM options and types have hyperlinks in the help button in each app.
 
@@ -32,9 +30,7 @@ When a query is made, the responses are stored in a separate vector database. Th
 
 PDF segments which are relevant are shown at the bottom and expandable.
 
-.. image:: ../images/chatbot.png
-  :alt: Chatbot
-  :align: center
+.. TODO: Add chatbot image
 
 Sidebar Options
 ^^^^^^^^^^^^^^^
@@ -42,9 +38,7 @@ Sidebar Options
   This app has restricted fucntionality when used with `AEROSPACE_CHATBOT_CONFIG=tester`. See :doc:`configs` for details.
   Secret keys are not required in demos. Inputting new secret keys will overwrite the existing ones, but are not saved.
 
-.. image:: ../sidebar.png
-  :alt: Database Processing
-  :align: center
+.. TODO: Add sidebar image
 
 - Index type: Vector database type (e.g. Chroma, Pinecone, etc.)
 - Embedding model family: Embedding family type (e.g. OpenAI, Voyage, etc.)
@@ -68,9 +62,7 @@ This app is used to manage databases. You can add, delete, and update databases.
 
 Deleting existing databases is available via the connection status dropdown.
 
-.. image:: ../images/database_processing.png
-  :alt: Database Processing
-  :align: center
+.. TODO: Add database processing image
 
 Visualize Data
 ^^^^^^^^^^^^^^

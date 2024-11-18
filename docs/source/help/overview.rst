@@ -27,10 +27,10 @@ A visual overview of how this code works is below. The parts of this which are u
 
 Of note, there are many areas of this workflow which have not been explored practically but have a lot of potential. The areas which are implemented, which are of interest and highlighted are:
 
-- **Chunk optimization**: currently this is in the form of a fixed number of words per chunk. Refer to :doc:`../modules/data_processing` for more information.
-- **Multi-representation indexing**: it is possible to index with the document chunks and generate summaries for each chunk which are used when providing answers. Refer to :doc:`../modules/data_processing` for more information.
-- **Specialized embeddings**: Instead of using a vector database, it is possible to create a context optimized retrieval model with ColBERT. This is performed using `RAGatouille <https://github.com/hwchase17/RAGatouille/tree/main>`__. Refer to :doc:`../modules/data_processing` for more information.
-- **Heirarchical indexing**: It is possible to upload small document chunks, which are compared to user queries, then return the parent document chunk when providing the response to the use. Refer to :doc:`../modules/data_processing` for more information.
+- **Chunk optimization**: currently this is in the form of a fixed number of words per chunk.
+- **Multi-representation indexing**: it is possible to index with the document chunks and generate summaries for each chunk which are used when providing answers.
+- **Specialized embeddings**: Instead of using a vector database, it is possible to create a context optimized retrieval model with ColBERT. This is performed using `RAGatouille <https://github.com/hwchase17/RAGatouille/tree/main>`__.
+- **Heirarchical indexing**: It is possible to upload small document chunks, which are compared to user queries, then return the parent document chunk when providing the response to the use.
 
 A very practical overview of how this works is also `here <https://towardsdatascience.com/retrieval-augmented-generation-rag-from-theory-to-langchain-implementation-4e9bd5f6a4f2>`__.
 
@@ -75,7 +75,7 @@ If Parent-Child or Summary RAG types are used, the Parent Chunk, or Summary of t
 
 6. Response is generated using an LLM
 """""""""""""""""""""""""""""""""""""
-The response is generated using an LLM. The response is generated using the context retrieved and the LLM you specify. There are prompts used to generate the response, which are discussed in the :doc:`../modules/prompts` section. The choice of prompt is important because it will minimize hallucination of the LLM and also only return the most relevant information.
+The response is generated using an LLM. The response is generated using the context retrieved and the LLM you specify. The choice of prompt is important because it will minimize hallucination of the LLM and also only return the most relevant information.
 
 The prompt which is used to return the response at the end of this process is located here in LangSmith `dmueller/ams-chatbot-qa-retrieval <https://smith.langchain.com/hub/dmueller/ams-chatbot-qa-retrieval?organizationId=45eb8917-7353-4296-978d-bb461fc45c65>`__.
 
