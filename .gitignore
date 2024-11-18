@@ -41,5 +41,4 @@ tests/.ragatouille
 # Sphinx documentation
 docs/build/
 
-# backups
 _bak/
