@@ -26,7 +26,7 @@ st.subheader('Create and load into a vector database')
 
 # Initialize services
 embedding_service = EmbeddingService(
-    model_service=sb['embedding_name'],
+    model_service=sb['embedding_service'],
     model=sb['embedding_model']
 )
 
@@ -34,7 +34,7 @@ embedding_service = EmbeddingService(
 llm_service = None
 if sb['rag_type'] == 'Summary':
     llm_service = LLMService(
-        model_service=sb['rag_llm_source'],
+        model_service=sb['rag_llm_service'],
         model=sb['rag_llm_model'],
         temperature=sb['model_options']['temperature'],
         max_tokens=sb['model_options']['output_level']
@@ -69,7 +69,7 @@ except Exception as e:
 
 # Set database name
 index_appendix = st.text_input('Appendix for index name', 'mch')
-st.session_state.index_name = (sb['embedding_name'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
+st.session_state.index_name = (sb['embedding_model'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
 
 # Add an expandable box for options
 with st.expander("Options",expanded=True):

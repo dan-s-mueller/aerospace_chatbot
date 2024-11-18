@@ -124,10 +124,10 @@ class SidebarManager:
         """Render LLM selection section."""
         st.sidebar.title('Language Model')
         
-        llm_sources = [llm['service'] for llm in self._config['llms']]
+        llm_services = [llm['service'] for llm in self._config['llms']]
         self.sb_out['llm_service'] = st.sidebar.selectbox(
-            'LLM Provider',
-            llm_sources,
+            'LLM Service',
+            llm_services,
             disabled=st.session_state.llm_service_disabled
         )
         
@@ -135,7 +135,7 @@ class SidebarManager:
         llm_config = next(llm for llm in self._config['llms'] if llm['service'] == self.sb_out['llm_service'])
         models = llm_config.get('models', [])  # Use get() in case 'models' key doesn't exist
         self.sb_out['llm_model'] = st.sidebar.selectbox(
-            'Model',
+            'LLM Model',
             models,
             disabled=st.session_state.llm_model_disabled
         )
@@ -163,7 +163,7 @@ class SidebarManager:
 
     def _render_rag_llm_config(self):
         """Render RAG LLM configuration section."""
-        self.sb_out['rag_llm_source'] = st.sidebar.selectbox(
+        self.sb_out['rag_llm_service'] = st.sidebar.selectbox(
             'RAG LLM model',
             list(self._config['llms'].keys()),
             disabled=st.session_state.rag_llm_service_disabled,
@@ -249,7 +249,7 @@ class SidebarManager:
             self.sb_out['embedding_model'] = self.sb_out['embedding_model']
         else:
             self.sb_out['embedding_service'] = st.sidebar.selectbox(
-                'Embedding model service',
+                'Embedding service',
                 db_config['embedding_services'],
                 disabled=st.session_state.embedding_service_disabled,
                 help="Model provider."
@@ -282,7 +282,7 @@ class SidebarManager:
         st.sidebar.markdown('If .env file is in directory, will use that first.')
         
         # Only show relevant API key inputs based on selected models
-        if ('llm_source' in self.sb_out and self.sb_out['llm_source'] == 'OpenAI') or \
+        if ('llm_service' in self.sb_out and self.sb_out['llm_service'] == 'OpenAI') or \
            ('embedding_model' in self.sb_out and self.sb_out['embedding_model'] == 'OpenAI'):
             self.sb_out['keys']['OPENAI_API_KEY'] = st.sidebar.text_input(
                 'OpenAI API Key',
@@ -291,7 +291,7 @@ class SidebarManager:
                 help='OpenAI API Key: https://platform.openai.com/api-keys'
             )
         
-        if 'llm_source' in self.sb_out and self.sb_out['llm_source'] == 'Anthropic':
+        if 'llm_service' in self.sb_out and self.sb_out['llm_service'] == 'Anthropic':
             self.sb_out['keys']['ANTHROPIC_API_KEY'] = st.sidebar.text_input(
                 'Anthropic API Key',
                 type='password',
@@ -315,7 +315,7 @@ class SidebarManager:
                 help='Pinecone API Key: https://www.pinecone.io/'
             )
         
-        if ('llm_source' in self.sb_out and self.sb_out['llm_source'] == 'Hugging Face') or \
+        if ('llm_service' in self.sb_out and self.sb_out['llm_service'] == 'Hugging Face') or \
            ('embedding_model' in self.sb_out and self.sb_out['embedding_model'] == 'Hugging Face'):
             self.sb_out['keys']['HUGGINGFACEHUB_API_KEY'] = st.sidebar.text_input(
                 'Hugging Face API Key',

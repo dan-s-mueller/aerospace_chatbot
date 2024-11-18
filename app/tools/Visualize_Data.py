@@ -22,12 +22,12 @@ if sb["index_type"] == 'RAGatouille':
     raise Exception('RAGatouille not supported for this function.')
 
 embedding_service = EmbeddingService(
-    model_service=sb['embedding_name'],
+    model_service=sb['embedding_service'],
     model=sb['embedding_model']
 )
 
 llm_service = LLMService(
-    model_service=sb['llm_source'],
+    model_service=sb['llm_service'],
     model=sb['llm_model'],
     temperature=sb['model_options']['temperature'],
     max_tokens=sb['model_options']['output_level']

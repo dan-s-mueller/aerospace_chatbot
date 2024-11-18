@@ -8,6 +8,10 @@ from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseSer
 
 logger = setup_logging()
 
+# FIXME EXTREMELY slow load time, but tailor import usage now that I have dependencies set up properly
+# FIXME sidebar doesn't filter selectable indexes by selections
+# FIXME chatbot still displays if there are no indexes matching selected service/model
+
 # Initialize session state variables if they don't exist
 if 'messages' not in st.session_state:
     st.session_state.messages = []
@@ -121,12 +125,12 @@ with chat_section:
                         
                         # Initialize services
                         embedding_service = EmbeddingService(
-                            model_service=sb['embedding_name'],
+                            model_service=sb['embedding_service'],
                             model=sb['embedding_model']
                         )
                         
                         llm_service = LLMService(
-                            model_service=sb['llm_source'],
+                            model_service=sb['llm_service'],
                             model=sb['llm_model'],
                             temperature=sb['model_options']['temperature'],
                             max_tokens=sb['model_options']['output_level']
