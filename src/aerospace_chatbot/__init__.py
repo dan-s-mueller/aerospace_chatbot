@@ -34,7 +34,7 @@ from .services import (
 from .ui import (
     SidebarManager,
     setup_page_config,
-    display_chat_history, 
+    handle_sidebar_state,
     display_sources, 
     show_connection_status,
     handle_file_upload,
@@ -54,6 +54,7 @@ __all__ = [
     'set_secrets',  
     'setup_logging',
     'get_required_api_keys',
+
     # Services
     'DatabaseService',
     'get_docs_questions_df', 
@@ -79,7 +80,7 @@ __all__ = [
     # UI
     'SidebarManager',
     'setup_page_config',
-    'display_chat_history', 
+    'handle_sidebar_state',
     'display_sources', 
     'show_connection_status',
     'handle_file_upload',

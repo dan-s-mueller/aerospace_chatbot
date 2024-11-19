@@ -18,6 +18,24 @@ def setup_page_config(title: str = "Aerospace Chatbot", layout: str = "wide"):
         page_icon="🚀"
     )
 
+def handle_sidebar_state(sidebar_manager):
+    """Handle sidebar state management and dependencies."""
+    # Get previous state for comparison
+    previous_state = st.session_state.sb.copy() if st.session_state.sb else {}
+    
+    # Render sidebar
+    current_state = sidebar_manager.render_sidebar()
+    
+    # Check if critical values changed that would affect dependencies
+    if (previous_state.get('index_type') != current_state.get('index_type') or
+        previous_state.get('rag_type') != current_state.get('rag_type') or
+        previous_state.get('embedding_model') != current_state.get('embedding_model') or
+        previous_state.get('embedding_service') != current_state.get('embedding_service') or
+        previous_state.get('llm_service') != current_state.get('llm_service')):
+        st.rerun()
+    
+    return current_state
+
 def display_sources(sources, expanded=False):
     """Display reference sources in an expander with PDF preview functionality."""
     with st.container():

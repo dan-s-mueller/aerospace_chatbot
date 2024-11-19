@@ -1,7 +1,7 @@
 import os, sys, time
 import streamlit as st
 
-from aerospace_chatbot.ui import SidebarManager, show_connection_status
+from aerospace_chatbot.ui import SidebarManager, show_connection_status, handle_sidebar_state
 from aerospace_chatbot.processing import DocumentProcessor
 from aerospace_chatbot.services import (
     EmbeddingService, 
@@ -13,9 +13,13 @@ from aerospace_chatbot.services import (
 # Page setup
 st.title('📓 Database Processing')
 
-# Initialize SidebarManager
-sidebar_manager = SidebarManager(st.session_state.config_file)
-sb = sidebar_manager.render_sidebar()
+# Initialize SidebarManager first
+if 'sidebar_state_initialized' not in st.session_state:
+    st.session_state.sidebar_manager = SidebarManager(st.session_state.config_file)
+    st.session_state.sb = {}
+
+# Handle sidebar state
+st.session_state.sb = handle_sidebar_state(st.session_state.sidebar_manager)
 
 # Page setup
 st.subheader('Connection status and vector database cleanup')
@@ -24,20 +28,20 @@ show_connection_status(expanded=False, delete_buttons=True)
 # Add section for creating and loading into a vector database
 st.subheader('Create and load into a vector database')
 
-# Initialize services
+# Initialize services after potential rerun
 embedding_service = EmbeddingService(
-    model_service=sb['embedding_service'],
-    model=sb['embedding_model']
+    model_service=st.session_state.sb['embedding_service'],
+    model=st.session_state.sb['embedding_model']
 )
 
 # Initialize LLM service if using Summary RAG
 llm_service = None
-if sb['rag_type'] == 'Summary':
+if st.session_state.sb['rag_type'] == 'Summary':
     llm_service = LLMService(
-        model_service=sb['rag_llm_service'],
-        model=sb['rag_llm_model'],
-        temperature=sb['model_options']['temperature'],
-        max_tokens=sb['model_options']['output_level']
+        model_service=st.session_state.sb['rag_llm_service'],
+        model=st.session_state.sb['rag_llm_model'],
+        temperature=st.session_state.sb['model_options']['temperature'],
+        max_tokens=st.session_state.sb['model_options']['output_level']
     )
 
 # Find docs
@@ -69,7 +73,7 @@ except Exception as e:
 
 # Set database name
 index_appendix = st.text_input('Appendix for index name', 'mch')
-st.session_state.index_name = (sb['embedding_model'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
+st.session_state.index_name = (st.session_state.sb['embedding_model'].replace('/', '-').replace(' ', '-') + '-' + index_appendix).lower()
 
 # Add an expandable box for options
 with st.expander("Options",expanded=True):
@@ -89,8 +93,8 @@ with st.expander("Options",expanded=True):
                                     If zero, each page is processed independently before chunking.''') if merge_pages else None
     
     # For each rag_type, set chunk parameters
-    if sb['rag_type'] != 'Summary':
-        if sb['rag_type']=='Parent-Child':
+    if st.session_state.sb['rag_type'] != 'Summary':
+        if st.session_state.sb['rag_type']=='Parent-Child':
             st.info('''
                     Chunk method applies to parent document. Child documents are default split into 4 smaller chunks.
                     If no chunk method is selected, 4 chunks will be created for each parent document.
@@ -111,16 +115,16 @@ with st.expander("Options",expanded=True):
         chunk_method=None
         chunk_size=None
         chunk_overlap=None
-        sb['model_options']={}
-        sb['model_options']['temperature'] = st.slider('Summary model remperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
-        sb['model_options']['output_level'] = st.number_input('Summary model max output tokens', min_value=50, step=10, value=4000,
+        st.session_state.sb['model_options']={}
+        st.session_state.sb['model_options']['temperature'] = st.slider('Summary model remperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
+        st.session_state.sb['model_options']['output_level'] = st.number_input('Summary model max output tokens', min_value=50, step=10, value=4000,
                                             help='Max output tokens for LLM. Concise: 50, Verbose: >1000. Limit depends on model.')
 
 # Initialize database service
 db_service = DatabaseService(
-    db_type=sb['index_type'],
+    db_type=st.session_state.sb['index_type'],
     index_name=st.session_state.index_name,
-    rag_type=sb['rag_type'],
+    rag_type=st.session_state.sb['rag_type'],
     embedding_service=embedding_service,
     doc_type='document'
 )
@@ -133,7 +137,7 @@ if st.button('Load docs into vector database'):
         # Initialize document processor
         doc_processor = DocumentProcessor(
             embedding_service=embedding_service,
-            rag_type=sb['rag_type'],
+            rag_type=st.session_state.sb['rag_type'],
             chunk_method=chunk_method,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,

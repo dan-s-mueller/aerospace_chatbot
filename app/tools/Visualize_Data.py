@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 
-from aerospace_chatbot.ui import SidebarManager, get_or_create_spotlight_viewer
+from aerospace_chatbot.ui import SidebarManager, get_or_create_spotlight_viewer, handle_sidebar_state
 from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
 
 # Page setup
@@ -9,44 +9,51 @@ st.title('📈 Visualize Data')
 current_directory = os.path.dirname(os.path.abspath(__file__))
 home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
 
-# Initialize SidebarManager
-sidebar_manager = SidebarManager(st.session_state.config_file)
-sb = sidebar_manager.render_sidebar()
+# Initialize SidebarManager first
+if 'sidebar_state_initialized' not in st.session_state:
+    st.session_state.sidebar_manager = SidebarManager(st.session_state.config_file)
+    st.session_state.sb = {}
+
+# Handle sidebar state
+st.session_state.sb = handle_sidebar_state(st.session_state.sidebar_manager)
 
 # Set up session state variables
 if 'viewer' not in st.session_state:
     st.session_state.viewer = None
 
-# Initialize services
-if sb["index_type"] == 'RAGatouille':
+# Initialize services after potential rerun
+if st.session_state.sb["index_type"] == 'RAGatouille':
     raise Exception('RAGatouille not supported for this function.')
 
 embedding_service = EmbeddingService(
-    model_service=sb['embedding_service'],
-    model=sb['embedding_model']
+    model_service=st.session_state.sb['embedding_service'],
+    model=st.session_state.sb['embedding_model']
 )
 
 llm_service = LLMService(
-    model_service=sb['llm_service'],
-    model=sb['llm_model'],
-    temperature=sb['model_options']['temperature'],
-    max_tokens=sb['model_options']['output_level']
+    model_service=st.session_state.sb['llm_service'],
+    model=st.session_state.sb['llm_model'],
+    temperature=st.session_state.sb['model_options']['temperature'],
+    max_tokens=st.session_state.sb['model_options']['output_level']
 )
 
 db_service = DatabaseService(
-    db_type=sb['index_type'],
-    local_db_path=os.getenv('LOCAL_DB_PATH')
+    db_type=st.session_state.sb['index_type'],
+    index_name=st.session_state.sb['index_selected'],
+    rag_type=st.session_state.sb['rag_type'],
+    embedding_service=embedding_service,
+    doc_type='document'
 )
 
 # Add options
 export_file=st.checkbox('Export local dataset file?',value=False,help='Export the data, including embeddings to a parquet file')
 if export_file:
-    file_name=st.text_input('Enter the file name',value=f"{os.path.join(os.getenv('LOCAL_DB_PATH'),sb['index_selected']+'.parquet')}")
+    file_name=st.text_input('Enter the file name',value=f"{os.path.join(os.getenv('LOCAL_DB_PATH'),st.session_state.sb['index_selected']+'.parquet')}")
 hf_dataset=st.checkbox('Export dataset to Hugging Face?',value=False,help='Export the data, including embeddings to a Hugging Face dataset.')
 
 if hf_dataset:
     hf_org_name=st.text_input('Enter the Hugging Face organization name',value='ai-aerospace',help='The organization name on Hugging Face.')
-    dataset_name=st.text_input('Enter the dataset name',value=sb['index_selected'],help='The name of the dataset to be created on Hugging Face. Output will be sidebar selection. Will be appended with ac-.')
+    dataset_name=st.text_input('Enter the dataset name',value=st.session_state.sb['index_selected'],help='The name of the dataset to be created on Hugging Face. Output will be sidebar selection. Will be appended with ac-.')
     dataset_name=hf_org_name+'/'+'ac-'+dataset_name
 
 cluster_data=st.checkbox('Cluster data?',value=False,help='Cluster the data using the embeddings using KMeans clustering.')
@@ -65,8 +72,8 @@ if st.button('Visualize'):
         
         # Get documents and questions from database
         df = db_service.get_docs_questions_df(
-            index_name=sb['index_selected'],
-            query_index_name=sb['index_selected']+'-queries',
+            index_name=st.session_state.sb['index_selected'],
+            query_index_name=st.session_state.sb['index_selected']+'-queries',
             embedding_service=embedding_service
         )
         

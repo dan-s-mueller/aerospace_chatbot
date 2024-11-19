@@ -1,7 +1,7 @@
 from .admin import SidebarManager
 from .utils import (
     setup_page_config,
-    display_chat_history, 
+    handle_sidebar_state,
     display_sources, 
     show_connection_status,
     handle_file_upload,
@@ -12,7 +12,7 @@ from .utils import (
 __all__ = [
     'SidebarManager',
     'setup_page_config',
-    'display_chat_history', 
+    'handle_sidebar_state',
     'display_sources', 
     'handle_file_upload',
     'process_uploads',

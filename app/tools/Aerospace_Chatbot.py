@@ -2,7 +2,7 @@ import streamlit as st
 import os, time
 
 from aerospace_chatbot.core.config import setup_logging
-from aerospace_chatbot.ui import SidebarManager, display_sources, handle_file_upload
+from aerospace_chatbot.ui import SidebarManager, display_sources, handle_file_upload, handle_sidebar_state
 from aerospace_chatbot.processing import QAModel
 from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
 
@@ -47,27 +47,13 @@ info_section = st.container()
 upload_section = st.container()
 chat_section = st.container()
 
-# Initialize SidebarManager first (since other components might depend on it)
+# Initialize SidebarManager first
 if 'sidebar_state_initialized' not in st.session_state:
     st.session_state.sidebar_manager = SidebarManager(st.session_state.config_file)
     st.session_state.sb = {}
 
-# Get previous state for comparison
-previous_state = st.session_state.sb.copy()
-
-# Render sidebar
-st.session_state.sb = st.session_state.sidebar_manager.render_sidebar()
-
-# Check if critical values changed that would affect dependencies
-if (previous_state.get('index_type') != st.session_state.sb.get('index_type') or
-    previous_state.get('rag_type') != st.session_state.sb.get('rag_type') or
-    previous_state.get('embedding_model') != st.session_state.sb.get('embedding_model') or
-    previous_state.get('embedding_service') != st.session_state.sb.get('embedding_service') or
-    previous_state.get('llm_service') != st.session_state.sb.get('llm_service')):
-    # Reset the QA model when services change
-    if 'qa_model_obj' in st.session_state:
-        st.session_state.qa_model_obj = None
-    st.rerun()
+# Handle sidebar state
+st.session_state.sb = handle_sidebar_state(st.session_state.sidebar_manager)
 
 # Header section
 with header:
