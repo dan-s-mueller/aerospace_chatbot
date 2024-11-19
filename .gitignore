@@ -26,10 +26,7 @@ notebooks/playground.ipynb
 notebooks/output/*
 
 # Databases
-db/chromadb
-db/.ragatouille/*
-!db/.ragatouille/colbert/indexes/colbert-ir-colbertv2.0-ams-15merge-2000-2020/
-db/local_file_store
+db/
 
 # Tests
 .pytest_cache/
