@@ -54,7 +54,7 @@ def display_sources(sources, expanded=False):
                             # Extract and display the pages when the user clicks
                             extracted_pdf = _extract_pages_from_pdf(selected_url, page)
                             with tab1:
-                                pdf_viewer(extracted_pdf, width=1000, height=1200, render_text=True)
+                                pdf_viewer(extracted_pdf, width=600, height=1200, render_text=True)
                             with tab2:
                                 st.write("Disabled for now...see download link above!")
                         except Exception as e:

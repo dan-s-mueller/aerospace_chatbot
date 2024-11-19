@@ -8,7 +8,8 @@ from .config import (
     load_config,
     get_secrets,
     set_secrets,
-    setup_logging
+    setup_logging,
+    get_required_api_keys
 )
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     'load_config',
     'get_secrets',
     'set_secrets',
-    'setup_logging'
+    'setup_logging',
+    'get_required_api_keys'
 ]

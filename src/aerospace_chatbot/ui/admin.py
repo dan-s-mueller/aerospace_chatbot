@@ -3,7 +3,7 @@
 import streamlit as st
 import os, logging
 
-from ..core.config import load_config, ConfigurationError, get_secrets, set_secrets
+from ..core.config import load_config, ConfigurationError, get_secrets, set_secrets, get_required_api_keys
 from ..core.cache import Dependencies
 from ..services.database import DatabaseService, get_available_indexes
 
@@ -107,6 +107,21 @@ class SidebarManager:
                 'Standard' if self.sb_out['index_type'] == 'RAGatouille'
                 else self._config['rag_types'][0]
             )
+
+        # Validate required API keys based on config
+        secrets = get_secrets()
+        selected_services = {
+            'index_type': self.sb_out.get('index_type'),
+            'embedding_service': self.sb_out.get('embedding_service'),
+            'llm_service': self.sb_out.get('llm_service')
+        }
+        
+        required_keys = get_required_api_keys(self._config, selected_services)
+        
+        for service, env_var in required_keys.items():
+            if env_var not in secrets or not secrets[env_var]:
+                raise ConfigurationError(f"{service} API key ({env_var}) is required for the selected configuration")
+
     def _render_index_selection(self):
         """Render index selection section."""
         st.sidebar.title('Index Selected')

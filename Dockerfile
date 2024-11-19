@@ -55,6 +55,7 @@ COPY --chown=user:user ./src $HOME/src
 # Set up run env variables.
 ENV LOCAL_DB_PATH=$HOME/db
 ENV AEROSPACE_CHATBOT_CONFIG='admin'
+ENV PYTHONPATH=$HOME/src:$PYTHONPATH
 
 # Set final work directory for the application
 WORKDIR $HOME/app

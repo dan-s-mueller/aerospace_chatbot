@@ -7,6 +7,7 @@ from .core import (
     get_secrets,
     set_secrets,
     setup_logging,
+    get_required_api_keys
 )
 from .processing import (
     DocumentProcessor, 
@@ -52,6 +53,7 @@ __all__ = [
     'get_secrets',
     'set_secrets',  
     'setup_logging',
+    'get_required_api_keys',
     # Services
     'DatabaseService',
     'get_docs_questions_df', 

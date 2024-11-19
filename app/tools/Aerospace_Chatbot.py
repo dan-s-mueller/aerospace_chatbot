@@ -100,7 +100,7 @@ with upload_section:
 logger.info(f"Upload section - Final user_upload value: {st.session_state.user_upload}")
 # Chat section
 with chat_section:
-    chat_col, sources_col = st.columns([1, 1])
+    chat_col, sources_col = st.columns([2, 3])
 
     # Left column for chat
     with chat_col:

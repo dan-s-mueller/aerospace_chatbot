@@ -28,7 +28,6 @@ def load_config(config_path):
         raise ConfigurationError(f"Failed to load config: {str(e)}")
 def get_secrets():
     """Load and return secrets from environment"""
-    # TODO add handling for missing keys. First check if the key is needed based on the config file. Make the list of required secrets. Then check if they are in the environment. If not, raise an error.
     load_dotenv(find_dotenv())
     return {
         'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
@@ -117,3 +116,32 @@ def setup_logging():
     root_logger.info("Logging configured successfully")
     
     return logger 
+
+def get_required_api_keys(config, selected_services):
+    """Determine required API keys based on config and selected services."""
+    required_keys = {}
+    
+    # Map services to their required environment variables
+    service_key_mapping = {
+        'OpenAI': 'OPENAI_API_KEY',
+        'Anthropic': 'ANTHROPIC_API_KEY',
+        'Hugging Face': 'HUGGINGFACEHUB_API_KEY',
+        'Voyage': 'VOYAGE_API_KEY',
+        'Pinecone': 'PINECONE_API_KEY'
+    }
+    
+    # Check database requirements
+    for db in config['databases']:
+        if db['name'] == selected_services.get('index_type'):
+            if db['name'] in service_key_mapping:
+                required_keys[db['name']] = service_key_mapping[db['name']]
+    
+    # Check embedding service requirements
+    if selected_services.get('embedding_service') in service_key_mapping:
+        required_keys[selected_services['embedding_service']] = service_key_mapping[selected_services['embedding_service']]
+    
+    # Check LLM service requirements
+    if selected_services.get('llm_service') in service_key_mapping:
+        required_keys[selected_services['llm_service']] = service_key_mapping[selected_services['llm_service']]
+    
+    return required_keys 
