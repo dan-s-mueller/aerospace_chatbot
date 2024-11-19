@@ -36,8 +36,9 @@ jobs:
         python -m poetry install
     - name: Test with pytest
       env:
-        HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
+        HUGGINGFACEHUB_API_KEY: ${{ secrets.HUGGINGFACEHUB_API_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
         VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
       run: |

@@ -14,8 +14,9 @@ Environment Variables
 
 There are several environment variables that are used to control the chatbot's behavior. These can be set in the `.env` file, or if in a deployed environment statically.
 
-- `DEBUG` - Set to `True` to enable debug mode, which will print additional information to the console.
-- `LOG_LEVEL` - Set to `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` to control the level of logging output.
-- `OPENAI_API_KEY`, `VOYAGE_API_KEY`, `PINECONE_API_KEY`, `HUGGINGFACEHUB_API_TOKEN` - These are the API keys used to access the services.
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`, `PINECONE_API_KEY`, `HUGGINGFACEHUB_API_TOKEN` - These are the API keys used to access the services.
 - `LOCAL_DB_PATH` - This is the path to the local database used for storing chat.
 - `AEROSPACE_CHATBOT_CONFIG` - This sets the level of access for the chatbot. `admin` provides full functionality. `tester` limits functionality to fewer models and read only access to the databases.
+- `LOG_LEVEL` - This is the level of logging to use.
+- `LOG_FILE` - This is the path to the log file.
+- `LOG_FORMAT` - This is the format of the log file.
