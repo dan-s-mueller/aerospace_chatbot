@@ -2,18 +2,18 @@
     "databases": [
         {
             "name": "Pinecone",
-            "embedding_models": ["OpenAI"]
+            "embedding_services": ["OpenAI"]
         }
     ],
     "embeddings": [
         {
-            "name": "OpenAI",
-            "embedding_models": ["text-embedding-3-large"]
+            "service": "OpenAI",
+            "models": ["text-embedding-3-large"]
         }
     ],
     "llms": [
         {
-            "name": "OpenAI",
+            "service": "OpenAI",
             "models": [
                 "gpt-4o",
                 "gpt-4o-mini",
@@ -21,7 +21,7 @@
             ]
         },
         {
-            "name": "Anthropic",
+            "service": "Anthropic",
             "models": [
                 "claude-3-5-sonnet-latest"
             ]
@@ -29,9 +29,9 @@
     ],
     "rag_types": ["Standard"],
     "disabled_controls": {
-        "embeddings": ["query_model", "embedding_name", "embedding_endpoint"],
-        "rag": ["rag_type", "rag_llm_source", "rag_llm_model", "rag_endpoint"],
-        "llm": ["llm_source", "llm_model", "llm_endpoint"],
+        "embeddings": ["embedding_service", "embedding_model", "embedding_endpoint"],
+        "rag": ["rag_type", "rag_llm_service", "rag_llm_model", "rag_endpoint"],
+        "llm": ["llm_service", "llm_model", "llm_endpoint"],
         "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"],
         "index": ["index_type"],
         "model_options": ["output_level", "search_type"]

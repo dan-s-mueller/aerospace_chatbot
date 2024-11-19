@@ -1,260 +1,228 @@
-import os, sys, time, ast
 import streamlit as st
-from streamlit_pdf_viewer import pdf_viewer
-import tempfile
-from pinecone import Pinecone as pinecone_client
+import os, time
 
-sys.path.append('../src/aerospace_chatbot')   # Add package to path
-import admin, queries, data_processing
+from aerospace_chatbot.core.config import setup_logging
+from aerospace_chatbot.ui import SidebarManager, display_sources, handle_file_upload, handle_sidebar_state
+from aerospace_chatbot.processing import QAModel
+from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
 
-def handle_file_upload(sb, secrets, paths):
-    """Handle file upload functionality for the chatbot."""
-    if not _validate_upload_settings(sb):
-        return
+logger = setup_logging()
 
-    uploaded_files = st.file_uploader("Choose pdf files", accept_multiple_files=True)
-    if not uploaded_files:
-        return
-
-    temp_files = _save_uploads_to_temp(uploaded_files)
-    
-    if st.button('Upload your docs into vector database'):
-        with st.spinner('Uploading and merging your documents with the database...'):
-            _process_uploads(sb, secrets, paths, temp_files)
-
-    if st.session_state.user_upload:
-        st.markdown(
-            f":white_check_mark: Merged! Your upload ID: `{st.session_state.user_upload}`. "
-            "This will be used for this chat session to also include your documents. "
-            "When you restart the chat, you'll have to re-upload your documents."
-        )
-def _validate_upload_settings(sb):
-    """Validate RAG type and index type settings."""
-    if sb['rag_type'] != "Standard":
-        st.error("Only Standard RAG is supported for user document upload.")
-        return False
-    if sb['index_type'] != 'Pinecone':
-        st.error("Only Pinecone is supported for user document upload.")
-        return False
-    
-    st.write("Upload parameters set to standard values, hard coded for now...standard only")
-    return True
-def _save_uploads_to_temp(uploaded_files):
-    """Save uploaded files to temporary directory."""
-    temp_files = []
-    for uploaded_file in uploaded_files:
-        temp_path = os.path.join(tempfile.gettempdir(), uploaded_file.name)
-        with open(temp_path, 'wb') as temp_file:
-            temp_file.write(uploaded_file.read())
-        temp_files.append(temp_path)
-    return temp_files
-def _process_uploads(sb, secrets, paths, temp_files):
-    """Process uploaded files and merge them into the vector database."""
-    # Initialize Pinecone and get index metadata
-    pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-    selected_index = pc.Index(sb['index_selected'])
-    index_metadata = selected_index.fetch(ids=['db_metadata'])['vectors']['db_metadata']['metadata']
-    
-    # Get query model
-    query_model = admin.get_query_model({
-        'index_type': sb['index_type'],
-        'query_model': index_metadata['query_model'],
-        'embedding_name': index_metadata['embedding_model']
-    }, secrets)
-    
-    # Prepare chunking parameters
-    chunk_params = {
-        key: int(value) if isinstance(value, float) else value
-        for key, value in index_metadata.items()
-        if key not in ['query_model', 'embedding_model'] and value is not None
-    }
-    
-    # Generate unique identifier and process documents
-    st.session_state.user_upload = f"user_upload_{os.urandom(3).hex()}"
-    
-    st.markdown("*Uploading user documents to namespace...*")
-    data_processing.load_docs(
-        sb['index_type'],
-        temp_files,
-        query_model,
-        index_name=sb['index_selected'],
-        local_db_path=paths['db_folder_path'],
-        show_progress=True,
-        namespace=st.session_state.user_upload,
-        **chunk_params
-    )
-    
-    st.markdown("*Merging user document with existing documents...*")
-    data_processing.copy_pinecone_vectors(
-        selected_index,
-        None,
-        st.session_state.user_upload,
-        show_progress=True
-    )
-def _reset_conversation():
-    """
-    Resets the conversation by clearing the session state variables related to the chatbot.
-
-    Returns:
-        None
-    """
-    st.session_state.qa_model_obj = []
-    st.session_state.message_id = 0
-    st.session_state.messages = []
-    st.session_state.pdf_urls = []
-    return None
-
-# Page setup
-st.title('🚀 Aerospace Chatbot')
-current_directory = os.path.dirname(os.path.abspath(__file__))
-home_dir = os.path.abspath(os.path.join(current_directory, "../../"))
-
-# Initialize SidebarManager
-sidebar_manager = admin.SidebarManager(st.session_state.config_file)
-
-# Get paths, sidebar values, and secrets
-paths = sidebar_manager.get_paths(home_dir)
-sb = sidebar_manager.render_sidebar()
-secrets = sidebar_manager.get_secrets()
-
-# Disable sidebar elements after first message
-if 'message_id' in st.session_state and st.session_state.message_id > 0:
-    # Disable individual sidebar elements
-    st.session_state['index_disabled'] = True
-    st.session_state['embeddings_disabled'] = True
-    st.session_state['rag_disabled'] = True
-    st.session_state['llm_disabled'] = True
-    st.session_state['model_options_disabled'] = True
-
-# Set up chat history
-if 'user_upload' not in st.session_state:
-    st.session_state.user_upload = None
-if 'qa_model_obj' not in st.session_state:
-    st.session_state.qa_model_obj = []
-if 'message_id' not in st.session_state:
-    st.session_state.message_id = 0
+# Initialize session state variables if they don't exist
+if 'sb' not in st.session_state:
+    st.session_state.sidebar_manager = None
+    st.session_state.sb = None
 if 'messages' not in st.session_state:
     st.session_state.messages = []
-for message in st.session_state.messages:
-    with st.chat_message(message['role']):
-        st.markdown(message['content'])
+if 'message_id' not in st.session_state:
+    st.session_state.message_id = 0
+if 'qa_model_obj' not in st.session_state:
+    st.session_state.qa_model_obj = None
 if 'pdf_urls' not in st.session_state:
     st.session_state.pdf_urls = []
-reset_query_db=False    # Add reset option for query database
+if 'user_upload' not in st.session_state:
+    st.session_state.user_upload = None
+logger.info(f"Initial user_upload value: {st.session_state.user_upload}")
 
-# Add expander with functionality details.
-with st.expander('''Helpful Information'''):
-    st.info("""
-            * [Help Docs](https://aerospace-chatbot.readthedocs.io/en/latest/index.html)
-            * [Code Repository](https://github.com/dan-s-mueller/aerospace_chatbot)
-            * For questions and problem reporting, please create an issue [here](https://github.com/dan-s-mueller/aerospace_chatbot/issues/new)
-            """)
-    st.subheader("Aerospace Mechanisms Chatbot")
-    st.markdown("""
-    This is a beta version vesion of the Aerospace Chatbot. The tool comes loaded with a subset of the [Aerospace Mecahnisms Symposia](https://aeromechanisms.com/past-symposia/) papers. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)
+def _reset_conversation():
+    """Resets the conversation by clearing the session state variables related to the chatbot."""
+    if 'qa_model_obj' in st.session_state:
+        # Clean up existing database connections
+        if st.session_state.qa_model_obj:
+            try:
+                st.session_state.qa_model_obj.query_db_service.delete_index()
+            except:
+                pass
     
-    To enable optimal retrieval, each paper has had Optical Character Recognition (OCR) reperformend using the latest release of [OCR my PDF](https://ocrmypdf.readthedocs.io/en/latest/).
+    st.session_state.qa_model_obj = None
+    st.session_state.message_id = 0
+    st.session_state.messages = []
+    st.session_state.pdf_urls = []
+    st.session_state.user_upload = None
+    return None
 
-    """)
+# Create fixed containers
+header = st.container()
+info_section = st.container()
+upload_section = st.container()
+chat_section = st.container()
 
-if st.session_state.message_id == 0:
-    with st.expander("Upload files to existing database",expanded=True):
-        handle_file_upload(sb, secrets, paths)
+# Initialize SidebarManager first
+if 'sidebar_state_initialized' not in st.session_state:
+    st.session_state.sidebar_manager = SidebarManager(st.session_state.config_file)
+    st.session_state.sb = {}
 
-# Define chat
-if prompt := st.chat_input('Prompt here'):
-    # User prompt
-    st.session_state.messages.append({'role': 'user', 'content': prompt})
-    with st.chat_message('user'):
-        st.markdown(prompt)
-    # Assistant response
-    with st.chat_message('assistant'):
-        message_placeholder = st.empty()
+# Handle sidebar state
+st.session_state.sb = handle_sidebar_state(st.session_state.sidebar_manager)
 
-        with st.status('Generating response...') as status:
-            t_start=time.time()
+# Header section
+with header:
+    st.title('🚀 Aerospace Chatbot')
 
-            st.session_state.message_id += 1
-            st.write(f'*Starting response generation for message: {str(st.session_state.message_id)}*')
+# Info section - Always visible at top
+with info_section:
+    with st.expander('Helpful Information'):
+        st.info("""
+                * [Help Docs](https://aerospace-chatbot.readthedocs.io/en/latest/index.html)
+                * [Code Repository](https://github.com/dan-s-mueller/aerospace_chatbot)
+                * For questions and problem reporting, please create an issue [here](https://github.com/dan-s-mueller/aerospace_chatbot/issues/new)
+                """)
+        st.subheader("Aerospace Mechanisms Chatbot")
+        st.markdown("""
+        This is a beta version of the Aerospace Chatbot. The tool comes loaded with a subset of the [Aerospace Mechanisms Symposia](https://aeromechanisms.com/past-symposia/) papers. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)        
+        """)
+
+# Upload section - Only visible when no messages
+with upload_section:
+    if len(st.session_state.get('messages', [])) == 0:
+        with st.expander("Upload files to existing database", expanded=True):
+            # Only call handle_file_upload if we don't already have a user_upload value
+            if not st.session_state.user_upload:
+                upload_result = handle_file_upload(st.session_state.sb)
+                if upload_result:  # Only update if we got a new upload ID
+                    st.session_state.user_upload = upload_result
+    if st.session_state.user_upload:
+        st.markdown(
+            f""":white_check_mark: Merged! Your upload ID: `{st.session_state.user_upload}`.
+                This will be used for this chat session to also include your documents.
+                When you restart the chat, you'll have to re-upload your documents.
+                """
+        )
+logger.info(f"Upload section - Final user_upload value: {st.session_state.user_upload}")
+# Chat section
+with chat_section:
+    chat_col, sources_col = st.columns([2, 3])
+
+    # Left column for chat
+    with chat_col:
+        # Move the upload ID message outside of the chat flow
+        if st.session_state.user_upload:
+            st.info(f"Using merged user documents with index. Your upload ID: `{st.session_state.user_upload}`")
             
-            if st.session_state.message_id==1:  # Initialize chat
-                query_model = admin.get_query_model(sb, secrets)    # Set query model
-                llm=admin.set_llm(sb,secrets,type='prompt') # Define LLM
-
-                # Initialize QA model object
-                if 'search_type' in sb['model_options']: 
-                    search_type=sb['model_options']['search_type']
-                else:
-                    search_type=None
-                st.session_state.qa_model_obj=queries.QA_Model(sb['index_type'],
-                                                               sb['index_selected'],
-                                                               query_model,
-                                                               llm,
-                                                               rag_type=sb['rag_type'],
-                                                               k=sb['model_options']['k'],
-                                                               search_type=search_type,
-                                                               local_db_path=paths['db_folder_path'],
-                                                               namespace=st.session_state.user_upload,
-                                                               reset_query_db=reset_query_db)
-                # reset_query_db.empty()  # Remove this option after initialization
-            if st.session_state.message_id>1:   # Chat after first message and initialization
-                # Update LLM
-                llm=admin.set_llm(sb,secrets,type='prompt')
-                st.session_state.qa_model_obj.update_model(llm)
+        if st.button('Restart session'):
+            _reset_conversation()
+            st.rerun()
             
-            st.write('*Searching vector database, generating prompt...*')
-            st.write(f"*Query added to query database: {sb['index_selected']+'-queries'}*")
-            st.session_state.qa_model_obj.query_docs(prompt)
-            ai_response=st.session_state.qa_model_obj.ai_response
+        # Regular chat input and message processing below
+        if 'selected_question' in st.session_state:
+            prompt = st.session_state.selected_question
+            del st.session_state.selected_question
+        else:
+            prompt = st.chat_input("Prompt here")
+            logger.info(f"Prompt: {prompt}")
+            logger.info(f"User upload: {st.session_state.user_upload}")
+        
+        # If there's a new prompt, process it first
+        if prompt:
+            logger.info(f"Before prompt processing - user_upload: {st.session_state.user_upload}")
+            # Show processing message first
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                try:
+                    t_start = time.time()
+                    with st.status('Generating response...') as status:
+                        st.write(f'*Starting response generation for message: {str(st.session_state.message_id)}*')
+                        st.write(f'*Prompt: {prompt}*')
+                        
+                        # Initialize services
+                        embedding_service = EmbeddingService(
+                            model_service=st.session_state.sb['embedding_service'],
+                            model=st.session_state.sb['embedding_model']
+                        )
+                        
+                        llm_service = LLMService(
+                            model_service=st.session_state.sb['llm_service'],
+                            model=st.session_state.sb['llm_model'],
+                            temperature=st.session_state.sb['model_options']['temperature'],
+                            max_tokens=st.session_state.sb['model_options']['output_level']
+                        )
+                        
+                        # Initialize database service
+                        db_service = DatabaseService(
+                            db_type=st.session_state.sb['index_type'],
+                            index_name=st.session_state.sb['index_selected'],
+                            rag_type=st.session_state.sb['rag_type'],
+                            embedding_service=embedding_service,
+                            doc_type='document'
+                        )
+                        
+                        try:
+                            db_service.initialize_database(
+                                namespace=st.session_state.user_upload
+                            )
+                        except ValueError as e:
+                            st.error(f"Database initialization failed: {str(e)}")
+                            st.stop()
 
-            message_placeholder.markdown(ai_response)
-            st.info("**Alternative questions:** \n\n\n"+
-                     st.session_state.qa_model_obj.generate_alternative_questions(prompt))
+                        # Initialize QA model
+                        if not st.session_state.qa_model_obj:
+                            st.session_state.qa_model_obj = QAModel(
+                                db_service=db_service,
+                                llm_service=llm_service,
+                                k=st.session_state.sb['model_options']['k']
+                            )
 
-            t_delta=time.time() - t_start
-            status.update(label=':white_check_mark: Prompt generated in '+"{:10.3f}".format(t_delta)+' seconds', state='complete', expanded=False)
+                        st.write('*Searching vector database, generating prompt...*')
+                        result = st.session_state.qa_model_obj.query(prompt)
+                        ai_response = st.session_state.qa_model_obj.ai_response
+                        similar_questions = st.session_state.qa_model_obj.generate_alternative_questions(prompt)
+                        
+                        message_placeholder.markdown(ai_response)
+                        response_time = time.time() - t_start
+                        
+                        # Add messages to session state in correct order
+                        logger.info(f"Sources: {st.session_state.qa_model_obj.sources[-1]}")
+                        st.session_state.messages.insert(0, {
+                            'role': 'assistant', 
+                            'content': ai_response, 
+                            'sources': st.session_state.qa_model_obj.sources[-1],
+                            'alternative_questions': similar_questions,
+                            'response_time': response_time,
+                            'message_id': st.session_state.message_id
+                        })
+                        st.session_state.messages.insert(1, {"role": "user", "content": prompt})
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"An error occurred: {str(e)}")
+                    st.stop()
+        
+        # Always show message history
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+                if message["role"] == "assistant":
+                    with st.status('Response Status', state="complete") as status:
+                        st.write(f'Message ID: {message.get("message_id", "N/A")}')
+                        st.write('✅ Response generated successfully')
+                        if 'response_time' in message:
+                            st.write(f'⏱️ Response time: {message["response_time"]:.2f} seconds')
+
+    # Right column - Persistent display of last message's info
+    with sources_col:
+        if st.session_state.messages and len(st.session_state.messages) > 0:
+            last_message = st.session_state.messages[0]  # Get most recent message
             
-        # Create a dropdown box with hyperlinks to PDFs and their pages
-        with st.container():
-            with st.spinner('Bring you source documents...'):
-                st.write(":notebook: Source Documents")
-                for source in st.session_state.qa_model_obj.sources[-1]:
-                    st.session_state.pdf_urls=[]
-                    page = source.get('page')
-                    pdf_source = source.get('source')
-                    
-                    # Parse string representations of lists
-                    try:
-                        page = ast.literal_eval(page) if isinstance(page, str) else page
-                        pdf_source = ast.literal_eval(pdf_source) if isinstance(pdf_source, str) else pdf_source
-                    except (ValueError, SyntaxError):
-                        # If parsing fails, keep the original value
-                        pass
+            # Alternative questions section at the top
+            with st.container():
+                if 'alternative_questions' in last_message:
+                    st.markdown("💡 Alternative Questions", help="Click on a question to use as a prompt.")
+                    # Replace st.info with buttons for each question
+                    for question in last_message['alternative_questions']:
+                        if st.button(f"🔄 {question}", key=f"btn_{hash(question)}"):
+                            # Store the question in session state
+                            st.session_state.selected_question = question
+                            st.rerun()
+            
+            # Source documents section below
+            with st.container():
+                if 'sources' in last_message:
+                    st.markdown("📚 Source Documents")
+                    display_sources(last_message['sources'])
 
-                    # Extract first element if it's a list
-                    page = page[0] if isinstance(page, list) and page else page
-                    pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
-                    
-                    if pdf_source and page is not None:
-                        selected_url = f"https://storage.googleapis.com/aerospace_mechanisms_chatbot_demo/{pdf_source}"
-                        st.session_state.pdf_urls.append(selected_url)
-                        st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
-
-                        with st.expander(":memo: View"):
-                            tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
-                            try:
-                                # Extract and display the pages when the user clicks
-                                extracted_pdf = admin.extract_pages_from_pdf(selected_url, page)
-                                with tab1:
-                                    pdf_viewer(extracted_pdf,width=1000,height=1200,render_text=True)
-                                with tab2:
-                                    # pdf_viewer(full_pdf, width=1000,height=1200,render_text=True)
-                                    st.write("Disabled for now...see download link above!")
-                            except Exception as e:
-                                st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. Contact support if this issue persists. User file uploads not yet supported.")
-
-        st.session_state.messages.append({'role': 'assistant', 'content': ai_response})
-
-# Add reset button
-if st.button('Restart session'):
-    _reset_conversation()
+        # If we're processing a new message, show its info too
+        if prompt:
+            with st.spinner('Loading response details...'):
+                # This will show while the response is being generated
+                if 'qa_model_obj' in st.session_state and st.session_state.qa_model_obj:
+                    if hasattr(st.session_state.qa_model_obj, 'sources'):
+                        display_sources(st.session_state.qa_model_obj.sources[-1])

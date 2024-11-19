@@ -10,9 +10,9 @@ Run the following for backend testing:
 .. code-block:: shell
 
    cd /tests
-   python -m pytest test_backend.py -v -s
+   python -m pytest test_chatbot.py -v -s
 
-.. automodule:: tests.test_backend
+.. automodule:: tests.test_chatbot
    :members:
    :undoc-members:
    :show-inheritance:

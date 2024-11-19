@@ -2,15 +2,13 @@
 FROM python:3.11.5-bookworm
 
 # Do root things: clone repo and install dependencies. libsndfile1 for spotlight. libhdf5-serial-dev for vector distance.
-USER root
+# USER root
 
 RUN useradd -m -u 1000 user && chown -R user:user /home/user && chmod -R 777 /home/user
 
-RUN apt-get update && apt-get install -y \
-    libhdf5-serial-dev \
-    libsndfile1 \
-    curl \   
-    && rm -rf /var/lib/apt/lists/*
+# Install sudo and add user to sudoers before switching to non-root
+RUN apt-get update && apt-get install -y sudo && \
+    echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 USER user
 
@@ -18,6 +16,20 @@ USER user
 ENV HOME=/home/user \
 	PATH=/home/user/.local/bin:$PATH
 WORKDIR $HOME
+
+# Use sudo for apt-get commands
+RUN sudo apt-get update && sudo apt-get install -y \
+    libhdf5-serial-dev \
+    libsndfile1 \
+    curl \   
+    && sudo rm -rf /var/lib/apt/lists/*
+
+# USER user
+
+# # Set home to the user's home directory
+# ENV HOME=/home/user \
+# 	PATH=/home/user/.local/bin:$PATH
+# WORKDIR $HOME
 
 # Create directories for the app code to be copied into
 RUN mkdir $HOME/app 
@@ -55,6 +67,7 @@ COPY --chown=user:user ./src $HOME/src
 # Set up run env variables.
 ENV LOCAL_DB_PATH=$HOME/db
 ENV AEROSPACE_CHATBOT_CONFIG='admin'
+ENV PYTHONPATH=$HOME/src:$PYTHONPATH
 
 # Set final work directory for the application
 WORKDIR $HOME/app
