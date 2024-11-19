@@ -17,14 +17,7 @@ def setup_page_config(title: str = "Aerospace Chatbot", layout: str = "wide"):
         layout=layout,
         page_icon="🚀"
     )
-def display_chat_history(history, show_metadata = False):
-    """Display chat history with optional metadata."""
-    for msg in history:
-        with st.chat_message(msg["role"]):
-            st.write(msg["content"])
-            if show_metadata and "metadata" in msg:
-                with st.expander("Message Metadata"):
-                    st.json(msg["metadata"])
+
 def display_sources(sources, expanded=False):
     """Display reference sources in an expander with PDF preview functionality."""
     with st.container():

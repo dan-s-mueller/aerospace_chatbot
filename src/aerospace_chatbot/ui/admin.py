@@ -54,7 +54,8 @@ class SidebarManager:
         """Render the complete sidebar based on enabled options."""
         try:
             # Sync any changed values from session state first
-            for key in ['index_type', 'rag_type', 'embedding_model', 'embedding_service']:
+            for key in ['index_type', 'rag_type', 'embedding_model', 'embedding_service', 
+                       'openai_key', 'anthropic_key', 'voyage_key', 'pinecone_key', 'hf_key']:
                 if f'{key}_select' in st.session_state:
                     self.sb_out[key] = st.session_state[f'{key}_select']
             
@@ -343,8 +344,9 @@ class SidebarManager:
                 'OpenAI API Key',
                 value='.env' if key in existing_secrets else '',
                 disabled=key in existing_secrets or st.session_state.openai_key_disabled,
-                type='default' if key in existing_secrets else 'password',  # Show text if from .env
-                help='OpenAI API Key: https://platform.openai.com/api-keys'
+                type='default' if key in existing_secrets else 'password',
+                help='OpenAI API Key: https://platform.openai.com/api-keys',
+                key='openai_key_select'  # Add unique key for state management
             )
         
         if 'llm_service' in self.sb_out and self.sb_out['llm_service'] == 'Anthropic':
@@ -354,7 +356,8 @@ class SidebarManager:
                 value='.env' if key in existing_secrets else '',
                 disabled=key in existing_secrets or st.session_state.anthropic_key_disabled,
                 type='default' if key in existing_secrets else 'password',
-                help='Anthropic API Key: https://console.anthropic.com/settings/keys'
+                help='Anthropic API Key: https://console.anthropic.com/settings/keys',
+                key='anthropic_key_select'
             )
         
         if 'embedding_service' in self.sb_out and self.sb_out['embedding_service'] == 'Voyage':
@@ -364,7 +367,8 @@ class SidebarManager:
                 value='.env' if key in existing_secrets else '',
                 disabled=key in existing_secrets or st.session_state.voyage_key_disabled,
                 type='default' if key in existing_secrets else 'password',
-                help='Voyage API Key: https://dash.voyageai.com/api-keys'
+                help='Voyage API Key: https://dash.voyageai.com/api-keys',
+                key='voyage_key_select'
             )
         
         if 'index_type' in self.sb_out and self.sb_out['index_type'] == 'Pinecone':
@@ -374,7 +378,8 @@ class SidebarManager:
                 value='.env' if key in existing_secrets else '',
                 disabled=key in existing_secrets or st.session_state.pinecone_key_disabled,
                 type='default' if key in existing_secrets else 'password',
-                help='Pinecone API Key: https://www.pinecone.io/'
+                help='Pinecone API Key: https://www.pinecone.io/',
+                key='pinecone_key_select'
             )
         
         if ('llm_service' in self.sb_out and self.sb_out['llm_service'] == 'Hugging Face') or \
@@ -385,8 +390,12 @@ class SidebarManager:
                 value='.env' if key in existing_secrets else '',
                 disabled=key in existing_secrets or st.session_state.hf_key_disabled,
                 type='default' if key in existing_secrets else 'password',
-                help='Hugging Face API Key: https://huggingface.co/settings/tokens'
+                help='Hugging Face API Key: https://huggingface.co/settings/tokens',
+                key='hf_key_select'
             )
+        
+        # Update session state immediately with any changes
+        st.session_state.sb = self.sb_out
         
         # Set secrets and environment variables
         try:
