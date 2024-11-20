@@ -148,7 +148,7 @@ with chat_section:
                         
                         try:
                             db_service.initialize_database(
-                                namespace=st.session_state.user_upload
+                                namespace=st.session_state.user_upload,
                             )
                         except ValueError as e:
                             st.error(f"Database initialization failed: {str(e)}")
