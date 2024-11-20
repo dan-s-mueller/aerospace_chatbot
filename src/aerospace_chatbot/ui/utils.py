@@ -2,7 +2,6 @@
 
 import streamlit as st
 import os, ast, tempfile, logging
-from streamlit_pdf_viewer import pdf_viewer
 
 from ..core.cache import Dependencies
 from ..core.config import get_secrets
@@ -58,18 +57,16 @@ def display_sources(sources, expanded=False):
                 if pdf_source and page is not None:
                     selected_url = f"https://storage.googleapis.com/{pdf_source}"
                     st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
-
                     with st.expander(":memo: View"):
                         tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
                         try:
-                            # Extract and display the pages when the user clicks
                             extracted_pdf = _extract_pages_from_pdf(selected_url, page)
                             with tab1:
-                                pdf_viewer(extracted_pdf, width=600, height=1200, render_text=True)
+                                displayPDF(extracted_pdf, "100%", 1000)
                             with tab2:
                                 st.write("Disabled for now...see download link above!")
                         except Exception as e:
-                            st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. Contact support if this issue persists. User file uploads not yet supported.")
+                            st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. User file uploads not yet supported. ")
 def show_connection_status(expanded = True, delete_buttons = False):
     """Display connection status for various services with optional delete functionality. """
     with st.expander("Connection Status", expanded=expanded):
@@ -271,6 +268,7 @@ def _save_uploads_to_temp(uploaded_files):
 
 def _extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
+    import io
     fitz, requests, _, _ = Dependencies.Document.get_processors()
     
     try:
@@ -287,11 +285,29 @@ def _extract_pages_from_pdf(url, target_page, page_range=5):
         for i in range(start_page, end_page + 1):
             extracted_doc.insert_pdf(doc, from_page=i, to_page=i)
 
-        extracted_pdf = extracted_doc.tobytes()
+        extracted_pdf_bytes = extracted_doc.tobytes()
         extracted_doc.close()
         doc.close()
-        return extracted_pdf
+
+        # Return a BytesIO object to simulate a file-like object
+        return io.BytesIO(extracted_pdf_bytes)
 
     except Exception as e:
         st.error(f"Error processing PDF: {str(e)}")
         return None
+        
+def displayPDF(upl_file, ui_width, ui_height):
+    """Display a PDF file in a Streamlit app."""
+    import base64
+
+    # Read file as bytes:
+    bytes_data = upl_file.read()
+
+    # Convert to utf-8
+    base64_pdf = base64.b64encode(bytes_data).decode("utf-8")
+
+    # Embed PDF in HTML
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width={str(ui_width)} height={str(ui_height)} type="application/pdf"></iframe>'
+
+    # Display file
+    st.markdown(pdf_display, unsafe_allow_html=True)

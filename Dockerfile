@@ -61,7 +61,7 @@ RUN python3 -m pip install --user --no-warn-script-location poetry \
 # Copy the rest of your application code.
 COPY --chown=user:user ./app $HOME/app
 COPY --chown=user:user ./config $HOME/config
-COPY --chown=user:user ./db $HOME/db
+# COPY --chown=user:user ./db $HOME/db
 COPY --chown=user:user ./src $HOME/src
 
 # Set up run env variables.
