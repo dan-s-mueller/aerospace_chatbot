@@ -114,29 +114,47 @@ class DocumentProcessor:
         """Load PDF documents and clean their contents."""
         _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
         _, _, storage, PyPDFLoader = Dependencies.Document.get_processors()
+
+        def _download_and_validate_pdf(doc_in, temp_dir):
+            """Download and validate a PDF document."""
+            
+            # Handle GCS URLs
+            if doc_in.startswith('gs://'):
+                bucket_name = doc_in.split('/')[2]
+                blob_name = '/'.join(doc_in.split('/')[3:])
+                self.logger.info(f"Bucket name: {bucket_name}")
+                self.logger.info(f"Blob name: {blob_name}")
+                
+                # Download file from GCS
+                storage_client = storage.Client()
+                bucket = storage_client.bucket(bucket_name)
+                blob = bucket.blob(blob_name)
+                local_path = f"{temp_dir}/{blob_name.split('/')[-1]}"
+                blob.download_to_filename(local_path)
+                doc_local_temp = local_path
+            else:
+                doc_local_temp = doc_in
+
+            # Validate the PDF
+            try:
+                loader = PyPDFLoader(doc_local_temp)
+                loader.load()
+            except Exception as e:
+                self.logger.error(f"Invalid PDF document: {doc_in}. Error: {str(e)}")
+                return None
+
+            return doc_local_temp
         
         cleaned_docs = []
+        invalid_docs = []
         with tempfile.TemporaryDirectory() as temp_dir:
             for i, doc_in in enumerate(documents):
-                self.logger.info(f"Processing document {i+1} of {len(documents)}: {doc_in}")
+                self.logger.info(f"Checking document {i+1} of {len(documents)}: {doc_in}")
 
-                # Handle GCS URLs
-                if doc_in.startswith('gs://'):
-                    # Parse bucket and blob name
-                    bucket_name = doc_in.split('/')[2]
-                    blob_name = '/'.join(doc_in.split('/')[3:])
-                    self.logger.info(f"Bucket name: {bucket_name}")
-                    self.logger.info(f"Blob name: {blob_name}")
-                    
-                    # Download file from GCS
-                    storage_client = storage.Client()
-                    bucket = storage_client.bucket(bucket_name)
-                    blob = bucket.blob(blob_name)
-                    local_path = f"{temp_dir}/{blob_name.split('/')[-1]}"
-                    blob.download_to_filename(local_path)
-                    doc_local_temp = local_path
-                else:
-                    doc_local_temp = doc_in
+                doc_local_temp = _download_and_validate_pdf(doc_in, temp_dir)
+                if doc_local_temp is None:
+                    invalid_docs.append(doc_in)
+                    continue
 
                 # Load and process the PDF
                 loader = PyPDFLoader(doc_local_temp)
@@ -165,6 +183,9 @@ class DocumentProcessor:
                         cleaned_docs.append(merged_doc)
                 else:
                     cleaned_docs.extend(doc_pages)
+
+            if invalid_docs:
+                raise ValueError(f"Invalid PDF documents detected: {', '.join(invalid_docs)}")
         
         return cleaned_docs
     def _process_standard(self, documents):

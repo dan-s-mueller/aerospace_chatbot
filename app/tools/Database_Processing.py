@@ -164,8 +164,4 @@ if st.button('Load docs into vector database'):
             
         except Exception as e:
             st.error(f"Error processing documents: {str(e)}")
-            # Try to clean up on failure
-            try:
-                db_service.delete_index()
-            except:
-                pass
+            raise e

@@ -37,9 +37,12 @@ def handle_sidebar_state(sidebar_manager):
 
 def display_sources(sources, expanded=False):
     """Display reference sources in an expander with PDF preview functionality."""
+    logger = logging.getLogger(__name__)
+
     with st.container():
         with st.spinner('Bringing you source documents...'):
             for source in sources:
+                logger.info(f"Starting to display source: {source}")
                 page = source.get('page')
                 pdf_source = source.get('source')
                 
@@ -61,12 +64,20 @@ def display_sources(sources, expanded=False):
                         tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
                         try:
                             extracted_pdf = _extract_pages_from_pdf(selected_url, page)
+                            logger.info(f"Extracted PDF...")
                             with tab1:
                                 displayPDF(extracted_pdf, "100%", 1000)
+                                logger.info(f"Displayed PDF...")
                             with tab2:
                                 st.write("Disabled for now...see download link above!")
+                        except ValueError as e:
+                            if "The PDF file is too large" in str(e):
+                                # TODO add handling here to just display the text if the PDF is too large
+                                st.warning("Large PDF, download file to view.")
+                            else:
+                                st.warning(f"Error processing PDF: {str(e)}")
                         except Exception as e:
-                            st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. User file uploads not yet supported. ")
+                            st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. User file uploads not yet supported.")
 def show_connection_status(expanded = True, delete_buttons = False):
     """Display connection status for various services with optional delete functionality. """
     with st.expander("Connection Status", expanded=expanded):
@@ -268,11 +279,27 @@ def _save_uploads_to_temp(uploaded_files):
 
 def _extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
+    logger = logging.getLogger(__name__)
+    
     import io
     fitz, requests, _, _ = Dependencies.Document.get_processors()
     
     try:
-        response = requests.get(url)
+        # First check file size to see if it's too large
+        response = requests.head(url, timeout=10)
+        response.raise_for_status()
+
+        # Get the content length from headers
+        content_length = response.headers.get('Content-Length')
+        if content_length is not None:
+            pdf_size_mb = int(content_length) / (1024 * 1024)  # Convert bytes to MB
+            logger.info(f"Content length (MB): {pdf_size_mb}")
+            if pdf_size_mb > 500:
+                logger.error(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds 500MB).")
+                raise ValueError(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds 500MB).")
+
+        # Proceed to download the file if size is acceptable
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         pdf_data = response.content
 
@@ -292,8 +319,9 @@ def _extract_pages_from_pdf(url, target_page, page_range=5):
         # Return a BytesIO object to simulate a file-like object
         return io.BytesIO(extracted_pdf_bytes)
 
+    except ValueError as e:
+        raise e
     except Exception as e:
-        st.error(f"Error processing PDF: {str(e)}")
         return None
         
 def displayPDF(upl_file, ui_width, ui_height):

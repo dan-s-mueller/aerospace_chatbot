@@ -126,31 +126,48 @@ class SidebarManager:
     def _render_index_selection(self):
         """Render index selection section."""
         st.sidebar.title('Index Selected')
-        
-        # Get available indexes based on current settings
-        self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out}")
-        available_indexes, index_metadatas = get_available_indexes(
-            self.sb_out['index_type'],
-            self.sb_out['embedding_model'],
-            self.sb_out['rag_type']
-        )
-        self.logger.info(f"Available indexes for sidebar: {available_indexes}")
-        
-        if not available_indexes:
-            st.warning('No compatible collections found with current settings.')
-            return [], {}  # Return empty lists instead of None
-        
-        # Only show indexes that match the current settings
-        self.sb_out['index_selected'] = st.sidebar.selectbox(
-            'Index selected', 
-            available_indexes,
-            disabled=st.session_state.index_selected_disabled,
-            help='Select the index to use for the application.',
-            key='index_selected_select'  # Add unique key
-        )
-        
-        self.logger.info(f"Index selected: {self.sb_out['index_selected']}")
-        return available_indexes, index_metadatas
+
+        # Check if the configuration is set to 'tester'
+        if os.getenv('AEROSPACE_CHATBOT_CONFIG') == 'tester':
+            # Use the index from the config and disable the selection
+            tester_config = self._config.get('available_indexes', [])
+            if tester_config:
+                self.sb_out['index_selected'] = tester_config[0]
+                st.session_state.index_selected_disabled = True
+                st.sidebar.selectbox(
+                    'Index selected',
+                    tester_config,
+                    disabled=True,
+                    help='Index is pre-selected for tester configuration.',
+                    key='index_selected_select'
+                )
+                self.logger.info(f"Index selected: {self.sb_out['index_selected']}")
+                return tester_config, {}  # Return the pre-selected index
+        else:
+            # Original code for rendering index selection
+            self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out}")
+            available_indexes, index_metadatas = get_available_indexes(
+                self.sb_out['index_type'],
+                self.sb_out['embedding_model'],
+                self.sb_out['rag_type']
+            )
+            self.logger.info(f"Available indexes for sidebar: {available_indexes}")
+
+            if not available_indexes:
+                st.warning('No compatible collections found with current settings.')
+                return [], {}  # Return empty lists instead of None
+
+            # Only show indexes that match the current settings
+            self.sb_out['index_selected'] = st.sidebar.selectbox(
+                'Index selected',
+                available_indexes,
+                disabled=st.session_state.index_selected_disabled,
+                help='Select the index to use for the application.',
+                key='index_selected_select'
+            )
+
+            self.logger.info(f"Index selected: {self.sb_out['index_selected']}")
+            return available_indexes, index_metadatas
         
     def _render_llm(self):
         """Render LLM selection section."""

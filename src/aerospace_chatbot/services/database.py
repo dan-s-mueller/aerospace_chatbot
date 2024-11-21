@@ -19,6 +19,8 @@ from tenacity import (
     wait_fixed
 )
 
+# TODO check if get_available_indexes works if there is an index with no metadata. Observed "no avaialble indexes" error when there was an index with no metadata and another with.
+
 def pinecone_retry(func):
     """Decorator for Pinecone operations with retry and rate limiting."""
     return retry(
@@ -282,8 +284,10 @@ class DatabaseService:
         # Try to describe the index
         try:
             pc.describe_index(self.index_name)
+            self.logger.info(f"Pinecone index {self.index_name} found, not creating. Will be initialized with existing index.")
         except NotFoundException:
             # Index doesn't exist, create it
+            self.logger.info(f"Not clearing database, but pinecone index {self.index_name} not found, creating.")
             pc.create_index(
                 self.index_name,
                 dimension=self.embedding_service.get_dimension(),
