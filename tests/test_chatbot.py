@@ -112,6 +112,9 @@ def setup_fixture():
     # Override environment variables first
     os.environ['LOG_LEVEL'] = 'INFO'
     os.environ['LOG_FILE'] = 'logs/test_chatbot.log'
+
+    # Override admin vs. test
+    os.environ['AEROSPACE_CHATBOT_CONFIG'] = 'admin'
     
     # Setup logging with overridden values
     from aerospace_chatbot.core.config import setup_logging
