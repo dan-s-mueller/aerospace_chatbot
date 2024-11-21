@@ -38,7 +38,6 @@ def handle_sidebar_state(sidebar_manager):
 def display_sources(sources, expanded=False):
     """Display reference sources in an expander with PDF preview functionality."""
     logger = logging.getLogger(__name__)
-    # FIXME: AMS_1996_reocr seems to be a problem
 
     with st.container():
         with st.spinner('Bringing you source documents...'):
@@ -274,11 +273,26 @@ def _save_uploads_to_temp(uploaded_files):
 
 def _extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
+    logger = logging.getLogger(__name__)
+    
     import io
     fitz, requests, _, _ = Dependencies.Document.get_processors()
     
     try:
-        response = requests.get(url)
+        # First check file size to see if it's too large
+        response = requests.head(url, timeout=10)
+        response.raise_for_status()
+
+        # Get the content length from headers
+        content_length = response.headers.get('Content-Length')
+        if content_length is not None:
+            pdf_size_mb = int(content_length) / (1024 * 1024)  # Convert bytes to MB
+            logger.info(f"Content length (MB): {content_length}")
+            if pdf_size_mb > 500:
+                raise ValueError(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds 500MB).")
+
+        # Proceed to download the file if size is acceptable
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         pdf_data = response.content
 
