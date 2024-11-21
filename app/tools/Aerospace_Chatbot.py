@@ -108,7 +108,7 @@ with chat_section:
             prompt = st.session_state.selected_question
             del st.session_state.selected_question
         else:
-            prompt = st.chat_input("Prompt here")
+            prompt = st.chat_input("Ask a question")
             logger.info(f"Prompt: {prompt}")
             logger.info(f"User upload: {st.session_state.user_upload}")
         

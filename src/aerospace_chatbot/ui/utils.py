@@ -72,6 +72,7 @@ def display_sources(sources, expanded=False):
                                 st.write("Disabled for now...see download link above!")
                         except ValueError as e:
                             if "The PDF file is too large" in str(e):
+                                # TODO add handling here to just display the text if the PDF is too large
                                 st.warning("Large PDF, download file to view.")
                             else:
                                 st.warning(f"Error processing PDF: {str(e)}")
@@ -292,8 +293,9 @@ def _extract_pages_from_pdf(url, target_page, page_range=5):
         content_length = response.headers.get('Content-Length')
         if content_length is not None:
             pdf_size_mb = int(content_length) / (1024 * 1024)  # Convert bytes to MB
-            logger.info(f"Content length (MB): {content_length}")
+            logger.info(f"Content length (MB): {pdf_size_mb}")
             if pdf_size_mb > 500:
+                logger.error(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds 500MB).")
                 raise ValueError(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds 500MB).")
 
         # Proceed to download the file if size is acceptable
@@ -317,8 +319,9 @@ def _extract_pages_from_pdf(url, target_page, page_range=5):
         # Return a BytesIO object to simulate a file-like object
         return io.BytesIO(extracted_pdf_bytes)
 
+    except ValueError as e:
+        raise e
     except Exception as e:
-        st.error(f"Error processing PDF: {str(e)}")
         return None
         
 def displayPDF(upl_file, ui_width, ui_height):
