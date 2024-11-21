@@ -70,8 +70,13 @@ def display_sources(sources, expanded=False):
                                 logger.info(f"Displayed PDF...")
                             with tab2:
                                 st.write("Disabled for now...see download link above!")
+                        except ValueError as e:
+                            if "The PDF file is too large" in str(e):
+                                st.warning("Large PDF, download file to view.")
+                            else:
+                                st.warning(f"Error processing PDF: {str(e)}")
                         except Exception as e:
-                            st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. User file uploads not yet supported. ")
+                            st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. User file uploads not yet supported.")
 def show_connection_status(expanded = True, delete_buttons = False):
     """Display connection status for various services with optional delete functionality. """
     with st.expander("Connection Status", expanded=expanded):
