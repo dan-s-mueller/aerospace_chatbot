@@ -26,6 +26,7 @@ def load_config(config_path):
         
     except Exception as e:
         raise ConfigurationError(f"Failed to load config: {str(e)}")
+    
 def get_secrets():
     """Load and return secrets from environment"""
     load_dotenv(find_dotenv())

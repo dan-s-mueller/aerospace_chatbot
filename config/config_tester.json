@@ -35,5 +35,6 @@
         "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"],
         "index": ["index_type"],
         "model_options": ["output_level", "search_type"]
-    }
+    },
+    "available_indexes": ["text-embedding-3-large-mech-demo"]
 }

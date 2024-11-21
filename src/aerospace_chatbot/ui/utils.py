@@ -37,9 +37,13 @@ def handle_sidebar_state(sidebar_manager):
 
 def display_sources(sources, expanded=False):
     """Display reference sources in an expander with PDF preview functionality."""
+    logger = logging.getLogger(__name__)
+    # FIXME: AMS_1996_reocr seems to be a problem
+
     with st.container():
         with st.spinner('Bringing you source documents...'):
             for source in sources:
+                logger.info(f"Starting to display source: {source}")
                 page = source.get('page')
                 pdf_source = source.get('source')
                 
@@ -61,8 +65,10 @@ def display_sources(sources, expanded=False):
                         tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
                         try:
                             extracted_pdf = _extract_pages_from_pdf(selected_url, page)
+                            logger.info(f"Extracted PDF...")
                             with tab1:
                                 displayPDF(extracted_pdf, "100%", 1000)
+                                logger.info(f"Displayed PDF...")
                             with tab2:
                                 st.write("Disabled for now...see download link above!")
                         except Exception as e:
