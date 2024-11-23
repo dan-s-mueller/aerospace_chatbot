@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aerospace-chatbot"
-version = "0.0.9"
+version = "0.0.9.1"
 description = "Aerospace engineering chatbot and AI tools."
 authors = ["dsmueller <dsm@danmueller.pro>"]
 license = "MIT"

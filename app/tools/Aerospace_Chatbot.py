@@ -57,7 +57,7 @@ st.session_state.sb = handle_sidebar_state(st.session_state.sidebar_manager)
 
 # Header section
 with header:
-    st.title('🚀 Aerospace Chatbot')
+    st.title('🚀 ' + (os.getenv('CHATBOT_TITLE') or 'Aerospace Chatbot'))
 
 # Info section - Always visible at top
 with info_section:

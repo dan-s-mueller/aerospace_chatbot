@@ -58,6 +58,7 @@ class DatabaseService:
         Initialize and store database connection."""
 
         # Validate index name and RAG type
+        self.logger.info(f"Validating index {self.index_name} and RAG type {self.rag_type}")
         self._validate_index()
         self.namespace = namespace
 
@@ -272,14 +273,15 @@ class DatabaseService:
 
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY')) # Need to use the native client since langchain can't upload a dummy embedding :(
         if clear:
+            self.logger.info(f"Clearing Pinecone index {self.index_name}")
             self.delete_index()
             # Wait until index is deleted with timeout
             start_time = time.time()
-            timeout = 30  # 30 second timeout
+            timeout = 30
             while self.index_name in [idx.name for idx in pc.list_indexes()]:
                 if time.time() - start_time > timeout:
                     raise TimeoutError(f"Timeout waiting for index {self.index_name} to be deleted")
-                time.sleep(4)  # Increased delay
+                time.sleep(4)
 
         # Try to describe the index
         try:
@@ -543,7 +545,10 @@ class DatabaseService:
             # Chunked documents
             # Standard for pinecone and chroma
             if self.rag_type == 'Standard':
+                total_batches = (len(upsert_data.chunks) + batch_size - 1) // batch_size  # Calculate total number of batches
                 for i in range(0, len(upsert_data.chunks), batch_size):
+                    current_batch = (i // batch_size) + 1  # Calculate current batch number (1-based index)
+                    self.logger.info(f"Upserting batch {current_batch} of {total_batches}")
                     batch = upsert_data.chunks[i:i + batch_size]
                     batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
                     
@@ -629,8 +634,8 @@ class DatabaseService:
         """Verify that vectors were uploaded to Pinecone index."""
         max_retries = 15  # Increased from 10
         retry_count = 0
-        last_count = 0
-        stable_count_checks = 0
+        # last_count = 0
+        # stable_count_checks = 0
         
         while retry_count < max_retries:
             time.sleep(5)   # Added delay to reduce likelihood of overlap with delayed delete responses
@@ -640,15 +645,15 @@ class DatabaseService:
                 current_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)
                 
             # Check if count has stabilized
-            if current_count == last_count:
-                stable_count_checks += 1
-                if stable_count_checks >= 3:  # Count has been stable for 3 checks
-                    if current_count > expected_count:
-                        self.logger.warning(f"Final count ({current_count}) exceeds expected count ({expected_count})")
-                    self.logger.info(f"Vector count has stabilized at {current_count}")
-                    break
-            else:
-                stable_count_checks = 0
+            # if current_count == last_count:
+            #     stable_count_checks += 1
+            #     if stable_count_checks >= 3:  # Count has been stable for 3 checks
+            #         if current_count > expected_count:
+            #             self.logger.warning(f"Final count ({current_count}) exceeds expected count ({expected_count})")
+            #         self.logger.info(f"Vector count has stabilized at {current_count}")
+            #         break
+            # else:
+            #     stable_count_checks = 0
                 
             # TODO explore making this a check of the exact count. I found that the count was sometimes greater than expected due to latency in the Pinecone API.
             if current_count >= expected_count:
@@ -656,7 +661,6 @@ class DatabaseService:
                 break
                 
             self.logger.info(f"Waiting for vectors to be indexed in Pinecone... Current count: {current_count}, Expected: {expected_count}")
-            last_count = current_count
             time.sleep(4) 
             retry_count += 1
             
@@ -946,12 +950,16 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
                 continue
                 
             index_obj = pc.Index(index_name)
-            metadata = index_obj.fetch(ids=['db_metadata'])
             
-            # Check embedding model if specified
-            if metadata and (embedding_model is None or metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_model):
-                available_indexes.append(index_name)
-                index_metadatas.append(metadata['vectors']['db_metadata']['metadata'])
+            try:
+                metadata = index_obj.fetch(ids=['db_metadata'])
+                # Check embedding model if specified
+                if metadata and (embedding_model is None or metadata['vectors']['db_metadata']['metadata'].get('embedding_model') == embedding_model):
+                    available_indexes.append(index_name)
+                    index_metadatas.append(metadata['vectors']['db_metadata']['metadata'])
+            except Exception as e:
+                # Log a message if metadata is not found
+                logger.warning(f"Index {index_name} exists but does not have db_metadata vector. Skipping. {e}")
                 
         return available_indexes, index_metadatas
 
