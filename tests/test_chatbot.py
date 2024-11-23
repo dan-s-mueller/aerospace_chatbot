@@ -678,8 +678,7 @@ def test_rag_type_mismatch(setup_fixture):
         'index_type': 'Pinecone',
         'embedding_service': 'OpenAI',
         'embedding_model': 'text-embedding-3-small',
-        # 'rag_types': ['Standard', 'Parent-Child', 'Summary']
-        'rag_types': ['Standard']
+        'rag_types': ['Standard', 'Parent-Child', 'Summary']
     },
     {
         'index_type': 'ChromaDB',
@@ -820,8 +819,8 @@ def test_get_available_indexes(setup_fixture, test_index):
                     embedding_service=embedding_service,
                     doc_type='document'
                 )
-                # db_service.delete_index()
-                # logger.info(f"Deleted test index: {index_name}")
+                db_service.delete_index()
+                logger.info(f"Deleted test index: {index_name}")
             except Exception as e:
                 logger.error(f"Error deleting index {index_name}: {str(e)}")
 def test_database_setup_and_query(test_input, setup_fixture):
