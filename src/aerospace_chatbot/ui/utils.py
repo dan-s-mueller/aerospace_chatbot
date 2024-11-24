@@ -35,7 +35,7 @@ def handle_sidebar_state(sidebar_manager):
     
     return current_state
 
-def display_sources(sources, expanded=False):
+def display_sources(sources, expanded=False, max_size=100):
     """Display reference sources in an expander with PDF preview functionality."""
     logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ def display_sources(sources, expanded=False):
                     with st.expander(":memo: View"):
                         tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
                         try:
-                            extracted_pdf = _extract_pages_from_pdf(selected_url, page)
+                            extracted_pdf = _extract_pages_from_pdf(selected_url, page, max_size=max_size)
                             logger.info(f"Extracted PDF...")
                             with tab1:
                                 displayPDF(extracted_pdf, "100%", 1000)
@@ -230,7 +230,7 @@ def _handle_index_deletion(db_type, index_name):
     if st.button(f'Delete {index_name}', help='This is permanent!'):
         try:
             rag_type = _determine_rag_type(index_name)
-            if index_name.endswith('-queries'):
+            if index_name.endswith('-q'):
                 doc_type = 'question'
             else:
                 doc_type = 'document'
@@ -277,7 +277,7 @@ def _save_uploads_to_temp(uploaded_files):
         temp_files.append(temp_path)
     return temp_files
 
-def _extract_pages_from_pdf(url, target_page, page_range=5):
+def _extract_pages_from_pdf(url, target_page, page_range=5, max_size=500):
     """Extracts specified pages from a PDF file."""
     logger = logging.getLogger(__name__)
     
@@ -294,9 +294,9 @@ def _extract_pages_from_pdf(url, target_page, page_range=5):
         if content_length is not None:
             pdf_size_mb = int(content_length) / (1024 * 1024)  # Convert bytes to MB
             logger.info(f"Content length (MB): {pdf_size_mb}")
-            if pdf_size_mb > 500:
-                logger.error(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds 500MB).")
-                raise ValueError(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds 500MB).")
+            if pdf_size_mb > max_size:
+                logger.error(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds {max_size}MB).")
+                raise ValueError(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds {max_size}MB).")
 
         # Proceed to download the file if size is acceptable
         response = requests.get(url, timeout=10)

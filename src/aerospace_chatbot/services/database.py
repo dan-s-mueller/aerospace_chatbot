@@ -492,7 +492,7 @@ class DatabaseService:
         
         # Add RAG type suffix
         if self.doc_type == 'question':
-            name += '-queries'
+            name += '-q'
             self.index_name = name
             self.logger.info(f"Adding query type suffix to index name: {name}")
         elif self.doc_type == 'document':
@@ -896,7 +896,7 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
     def _check_get_index_criteria(index_name, rag_type):
         """Check if index meets criteria for inclusion."""
         # Never include query indexes when filtering
-        if index_name.endswith('-queries'):
+        if index_name.endswith('-q'):
             return False
             
         # Check RAG type criteria if specified

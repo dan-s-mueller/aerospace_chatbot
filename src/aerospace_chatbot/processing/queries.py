@@ -88,12 +88,12 @@ class QAModel:
     def generate_alternative_questions(self, prompt):
         """Generates alternative questions based on a prompt."""
         _, StrOutputParser, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
-        if self.ai_response:
-            prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
-            invoke_dict={'question':prompt,'context':self.ai_response}
-        else:
-            prompt_template=GENERATE_SIMILAR_QUESTIONS
-            invoke_dict={'question':prompt}
+        # if self.ai_response:
+        prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
+        invoke_dict={'question':prompt,'context':self.ai_response}
+        # else:
+        #     prompt_template=GENERATE_SIMILAR_QUESTIONS
+        #     invoke_dict={'question':prompt}
         
         chain = (
                 prompt_template

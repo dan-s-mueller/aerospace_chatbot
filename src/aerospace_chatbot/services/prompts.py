@@ -1,6 +1,5 @@
 from langchain.prompts.prompt import PromptTemplate
 
-# CONDENSE_QUESTION_PROMPT = hub.pull("dmueller/ams-chatbot-qa-condense-history")
 CONDENSE_QUESTION_PROMPT=PromptTemplate.from_template(template=
     """
     Given the following conversation and a follow up question, generate a follow up question to be a standalone question, in English. You are only allowed to generate one question in response. Include sources from the chat history in the standalone question created, when they are available. 
@@ -12,7 +11,6 @@ CONDENSE_QUESTION_PROMPT=PromptTemplate.from_template(template=
     ---
     """)
 
-# QA_PROMPT=hub.pull("dmueller/ams-chatbot-qa-retrieval")
 QA_PROMPT=PromptTemplate.from_template(template=
     """
     Your name is Aerospace Chatbot. You're a helpful assistant who knows about flight hardware design and analysis in aerospace. 
@@ -34,7 +32,6 @@ QA_PROMPT=PromptTemplate.from_template(template=
     Chatbot:
     """)
 
-# QA_WSOURCES_PROMPT=hub.pull("dmueller/ams-chatbot-qa-retrieval-wsources")
 QA_WSOURCES_PROMPT=PromptTemplate.from_template(template=
     """
     Given the following extracted parts of a long document and a question, create a final answer with references ("SOURCES"). 
@@ -80,7 +77,6 @@ QA_WSOURCES_PROMPT=PromptTemplate.from_template(template=
     FINAL ANSWER:
     """)    
 
-# QA_GENERATE_PROMPT=hub.pull("dmueller/generate_qa_prompt")
 QA_GENERATE_PROMPT=PromptTemplate.from_template(template=
     """
     You are an expert in aerospace engineering.  Your task is to provide exactly **{num_questions_per_chunk}** question(s) for an upcoming quiz/examination based on context information. The context information is below. **ALWAYS** provide each question on a new line that starts with "QUESTION:". Follow the rules listed below.
@@ -99,7 +95,6 @@ QA_GENERATE_PROMPT=PromptTemplate.from_template(template=
     ---------------------
     """)    
 
-# SUMMARIZE_TEXT=hub.pull("dmueller/summarize_text")
 SUMMARIZE_TEXT=PromptTemplate.from_template(template=
     """
     You will generate concise, entity-dense summaries of the document provided. Do not discuss the guidelines for summarization in your response. 
@@ -117,23 +112,20 @@ SUMMARIZE_TEXT=PromptTemplate.from_template(template=
     -------------
     """)   
 
-# GENERATE_SIMILAR_QUESTIONS=hub.pull("dmueller/generate_similar_questions")
 GENERATE_SIMILAR_QUESTIONS=PromptTemplate.from_template(template=
     """
     You are an AI language model assistant. Your task is to generate 3 different versions of the given user question to retrieve relevant documents from a vector  database. By generating multiple perspectives on the user question, your goal is to help the user overcome some of the limitations of distance-based similarity search. Provide these alternative questions separated by newlines. Original question: {question}
     """)    
 
-# GENERATE_SIMILAR_QUESTIONS_W_CONTEXT=hub.pull("dmueller/generate_similar_questions_w_context")
 GENERATE_SIMILAR_QUESTIONS_W_CONTEXT=PromptTemplate.from_template(template=
     """
-    You are an AI language model assistant. Your task is to generate 3 different versions of the given user question to retrieve relevant documents from a vector database. You are also provided context, which was the AI response to the question provided. By generating multiple perspectives on the user question, your goal is to help the user overcome some of the limitations of distance-based similarity search and add contextual relevance based on the AI response. Provide these alternative questions separated by newlines. 
+    You are an AI language model assistant. Your task is to generate 3 different versions of the given user question to retrieve relevant documents from a vector database. You are also provided context, which was the AI response to the question provided. By generating multiple perspectives on the user question, your goal is to help the user overcome some of the limitations of distance-based similarity search and add contextual relevance based on the AI response. You should also provide questions which are different from the original question, but are still related to the context provided. Provide these alternative questions separated by newlines. 
 
 
     Original question: {question}
     AI response to original question: {context}
     """)    
 
-# CLUSTER_LABEL=hub.pull("dmueller/cluster-label")
 CLUSTER_LABEL=PromptTemplate.from_template(template=
     """
     What theme do the following document chunks have in common?

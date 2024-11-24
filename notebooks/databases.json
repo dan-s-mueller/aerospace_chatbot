@@ -4,32 +4,6 @@
             "index_appendix": "mech-demo-500rec-nc",
             "index_type": "Pinecone",
             "rag_type": "Standard",
-            "embedding_service": "OpenAI",
-            "embedding_model": "text-embedding-3-large",
-            "chunk_params": {
-                "chunk_method": "character_recursive",
-                "chunk_size": 500,
-                "chunk_overlap": 0
-            },
-            "bucket_names": ["ams_pdfs", "esmats_pdfs"]
-        },
-        {
-            "index_appendix": "mech-demo",
-            "index_type": "Pinecone",
-            "rag_type": "Standard",
-            "embedding_service": "Voyage",
-            "embedding_model": "voyage-3",
-            "chunk_params": {
-                "n_merge_pages": 2,
-                "chunk_method": "None",
-                "chunk_size": 0
-            },
-            "bucket_names": ["ams_pdfs", "esmats_pdfs"]
-        },
-        {
-            "index_appendix": "mech-demo-500rec-nc",
-            "index_type": "Pinecone",
-            "rag_type": "Standard",
             "embedding_service": "Voyage",
             "embedding_model": "voyage-3",
             "chunk_params": {
