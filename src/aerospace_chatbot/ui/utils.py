@@ -35,14 +35,14 @@ def handle_sidebar_state(sidebar_manager):
     
     return current_state
 
-def display_sources(sources, expanded=False, max_size=100):
+def display_sources(sources, expanded=False):
     """Display reference sources in an expander with PDF preview functionality."""
     logger = logging.getLogger(__name__)
-
+    
     with st.container():
         with st.spinner('Bringing you source documents...'):
             for source in sources:
-                logger.info(f"Starting to display source: {source}")
+                # Parse and validate source information
                 page = source.get('page')
                 pdf_source = source.get('source')
                 
@@ -51,8 +51,8 @@ def display_sources(sources, expanded=False, max_size=100):
                     page = ast.literal_eval(page) if isinstance(page, str) else page
                     pdf_source = ast.literal_eval(pdf_source) if isinstance(pdf_source, str) else pdf_source
                 except (ValueError, SyntaxError):
-                    pass
-
+                    continue
+                
                 # Extract first element if it's a list
                 page = page[0] if isinstance(page, list) and page else page
                 pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
@@ -60,24 +60,33 @@ def display_sources(sources, expanded=False, max_size=100):
                 if pdf_source and page is not None:
                     selected_url = f"https://storage.googleapis.com/{pdf_source}"
                     st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
-                    with st.expander(":memo: View"):
+                    
+                    # Style the expander
+                    st.markdown("""
+                        <style>
+                            .stExpander {
+                                max-height: 1000px;
+                                overflow-y: auto;
+                            }
+                        </style>
+                    """, unsafe_allow_html=True)
+                    
+                    # Display PDF content
+                    with st.expander(":memo: View", expanded=expanded):
                         tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
                         try:
-                            extracted_pdf = _extract_pages_from_pdf(selected_url, page, max_size=max_size)
-                            logger.info(f"Extracted PDF...")
+                            extracted_pdf = _extract_pages_from_pdf(selected_url, page)
+                            
                             with tab1:
-                                displayPDF(extracted_pdf, "100%", 1000)
-                                logger.info(f"Displayed PDF...")
+                                display_pdf(extracted_pdf, "100%", 1000)
+                            
                             with tab2:
                                 st.write("Disabled for now...see download link above!")
-                        except ValueError as e:
-                            if "The PDF file is too large" in str(e):
-                                # TODO add handling here to just display the text if the PDF is too large
-                                st.warning("Large PDF, download file to view.")
-                            else:
-                                st.warning(f"Error processing PDF: {str(e)}")
+                                
                         except Exception as e:
-                            st.warning("Unable to load PDF preview. Either the file no longer exists or is inaccessible. User file uploads not yet supported.")
+                            logger.error(f"Failed to display source: {e}")
+                            st.error("Unable to display PDF. Please use the download link.")
+
 def show_connection_status(expanded = True, delete_buttons = False):
     """Display connection status for various services with optional delete functionality. """
     with st.expander("Connection Status", expanded=expanded):
@@ -277,65 +286,73 @@ def _save_uploads_to_temp(uploaded_files):
         temp_files.append(temp_path)
     return temp_files
 
-def _extract_pages_from_pdf(url, target_page, page_range=5, max_size=500):
+def _extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
     logger = logging.getLogger(__name__)
-    
-    import io
-    fitz, requests, _, _ = Dependencies.Document.get_processors()
+    fitz, requests, _, _, _, io = Dependencies.Document.get_processors()
     
     try:
-        # First check file size to see if it's too large
-        response = requests.head(url, timeout=10)
+        # Download PDF
+        response = requests.get(url, timeout=30)
         response.raise_for_status()
-
-        # Get the content length from headers
-        content_length = response.headers.get('Content-Length')
-        if content_length is not None:
-            pdf_size_mb = int(content_length) / (1024 * 1024)  # Convert bytes to MB
-            logger.info(f"Content length (MB): {pdf_size_mb}")
-            if pdf_size_mb > max_size:
-                logger.error(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds {max_size}MB).")
-                raise ValueError(f"The PDF file is too large ({pdf_size_mb:.2f} MB, exceeds {max_size}MB).")
-
-        # Proceed to download the file if size is acceptable
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        pdf_data = response.content
-
-        doc = fitz.open("pdf", pdf_data)
+        
+        # Open PDF and extract pages
+        doc = fitz.open(stream=response.content, filetype="pdf")
         extracted_doc = fitz.open()
-
+        
         start_page = max(target_page, 0)
         end_page = min(target_page + page_range, doc.page_count - 1)
-
+        
         for i in range(start_page, end_page + 1):
             extracted_doc.insert_pdf(doc, from_page=i, to_page=i)
-
+        
+        # Get bytes and cleanup
         extracted_pdf_bytes = extracted_doc.tobytes()
         extracted_doc.close()
         doc.close()
-
-        # Return a BytesIO object to simulate a file-like object
-        return io.BytesIO(extracted_pdf_bytes)
-
-    except ValueError as e:
-        raise e
-    except Exception as e:
-        return None
         
-def displayPDF(upl_file, ui_width, ui_height):
-    """Display a PDF file in a Streamlit app."""
-    import base64
+        return io.BytesIO(extracted_pdf_bytes)
+                
+    except Exception as e:
+        logger.error(f"Failed to extract PDF pages: {e}")
+        raise ValueError(f"PDF extraction failed: {str(e)}")
+        
+def display_pdf(upl_file, ui_width, ui_height):
+    """Display a PDF file by converting pages to images."""
+    fitz, _, _, _, Image, io = Dependencies.Document.get_processors()
+    logger = logging.getLogger(__name__)
 
-    # Read file as bytes:
-    bytes_data = upl_file.read()
+    try:
+        # Read the PDF
+        pdf_bytes = upl_file.read()
+        pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
+        
+        # Set rendering parameters
+        zoom = 2.0
+        mat = fitz.Matrix(zoom, zoom)
 
-    # Convert to utf-8
-    base64_pdf = base64.b64encode(bytes_data).decode("utf-8")
+        # Display each page
+        for page_num in range(len(pdf_document)):
+            page = pdf_document[page_num]
+            pix = page.get_pixmap(matrix=mat)
+            
+            # Convert to PIL Image
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            
+            # Convert to bytes for display
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='PNG', optimize=True)
+            img_byte_arr = img_byte_arr.getvalue()
 
-    # Embed PDF in HTML
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width={str(ui_width)} height={str(ui_height)} type="application/pdf"></iframe>'
+            # Display the image
+            st.image(
+                img_byte_arr,
+                caption=f"Page {page_num + 1}",
+                use_column_width=True
+            )
 
-    # Display file
-    st.markdown(pdf_display, unsafe_allow_html=True)
+        pdf_document.close()
+
+    except Exception as e:
+        logger.error(f"Failed to display PDF: {e}")
+        st.error(f"Error displaying PDF: {e}")

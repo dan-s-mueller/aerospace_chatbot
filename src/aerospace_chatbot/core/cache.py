@@ -141,7 +141,9 @@ class Dependencies:
             import requests
             from google.cloud import storage
             from langchain_community.document_loaders import PyPDFLoader
-            return fitz, requests, storage, PyPDFLoader
+            from PIL import Image
+            import io
+            return fitz, requests, storage, PyPDFLoader, Image, io
 
         @staticmethod
         @cache_resource
