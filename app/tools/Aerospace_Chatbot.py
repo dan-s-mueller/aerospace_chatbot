@@ -91,10 +91,11 @@ with upload_section:
 logger.info(f"Upload section - Final user_upload value: {st.session_state.user_upload}")
 # Chat section
 with chat_section:
-    chat_col, sources_col = st.columns([2, 3])
+    chat_col, sources_col = st.columns([1, 1])
 
     # Left column for chat
     with chat_col:
+        st.markdown('<div class="chat-column">', unsafe_allow_html=True)
         # Move the upload ID message outside of the chat flow
         if st.session_state.user_upload:
             st.info(f"Using merged user documents with index. Your upload ID: `{st.session_state.user_upload}`")
@@ -196,9 +197,11 @@ with chat_section:
                         st.write('✅ Response generated successfully')
                         if 'response_time' in message:
                             st.write(f'⏱️ Response time: {message["response_time"]:.2f} seconds')
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Right column - Persistent display of last message's info
     with sources_col:
+        st.markdown('<div class="sources-column">', unsafe_allow_html=True)
         if st.session_state.messages and len(st.session_state.messages) > 0:
             last_message = st.session_state.messages[0]  # Get most recent message
             
@@ -226,3 +229,4 @@ with chat_section:
                 if 'qa_model_obj' in st.session_state and st.session_state.qa_model_obj:
                     if hasattr(st.session_state.qa_model_obj, 'sources'):
                         display_sources(st.session_state.qa_model_obj.sources[-1])
+        st.markdown('</div>', unsafe_allow_html=True)

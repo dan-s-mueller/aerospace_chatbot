@@ -301,7 +301,7 @@ def _extract_pages_from_pdf(url, target_page, page_range=5):
         extracted_doc = fitz.open()
         
         start_page = max(target_page, 0)
-        end_page = min(target_page + page_range, doc.page_count - 1)
+        end_page = min(target_page + page_range - 1, doc.page_count - 1)
         
         for i in range(start_page, end_page + 1):
             extracted_doc.insert_pdf(doc, from_page=i, to_page=i)
@@ -347,7 +347,7 @@ def display_pdf(upl_file, ui_width, ui_height):
             # Display the image
             st.image(
                 img_byte_arr,
-                caption=f"Page {page_num + 1}",
+                # caption=f"Page {page_num + 1}",
                 use_column_width=True
             )
 
