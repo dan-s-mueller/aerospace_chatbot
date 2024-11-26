@@ -217,7 +217,7 @@ with chat_section:
             with st.container():
                 if 'sources' in last_message:
                     st.markdown("📚 Source Documents")
-                    display_sources(last_message['sources'], max_size=100)
+                    display_sources(last_message['sources'])
 
         # If we're processing a new message, show its info too
         if prompt:
@@ -225,4 +225,4 @@ with chat_section:
                 # This will show while the response is being generated
                 if 'qa_model_obj' in st.session_state and st.session_state.qa_model_obj:
                     if hasattr(st.session_state.qa_model_obj, 'sources'):
-                        display_sources(st.session_state.qa_model_obj.sources[-1], max_size=100)
+                        display_sources(st.session_state.qa_model_obj.sources[-1])

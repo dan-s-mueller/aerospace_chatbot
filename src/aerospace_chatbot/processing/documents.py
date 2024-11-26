@@ -65,7 +65,7 @@ class DocumentProcessor:
     @staticmethod
     def list_available_buckets():
         """Lists all available buckets in the GCS project."""
-        _, _, storage, _ = Dependencies.Document.get_processors()
+        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         try:
             # Initialize the GCS client
@@ -80,7 +80,7 @@ class DocumentProcessor:
     @staticmethod
     def list_bucket_pdfs(bucket_name: str):
         """Lists all PDF files in a Google Cloud Storage bucket."""
-        _, _, storage, _ = Dependencies.Document.get_processors()
+        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         logger = logging.getLogger(__name__)
         try:
@@ -113,7 +113,7 @@ class DocumentProcessor:
     def _load_and_clean_documents(self, documents):
         """Load PDF documents and clean their contents."""
         _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
-        _, _, storage, PyPDFLoader = Dependencies.Document.get_processors()
+        _, _, storage, PyPDFLoader, _, _ = Dependencies.Document.get_processors()
 
         def _download_and_validate_pdf(doc_in, temp_dir):
             """Download and validate a PDF document."""
@@ -363,7 +363,7 @@ class DocumentProcessor:
     @staticmethod
     def _upload_to_gcs(bucket_name, file_path, local_file_path):
         """Upload a file to Google Cloud Storage."""
-        _, _, storage, _ = Dependencies.Document.get_processors()
+        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
