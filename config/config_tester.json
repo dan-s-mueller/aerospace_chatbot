@@ -36,5 +36,5 @@
         "index": ["index_type"],
         "model_options": ["output_level", "search_type"]
     },
-    "available_indexes": ["text-embedding-3-large-mech-demo"]
+    "available_indexes": ["text-embedding-3-large-mech-demo-2m"]
 }
