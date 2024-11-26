@@ -28,10 +28,7 @@ from aerospace_chatbot.services import (
     LLMService,
     CONDENSE_QUESTION_PROMPT,
     QA_PROMPT,
-    QA_WSOURCES_PROMPT,
-    QA_GENERATE_PROMPT,
     SUMMARIZE_TEXT,
-    GENERATE_SIMILAR_QUESTIONS,
     GENERATE_SIMILAR_QUESTIONS_W_CONTEXT,
     CLUSTER_LABEL,
     DEFAULT_DOCUMENT_PROMPT,
@@ -1224,17 +1221,8 @@ def test_prompt_templates():
     # Test QA_PROMPT
     assert set(QA_PROMPT.input_variables) == {"question", "context"}
 
-    # Test QA_WSOURCES_PROMPT
-    assert set(QA_WSOURCES_PROMPT.input_variables) == {"question", "summaries"}
-
-    # Test QA_GENERATE_PROMPT
-    assert set(QA_GENERATE_PROMPT.input_variables) == {"num_questions_per_chunk", "context_str"}
-
     # Test SUMMARIZE_TEXT
     assert set(SUMMARIZE_TEXT.input_variables) == {"doc"}
-
-    # Test GENERATE_SIMILAR_QUESTIONS
-    assert set(GENERATE_SIMILAR_QUESTIONS.input_variables) == {"question"}
 
     # Test GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
     assert set(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT.input_variables) == {"question", "context"}

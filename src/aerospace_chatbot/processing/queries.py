@@ -4,7 +4,7 @@ import logging
 
 from ..core.cache import Dependencies
 from ..services.prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT, 
-                                DEFAULT_DOCUMENT_PROMPT, GENERATE_SIMILAR_QUESTIONS,
+                                DEFAULT_DOCUMENT_PROMPT,
                                 GENERATE_SIMILAR_QUESTIONS_W_CONTEXT)
 from ..services.database import DatabaseService
 from ..processing.documents import DocumentProcessor
@@ -91,9 +91,6 @@ class QAModel:
         # if self.ai_response:
         prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
         invoke_dict={'question':prompt,'context':self.ai_response}
-        # else:
-        #     prompt_template=GENERATE_SIMILAR_QUESTIONS
-        #     invoke_dict={'question':prompt}
         
         chain = (
                 prompt_template
