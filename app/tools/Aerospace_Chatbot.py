@@ -65,11 +65,10 @@ with info_section:
         st.info("""
                 * [Help Docs](https://aerospace-chatbot.readthedocs.io/en/latest/index.html)
                 * [Code Repository](https://github.com/dan-s-mueller/aerospace_chatbot)
-                * For questions and problem reporting, please create an issue [here](https://github.com/dan-s-mueller/aerospace_chatbot/issues/new)
+                * For questions and problem reporting, please create an issue [here](https://github.com/dan-s-mueller/aerospace_chatbot/issues/new).
                 """)
-        st.subheader("Aerospace Mechanisms Chatbot")
         st.markdown("""
-        This is a beta version of the Aerospace Chatbot. The tool comes loaded with a subset of the [Aerospace Mechanisms Symposia](https://aeromechanisms.com/past-symposia/) papers. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)        
+        Welcome to the Aerospace Chatbot: Space Mechanisms Demo. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)        
         """)
 
 # Upload section - Only visible when no messages
