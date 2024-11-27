@@ -273,7 +273,7 @@ def _validate_upload_settings(sb):
         st.error("Only Pinecone is supported for user document upload.")
         return False
     
-    st.write("Upload parameters determined by index selected in sidebar.")
+    st.write("Upload parameters determined by index selected in sidebar. Upload and merge process may take a while.")
     return True
 
 def _save_uploads_to_temp(uploaded_files):
