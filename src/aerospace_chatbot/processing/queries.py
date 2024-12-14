@@ -115,6 +115,18 @@ class QAModel:
         """Defines the conversational QA chain."""
         itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
         
+
+        from langchain_core.documents import Document
+        from langchain_core.runnables import chain
+
+        @chain
+        def retriever(query: str):
+            docs, scores = map(list, zip(*self.db_service.vectorstore.similarity_search_with_score(query))) # Convert to a list from zip tuple
+            for doc, score in zip(docs, scores):
+                doc.metadata["score"] = score
+            return docs
+
+
         # This adds a 'memory' key to the input object
         loaded_memory = RunnablePassthrough.assign(
             chat_history=RunnableLambda(self.memory.load_memory_variables) 
@@ -131,7 +143,7 @@ class QAModel:
         
         retrieved_documents = {
             'source_documents': itemgetter('standalone_question') 
-                                | self.db_service.retriever,
+                                | retriever,
             'question': lambda x: x['standalone_question']}
         
         final_inputs = {

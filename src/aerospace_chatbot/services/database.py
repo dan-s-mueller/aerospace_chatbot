@@ -99,7 +99,7 @@ class DatabaseService:
             self._store_index_metadata(data)    # Only store metadata if documents are being indexed
         self._upsert_data(data, batch_size)
 
-    def get_retriever(self, k=4):
+    def get_retriever(self, k=8):
         """Get configured retriever for the vectorstore."""
         self.retriever = None
         search_kwargs = self._process_retriever_args(k)
@@ -362,7 +362,7 @@ class DatabaseService:
             search_kwargs=search_kwargs
         )
 
-    def _process_retriever_args(self, k=4):
+    def _process_retriever_args(self, k=8):
         """Process the retriever arguments."""
         # Set up filter
         if self.db_type == 'Pinecone':
