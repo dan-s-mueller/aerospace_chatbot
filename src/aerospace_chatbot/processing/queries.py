@@ -62,6 +62,8 @@ class QAModel:
         # Add answer to response, create an array as more prompts come in
         self.logger.info(f'Invoking QA chain with query: {query}')
         answer_result = self.conversational_qa_chain.invoke({'question': query})
+        print(len(answer_result['references']))
+        print(answer_result['references'])
         if not hasattr(self, 'result') or self.result is None:
             self.result = [answer_result]
         else:
@@ -114,17 +116,6 @@ class QAModel:
     def _define_qa_chain(self):
         """Defines the conversational QA chain."""
         itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
-        
-
-        from langchain_core.documents import Document
-        from langchain_core.runnables import chain
-
-        @chain
-        def retriever(query: str):
-            docs, scores = map(list, zip(*self.db_service.vectorstore.similarity_search_with_score(query))) # Convert to a list from zip tuple
-            for doc, score in zip(docs, scores):
-                doc.metadata["score"] = score
-            return docs
 
 
         # This adds a 'memory' key to the input object
@@ -143,7 +134,7 @@ class QAModel:
         
         retrieved_documents = {
             'source_documents': itemgetter('standalone_question') 
-                                | retriever,
+                                | self.db_service.retriever,
             'question': lambda x: x['standalone_question']}
         
         final_inputs = {

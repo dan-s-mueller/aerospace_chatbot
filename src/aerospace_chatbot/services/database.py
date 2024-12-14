@@ -338,10 +338,24 @@ class DatabaseService:
     def _get_standard_retriever(self, search_kwargs):
         """Get standard retriever based on index type."""
         if self.db_type in ['Pinecone', 'ChromaDB']:
-            self.retriever = self.vectorstore.as_retriever(
-                search_type='similarity',
-                search_kwargs=search_kwargs
-            )
+            # self.retriever = self.vectorstore.as_retriever(
+            #     search_type='similarity',
+            #     search_kwargs=search_kwargs
+            # )
+            from langchain_core.documents import Document
+            from langchain_core.runnables import chain
+
+            @chain
+            def retriever(query: str):
+                # FIXME passed k directly
+                # Convert to a list from zip tuple
+                docs, scores = map(list, zip(*self.vectorstore.similarity_search_with_score(query, 
+                                                                                            search_type='similarity',
+                                                                                            search_kwargs=search_kwargs))) 
+                for doc, score in zip(docs, scores):
+                    doc.metadata["score"] = score
+                return docs
+            self.retriever = retriever
         elif self.db_type == 'RAGatouille':
             self.retriever = self.vectorstore.as_langchain_retriever(
                 k=search_kwargs['k']
