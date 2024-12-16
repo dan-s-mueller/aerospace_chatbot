@@ -338,20 +338,16 @@ class DatabaseService:
     def _get_standard_retriever(self, search_kwargs):
         """Get standard retriever based on index type."""
         if self.db_type in ['Pinecone', 'ChromaDB']:
-            # self.retriever = self.vectorstore.as_retriever(
-            #     search_type='similarity',
-            #     search_kwargs=search_kwargs
-            # )
+            # TODO move this into dependency function
             from langchain_core.documents import Document
             from langchain_core.runnables import chain
 
+            # Callable retriever which adds score to the metadata of the documents
             @chain
             def retriever(query: str):
-                # FIXME passed k directly
                 # Convert to a list from zip tuple
                 docs, scores = map(list, zip(*self.vectorstore.similarity_search_with_score(query, 
-                                                                                            search_type='similarity',
-                                                                                            search_kwargs=search_kwargs))) 
+                                                                                            **search_kwargs))) 
                 for doc, score in zip(docs, scores):
                     doc.metadata["score"] = score
                 return docs
@@ -365,14 +361,50 @@ class DatabaseService:
     def _get_multivector_retriever(self, search_kwargs):
         """Get multi-vector retriever for Parent-Child or Summary RAG types."""
         _, _, MultiVectorRetriever, LocalFileStore = Dependencies.Storage.get_vector_stores()
-        
+        # TODO move this into dependency function
+        from collections import defaultdict
+        from langchain.retrievers import MultiVectorRetriever
+        from langchain_core.callbacks import CallbackManagerForRetrieverRun
+        class CustomMultiVectorRetriever(MultiVectorRetriever):
+            def _get_relevant_documents(
+                self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+            ):
+                """Get documents relevant to a query.
+                Args:
+                    query: String to find relevant documents for
+                    run_manager: The callbacks handler to use
+                Returns:
+                    List of relevant documents
+                """
+                results = self.vectorstore.similarity_search_with_score(
+                    query, **self.search_kwargs
+                )
+
+                # Map doc_ids to list of sub-documents, adding scores to metadata
+                id_to_doc = defaultdict(list)
+                for doc, score in results:
+                    doc_id = doc.metadata.get("doc_id")
+                    if doc_id:
+                        doc.metadata["score"] = score
+                        id_to_doc[doc_id].append(doc)
+
+                # Fetch documents corresponding to doc_ids, retaining sub_docs in metadata
+                docs = []
+                for _id, sub_docs in id_to_doc.items():
+                    docstore_docs = self.docstore.mget([_id])
+                    if docstore_docs:
+                        if doc := docstore_docs[0]:
+                            doc.metadata["sub_docs"] = sub_docs
+                            docs.append(doc)
+
+                return docs
+            
         lfs = LocalFileStore(
-            os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+        os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
         )
-        self.retriever = MultiVectorRetriever(
+        self.retriever = CustomMultiVectorRetriever(
             vectorstore=self.vectorstore,
-            byte_store=lfs,
-            id_key="doc_id",
+            docstore=lfs,
             search_kwargs=search_kwargs
         )
 

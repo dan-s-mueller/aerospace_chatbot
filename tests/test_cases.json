@@ -39,16 +39,16 @@
             "index_type": "ChromaDB",
             "embedding_service": "OpenAI",
             "embedding_model": "text-embedding-3-small",
-            "rag_type": "Parent-Child",
+            "rag_type": "Summary",
             "llm_service": "OpenAI",
             "llm_model": "gpt-4o-mini",
             "id": 4
         },
         {
-            "index_type": "ChromaDB",
+            "index_type": "Pinecone",
             "embedding_service": "OpenAI",
-            "embedding_model": "text-embedding-3-small",
-            "rag_type": "Summary",
+            "embedding_model": "text-embedding-3-large",
+            "rag_type": "Parent-Child",
             "llm_service": "OpenAI",
             "llm_model": "gpt-4o-mini",
             "id": 5

@@ -80,13 +80,14 @@ class QAModel:
         if self.llm_service.get_llm().__class__.__name__=='ChatOpenAI' or self.llm_service.get_llm().__class__.__name__=='ChatAnthropic':
             self.ai_response = self.result[-1]['answer'].content
         else:
-            raise NotImplementedError   # To catch any weird stuff I might add later and break the chatbot
+            raise NotImplementedError   # To catch any weird stuff I might add later
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
         # If compatible type, upsert query into query database
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
             self.logger.info(f'Upserting question into query database {self.query_db_service.index_name}')
             self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
+        # print(self.result[-1])
     def generate_alternative_questions(self, prompt):
         """Generates alternative questions based on a prompt."""
         _, StrOutputParser, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
@@ -165,8 +166,11 @@ class QAModel:
         # TODO this feels really fragile, but it's the best I can think of for now.
         for i, doc in enumerate(rag_answer['references']):
             for key, value in doc.metadata.items():
-                if isinstance(value, float) and not isinstance(value, (bool, int, str)):
-                    doc.metadata[key] = int(value)
+                if isinstance(value, float) and not isinstance(value, (bool, int)):
+                    if key == 'score':
+                        doc.metadata[key] = f"{value:.5f}"  # Keep 5 decimal places of the score.
+                    else:
+                        doc.metadata[key] = int(value)
                     rag_answer['references'][i] = doc
 
         sources = [DocumentProcessor.stable_hash_meta(doc.metadata) for doc in rag_answer['references']]
