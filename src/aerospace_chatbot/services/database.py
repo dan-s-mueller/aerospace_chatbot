@@ -379,6 +379,8 @@ class DatabaseService:
                 results = self.vectorstore.similarity_search_with_score(
                     query, **self.search_kwargs
                 )
+                print('results from similarity search')
+                print(results)
 
                 # Map doc_ids to list of sub-documents, adding scores to metadata
                 id_to_doc = defaultdict(list)
@@ -387,6 +389,8 @@ class DatabaseService:
                     if doc_id:
                         doc.metadata["score"] = score
                         id_to_doc[doc_id].append(doc)
+                print('Mapped doc_ids to list of sub-document')
+                print(id_to_doc)
 
                 # Fetch documents corresponding to doc_ids, retaining sub_docs in metadata
                 docs = []
@@ -396,12 +400,21 @@ class DatabaseService:
                         if doc := docstore_docs[0]:
                             doc.metadata["sub_docs"] = sub_docs
                             docs.append(doc)
+                print('Fetched documents corresponding to doc_ids, retaining sub_docs in metadata')
+                print(docs)
 
                 return docs
             
         lfs = LocalFileStore(
         os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
         )
+
+        # self.retriever = MultiVectorRetriever(
+        #     vectorstore=self.vectorstore,
+        #     byte_store=lfs,
+        #     id_key="doc_id",
+        #     search_kwargs=search_kwargs
+        # )
         self.retriever = CustomMultiVectorRetriever(
             vectorstore=self.vectorstore,
             docstore=lfs,
