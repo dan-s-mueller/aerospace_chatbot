@@ -21,6 +21,7 @@ class QAModel:
         self.llm_service = llm_service
         self.k = k
         self.sources = []
+        self.scores = []
         self.ai_response = ""
         self.result = []
         self.conversational_qa_chain = None
@@ -62,8 +63,6 @@ class QAModel:
         # Add answer to response, create an array as more prompts come in
         self.logger.info(f'Invoking QA chain with query: {query}')
         answer_result = self.conversational_qa_chain.invoke({'question': query})
-        print(len(answer_result['references']))
-        print(answer_result['references'])
         if not hasattr(self, 'result') or self.result is None:
             self.result = [answer_result]
         else:
@@ -71,10 +70,13 @@ class QAModel:
 
         # Add sources to response, create an array as more prompts come in
         answer_sources = [data.metadata for data in self.result[-1]['references']]
+        answer_scores =  self.result[-1]['scores']
         if not hasattr(self, 'sources') or self.sources is None:
             self.sources = [answer_sources]
+            self.scores = [answer_scores]
         else:
             self.sources.append(answer_sources)
+            self.scores.append(answer_scores)
 
         # Add answer to memory
         if self.llm_service.get_llm().__class__.__name__=='ChatOpenAI' or self.llm_service.get_llm().__class__.__name__=='ChatAnthropic':
@@ -87,7 +89,6 @@ class QAModel:
         if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
             self.logger.info(f'Upserting question into query database {self.query_db_service.index_name}')
             self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
-        # print(self.result[-1])
     def generate_alternative_questions(self, prompt):
         """Generates alternative questions based on a prompt."""
         _, StrOutputParser, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
@@ -117,9 +118,8 @@ class QAModel:
     def _define_qa_chain(self):
         """Defines the conversational QA chain."""
         itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
-
-
-        # This adds a 'memory' key to the input object
+        
+       # This adds a 'memory' key to the input object
         loaded_memory = RunnablePassthrough.assign(
             chat_history=RunnableLambda(self.memory.load_memory_variables) 
             | itemgetter('history'))  
@@ -133,22 +133,27 @@ class QAModel:
             | self.llm_service.get_llm()
             | StrOutputParser()}
         
-        retrieved_documents = {
-            'source_documents': itemgetter('standalone_question') 
-                                | self.db_service.retriever,
-            'question': lambda x: x['standalone_question']}
+        retrieval_results = RunnablePassthrough.assign(
+            retrieval=lambda x: self.db_service.retriever.invoke(x['standalone_question'])
+        )
+
+        retrieved_documents = RunnablePassthrough.assign(
+            source_documents=lambda x: x['retrieval'][0],  # Get docs from first element of tuple
+            scores=lambda x: x['retrieval'][1]            # Get scores from second element of tuple
+        )
         
         final_inputs = {
             'context': lambda x: self._combine_documents(x['source_documents']),
-            'question': itemgetter('question')}
+            'question': itemgetter('standalone_question')}
         
         answer = {
             'answer': final_inputs 
                         | QA_PROMPT 
                         | self.llm_service.get_llm(),
-            'references': itemgetter('source_documents')}
+            'references': itemgetter('source_documents'),
+            'scores': itemgetter('scores')}
         
-        return loaded_memory | standalone_question | retrieved_documents | answer
+        return loaded_memory | standalone_question | retrieval_results | retrieved_documents | answer
     def _combine_documents(self, docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator='\n\n'):
         """Combines a list of documents into a single string using the format_document function."""
         _, _, _, _, _, _, _, format_document = Dependencies.LLM.get_chain_utils()

@@ -343,14 +343,13 @@ class DatabaseService:
             from langchain_core.runnables import chain
 
             # Callable retriever which adds score to the metadata of the documents
+            # FIXME make score a separate output from the metadata. Adding it to the metadata will break the hashing used to index
             @chain
             def retriever(query: str):
                 # Convert to a list from zip tuple
                 docs, scores = map(list, zip(*self.vectorstore.similarity_search_with_score(query, 
                                                                                             **search_kwargs))) 
-                for doc, score in zip(docs, scores):
-                    doc.metadata["score"] = score
-                return docs
+                return docs, scores
             self.retriever = retriever
         elif self.db_type == 'RAGatouille':
             self.retriever = self.vectorstore.as_langchain_retriever(
@@ -362,6 +361,8 @@ class DatabaseService:
         """Get multi-vector retriever for Parent-Child or Summary RAG types."""
         _, _, MultiVectorRetriever, LocalFileStore = Dependencies.Storage.get_vector_stores()
         # TODO move this into dependency function
+        import json
+        from langchain.schema import Document
         from collections import defaultdict
         from langchain.retrievers import MultiVectorRetriever
         from langchain_core.callbacks import CallbackManagerForRetrieverRun
@@ -383,27 +384,40 @@ class DatabaseService:
                 print(results)
 
                 # Map doc_ids to list of sub-documents, adding scores to metadata
-                id_to_doc = defaultdict(list)
+                sub_docs = defaultdict(list)
+                sub_doc_scores = defaultdict(list)
                 for doc, score in results:
                     doc_id = doc.metadata.get("doc_id")
                     if doc_id:
-                        doc.metadata["score"] = score
-                        id_to_doc[doc_id].append(doc)
-                print('Mapped doc_ids to list of sub-document')
-                print(id_to_doc)
+                        sub_docs[doc_id].append(doc)
+                        sub_doc_scores[doc_id].append(score)
+                print('Sub-docs')
+                print(sub_docs)
+                print('Sub-doc scores')
+                print(sub_doc_scores)
 
                 # Fetch documents corresponding to doc_ids, retaining sub_docs in metadata
                 docs = []
-                for _id, sub_docs in id_to_doc.items():
+                scores = []
+                for _id, sub_docs in sub_docs.items():
                     docstore_docs = self.docstore.mget([_id])
                     if docstore_docs:
                         if doc := docstore_docs[0]:
-                            doc.metadata["sub_docs"] = sub_docs
+                            doc_dict = json.loads(doc.decode('utf-8'))  # Deserialize the bytes into a dictionary
+                            # Create a Document object from the dictionary
+                            doc = Document(
+                                page_content=doc_dict['kwargs']['page_content'],
+                                metadata=doc_dict['kwargs']['metadata']
+                            )
                             docs.append(doc)
+                            scores.append(sub_doc_scores[_id][0])
+
                 print('Fetched documents corresponding to doc_ids, retaining sub_docs in metadata')
                 print(docs)
+                print('Scores')
+                print(scores)
 
-                return docs
+                return docs, scores
             
         lfs = LocalFileStore(
         os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
