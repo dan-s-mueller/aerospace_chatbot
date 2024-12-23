@@ -97,7 +97,10 @@ class DocumentProcessor:
             elements = partition_pdf(
                 pdf_path,
                 strategy="hi_res",
-                infer_table_structure=True
+                languages=['eng'],
+                split_pdf_page=True,
+                split_pdf_allow_failed=True,
+                split_pdf_concurrency_level=15
             )
             return [element.to_dict() for element in elements]
 
@@ -130,7 +133,7 @@ class DocumentProcessor:
             partitioned_docs.append(output_path)
             if upload_bucket:
                 self._upload_to_gcs(upload_bucket, pdf_file, os.path.basename(pdf_file)) # Upload original PDF file to GCS
-                self._upload_to_gcs(upload_bucket, output_path, os.path.basename(output_path)) # Upload JSON file to GCS
+                self._upload_to_gcs(upload_bucket, output_path, os.path.join('partitioned', os.path.basename(output_path))) # Upload JSON file to GCS
                 self.logger.info(f"Uploaded {pdf_file} and {output_path} to {upload_bucket}")
 
         return partitioned_docs
