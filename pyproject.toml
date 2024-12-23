@@ -14,7 +14,6 @@ numpy = ">=1.21,<1.25"
 python-dotenv = "^1.0.0"
 ipywidgets = "^8.1.1"
 jsonlines = "^4.0.0"
-pypdf = "^3.17.4"
 pypdf2 = "^3.0.1"
 tenacity = "^8.2.3"
 pytest = "^8.1.1"
@@ -49,6 +48,7 @@ langchain-anthropic = "^0.2.4"
 langchain-core = "^0.3.15"
 langchain = "^0.3.7"
 unstructured = {extras = ["pdf"], version = "^0.16.11"}
+pypdf = "^5.1.0"
 
 [build-system]
 requires = ["poetry-core"]

@@ -129,8 +129,8 @@ class DocumentProcessor:
             self.logger.info(f"Partitioned data saved at {output_path}")
             partitioned_docs.append(output_path)
             if upload_bucket:
-                self._upload_to_gcs(upload_bucket, pdf_file) # Upload original PDF file to GCS
-                self._upload_to_gcs(upload_bucket, output_path) # Upload JSON file to GCS
+                self._upload_to_gcs(upload_bucket, pdf_file, os.path.basename(pdf_file)) # Upload original PDF file to GCS
+                self._upload_to_gcs(upload_bucket, output_path, os.path.basename(output_path)) # Upload JSON file to GCS
                 self.logger.info(f"Uploaded {pdf_file} and {output_path} to {upload_bucket}")
 
         return partitioned_docs
@@ -142,7 +142,7 @@ class DocumentProcessor:
         If no_chunk is True, skip the chunking step and only partition documents.
         """
 
-        # Load partitioned docs
+        # FIXME Load partitioned docs
         # If local, do nothing. If GCS, download to work_dir and update partitioned_docs to local paths
 
         self.logger.info("Chunking documents...")
@@ -321,7 +321,7 @@ class DocumentProcessor:
         """Chunk documents using specified parameters."""
         RecursiveCharacterTextSplitter = Dependencies.Document.get_splitters()
 
-        # TODO Create chunking functionality here for unstructured
+        # FIXME Create chunking functionality here for unstructured
         # Provide load from work_dir if a partitioned directory exists with json files
         # Also provide the option to load from GCS if partitioned files are present in GCS
 
@@ -430,14 +430,14 @@ class DocumentProcessor:
         return merged
 
     @staticmethod
-    def _upload_to_gcs(bucket_name, file_path):
+    def _upload_to_gcs(bucket_name, file_local, file_gcs):
         """Upload a file to Google Cloud Storage."""
         _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(file_path)
-        blob.upload_from_filename(file_path)
+        blob = bucket.blob(file_gcs)
+        blob.upload_from_filename(file_local)
 
     def _store_parent_docs(self, index_name, chunking_result, rag_type):
         """Store parent documents or original documents for Parent-Child or Summary RAG types."""
