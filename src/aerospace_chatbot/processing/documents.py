@@ -105,21 +105,31 @@ class DocumentProcessor:
             return [element.to_dict() for element in elements]
 
         self.logger.info(f"Loading {len(documents)} documents...")
-        docs_to_process = self._load_documents(documents)
+        local_docs_to_process, valid_gcs_docs = self._load_documents(documents)
 
-        self.logger.info(f"Partitioning {len(docs_to_process)} documents...")
+        self.logger.info(f"Partitioning {len(local_docs_to_process)} documents...")
         output_dir=os.path.join(self.work_dir, 'partitioned')
         os.makedirs(output_dir, exist_ok=True)
 
         # Process directory of PDFs
         partitioned_docs = []
-        for pdf_file in docs_to_process:
+        for pdf_file in local_docs_to_process:
             if partition_by_api:
                 self.logger.info(f"Partitioning {pdf_file} with Unstructured API...")
                 partitioned_data = partition_with_api(pdf_file)
             else:
                 self.logger.info(f"Partitioning {pdf_file} Locally...")
                 partitioned_data = partition_locally(pdf_file)
+
+            # TODO before saving to json, or in the partition functions, add GCS metadata. Example below. Used automatically with ingest pipeline. 
+            # If valid_gcs_docs is not empty, add GCS metadata to partitioned_data.
+            # "data_source": {
+            #     "url": "gs://processing-pdfs/1999_cremers_reocr.pdf",
+            #     "record_locator": {
+            #     "protocol": "gs",
+            #     "remote_file_path": "gs://processing-pdfs"
+            #     },
+            # }
 
             # Save the partitioned data to JSON
             output_path = os.path.join(
@@ -142,19 +152,37 @@ class DocumentProcessor:
         """
         Chunk documents based on RAG type.
         Partitioned docs is either a list of local or GCS json files.
-        If no_chunk is True, skip the chunking step and only partition documents.
         """
+        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
-        # FIXME Load partitioned docs
-        # If local, do nothing. If GCS, download to work_dir and update partitioned_docs to local paths
-
+        # Process GCS paths if present
+        local_partition_paths = []
+        for doc_path in partitioned_docs:
+            if doc_path.startswith('gs://'):
+                # Parse GCS path
+                bucket_name = doc_path.split('/')[2]
+                blob_name = '/'.join(doc_path.split('/')[3:])
+                
+                # Download file from GCS
+                storage_client = storage.Client()
+                bucket = storage_client.bucket(bucket_name)
+                blob = bucket.blob(blob_name)
+                
+                # Create local path
+                local_path = os.path.join(self.work_dir, os.path.basename(blob_name))
+                blob.download_to_filename(local_path)
+                local_partition_paths.append(local_path)
+                self.logger.info(f"Downloaded {doc_path} to {local_path}")
+            else:
+                local_partition_paths.append(doc_path)
+        
         self.logger.info("Chunking documents...")
         if self.rag_type == 'Standard':
-            return self._chunk_standard(partitioned_docs)
+            return self._chunk_standard(local_partition_paths)
         elif self.rag_type == 'Parent-Child':
-            return self._chunk_parent_child(partitioned_docs)
+            return self._chunk_parent_child(local_partition_paths)
         elif self.rag_type == 'Summary':
-            return self._chunk_summary(partitioned_docs)
+            return self._chunk_summary(local_partition_paths)
         else:
             raise ValueError(f"Unsupported RAG type: {self.rag_type}")
             
@@ -210,16 +238,13 @@ class DocumentProcessor:
     def _load_documents(self, documents):
         """
         Load PDF documents and return a list of local file paths. Accepts GCS URLs and local file paths.
-        
-        work_dir is the directory to store downloaded and processed PDF files.
         """
         _, _, storage, PyPDFLoader, _, _ = Dependencies.Document.get_processors()
 
         def _download_and_validate_pdf(doc_in):
             """Download and validate a PDF document."""
             
-            # Handle GCS URLs
-            if doc_in.startswith('gs://'):
+            if doc_in.startswith('gs://') and doc_in.lower().endswith('.pdf'):
                 self.logger.info(f"Downloading PDF from GCS: {doc_in}")
                 bucket_name = doc_in.split('/')[2]
                 blob_name = '/'.join(doc_in.split('/')[3:])
@@ -233,8 +258,11 @@ class DocumentProcessor:
                 local_path = f"{self.work_dir}/{blob_name.split('/')[-1]}"
                 blob.download_to_filename(local_path)
                 doc_local_temp = local_path
-            else:
+            elif doc_in.lower().endswith('.pdf'):
                 doc_local_temp = doc_in
+            else:
+                self.logger.warning(f"Not a PDF document, skipping: {doc_in}")
+                return None
 
             # Validate the PDF
             try:
@@ -246,7 +274,8 @@ class DocumentProcessor:
 
             return doc_local_temp
         
-        docs_to_process = []
+        local_docs_to_process = []
+        valid_gcs_docs = []
         invalid_docs = []
         for i, doc_in in enumerate(documents):
             self.logger.info(f"Checking document {i+1} of {len(documents)}: {doc_in}")
@@ -256,12 +285,14 @@ class DocumentProcessor:
                 invalid_docs.append(doc_in)
                 continue
             else:
-                docs_to_process.append(doc_local_temp)
+                local_docs_to_process.append(doc_local_temp)
+                if doc_in.startswith('gs://'):
+                    valid_gcs_docs.append(doc_in)
 
         if invalid_docs:
             raise ValueError(f"Invalid PDF documents detected: {', '.join(invalid_docs)}")
         
-        return docs_to_process
+        return local_docs_to_process, valid_gcs_docs
     
     def _chunk_standard(self, documents):
         """Chunk documents for standard RAG."""
@@ -271,166 +302,167 @@ class DocumentProcessor:
                               chunks=chunks,
                               chunk_size=self.chunk_size,
                               chunk_overlap=self.chunk_overlap)
-    def _chunk_parent_child(self, documents):
-        """Chunk documents for parent-child RAG."""
-        chunks, parent_chunks = self._chunk_documents(documents)
-        self.logger.info(f"Number of chunks: {len(chunks)}")
-        return ChunkingResult(rag_type=self.rag_type,
-                              chunks=chunks,
-                              parent_chunks=parent_chunks,
-                              chunk_size=self.chunk_size,
-                              chunk_overlap=self.chunk_overlap)
-    def _chunk_summary(self, documents):
-        """Chunk documents for summary RAG."""
-        _, StrOutputParser, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+    
+    # TODO Removed parent-child chunking for now. Too complex with breaking down unstructured.io parent into child. No clear use case now.
+    # def _chunk_parent_child(self, documents):
+    #     """Chunk documents for parent-child RAG."""
+    #     chunks, parent_chunks = self._chunk_documents(documents)
+    #     self.logger.info(f"Number of chunks: {len(chunks)}")
+    #     return ChunkingResult(rag_type=self.rag_type,
+    #                           chunks=chunks,
+    #                           parent_chunks=parent_chunks,
+    #                           chunk_size=self.chunk_size,
+    #                           chunk_overlap=self.chunk_overlap)
+    # def _chunk_summary(self, documents):
+    #     """Chunk documents for summary RAG."""
+    #     _, StrOutputParser, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
         
-        chunks = self._chunk_documents(documents)
+    #     chunks = self._chunk_documents(documents)
 
-        # Create unique ids for each chunk, set up chain
-        id_key = "doc_id"
-        doc_ids = [str(self.stable_hash_meta(chunk.metadata)) for chunk in chunks]
-        # Setup the summarization chain
-        chain = (
-            {"doc": lambda x: x.page_content}
-            | SUMMARIZE_TEXT
-            | self.llm_service.get_llm()
-            | StrOutputParser()
-        )
+    #     # Create unique ids for each chunk, set up chain
+    #     id_key = "doc_id"
+    #     doc_ids = [str(self.stable_hash_meta(chunk.metadata)) for chunk in chunks]
+    #     # Setup the summarization chain
+    #     chain = (
+    #         {"doc": lambda x: x.page_content}
+    #         | SUMMARIZE_TEXT
+    #         | self.llm_service.get_llm()
+    #         | StrOutputParser()
+    #     )
         
-        # Process documents in batches
-        summaries = []
-        batch_size=10   # TODO make this a parameter
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i:i + batch_size]
-            batch_summaries = chain.batch(batch, config={"max_concurrency": batch_size})
-            summaries.extend(batch_summaries)
+    #     # Process documents in batches
+    #     summaries = []
+    #     batch_size=10   # make this a parameter
+    #     for i in range(0, len(chunks), batch_size):
+    #         batch = chunks[i:i + batch_size]
+    #         batch_summaries = chain.batch(batch, config={"max_concurrency": batch_size})
+    #         summaries.extend(batch_summaries)
         
-        # Create summary documents with metadata
-        summary_chunks = [
-            Document(page_content=summary, metadata={id_key: doc_ids[i]})
-            for i, summary in enumerate(summaries)
-        ]        
+    #     # Create summary documents with metadata
+    #     summary_chunks = [
+    #         Document(page_content=summary, metadata={id_key: doc_ids[i]})
+    #         for i, summary in enumerate(summaries)
+    #     ]        
             
-        self.logger.info(f"Number of summaries: {len(summary_chunks)}")
-        return ChunkingResult(rag_type=self.rag_type,
-                              chunks={'doc_ids':doc_ids,'chunks':chunks},
-                              summary_chunks=summary_chunks, 
-                              llm_service=self.llm_service,
-                              chunk_size=self.chunk_size,
-                              chunk_overlap=self.chunk_overlap,
-        )
+    #     self.logger.info(f"Number of summaries: {len(summary_chunks)}")
+    #     return ChunkingResult(rag_type=self.rag_type,
+    #                           chunks={'doc_ids':doc_ids,'chunks':chunks},
+    #                           summary_chunks=summary_chunks, 
+    #                           llm_service=self.llm_service,
+    #                           chunk_size=self.chunk_size,
+    #                           chunk_overlap=self.chunk_overlap,
+    #     )
 
     def _chunk_documents(self, documents):
         """Chunk documents using specified parameters."""
-        RecursiveCharacterTextSplitter = Dependencies.Document.get_splitters()
+        # RecursiveCharacterTextSplitter = Dependencies.Document.get_splitters()
 
-        # FIXME Create chunking functionality here for unstructured
-        # Provide load from work_dir if a partitioned directory exists with json files
-        # Also provide the option to load from GCS if partitioned files are present in GCS
+        os.makedirs(os.path.join(self.work_dir, 'chunked'), exist_ok=True)
+        output_paths = []
+        chunks_out = []
+        for json_file in documents:
+            print(f"Chunking {json_file}...")
+            
+            # Load partitioned data, convert to elements type
+            with open(json_file, "r") as file:
+                partitioned_data = json.load(file)
+            elements=elements_from_dicts(partitioned_data)
 
-        # Check for partitioned input as a bucket or local directory
+            # Chunk the partitioned data by title
+            chunks = chunk_by_title(
+                elements,
+                multipage_sections=True,
+                max_characters=self.chunk_size,
+                overlap=self.chunk_overlap
+            )
+            chunks_out.extend(chunks)
+            chunks_output = [chunk.to_dict() for chunk in chunks]
 
-        chunks = []
-        if self.rag_type != 'Parent-Child':
-            # if self.chunk_method == 'None' or self.chunk_method is None:
-            #     return documents
-            for i, doc in enumerate(documents):
-                # if self.chunk_method == 'character_recursive':
-                self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-                                                                chunk_overlap=self.chunk_overlap,
-                                                                add_start_index=True)
-                page_chunks = self.splitter.split_documents([doc])
-                chunks.extend(page_chunks)  # Use extend to flatten the list
-                # else:
-                #     raise NotImplementedError
-            return chunks
-        elif self.rag_type == 'Parent-Child':
-            parent_chunks = []
-            # if self.chunk_method == 'None':
-            #     parent_chunks = documents
-            #     for i, doc in enumerate(documents):
-            #         self.k_child = 4
-            #         doc_ids = [str(self.stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
-            #         id_key = "doc_id"
-            #         for parent_chunk in parent_chunks:
-            #             _id = doc_ids[i]
-            #             # Default character recursive since no chunking method specified, use k_child to determine chunk size
-            #             self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=len(parent_chunk.page_content) / self.k_child, 
-            #                                                                 chunk_overlap=0,
-            #                                                                 add_start_index=True)
-            #             _chunks = self.child_splitter.split_documents([parent_chunk])
-            #             for _doc in _chunks:
-            #                 _doc.metadata[id_key] = _id
-            #             chunks.extend(_chunks)  # Use extend to flatten the list
-            #     return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
-            # else:
-            for i, doc in enumerate(documents):
-                self.k_child = 4
-                # if self.chunk_method == 'character_recursive':
-                self.parent_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-                                                                    chunk_overlap=self.chunk_overlap,
-                                                                    add_start_index=True)
-                parent_page_chunks = self.parent_splitter.split_documents([doc])
-                parent_chunks.extend(parent_page_chunks)  # Use extend to flatten the list
-                # else:
-                #     raise NotImplementedError
+            # Save chunked output
+            output_path = os.path.join(os.path.join(self.work_dir, 'chunked'), json_file.replace("-partitioned", "-chunked"))
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(chunks_output, f, ensure_ascii=False, indent=4)
+            output_paths.append(output_path)
+
+            print(f"Chunked data saved at {output_path}")
+
+        return chunks_out, output_paths
+        
+        # TODO Removed parent-child chunking for now. Too complex with breaking down unstructured.io parent into child. No clear use case now.
+        # chunks = []
+        # if self.rag_type != 'Parent-Child':
+            # for i, doc in enumerate(documents):
+            #     self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
+            #                                                     chunk_overlap=self.chunk_overlap,
+            #                                                     add_start_index=True)
+            #     page_chunks = self.splitter.split_documents([doc])
+            #     chunks.extend(page_chunks)  # Use extend to flatten the list
+
+        # elif self.rag_type == 'Parent-Child':
+            # parent_chunks = []
+            # for i, doc in enumerate(documents):
+            #     self.k_child = 4
+            #     self.parent_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
+            #                                                         chunk_overlap=self.chunk_overlap,
+            #                                                         add_start_index=True)
+            #     parent_page_chunks = self.parent_splitter.split_documents([doc])
+            #     parent_chunks.extend(parent_page_chunks)  # Use extend to flatten the list
                 
-            doc_ids = [str(self.stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
-            id_key = "doc_id"
-            for i, doc in enumerate(parent_chunks):
-                _id = doc_ids[i]
-                # if self.chunk_method == 'character_recursive':
-                self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size / self.k_child, 
-                                                                    chunk_overlap=self.chunk_overlap,
-                                                                    add_start_index=True)
-                # else:
-                #     raise NotImplementedError
-                _chunks = self.child_splitter.split_documents([doc])
-                for _doc in _chunks:
-                    _doc.metadata[id_key] = _id
-                chunks.extend(_chunks)  # Use extend to flatten the list
-            return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
-        else:
-            raise NotImplementedError
-    @staticmethod
-    def _sanitize_page(doc):
-        """Clean up page content and metadata."""
-        
-        # Clean up content
-        content = doc.page_content
-        content = re.sub(r"(\w+)-\n(\w+)", r"\1\2", content)
-        content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", content.strip())
-        content = re.sub(r"\n\s*\n", "\n\n", content)
-        
-        # Validate content
-        if len(content) == 0:
-            return None
-            
-        num_words = len(content.split())
-        alphanumeric_pct = sum(c.isalnum() for c in content) / len(content)
-        
-        if num_words < 5 or alphanumeric_pct < 0.3:
-            return None
-            
-        doc.page_content = content
-        return doc
+            # doc_ids = [str(self.stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
+            # doc_ids = [parent_chunk.element_id for parent_chunk in parent_chunks]
+            # id_key = "doc_id"
+            # for i, doc in enumerate(parent_chunks):
+            #     _id = doc_ids[i]
+            #     self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size / self.k_child, 
+            #                                                         chunk_overlap=self.chunk_overlap,
+            #                                                         add_start_index=True)
+            #     _chunks = self.child_splitter.split_documents([doc])
+            #     for _doc in _chunks:
+            #         _doc.metadata[id_key] = _id
+            #     chunks.extend(_chunks)  # Use extend to flatten the list
+            # return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
+        # else:
+        #     raise NotImplementedError
 
-    @staticmethod
-    def _merge_pages(docs, n_pages):
-        """Merge consecutive pages."""
-        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+    # @staticmethod
+    # def _sanitize_page(doc):
+    #     """Clean up page content and metadata."""
+        
+    #     # Clean up content
+    #     content = doc.page_content
+    #     content = re.sub(r"(\w+)-\n(\w+)", r"\1\2", content)
+    #     content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", content.strip())
+    #     content = re.sub(r"\n\s*\n", "\n\n", content)
+        
+    #     # Validate content
+    #     if len(content) == 0:
+    #         return None
+            
+    #     num_words = len(content.split())
+    #     alphanumeric_pct = sum(c.isalnum() for c in content) / len(content)
+        
+    #     if num_words < 5 or alphanumeric_pct < 0.3:
+    #         return None
+            
+    #     doc.page_content = content
+    #     return doc
 
-        merged = []
-        for i in range(0, len(docs), n_pages):
-            batch = docs[i:i + n_pages]
-            merged_content = "\n\n".join(d.page_content for d in batch)
-            merged_metadata = batch[0].metadata.copy()
-            merged_metadata['merged_pages'] = n_pages
-            merged.append(Document(
-                page_content=merged_content,
-                metadata=merged_metadata
-            ))
-        return merged
+    # @staticmethod
+    # def _merge_pages(docs, n_pages):
+    #     """Merge consecutive pages."""
+    #     _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+
+    #     merged = []
+    #     for i in range(0, len(docs), n_pages):
+    #         batch = docs[i:i + n_pages]
+    #         merged_content = "\n\n".join(d.page_content for d in batch)
+    #         merged_metadata = batch[0].metadata.copy()
+    #         merged_metadata['merged_pages'] = n_pages
+    #         merged.append(Document(
+    #             page_content=merged_content,
+    #             metadata=merged_metadata
+    #         ))
+    #     return merged
 
     @staticmethod
     def _upload_to_gcs(bucket_name, file_local, file_gcs):
@@ -442,26 +474,27 @@ class DocumentProcessor:
         blob = bucket.blob(file_gcs)
         blob.upload_from_filename(file_local)
 
-    def _store_parent_docs(self, index_name, chunking_result, rag_type):
-        """Store parent documents or original documents for Parent-Child or Summary RAG types."""
-        from pathlib import Path
-        import json
-        import os
+    # TODO removed parent/child/summary doc storage for now. No clear use case now.
+    # def _store_parent_docs(self, index_name, chunking_result, rag_type):
+    #     """Store parent documents or original documents for Parent-Child or Summary RAG types."""
+    #     from pathlib import Path
+    #     import json
+    #     import os
 
-        # Create local file store directory if it doesn't exist
-        lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / index_name
-        lfs_path.mkdir(parents=True, exist_ok=True)
+    #     # Create local file store directory if it doesn't exist
+    #     lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / index_name
+    #     lfs_path.mkdir(parents=True, exist_ok=True)
 
-        if rag_type == 'Parent-Child':
-            # Store parent documents
-            for doc_id, parent_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.parent_chunks):
-                file_path = lfs_path / str(doc_id)
-                with open(file_path, "w") as f:
-                    json.dump({"kwargs": {"page_content": parent_doc.page_content}}, f)
+    #     if rag_type == 'Parent-Child':
+    #         # Store parent documents
+    #         for doc_id, parent_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.parent_chunks):
+    #             file_path = lfs_path / str(doc_id)
+    #             with open(file_path, "w") as f:
+    #                 json.dump({"kwargs": {"page_content": parent_doc.page_content}}, f)
         
-        elif rag_type == 'Summary':
-            # Store original documents
-            for doc_id, orig_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.pages['docs']):
-                file_path = lfs_path / str(doc_id)
-                with open(file_path, "w") as f:
-                    json.dump({"kwargs": {"page_content": orig_doc.page_content}}, f)
+    #     elif rag_type == 'Summary':
+    #         # Store original documents
+    #         for doc_id, orig_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.pages['docs']):
+    #             file_path = lfs_path / str(doc_id)
+    #             with open(file_path, "w") as f:
+    #                 json.dump({"kwargs": {"page_content": orig_doc.page_content}}, f)
