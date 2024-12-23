@@ -16,16 +16,17 @@ from unstructured.staging.base import elements_from_dicts
 from ..core.cache import Dependencies, cache_data
 from ..services.prompts import SUMMARIZE_TEXT
 
-@dataclass
-class ChunkingResult:
-    """Container for chunking results."""
-    rag_type: str
-    chunks: List[Any]
-    chunk_size: Optional[int] = None
-    chunk_overlap: Optional[int] = None
-    parent_chunks: List[Any] = None
-    summary_chunks: Optional[List[Any]] = None
-    llm_service: Optional[Any] = None
+# TODO removed this, using unstructured.io elements. Clean up later.
+# @dataclass
+# class ChunkingResult:
+#     """Container for chunking results."""
+#     rag_type: str
+#     chunks: List[Any]
+#     chunk_size: Optional[int] = None
+#     chunk_overlap: Optional[int] = None
+#     parent_chunks: List[Any] = None
+#     summary_chunks: Optional[List[Any]] = None
+#     llm_service: Optional[Any] = None
 
 class DocumentProcessor:
     """Handles document processing, chunking, and indexing."""
@@ -100,7 +101,8 @@ class DocumentProcessor:
                 languages=['eng'],
                 split_pdf_page=True,
                 split_pdf_allow_failed=True,
-                split_pdf_concurrency_level=15
+                split_pdf_concurrency_level=15,
+                infer_table_structure=True
             )
             return [element.to_dict() for element in elements]
 
@@ -114,6 +116,7 @@ class DocumentProcessor:
         # Process directory of PDFs
         partitioned_docs = []
         for pdf_file in local_docs_to_process:
+            
             if partition_by_api:
                 self.logger.info(f"Partitioning {pdf_file} with Unstructured API...")
                 partitioned_data = partition_with_api(pdf_file)
@@ -148,7 +151,7 @@ class DocumentProcessor:
 
         return partitioned_docs
     
-    def process_documents(self, partitioned_docs):
+    def chunk_documents(self, partitioned_docs):
         """
         Chunk documents based on RAG type.
         Partitioned docs is either a list of local or GCS json files.
@@ -176,15 +179,56 @@ class DocumentProcessor:
             else:
                 local_partition_paths.append(doc_path)
         
+        # Chunk documents
         self.logger.info("Chunking documents...")
-        if self.rag_type == 'Standard':
-            return self._chunk_standard(local_partition_paths)
-        elif self.rag_type == 'Parent-Child':
-            return self._chunk_parent_child(local_partition_paths)
-        elif self.rag_type == 'Summary':
-            return self._chunk_summary(local_partition_paths)
-        else:
-            raise ValueError(f"Unsupported RAG type: {self.rag_type}")
+        os.makedirs(os.path.join(self.work_dir, 'chunked'), exist_ok=True)
+        output_paths = []
+        chunks_out = []
+        for json_file in local_partition_paths:
+            print(f"Chunking {json_file}...")
+            
+            # Load partitioned data, convert to elements type
+            with open(json_file, "r") as file:
+                partitioned_data = json.load(file)
+            elements=elements_from_dicts(partitioned_data)
+
+            # Chunk the partitioned data by title
+            chunks = chunk_by_title(
+                elements,
+                multipage_sections=True,
+                max_characters=self.chunk_size,
+                overlap=self.chunk_overlap
+            )
+            chunks_out.extend(chunks)
+            chunks_output = [chunk.to_dict() for chunk in chunks]
+
+            # Save chunked output
+            output_path = os.path.join(os.path.join(self.work_dir, 'chunked'), os.path.basename(json_file).replace("-partitioned", "-chunked"))
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(chunks_output, f, ensure_ascii=False, indent=4)
+            output_paths.append(output_path)
+
+            print(f"Chunked data saved at {output_path}")
+
+        self.logger.info(f"Total number of chunks: {len(chunks_out)}")
+        self.logger.info(f"Output paths: {output_paths}")
+
+        # TODO remove later, this is from previous code setup with rag_type
+        # if self.rag_type == 'Standard':
+        #     return self._chunk_standard(local_partition_paths)
+        # elif self.rag_type == 'Parent-Child':
+        #     return self._chunk_parent_child(local_partition_paths)
+        # elif self.rag_type == 'Summary':
+        #     return self._chunk_summary(local_partition_paths)
+        # else:
+        #     raise ValueError(f"Unsupported RAG type: {self.rag_type}")
+        # chunks = self._chunk_documents(documents)
+        # return ChunkingResult(rag_type=self.rag_type,
+        #                       chunks=chunks,
+        #                       chunk_size=self.chunk_size,
+        #                       chunk_overlap=self.chunk_overlap)
+
+        return chunks_out, output_paths
             
     @staticmethod
     def list_available_buckets():
@@ -296,13 +340,54 @@ class DocumentProcessor:
     
     def _chunk_standard(self, documents):
         """Chunk documents for standard RAG."""
-        chunks = self._chunk_documents(documents)
+
+        os.makedirs(os.path.join(self.work_dir, 'chunked'), exist_ok=True)
+        output_paths = []
+        chunks_out = []
+        for json_file in documents:
+            print(f"Chunking {json_file}...")
+            
+            # Load partitioned data, convert to elements type
+            with open(json_file, "r") as file:
+                partitioned_data = json.load(file)
+            elements=elements_from_dicts(partitioned_data)
+
+            # Chunk the partitioned data by title
+            chunks = chunk_by_title(
+                elements,
+                multipage_sections=True,
+                max_characters=self.chunk_size,
+                overlap=self.chunk_overlap
+            )
+            chunks_out.extend(chunks)
+            chunks_output = [chunk.to_dict() for chunk in chunks]
+
+            # Save chunked output
+            output_path = os.path.join(os.path.join(self.work_dir, 'chunked'), json_file.replace("-partitioned", "-chunked"))
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(chunks_output, f, ensure_ascii=False, indent=4)
+            output_paths.append(output_path)
+
+            print(f"Chunked data saved at {output_path}")
+
+        # chunks = self._chunk_documents(documents)
         self.logger.info(f"Number of chunks: {len(chunks)}")
-        return ChunkingResult(rag_type=self.rag_type,
-                              chunks=chunks,
-                              chunk_size=self.chunk_size,
-                              chunk_overlap=self.chunk_overlap)
+        # return ChunkingResult(rag_type=self.rag_type,
+        #                       chunks=chunks,
+        #                       chunk_size=self.chunk_size,
+        #                       chunk_overlap=self.chunk_overlap)
+        return chunks_out, output_paths
     
+    @staticmethod
+    def _upload_to_gcs(bucket_name, file_local, file_gcs):
+        """Upload a file to Google Cloud Storage."""
+        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(file_gcs)
+        blob.upload_from_filename(file_local)
+
     # TODO Removed parent-child chunking for now. Too complex with breaking down unstructured.io parent into child. No clear use case now.
     # def _chunk_parent_child(self, documents):
     #     """Chunk documents for parent-child RAG."""
@@ -353,42 +438,10 @@ class DocumentProcessor:
     #                           chunk_overlap=self.chunk_overlap,
     #     )
 
-    def _chunk_documents(self, documents):
+    # TODO Removed parent-child chunking for now. Too complex with breaking down unstructured.io parent into child. No clear use case now.
+    # def _chunk_documents(self, documents):
         """Chunk documents using specified parameters."""
         # RecursiveCharacterTextSplitter = Dependencies.Document.get_splitters()
-
-        os.makedirs(os.path.join(self.work_dir, 'chunked'), exist_ok=True)
-        output_paths = []
-        chunks_out = []
-        for json_file in documents:
-            print(f"Chunking {json_file}...")
-            
-            # Load partitioned data, convert to elements type
-            with open(json_file, "r") as file:
-                partitioned_data = json.load(file)
-            elements=elements_from_dicts(partitioned_data)
-
-            # Chunk the partitioned data by title
-            chunks = chunk_by_title(
-                elements,
-                multipage_sections=True,
-                max_characters=self.chunk_size,
-                overlap=self.chunk_overlap
-            )
-            chunks_out.extend(chunks)
-            chunks_output = [chunk.to_dict() for chunk in chunks]
-
-            # Save chunked output
-            output_path = os.path.join(os.path.join(self.work_dir, 'chunked'), json_file.replace("-partitioned", "-chunked"))
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(chunks_output, f, ensure_ascii=False, indent=4)
-            output_paths.append(output_path)
-
-            print(f"Chunked data saved at {output_path}")
-
-        return chunks_out, output_paths
-        
-        # TODO Removed parent-child chunking for now. Too complex with breaking down unstructured.io parent into child. No clear use case now.
         # chunks = []
         # if self.rag_type != 'Parent-Child':
             # for i, doc in enumerate(documents):
@@ -463,16 +516,6 @@ class DocumentProcessor:
     #             metadata=merged_metadata
     #         ))
     #     return merged
-
-    @staticmethod
-    def _upload_to_gcs(bucket_name, file_local, file_gcs):
-        """Upload a file to Google Cloud Storage."""
-        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
-
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(file_gcs)
-        blob.upload_from_filename(file_local)
 
     # TODO removed parent/child/summary doc storage for now. No clear use case now.
     # def _store_parent_docs(self, index_name, chunking_result, rag_type):

@@ -1,6 +1,5 @@
 from .documents import (
     DocumentProcessor, 
-    ChunkingResult
 )
 from .queries import (
     QAModel
@@ -8,6 +7,5 @@ from .queries import (
 
 __all__ = [
     'DocumentProcessor', 
-    'ChunkingResult', 
     'QAModel'
 ]
