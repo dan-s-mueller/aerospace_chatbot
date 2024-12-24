@@ -10,9 +10,9 @@ from .core import (
     get_required_api_keys
 )
 from .processing import (
+    ChunkingResult,
     DocumentProcessor, 
-    QAModel,
-    ChunkingResult
+    QAModel
 )
 from .services import (
     DatabaseService, 
@@ -71,9 +71,9 @@ __all__ = [
     'SUMMARIZE_TEXT',
     
     # Processing
+    'ChunkingResult',
     'DocumentProcessor',
     'QAModel',
-    'ChunkingResult',
     
     # UI
     'SidebarManager',

@@ -1,4 +1,5 @@
 from .documents import (
+    ChunkingResult,
     DocumentProcessor, 
 )
 from .queries import (
@@ -6,6 +7,7 @@ from .queries import (
 )
 
 __all__ = [
+    'ChunkingResult',
     'DocumentProcessor', 
     'QAModel'
 ]

@@ -1,15 +1,26 @@
 """Database service implementations."""
 
-import os, shutil
-import re
-from pathlib import Path
-import time
-import json
-import logging
+import os, shutil, re, time, json, logging
 
+# Databases
+from pinecone import Pinecone as pinecone_client
+from pinecone import ServerlessSpec
+from pinecone.exceptions import NotFoundException, PineconeApiException
+from ragatouille import RAGPretrainedModel
+from langchain_pinecone import PineconeVectorStore
+
+# Embeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+
+# Utilities
+from langchain_core.documents import Document
+from langchain_core.runnables import chain
+
+# Cache
 from ..core.cache import Dependencies
 from ..services.prompts import CLUSTER_LABEL
-from pinecone.exceptions import NotFoundException, PineconeApiException
 
 from tenacity import (
     retry, 
@@ -25,7 +36,7 @@ def pinecone_retry(func):
     """Decorator for Pinecone operations with retry and rate limiting."""
     return retry(
         stop=stop_after_attempt(5),
-        wait=wait_fixed(2) + wait_exponential(multiplier=1, min=4, max=10),  # Increased delays
+        wait=wait_fixed(2) + wait_exponential(multiplier=1, min=4, max=10),
         reraise=True
     )(func)
 
@@ -35,13 +46,6 @@ class DatabaseService:
     def __init__(self, db_type, index_name, rag_type, embedding_service, doc_type='document'):
         """
         Initialize DatabaseService.
-
-        Args:
-            db_type (str): Type of database ('Pinecone', 'ChromaDB', 'RAGatouille')
-            index_name (str): Name of the index
-            rag_type (str): Type of RAG ('Standard', 'Parent-Child', 'Summary')
-            embedding_service (EmbeddingService): Embedding service instance
-            doc_type (str, optional): Type of document ('document', 'question'). Defaults to 'document'.
         """
         self.db_type = db_type
         self.index_name = index_name
@@ -51,11 +55,13 @@ class DatabaseService:
         self.vectorstore = None
         self.retriever = None
         self.namespace = None
+        self.db_client = None
         self.logger = logging.getLogger(__name__)
 
     def initialize_database(self, namespace=None, clear=False):
         """
-        Initialize and store database connection."""
+        Initialize and store database connection.
+        """
 
         # Validate index name and RAG type
         self.logger.info(f"Validating index {self.index_name} and RAG type {self.rag_type}")
@@ -69,35 +75,32 @@ class DatabaseService:
         # Initialize the vectorstore based on database type
         if self.db_type == 'Pinecone':
             self._init_pinecone(clear=clear)
-        elif self.db_type == 'ChromaDB':
-            self._init_chromadb(clear=clear)
+        # elif self.db_type == 'ChromaDB':
+        #     self._init_chromadb(clear=clear)
         elif self.db_type == 'RAGatouille':
             self._init_ragatouille(clear=clear)
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
-    def index_data(self, data, batch_size=100):
+    def index_data(self, chunks, batch_size=100):
         """
         Index processed documents or questions. 
-        If data is ChunkingResult type, chunked documents are processed.
-        If data is a list of Documents, questions are processed. Questions are not chunked or processed, just validated and upserted.
         Database must be initialized before calling this method.
         """
-        from ..processing.documents import ChunkingResult
-        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+        # from ..processing.documents import ChunkingResult
+        # _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
 
         if not self.vectorstore:
             raise ValueError("Database not initialized. Call initialize_database() before indexing data.")
-
-        if not (isinstance(data, ChunkingResult) or (isinstance(data, list) and all(isinstance(d, Document) for d in data))):
-            raise TypeError("data must be either a ChunkingResult or a list of Documents")
+        # if not (isinstance(chunks, list) and all(isinstance(d, Document) for d in chunks)):
+        #     raise TypeError("Data must be a list of Documents")
 
         # Add index metadata, upsert docs
-        if isinstance(data, ChunkingResult):
-            if self.doc_type == 'document' and data.rag_type != self.rag_type:
-                raise ValueError(f"RAG type mismatch: ChunkingResult has '{data.rag_type}' but DatabaseService has '{self.rag_type}'")
-            self._store_index_metadata(data)    # Only store metadata if documents are being indexed
-        self._upsert_data(data, batch_size)
+        # if isinstance(data, ChunkingResult):
+            # if self.doc_type == 'document' and data.rag_type != self.rag_type:
+            #     raise ValueError(f"RAG type mismatch: ChunkingResult has '{data.rag_type}' but DatabaseService has '{self.rag_type}'")
+        self._store_index_metadata(chunks)    # Only store metadata if documents are being indexed
+        self._upsert_data(chunks, batch_size)
 
     def get_retriever(self, k=8):
         """Get configured retriever for the vectorstore."""
@@ -116,13 +119,12 @@ class DatabaseService:
     
     def copy_vectors(self, source_namespace, batch_size=100):
         """Copies vectors from a source Pinecone namespace into the namespace assigned to the DatabaseService instance."""
-        pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
+        # pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
 
         if self.db_type != 'Pinecone':
             raise ValueError("Vector copying is only supported for Pinecone databases")
             
-        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-        index = pc.Index(self.index_name)
+        index = self.db_client.Index(self.index_name)
         
         # Verify source namespace exists and get vector count
         stats = index.describe_index_stats()
@@ -174,31 +176,30 @@ class DatabaseService:
     def delete_index(self):
         """Delete an index from the database."""
         
-        def _delete_chromadb():
-            """Delete ChromaDB index."""
-            _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
+        # def _delete_chromadb():
+        #     """Delete ChromaDB index."""
+        #     _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
             
-            try:
-                db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
-                client = PersistentClient(path=str(db_path))
+        #     try:
+        #         db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
+        #         client = PersistentClient(path=str(db_path))
                 
-                collections = client.list_collections()
-                if any(c.name == self.index_name for c in collections):
-                    client.delete_collection(self.index_name)
-                else:
-                    self.logger.warning(f"Collection {self.index_name} not found. No deletion performed.")
-            except Exception as e:
-                self.logger.warning(f"Failed to delete index {self.index_name}: {str(e)}")
+        #         collections = client.list_collections()
+        #         if any(c.name == self.index_name for c in collections):
+        #             client.delete_collection(self.index_name)
+        #         else:
+        #             self.logger.warning(f"Collection {self.index_name} not found. No deletion performed.")
+        #     except Exception as e:
+        #         self.logger.warning(f"Failed to delete index {self.index_name}: {str(e)}")
 
         @pinecone_retry
         def _delete_pinecone():
             """Delete Pinecone index."""
-            pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
+            # pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
             
-            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
             try:
-                if self.index_name in [idx.name for idx in pc.list_indexes()]:
-                    pc.delete_index(self.index_name)
+                if self.index_name in [idx.name for idx in self.db_client.list_indexes()]:
+                    self.db_client.delete_index(self.index_name)
                     self.logger.info(f"Index {self.index_name} deleted")
                 else:
                     self.logger.warning(f"Index {self.index_name} not found. No deletion performed.")
@@ -214,51 +215,51 @@ class DatabaseService:
                 self.logger.warning(f"Failed to delete index {self.index_name}: {str(e)}")
 
         # Delete local file store if using Parent-Child or Summary RAG
-        if self.rag_type in ['Parent-Child', 'Summary']:
-            try:
-                lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
-                if os.path.exists(lfs_path):
-                    shutil.rmtree(lfs_path)
-                    self.logger.info(f"Local file store for {self.index_name} deleted")
-            except Exception as e:
-                self.logger.warning(f"Failed to delete local file store for {self.index_name}: {str(e)}")
+        # if self.rag_type in ['Parent-Child', 'Summary']:
+        #     try:
+        #         lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+        #         if os.path.exists(lfs_path):
+        #             shutil.rmtree(lfs_path)
+        #             self.logger.info(f"Local file store for {self.index_name} deleted")
+        #     except Exception as e:
+        #         self.logger.warning(f"Failed to delete local file store for {self.index_name}: {str(e)}")
 
         # Delete vector store based on type
-        if self.db_type == 'ChromaDB':
-            _delete_chromadb()
-        elif self.db_type == 'Pinecone':
+        # if self.db_type == 'ChromaDB':
+        #     _delete_chromadb()
+        if self.db_type == 'Pinecone':
             _delete_pinecone()
         elif self.db_type == 'RAGatouille':
             _delete_ragatouille()
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
-    def _init_chromadb(self, clear=False):
-        """Initialize ChromaDB."""
-        _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
-        _, Chroma, _, _ = Dependencies.Storage.get_vector_stores()
+    # def _init_chromadb(self, clear=False):
+    #     """Initialize ChromaDB."""
+    #     _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
+    #     _, Chroma, _, _ = Dependencies.Storage.get_vector_stores()
         
-        # Create ChromaDB directory
-        db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
-        os.makedirs(db_path, exist_ok=True)
-        client = PersistentClient(path=db_path)
+    #     # Create ChromaDB directory
+    #     db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
+    #     os.makedirs(db_path, exist_ok=True)
+    #     client = PersistentClient(path=db_path)
         
-        if clear:
-            self.delete_index()
+    #     if clear:
+    #         self.delete_index()
 
-        # Create local file store directory if needed
-        if self.rag_type in ['Parent-Child', 'Summary']:
-            lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
-            if not os.path.exists(lfs_path):
-                os.makedirs(lfs_path)
-                self.logger.info(f"Created local file store directory at {lfs_path}")
+    #     # Create local file store directory if needed
+    #     if self.rag_type in ['Parent-Child', 'Summary']:
+    #         lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+    #         if not os.path.exists(lfs_path):
+    #             os.makedirs(lfs_path)
+    #             self.logger.info(f"Created local file store directory at {lfs_path}")
 
-        self.vectorstore = Chroma(
-            client=client,
-            collection_name=self.index_name,
-            embedding_function=self.embedding_service.get_embeddings()
-        )
-        self.logger.info(f"ChromaDB index {self.index_name} initialized or created.")
+    #     self.vectorstore = Chroma(
+    #         client=client,
+    #         collection_name=self.index_name,
+    #         embedding_function=self.embedding_service.get_embeddings()
+    #     )
+    #     self.logger.info(f"ChromaDB index {self.index_name} initialized or created.")
     
     @retry(
         stop=stop_after_attempt(5),
@@ -268,29 +269,29 @@ class DatabaseService:
     )
     def _init_pinecone(self, clear=False):
         """Initialize Pinecone."""
-        pinecone_client, _, ServerlessSpec, _, _ = Dependencies.Storage.get_db_clients()
-        PineconeVectorStore, _, _, _ = Dependencies.Storage.get_vector_stores()
+        # pinecone_client, _, ServerlessSpec, _, _ = Dependencies.Storage.get_db_clients()
+        # PineconeVectorStore, _, _, _ = Dependencies.Storage.get_vector_stores()
 
-        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY')) # Need to use the native client since langchain can't upload a dummy embedding :(
+        self.db_client = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         if clear:
             self.logger.info(f"Clearing Pinecone index {self.index_name}")
             self.delete_index()
             # Wait until index is deleted with timeout
             start_time = time.time()
             timeout = 30
-            while self.index_name in [idx.name for idx in pc.list_indexes()]:
+            while self.index_name in [idx.name for idx in self.db_client.list_indexes()]:
                 if time.time() - start_time > timeout:
                     raise TimeoutError(f"Timeout waiting for index {self.index_name} to be deleted")
                 time.sleep(4)
 
         # Try to describe the index
         try:
-            pc.describe_index(self.index_name)
+            self.db_client.describe_index(self.index_name)
             self.logger.info(f"Pinecone index {self.index_name} found, not creating. Will be initialized with existing index.")
         except NotFoundException:
             # Index doesn't exist, create it
             self.logger.info(f"Not clearing database, but pinecone index {self.index_name} not found, creating.")
-            pc.create_index(
+            self.db_client.create_index(
                 self.index_name,
                 dimension=self.embedding_service.get_dimension(),
                 spec=ServerlessSpec(
@@ -301,14 +302,14 @@ class DatabaseService:
             self.logger.info(f"Pinecone index {self.index_name} created")
         
         # Create local file store directory if needed
-        if self.rag_type in ['Parent-Child', 'Summary']:
-            lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
-            if not os.path.exists(lfs_path):
-                os.makedirs(lfs_path)
-                self.logger.info(f"Created local file store directory at {lfs_path}")
+        # if self.rag_type in ['Parent-Child', 'Summary']:
+        #     lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+        #     if not os.path.exists(lfs_path):
+        #         os.makedirs(lfs_path)
+        #         self.logger.info(f"Created local file store directory at {lfs_path}")
 
         self.vectorstore = PineconeVectorStore(
-            index=pc.Index(self.index_name),
+            index=self.db_client.Index(self.index_name),
             index_name=self.index_name,
             embedding=self.embedding_service.get_embeddings(),
             text_key='page_content',
@@ -318,7 +319,7 @@ class DatabaseService:
 
     def _init_ragatouille(self, clear=False):
         """Initialize RAGatouille."""
-        _, _, _, _, RAGPretrainedModel = Dependencies.Storage.get_db_clients()
+        # _, _, _, _, RAGPretrainedModel = Dependencies.Storage.get_db_clients()
 
         # FIXME this will always create a new index
         index_path = os.path.join(os.getenv('LOCAL_DB_PATH'), '.ragatouille')
@@ -338,9 +339,6 @@ class DatabaseService:
     def _get_standard_retriever(self, search_kwargs):
         """Get standard retriever based on index type."""
         if self.db_type in ['Pinecone', 'ChromaDB']:
-            # TODO move this into dependency function
-            from langchain_core.documents import Document
-            from langchain_core.runnables import chain
 
             # Callable retriever which adds score to the metadata of the documents
             # FIXME make score a separate output from the metadata. Adding it to the metadata will break the hashing used to index
@@ -357,83 +355,84 @@ class DatabaseService:
             )
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
-    def _get_multivector_retriever(self, search_kwargs):
-        """Get multi-vector retriever for Parent-Child or Summary RAG types."""
-        _, _, MultiVectorRetriever, LocalFileStore = Dependencies.Storage.get_vector_stores()
-        # TODO move this into dependency function
-        import json
-        from langchain.schema import Document
-        from collections import defaultdict
-        from langchain.retrievers import MultiVectorRetriever
-        from langchain_core.callbacks import CallbackManagerForRetrieverRun
-        class CustomMultiVectorRetriever(MultiVectorRetriever):
-            def _get_relevant_documents(
-                self, query: str, *, run_manager: CallbackManagerForRetrieverRun
-            ):
-                """Get documents relevant to a query.
-                Args:
-                    query: String to find relevant documents for
-                    run_manager: The callbacks handler to use
-                Returns:
-                    List of relevant documents
-                """
-                results = self.vectorstore.similarity_search_with_score(
-                    query, **self.search_kwargs
-                )
-                print('results from similarity search')
-                print(results)
+    # TODO removed parent-child and summary retrievers for now
+    # def _get_multivector_retriever(self, search_kwargs):
+    #     """Get multi-vector retriever for Parent-Child or Summary RAG types."""
+    #     _, _, MultiVectorRetriever, LocalFileStore = Dependencies.Storage.get_vector_stores()
+    #     # TODO move this into dependency function
+    #     import json
+    #     from langchain.schema import Document
+    #     from collections import defaultdict
+    #     from langchain.retrievers import MultiVectorRetriever
+    #     from langchain_core.callbacks import CallbackManagerForRetrieverRun
+    #     class CustomMultiVectorRetriever(MultiVectorRetriever):
+    #         def _get_relevant_documents(
+    #             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    #         ):
+    #             """Get documents relevant to a query.
+    #             Args:
+    #                 query: String to find relevant documents for
+    #                 run_manager: The callbacks handler to use
+    #             Returns:
+    #                 List of relevant documents
+    #             """
+    #             results = self.vectorstore.similarity_search_with_score(
+    #                 query, **self.search_kwargs
+    #             )
+    #             print('results from similarity search')
+    #             print(results)
 
-                # Map doc_ids to list of sub-documents, adding scores to metadata
-                sub_docs = defaultdict(list)
-                sub_doc_scores = defaultdict(list)
-                for doc, score in results:
-                    doc_id = doc.metadata.get("doc_id")
-                    if doc_id:
-                        sub_docs[doc_id].append(doc)
-                        sub_doc_scores[doc_id].append(score)
-                print('Sub-docs')
-                print(sub_docs)
-                print('Sub-doc scores')
-                print(sub_doc_scores)
+    #             # Map doc_ids to list of sub-documents, adding scores to metadata
+    #             sub_docs = defaultdict(list)
+    #             sub_doc_scores = defaultdict(list)
+    #             for doc, score in results:
+    #                 doc_id = doc.metadata.get("doc_id")
+    #                 if doc_id:
+    #                     sub_docs[doc_id].append(doc)
+    #                     sub_doc_scores[doc_id].append(score)
+    #             print('Sub-docs')
+    #             print(sub_docs)
+    #             print('Sub-doc scores')
+    #             print(sub_doc_scores)
 
-                # Fetch documents corresponding to doc_ids, retaining sub_docs in metadata
-                docs = []
-                scores = []
-                for _id, sub_docs in sub_docs.items():
-                    docstore_docs = self.docstore.mget([_id])
-                    if docstore_docs:
-                        if doc := docstore_docs[0]:
-                            doc_dict = json.loads(doc.decode('utf-8'))  # Deserialize the bytes into a dictionary
-                            # Create a Document object from the dictionary
-                            doc = Document(
-                                page_content=doc_dict['kwargs']['page_content'],
-                                metadata=doc_dict['kwargs']['metadata']
-                            )
-                            docs.append(doc)
-                            scores.append(sub_doc_scores[_id][0])
+    #             # Fetch documents corresponding to doc_ids, retaining sub_docs in metadata
+    #             docs = []
+    #             scores = []
+    #             for _id, sub_docs in sub_docs.items():
+    #                 docstore_docs = self.docstore.mget([_id])
+    #                 if docstore_docs:
+    #                     if doc := docstore_docs[0]:
+    #                         doc_dict = json.loads(doc.decode('utf-8'))  # Deserialize the bytes into a dictionary
+    #                         # Create a Document object from the dictionary
+    #                         doc = Document(
+    #                             page_content=doc_dict['kwargs']['page_content'],
+    #                             metadata=doc_dict['kwargs']['metadata']
+    #                         )
+    #                         docs.append(doc)
+    #                         scores.append(sub_doc_scores[_id][0])
 
-                print('Fetched documents corresponding to doc_ids, retaining sub_docs in metadata')
-                print(docs)
-                print('Scores')
-                print(scores)
+    #             print('Fetched documents corresponding to doc_ids, retaining sub_docs in metadata')
+    #             print(docs)
+    #             print('Scores')
+    #             print(scores)
 
-                return docs, scores
+    #             return docs, scores
             
-        lfs = LocalFileStore(
-        os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
-        )
+    #     lfs = LocalFileStore(
+    #     os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+    #     )
 
-        # self.retriever = MultiVectorRetriever(
-        #     vectorstore=self.vectorstore,
-        #     byte_store=lfs,
-        #     id_key="doc_id",
-        #     search_kwargs=search_kwargs
-        # )
-        self.retriever = CustomMultiVectorRetriever(
-            vectorstore=self.vectorstore,
-            docstore=lfs,
-            search_kwargs=search_kwargs
-        )
+    #     # self.retriever = MultiVectorRetriever(
+    #     #     vectorstore=self.vectorstore,
+    #     #     byte_store=lfs,
+    #     #     id_key="doc_id",
+    #     #     search_kwargs=search_kwargs
+    #     # )
+    #     self.retriever = CustomMultiVectorRetriever(
+    #         vectorstore=self.vectorstore,
+    #         docstore=lfs,
+    #         search_kwargs=search_kwargs
+    #     )
 
     def _process_retriever_args(self, k=8):
         """Process the retriever arguments."""
@@ -450,20 +449,20 @@ class DatabaseService:
             search_kwargs['filter'] = filter_kwargs
             
         return search_kwargs
-    def _store_index_metadata(self, chunking_result):
+    def _store_index_metadata(self, chunks):
         """Store index metadata based on the database type."""
-        OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = Dependencies.Embeddings.get_models()
-        pinecone_client, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
+        # OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = Dependencies.Embeddings.get_models()
+        # pinecone_client, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
 
         index_metadata = {}
-        if chunking_result.merge_pages is not None:
-            index_metadata['merge_pages'] = chunking_result.merge_pages
-        if chunking_result.chunk_method != 'None':
-            index_metadata['chunk_method'] = chunking_result.chunk_method
-        if chunking_result.chunk_size is not None:
-            index_metadata['chunk_size'] = chunking_result.chunk_size
-        if chunking_result.chunk_overlap is not None:
-            index_metadata['chunk_overlap'] = chunking_result.chunk_overlap
+        # if chunking_result.merge_pages is not None:
+        #     index_metadata['merge_pages'] = chunking_result.merge_pages
+        # if chunking_result.chunk_method != 'None':
+        #     index_metadata['chunk_method'] = chunking_result.chunk_method
+        if chunks.chunk_size is not None:
+            index_metadata['chunk_size'] = chunks.chunk_size
+        if chunks.chunk_overlap is not None:
+            index_metadata['chunk_overlap'] = chunks.chunk_overlap
         if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
             index_metadata['embedding_family']= "OpenAI"
             index_metadata['embedding_model'] = self.embedding_service.model
@@ -479,8 +478,7 @@ class DatabaseService:
 
         @pinecone_retry
         def _store_pinecone_metadata():
-            pc_native = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-            index = pc_native.Index(self.index_name)
+            index = self.db_client.Index(self.index_name)
             
             # Check if metadata vector already exists
             existing_metadata = index.fetch(ids=['db_metadata'])
@@ -513,48 +511,47 @@ class DatabaseService:
 
         if self.db_type == "Pinecone":
             _store_pinecone_metadata()
-        elif self.db_type == "ChromaDB":
-            chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
-            index = chroma_native.get_collection(name=self.index_name)
-            
-            # Get existing metadata
-            existing_metadata = index.get(ids=['db_metadata'])
-            
-            # If metadata exists, check for mismatches
-            if existing_metadata['ids']:
-                # Extract existing metadata
-                db_metadata = existing_metadata['metadatas'][0]
-                self.logger.info(f"Found existing metadata in {self.index_name}: {db_metadata}")
-                
-                # Check for mismatches between existing and new metadata
-                mismatched_keys = []
-                for key, value in db_metadata.items():
-                    if key in index_metadata and index_metadata[key] != value:
-                        mismatched_keys.append(f"{key}: expected '{value}', found '{index_metadata[key]}'")
-                
-                if mismatched_keys:
-                    raise ValueError(f"Metadata mismatch in {self.index_name}. Mismatched values: {', '.join(mismatched_keys)}")
-                
-                self.logger.warning(f"Metadata vector already exists in {self.index_name}, skipping metadata upsert")
-                return
-            
-            # Proceed with metadata upsert if none exists
-            self.logger.info(f"No existing metadata found in {self.index_name}, adding metadata: {index_metadata}")
-            index.add(
-                embeddings=[metadata_vector],
-                metadatas=[index_metadata],
-                ids=['db_metadata']
-            )
-            self.logger.info(f"Successfully added metadata to {self.index_name}")
-
         elif self.db_type == "RAGatouille":
             self.logger.warning("Metadata storage is not yet supported for RAGatouille indexes")
+        # elif self.db_type == "ChromaDB":
+        #     chroma_native = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'),'chromadb'))    
+        #     index = chroma_native.get_collection(name=self.index_name)
+            
+        #     # Get existing metadata
+        #     existing_metadata = index.get(ids=['db_metadata'])
+            
+        #     # If metadata exists, check for mismatches
+        #     if existing_metadata['ids']:
+        #         # Extract existing metadata
+        #         db_metadata = existing_metadata['metadatas'][0]
+        #         self.logger.info(f"Found existing metadata in {self.index_name}: {db_metadata}")
+                
+        #         # Check for mismatches between existing and new metadata
+        #         mismatched_keys = []
+        #         for key, value in db_metadata.items():
+        #             if key in index_metadata and index_metadata[key] != value:
+        #                 mismatched_keys.append(f"{key}: expected '{value}', found '{index_metadata[key]}'")
+                
+        #         if mismatched_keys:
+        #             raise ValueError(f"Metadata mismatch in {self.index_name}. Mismatched values: {', '.join(mismatched_keys)}")
+                
+        #         self.logger.warning(f"Metadata vector already exists in {self.index_name}, skipping metadata upsert")
+        #         return
+            
+        #     # Proceed with metadata upsert if none exists
+        #     self.logger.info(f"No existing metadata found in {self.index_name}, adding metadata: {index_metadata}")
+        #     index.add(
+        #         embeddings=[metadata_vector],
+        #         metadatas=[index_metadata],
+        #         ids=['db_metadata']
+        #     )
+        #     self.logger.info(f"Successfully added metadata to {self.index_name}")
+
 
     def _validate_index(self):
         """
         Validate and format index with parameters.
         Does nothing if no exceptions are raised, unless:
-          RAG type is Parent-Child or Summary, which will append to index_name.
           doc_type is question, which will append 'queries' to index_name.
         """
         if not self.index_name or not self.index_name.strip():
@@ -568,15 +565,15 @@ class DatabaseService:
             name += '-q'
             self.index_name = name
             self.logger.info(f"Adding query type suffix to index name: {name}")
-        elif self.doc_type == 'document':
-            if self.rag_type == 'Parent-Child':
-                name += '-parent-child'
-                self.index_name = name
-                self.logger.info(f"Adding RAG type suffix to index name: {name}")
-            elif self.rag_type == 'Summary':
-                name += '-summary'
-                self.index_name = name
-                self.logger.info(f"Adding RAG type suffix to index name: {name}")
+        # elif self.doc_type == 'document':
+            # if self.rag_type == 'Parent-Child':
+            #     name += '-parent-child'
+            #     self.index_name = name
+            #     self.logger.info(f"Adding RAG type suffix to index name: {name}")
+            # elif self.rag_type == 'Summary':
+            #     name += '-summary'
+            #     self.index_name = name
+            #     self.logger.info(f"Adding RAG type suffix to index name: {name}")
 
         # Database-specific validation
         if self.db_type == "Pinecone":
@@ -596,112 +593,117 @@ class DatabaseService:
 
     def _upsert_data(self, upsert_data, batch_size):
         """Upsert documents or questions. Used for all RAG types."""
-        from ..processing.documents import DocumentProcessor, ChunkingResult
-        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+        from ..processing.documents import DocumentProcessor
+        # _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
         
         @pinecone_retry
         def _upsert_pinecone(batch, batch_ids):
             self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
 
         if self.db_type == "Pinecone":
-            pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
+            # pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
 
-            pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))            
-            pc_index = pc.Index(self.index_name)
+            pc_index = self.db_client.Index(self.index_name)
             stats = pc_index.describe_index_stats()
             initial_count = stats['total_vector_count']
             if self.namespace:
                 initial_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)   
             self.logger.info(f"Initial vector count: {initial_count}")
 
-        if isinstance(upsert_data, ChunkingResult):
+        # if isinstance(upsert_data, ChunkingResult):
             # Chunked documents
             # Standard for pinecone and chroma
-            if self.rag_type == 'Standard':
-                total_batches = (len(upsert_data.chunks) + batch_size - 1) // batch_size  # Calculate total number of batches
-                for i in range(0, len(upsert_data.chunks), batch_size):
-                    current_batch = (i // batch_size) + 1  # Calculate current batch number (1-based index)
-                    self.logger.info(f"Upserting batch {current_batch} of {total_batches}")
-                    batch = upsert_data.chunks[i:i + batch_size]
-                    batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
-                    
-                    if self.db_type == "Pinecone":
-                        _upsert_pinecone(batch, batch_ids)
-                    elif self.db_type == "ChromaDB":
-                        self.vectorstore.add_documents(documents=batch, ids=batch_ids)
-                    elif self.db_type == "RAGatouille":
-                        continue
-                    else:
-                        raise NotImplementedError
+            # if self.rag_type == 'Standard':
+            total_batches = (len(upsert_data.chunks) + batch_size - 1) // batch_size  # Calculate total number of batches
+            for i in range(0, len(upsert_data.chunks), batch_size):
+                current_batch = (i // batch_size) + 1  # Calculate current batch number (1-based index)
+                self.logger.info(f"Upserting batch {current_batch} of {total_batches}")
+                batch = upsert_data.chunks[i:i + batch_size]
+                batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
+                
+                if self.db_type == "Pinecone":
+                    _upsert_pinecone(batch, batch_ids)
+                elif self.db_type == "ChromaDB":
+                    self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+                elif self.db_type == "RAGatouille":
+                    continue
+                else:
+                    raise NotImplementedError
             
-            # RAGatouille for all chunks at once
-            if self.db_type == "RAGatouille":
-                # Process all chunks at once for RAGatouille
-                self.vectorstore.index(
-                    collection=[chunk.page_content for chunk in upsert_data.chunks],
-                    document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in upsert_data.chunks],
-                    index_name=self.index_name,
-                    split_documents=True,
-                    document_metadatas=[chunk.metadata for chunk in upsert_data.chunks]
-                )
+            # if isinstance(upsert_data, ChunkingResult):
+            expected_count = initial_count + len(upsert_data.chunks)
+            # else:
+            #     expected_count = initial_count+len(upsert_data)
+            self._verify_pinecone_upload(pc_index, expected_count)
+        
+        # RAGatouille for all chunks at once
+        if self.db_type == "RAGatouille":
+            # Process all chunks at once for RAGatouille
+            self.vectorstore.index(
+                collection=[chunk.page_content for chunk in upsert_data.chunks],
+                document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in upsert_data.chunks],
+                index_name=self.index_name,
+                split_documents=True,
+                document_metadatas=[chunk.metadata for chunk in upsert_data.chunks]
+            )
             
             # Parent-Child or Summary for pinecone and chroma
-            if self.rag_type in ['Parent-Child', 'Summary']:
-                _, _, MultiVectorRetriever, LocalFileStore = Dependencies.Storage.get_vector_stores()
+            # if self.rag_type in ['Parent-Child', 'Summary']:
+            #     _, _, MultiVectorRetriever, LocalFileStore = Dependencies.Storage.get_vector_stores()
                 
-                if self.db_type == 'RAGatouille':
-                    raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
-                else:
-                    lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
-                    if not os.path.exists(lfs_path):
-                        raise ValueError(f"Local file store path {lfs_path} does not exist. This should have been created during database initialization.")
-                    store = LocalFileStore(lfs_path)
+            #     if self.db_type == 'RAGatouille':
+            #         raise NotImplementedError("RAGatouille does not support Parent-Child or Summary RAG types")
+            #     else:
+            #         lfs_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', self.index_name)
+            #         if not os.path.exists(lfs_path):
+            #             raise ValueError(f"Local file store path {lfs_path} does not exist. This should have been created during database initialization.")
+            #         store = LocalFileStore(lfs_path)
                     
-                    id_key = "doc_id"
-                    retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
+            #         id_key = "doc_id"
+            #         retriever = MultiVectorRetriever(vectorstore=self.vectorstore, byte_store=store, id_key=id_key)
 
-                    # Get the appropriate chunks and pages based on RAG type
-                    if self.rag_type == 'Parent-Child':
-                        chunks = upsert_data.chunks
-                        pages = upsert_data.pages['parent_chunks']
-                        doc_ids = upsert_data.pages['doc_ids']
-                    elif self.rag_type == 'Summary':
-                        chunks = upsert_data.summaries
-                        pages = upsert_data.pages['docs']
-                        doc_ids = upsert_data.pages['doc_ids']
-                    else:
-                        raise NotImplementedError
+            #         # Get the appropriate chunks and pages based on RAG type
+            #         if self.rag_type == 'Parent-Child':
+            #             chunks = upsert_data.chunks
+            #             pages = upsert_data.pages['parent_chunks']
+            #             doc_ids = upsert_data.pages['doc_ids']
+            #         elif self.rag_type == 'Summary':
+            #             chunks = upsert_data.summaries
+            #             pages = upsert_data.pages['docs']
+            #             doc_ids = upsert_data.pages['doc_ids']
+            #         else:
+            #             raise NotImplementedError
 
-                    # Process chunks in batches
-                    for i in range(0, len(chunks), batch_size):
-                        batch = chunks[i:i + batch_size]
-                        batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
+            #         # Process chunks in batches
+            #         for i in range(0, len(chunks), batch_size):
+            #             batch = chunks[i:i + batch_size]
+            #             batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
                         
-                        if self.db_type == "Pinecone":
-                            _upsert_pinecone(batch, batch_ids)
-                        else:
-                            self.vectorstore.add_documents(documents=batch, ids=batch_ids)
+            #             if self.db_type == "Pinecone":
+            #                 _upsert_pinecone(batch, batch_ids)
+            #             else:
+            #                 self.vectorstore.add_documents(documents=batch, ids=batch_ids)
                     
-                    # Index parent docs all at once
-                    retriever.docstore.mset(list(zip(doc_ids, pages)))
-                    self.retriever = retriever
-        elif isinstance(upsert_data, list) and all(isinstance(item, Document) for item in upsert_data):
-            # Questions
-            if self.db_type in ["Pinecone", "ChromaDB"]:
-                self.vectorstore.add_documents(documents=upsert_data)
-            elif self.db_type == "RAGatouille":
-                self.logger.warning("RAGatouille does not support question databases.")
-            else:
-                raise NotImplementedError
-        else:
-            raise ValueError("Unsupported data formatting for upsert. Should either be a ChunkingResult or a list of Documents.")
+            #         # Index parent docs all at once
+            #         retriever.docstore.mset(list(zip(doc_ids, pages)))
+            #         self.retriever = retriever
+        # elif isinstance(upsert_data, list) and all(isinstance(item, Document) for item in upsert_data):
+        #     # Questions
+        #     if self.db_type in ["Pinecone", "ChromaDB"]:
+        #         self.vectorstore.add_documents(documents=upsert_data)
+        #     elif self.db_type == "RAGatouille":
+        #         self.logger.warning("RAGatouille does not support question databases.")
+        #     else:
+        #         raise NotImplementedError
+        # else:
+        #     raise ValueError("Unsupported data formatting for upsert. Should either be a ChunkingResult or a list of Documents.")
             
-        if self.db_type == "Pinecone":
-            if isinstance(upsert_data, ChunkingResult):
-                expected_count = initial_count + len(upsert_data.summaries if self.rag_type == 'Summary' else upsert_data.chunks)
-            else:
-                expected_count = initial_count+len(upsert_data)
-            self._verify_pinecone_upload(pc_index, expected_count)
+        # if self.db_type == "Pinecone":
+        #     if isinstance(upsert_data, ChunkingResult):
+        #         expected_count = initial_count + len(upsert_data.summaries if self.rag_type == 'Summary' else upsert_data.chunks)
+        #     else:
+        #         expected_count = initial_count+len(upsert_data)
+        #     self._verify_pinecone_upload(pc_index, expected_count)
         
     def _verify_pinecone_upload(self, index, expected_count):
         """Verify that vectors were uploaded to Pinecone index."""
@@ -746,13 +748,12 @@ class DatabaseService:
 def get_docs_questions_df(db_service, query_db_service, logger=False):
     """Get documents and questions from database as a DataFrame."""
     pd, _, _, _ = Dependencies.Analysis.get_tools()
-    pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
+    # pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
     
     @pinecone_retry
     def _fetch_pinecone_docs(index_name):
         """Fetch documents from Pinecone in batches with retry logic and rate limiting."""
-        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-        index = pc.Index(index_name)
+        index = db_service.db_client.Index(index_name)
 
         if logger:
             logger.info(f'Attempting to fetch {index_name} from Pinecone')

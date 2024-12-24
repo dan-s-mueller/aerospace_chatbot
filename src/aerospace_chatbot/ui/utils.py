@@ -3,6 +3,11 @@
 import streamlit as st
 import os, ast, tempfile, logging
 
+import fitz
+import requests
+from PIL import Image
+import io
+
 from ..core.cache import Dependencies
 from ..core.config import get_secrets
 from ..services.database import DatabaseService, get_available_indexes
@@ -289,7 +294,7 @@ def _save_uploads_to_temp(uploaded_files):
 def _extract_pages_from_pdf(url, target_page, page_range=5):
     """Extracts specified pages from a PDF file."""
     logger = logging.getLogger(__name__)
-    fitz, requests, _, _, _, io = Dependencies.Document.get_processors()
+    # fitz, requests, _, _, _, io = Dependencies.Document.get_processors()
     
     try:
         # Download PDF
@@ -319,7 +324,7 @@ def _extract_pages_from_pdf(url, target_page, page_range=5):
         
 def display_pdf(upl_file, ui_width, ui_height):
     """Display a PDF file by converting pages to images."""
-    fitz, _, _, _, Image, io = Dependencies.Document.get_processors()
+    # fitz, _, _, _, Image, io = Dependencies.Document.get_processors()
     logger = logging.getLogger(__name__)
 
     try:

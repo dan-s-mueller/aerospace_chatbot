@@ -3,6 +3,11 @@
 import os
 from ..core.cache import Dependencies, cache_resource
 
+# Embeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+
 class EmbeddingService:
     """Manages embedding model operations."""
     
@@ -14,7 +19,7 @@ class EmbeddingService:
     def get_embeddings(self):
         """Get or create embedding model instance."""
         if self._embeddings is None:
-            OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = Dependencies.Embeddings.get_models()
+            # OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings = Dependencies.Embeddings.get_models()
             
             if self.model_service == 'OpenAI':
                 self._embeddings = OpenAIEmbeddings(

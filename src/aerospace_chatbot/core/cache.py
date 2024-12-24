@@ -70,19 +70,19 @@ class Dependencies:
             from langchain.schema import format_document
             return itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, ConversationBufferMemory, get_buffer_string, Document, format_document
 
-    class Embeddings:
-        @staticmethod
-        @cache_resource
-        def get_models():
-            """Load embedding model dependencies.
+    # class Embeddings:
+    #     @staticmethod
+    #     @cache_resource
+    #     def get_models():
+    #         """Load embedding model dependencies.
             
-            Returns:
-                tuple: OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
-            """
-            from langchain_openai import OpenAIEmbeddings
-            from langchain_voyageai import VoyageAIEmbeddings
-            from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-            return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
+    #         Returns:
+    #             tuple: OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
+    #         """
+    #         from langchain_openai import OpenAIEmbeddings
+    #         from langchain_voyageai import VoyageAIEmbeddings
+    #         from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+    #         return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
 
     class Storage:
         @staticmethod
@@ -128,30 +128,30 @@ class Dependencies:
             from datasets import Dataset
             return pd, np, KMeans, Dataset
 
-    class Document:
-        @staticmethod
-        @cache_resource
-        def get_processors():
-            """Load document processing dependencies.
+    # class Document:
+        # @staticmethod
+        # @cache_resource
+        # def get_processors():
+        #     """Load document processing dependencies.
             
-            Returns:
-                tuple: fitz, requests, storage, PyPDFLoader
-            """
-            import fitz
-            import requests
-            from google.cloud import storage
-            from langchain_community.document_loaders import PyPDFLoader
-            from PIL import Image
-            import io
-            return fitz, requests, storage, PyPDFLoader, Image, io
+        #     Returns:
+        #         tuple: fitz, requests, storage, PyPDFLoader
+        #     """
+        #     import fitz
+        #     import requests
+        #     from google.cloud import storage
+        #     from langchain_community.document_loaders import PyPDFLoader
+        #     from PIL import Image
+        #     import io
+        #     return fitz, requests, storage, PyPDFLoader, Image, io
 
-        @staticmethod
-        @cache_resource
-        def get_splitters():
-            """Load document splitting dependencies.
+        # @staticmethod
+        # @cache_resource
+        # def get_splitters():
+        #     """Load document splitting dependencies.
             
-            Returns:
-                RecursiveCharacterTextSplitter
-            """
-            from langchain.text_splitter import RecursiveCharacterTextSplitter
-            return RecursiveCharacterTextSplitter
+        #     Returns:
+        #         RecursiveCharacterTextSplitter
+        #     """
+        #     from langchain.text_splitter import RecursiveCharacterTextSplitter
+        #     return RecursiveCharacterTextSplitter

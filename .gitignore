@@ -20,7 +20,7 @@ data/**/*.jsonl
 *.pickle
 *.parquet
 profile_stats.txt
-*/unstructured_results/*
+*/document_processing/*
 
 # Notebooks
 notebooks/playground.ipynb

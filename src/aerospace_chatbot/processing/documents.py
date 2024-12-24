@@ -1,32 +1,32 @@
 """Document processing and chunking logic."""
 
-import hashlib, json, re, os
-from typing import List, Optional, Any
-from dataclasses import dataclass
-import tempfile
+import hashlib, json, os
 import logging
 
-# TODO: Smarter imports
+# Parsers
 import unstructured_client
 from unstructured_client.models import operations, shared
 from unstructured.partition.pdf import partition_pdf
 from unstructured.chunking.title import chunk_by_title
 from unstructured.staging.base import elements_from_dicts
+from unstructured.documents.elements import Element
 
-from ..core.cache import Dependencies, cache_data
-from ..services.prompts import SUMMARIZE_TEXT
+# Utilities
+from dataclasses import dataclass
+from typing import List, Any, Optional
+from google.cloud import storage
+import fitz
 
-# TODO removed this, using unstructured.io elements. Clean up later.
-# @dataclass
-# class ChunkingResult:
-#     """Container for chunking results."""
-#     rag_type: str
-#     chunks: List[Any]
-#     chunk_size: Optional[int] = None
-#     chunk_overlap: Optional[int] = None
-#     parent_chunks: List[Any] = None
-#     summary_chunks: Optional[List[Any]] = None
-#     llm_service: Optional[Any] = None
+# from ..core.cache import Dependencies
+# from ..services.prompts import SUMMARIZE_TEXT
+
+@dataclass
+class ChunkingResult:
+    """Container for chunking results."""
+    rag_type: str
+    chunks: List[Element]
+    chunk_size: Optional[int]
+    chunk_overlap: Optional[int]
 
 class DocumentProcessor:
     """Handles document processing, chunking, and indexing."""
@@ -34,30 +34,29 @@ class DocumentProcessor:
     def __init__(
         self, 
         embedding_service,
-        work_dir='./unstructured_results',
+        work_dir='./document_processing',
         rag_type='Standard',
-                #  chunk_method='character_recursive',
         chunk_size=500,
         chunk_overlap=0,
         #  merge_pages=None,
-        llm_service=None
+        #  chunk_method='character_recursive',
+        # llm_service=None
     ):
         self.embedding_service = embedding_service
         self.work_dir = work_dir
         self.rag_type = rag_type
-        # self.chunk_method = chunk_method
-        self.splitter = None
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-        # self.merge_pages = merge_pages
-        self.llm_service = llm_service  # Only for rag_type=='Summary', otherwise ignored
-        self._deps = Dependencies()
         self.logger = logging.getLogger(__name__)
+        # self.splitter = None
+        # self.merge_pages = merge_pages
+        # self.chunk_method = chunk_method
+        # self.llm_service = llm_service  # Only for rag_type=='Summary', otherwise ignored
+        # self._deps = Dependencies()
+        # if self.rag_type == 'Summary' and not self.llm_service:
+        #     raise ValueError("LLM service is required for Summary RAG type")
 
         os.makedirs(self.work_dir, exist_ok=True)
-
-        if self.rag_type == 'Summary' and not self.llm_service:
-            raise ValueError("LLM service is required for Summary RAG type")
 
     def load_and_partition_documents(
         self,
@@ -95,6 +94,7 @@ class DocumentProcessor:
             return [element for element in res.elements]
         
         def partition_locally(pdf_path):
+            # TODO check that this is the same functionality as the API partition_pdf function.
             elements = partition_pdf(
                 pdf_path,
                 strategy="hi_res",
@@ -124,15 +124,24 @@ class DocumentProcessor:
                 self.logger.info(f"Partitioning {pdf_file} Locally...")
                 partitioned_data = partition_locally(pdf_file)
 
-            # TODO before saving to json, or in the partition functions, add GCS metadata. Example below. Used automatically with ingest pipeline. 
-            # If valid_gcs_docs is not empty, add GCS metadata to partitioned_data.
-            # "data_source": {
-            #     "url": "gs://processing-pdfs/1999_cremers_reocr.pdf",
-            #     "record_locator": {
-            #     "protocol": "gs",
-            #     "remote_file_path": "gs://processing-pdfs"
-            #     },
-            # }
+            # Add GCS metadata if the PDF has a matching GCS source
+            pdf_basename = os.path.basename(pdf_file)
+            matching_gcs_doc = next((gcs_doc for gcs_doc in valid_gcs_docs 
+                                   if os.path.basename(gcs_doc) == pdf_basename), None)
+            if matching_gcs_doc:
+                # Parse GCS path components
+                bucket_name = matching_gcs_doc.split('/')[2]
+                remote_path = f"gs://{bucket_name}"
+                
+                # Add metadata to each element in partitioned_data
+                for element in partitioned_data:
+                    element['metadata']['data_source'] = {
+                        "url": matching_gcs_doc,
+                        "record_locator": {
+                            "protocol": "gs",
+                            "remote_file_path": remote_path
+                        }
+                    }
 
             # Save the partitioned data to JSON
             output_path = os.path.join(
@@ -141,9 +150,10 @@ class DocumentProcessor:
             )
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(partitioned_data, f, ensure_ascii=False, indent=4)
-
             self.logger.info(f"Partitioned data saved at {output_path}")
             partitioned_docs.append(output_path)
+
+            # Upload to GCS bucket if specified
             if upload_bucket:
                 self._upload_to_gcs(upload_bucket, pdf_file, os.path.basename(pdf_file)) # Upload original PDF file to GCS
                 self._upload_to_gcs(upload_bucket, output_path, os.path.join('partitioned', os.path.basename(output_path))) # Upload JSON file to GCS
@@ -156,7 +166,7 @@ class DocumentProcessor:
         Chunk documents based on RAG type.
         Partitioned docs is either a list of local or GCS json files.
         """
-        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+        # _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         # Process GCS paths if present
         local_partition_paths = []
@@ -228,12 +238,19 @@ class DocumentProcessor:
         #                       chunk_size=self.chunk_size,
         #                       chunk_overlap=self.chunk_overlap)
 
-        return chunks_out, output_paths
+        chunk_obj=ChunkingResult(
+            rag_type=self.rag_type,
+            chunks=chunks_out,
+            chunk_size=self.chunk_size,
+            chunk_overlap=self.chunk_overlap
+        )
+
+        return chunk_obj, output_paths
             
     @staticmethod
     def list_available_buckets():
         """Lists all available buckets in the GCS project."""
-        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+        # _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         try:
             # Initialize the GCS client
@@ -249,7 +266,7 @@ class DocumentProcessor:
     @staticmethod
     def list_bucket_pdfs(bucket_name: str):
         """Lists all PDF files in a Google Cloud Storage bucket."""
-        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+        # _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         logger = logging.getLogger(__name__)
         try:
@@ -283,7 +300,7 @@ class DocumentProcessor:
         """
         Load PDF documents and return a list of local file paths. Accepts GCS URLs and local file paths.
         """
-        _, _, storage, PyPDFLoader, _, _ = Dependencies.Document.get_processors()
+        # _, _, storage, PyPDFLoader, _, _ = Dependencies.Document.get_processors()
 
         def _download_and_validate_pdf(doc_in):
             """Download and validate a PDF document."""
@@ -310,8 +327,8 @@ class DocumentProcessor:
 
             # Validate the PDF
             try:
-                loader = PyPDFLoader(doc_local_temp)
-                loader.load()
+                doc = fitz.open(doc_local_temp)
+                doc.close()
             except Exception as e:
                 self.logger.error(f"Invalid PDF document: {doc_in}. Error: {str(e)}")
                 return None
@@ -381,7 +398,7 @@ class DocumentProcessor:
     @staticmethod
     def _upload_to_gcs(bucket_name, file_local, file_gcs):
         """Upload a file to Google Cloud Storage."""
-        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+        # _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
@@ -440,7 +457,7 @@ class DocumentProcessor:
 
     # TODO Removed parent-child chunking for now. Too complex with breaking down unstructured.io parent into child. No clear use case now.
     # def _chunk_documents(self, documents):
-        """Chunk documents using specified parameters."""
+        # """Chunk documents using specified parameters."""
         # RecursiveCharacterTextSplitter = Dependencies.Document.get_splitters()
         # chunks = []
         # if self.rag_type != 'Parent-Child':
