@@ -32,14 +32,6 @@ from tenacity import (
 
 # TODO check if get_available_indexes works if there is an index with no metadata. Observed "no avaialble indexes" error when there was an index with no metadata and another with.
 
-def pinecone_retry(func):
-    """Decorator for Pinecone operations with retry and rate limiting."""
-    return retry(
-        stop=stop_after_attempt(5),
-        wait=wait_fixed(2) + wait_exponential(multiplier=1, min=4, max=10),
-        reraise=True
-    )(func)
-
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
@@ -100,6 +92,7 @@ class DatabaseService:
             # if self.doc_type == 'document' and data.rag_type != self.rag_type:
             #     raise ValueError(f"RAG type mismatch: ChunkingResult has '{data.rag_type}' but DatabaseService has '{self.rag_type}'")
         self._store_index_metadata(chunks)    # Only store metadata if documents are being indexed
+        chunks.chunk_convert(destination_type=Document)
         self._upsert_data(chunks, batch_size)
 
     def get_retriever(self, k=8):
@@ -595,7 +588,7 @@ class DatabaseService:
         """Upsert documents or questions. Used for all RAG types."""
         from ..processing.documents import DocumentProcessor
         # _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
-        
+
         @pinecone_retry
         def _upsert_pinecone(batch, batch_ids):
             self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
@@ -619,7 +612,7 @@ class DatabaseService:
                 current_batch = (i // batch_size) + 1  # Calculate current batch number (1-based index)
                 self.logger.info(f"Upserting batch {current_batch} of {total_batches}")
                 batch = upsert_data.chunks[i:i + batch_size]
-                batch_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in batch]
+                batch_ids = [chunk.metadata['element_id'] for chunk in batch]
                 
                 if self.db_type == "Pinecone":
                     _upsert_pinecone(batch, batch_ids)
@@ -641,7 +634,7 @@ class DatabaseService:
             # Process all chunks at once for RAGatouille
             self.vectorstore.index(
                 collection=[chunk.page_content for chunk in upsert_data.chunks],
-                document_ids=[DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in upsert_data.chunks],
+                document_ids=[chunk.metadata['element_id'] for chunk in upsert_data.chunks],
                 index_name=self.index_name,
                 split_documents=True,
                 document_metadatas=[chunk.metadata for chunk in upsert_data.chunks]
@@ -744,6 +737,14 @@ class DatabaseService:
                 self.logger.warning(f"Final count ({current_count}) exceeds expected count ({expected_count})")
                 return  # Don't raise error if we have more vectors than expected
             raise TimeoutError(f"Timeout waiting for vectors to be indexed in Pinecone. Current count: {current_count}, Expected: {expected_count}")
+
+def pinecone_retry(func):
+    """Decorator for Pinecone operations with retry and rate limiting."""
+    return retry(
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(2) + wait_exponential(multiplier=1, min=4, max=10),
+        reraise=True
+    )(func)
 
 def get_docs_questions_df(db_service, query_db_service, logger=False):
     """Get documents and questions from database as a DataFrame."""
@@ -985,33 +986,33 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
                 
         return True
 
-    def _process_chromadb_indexes():
-        """Process available ChromaDB indexes."""
-        _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
+    # def _process_chromadb_indexes():
+    #     """Process available ChromaDB indexes."""
+    #     _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
 
-        client = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
+    #     client = PersistentClient(path=os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb'))
         
-        available_indexes = []
-        index_metadatas = []
+    #     available_indexes = []
+    #     index_metadatas = []
         
-        for index in db_status['message']:
-            # First check if index meets basic criteria
-            if not _check_get_index_criteria(index.name, rag_type):
-                continue
+    #     for index in db_status['message']:
+    #         # First check if index meets basic criteria
+    #         if not _check_get_index_criteria(index.name, rag_type):
+    #             continue
                 
-            collection = client.get_collection(index.name)
-            metadata = collection.get(ids=['db_metadata'])
+    #         collection = client.get_collection(index.name)
+    #         metadata = collection.get(ids=['db_metadata'])
             
-            # Check embedding model if specified
-            if metadata and (embedding_model is None or metadata['metadatas'][0].get('embedding_model') == embedding_model):
-                available_indexes.append(index.name)
-                index_metadatas.append(metadata['metadatas'][0])
+    #         # Check embedding model if specified
+    #         if metadata and (embedding_model is None or metadata['metadatas'][0].get('embedding_model') == embedding_model):
+    #             available_indexes.append(index.name)
+    #             index_metadatas.append(metadata['metadatas'][0])
                 
-        return available_indexes, index_metadatas
+    #     return available_indexes, index_metadatas
 
     def _process_pinecone_indexes():
         """Process available Pinecone indexes."""
-        pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
+        # pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
         
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         
@@ -1091,7 +1092,7 @@ def _get_pinecone_status():
     """Get status of Pinecone indexes."""
     
     try:
-        pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
+        # pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
 
         pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
         indexes = pc.list_indexes()
@@ -1101,19 +1102,19 @@ def _get_pinecone_status():
     except Exception as e:
         return {'status': False, 'message': f'Error connecting to Pinecone: {str(e)}'}
 
-def _get_chromadb_status():
-    """Get status of ChromaDB collections."""
-    try:
-        _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
+# def _get_chromadb_status():
+#     """Get status of ChromaDB collections."""
+#     try:
+#         _, _, _, PersistentClient, _ = Dependencies.Storage.get_db_clients()
         
-        db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
-        client = PersistentClient(path=str(db_path))
-        collections = client.list_collections()
-        if not collections:
-            return {'status': False, 'message': 'No collections found'}
-        return {'status': True, 'message': collections}
-    except Exception as e:
-        return {'status': False, 'message': f'Error connecting to ChromaDB: {str(e)}'}
+#         db_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'chromadb')
+#         client = PersistentClient(path=str(db_path))
+#         collections = client.list_collections()
+#         if not collections:
+#             return {'status': False, 'message': 'No collections found'}
+#         return {'status': True, 'message': collections}
+#     except Exception as e:
+#         return {'status': False, 'message': f'Error connecting to ChromaDB: {str(e)}'}
 
 def _get_ragatouille_status():
     """Get status of RAGatouille indexes."""

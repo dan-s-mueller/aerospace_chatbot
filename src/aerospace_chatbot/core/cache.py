@@ -84,35 +84,35 @@ class Dependencies:
     #         from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
     #         return OpenAIEmbeddings, VoyageAIEmbeddings, HuggingFaceInferenceAPIEmbeddings
 
-    class Storage:
-        @staticmethod
-        @cache_resource
-        def get_vector_stores():
-            """Load vector store dependencies.
+    # class Storage:
+        # @staticmethod
+        # @cache_resource
+        # def get_vector_stores():
+        #     """Load vector store dependencies.
             
-            Returns:
-                tuple: PineconeVectorStore, Chroma, MultiVectorRetriever
-            """
-            from langchain_pinecone import PineconeVectorStore
-            from langchain_chroma import Chroma
-            from langchain.retrievers.multi_vector import MultiVectorRetriever
-            from langchain.storage import LocalFileStore
-            return PineconeVectorStore, Chroma, MultiVectorRetriever, LocalFileStore
+        #     Returns:
+        #         tuple: PineconeVectorStore, Chroma, MultiVectorRetriever
+        #     """
+        #     from langchain_pinecone import PineconeVectorStore
+        #     from langchain_chroma import Chroma
+        #     from langchain.retrievers.multi_vector import MultiVectorRetriever
+        #     from langchain.storage import LocalFileStore
+        #     return PineconeVectorStore, Chroma, MultiVectorRetriever, LocalFileStore
 
-        @staticmethod
-        @cache_resource
-        def get_db_clients():
-            """Load database client dependencies.
+        # @staticmethod
+        # @cache_resource
+        # def get_db_clients():
+        #     """Load database client dependencies.
             
-            Returns:
-                tuple: pinecone_client, chromadb, ServerlessSpec, PersistentClient, RAGPretrainedModel
-            """
-            from pinecone import Pinecone as pinecone_client
-            import chromadb
-            from pinecone import ServerlessSpec
-            from chromadb import PersistentClient
-            from ragatouille import RAGPretrainedModel
-            return pinecone_client, chromadb, ServerlessSpec, PersistentClient, RAGPretrainedModel
+        #     Returns:
+        #         tuple: pinecone_client, chromadb, ServerlessSpec, PersistentClient, RAGPretrainedModel
+        #     """
+        #     from pinecone import Pinecone as pinecone_client
+        #     import chromadb
+        #     from pinecone import ServerlessSpec
+        #     from chromadb import PersistentClient
+        #     from ragatouille import RAGPretrainedModel
+        #     return pinecone_client, chromadb, ServerlessSpec, PersistentClient, RAGPretrainedModel
     class Analysis:
         @staticmethod
         @cache_resource

@@ -12,21 +12,67 @@ from unstructured.staging.base import elements_from_dicts
 from unstructured.documents.elements import Element
 
 # Utilities
-from dataclasses import dataclass
 from typing import List, Any, Optional
 from google.cloud import storage
+from langchain_core.documents import Document
 import fitz
 
 # from ..core.cache import Dependencies
 # from ..services.prompts import SUMMARIZE_TEXT
 
-@dataclass
 class ChunkingResult:
-    """Container for chunking results."""
-    rag_type: str
-    chunks: List[Element]
-    chunk_size: Optional[int]
-    chunk_overlap: Optional[int]
+    def __init__(
+            self, 
+            rag_type: str, 
+            chunks: List[Element], 
+            chunk_size: Optional[int], 
+            chunk_overlap: Optional[int]
+        ):
+        self.rag_type = rag_type
+        self.chunks = chunks
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
+    def chunk_convert(self, destination_type=Document):
+        """
+        Convert chunks to a destination type.
+        """
+
+        def _flatten_metadata(metadata, parent_key='', sep='.'):
+            """
+            Flatten a nested dictionary and ensure all values are strings, numbers, booleans, or lists of strings.
+            """
+            items = []
+            for k, v in metadata.items():
+                new_key = f"{parent_key}{sep}{k}" if parent_key else k
+                if isinstance(v, dict):
+                    items.extend(_flatten_metadata(v, new_key, sep=sep).items())
+                elif isinstance(v, list) and all(isinstance(i, str) for i in v):
+                    items.append((new_key, v))
+                elif isinstance(v, (str, int, float, bool)):
+                    items.append((new_key, v))
+                else:
+                    # Convert unsupported types to string
+                    items.append((new_key, str(v)))
+            return dict(items)
+
+        converted_chunks = []
+        if destination_type == Document:
+            for chunk in self.chunks:
+                chunk=chunk.to_dict()
+                doc_metadata = _flatten_metadata(chunk['metadata'])
+                doc_metadata['element_id']=chunk['element_id']
+                doc_metadata['type']=chunk['type']
+                doc_metadata['rag_type']=self.rag_type
+                doc_metadata['chunk_size']=self.chunk_size
+                doc_metadata['chunk_overlap']=self.chunk_overlap
+
+                doc=Document(
+                    page_content=chunk['text'], 
+                    metadata=doc_metadata, 
+                )
+                converted_chunks.append(doc)
+        self.chunks=converted_chunks
 
 class DocumentProcessor:
     """Handles document processing, chunking, and indexing."""
@@ -38,8 +84,8 @@ class DocumentProcessor:
         rag_type='Standard',
         chunk_size=500,
         chunk_overlap=0,
-        #  merge_pages=None,
-        #  chunk_method='character_recursive',
+        # merge_pages=None,
+        # chunk_method='character_recursive',
         # llm_service=None
     ):
         self.embedding_service = embedding_service
@@ -558,3 +604,4 @@ class DocumentProcessor:
     #             file_path = lfs_path / str(doc_id)
     #             with open(file_path, "w") as f:
     #                 json.dump({"kwargs": {"page_content": orig_doc.page_content}}, f)
+    
