@@ -1,7 +1,12 @@
 """LLM service implementations."""
 
 import os
-from ..core.cache import Dependencies, cache_resource
+
+# LLM
+from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+
+# from ..core.cache import Dependencies, cache_resource
 
 class LLMService:
     """Manages LLM operations."""
@@ -20,7 +25,7 @@ class LLMService:
     def get_llm(self):
         """Get or create LLM instance."""
         if self._llm is None:
-            ChatOpenAI, ChatAnthropic = Dependencies.LLM.get_models()
+            # ChatOpenAI, ChatAnthropic = Dependencies.LLM.get_models()
             
             if self.model_service == 'OpenAI':
                 self._llm = ChatOpenAI(

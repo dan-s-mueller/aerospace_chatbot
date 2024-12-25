@@ -4,7 +4,7 @@ import streamlit as st
 import os, logging
 
 from ..core.config import load_config, ConfigurationError, get_secrets, set_secrets, get_required_api_keys
-from ..core.cache import Dependencies
+# from ..core.cache import Dependencies
 from ..services.database import DatabaseService, get_available_indexes
 
 class SidebarManager:
@@ -13,7 +13,7 @@ class SidebarManager:
     def __init__(self, config_file):
         self._config_file = config_file
         self._config = load_config(self._config_file)
-        self._deps = Dependencies()
+        # self._deps = Dependencies()
         self.sb_out = st.session_state.get('sb', {})
         if self.sb_out is None:
             self.sb_out = {}

@@ -3,12 +3,13 @@
 import streamlit as st
 import os, ast, tempfile, logging
 
+# Utilities
 import fitz
 import requests
 from PIL import Image
 import io
 
-from ..core.cache import Dependencies
+# from ..core.cache import Dependencies
 from ..core.config import get_secrets
 from ..services.database import DatabaseService, get_available_indexes
 from ..services.embeddings import EmbeddingService
@@ -195,18 +196,18 @@ def process_uploads(sb, temp_files):
     logger.info("Merged user document with existing documents.")
     return user_upload
 
-def get_or_create_spotlight_viewer(df, port: int = 9000):
-    """Create or get existing Spotlight viewer instance."""
-    deps = Dependencies()
-    spotlight = deps.get_spotlight()
+# def get_or_create_spotlight_viewer(df, port: int = 9000):
+#     """Create or get existing Spotlight viewer instance."""
+#     # deps = Dependencies()
+#     spotlight = deps.get_spotlight()
     
-    viewer = spotlight.show(
-        df,
-        port=port,
-        return_viewer=True,
-        open_browser=False
-    )
-    return viewer
+#     viewer = spotlight.show(
+#         df,
+#         port=port,
+#         return_viewer=True,
+#         open_browser=False
+#     )
+#     return viewer
 
 def _display_api_key_status():
     """Display API key status."""
@@ -220,8 +221,8 @@ def _display_database_status(delete_buttons=False):
         st.error("Local database path not set")
         return
 
-    db_types = ['Pinecone', 'ChromaDB', 'RAGatouille']
-    rag_types = ['Standard', 'Parent-Child', 'Summary']
+    db_types = ['Pinecone', 'RAGatouille']
+    # rag_types = ['Standard', 'Parent-Child', 'Summary']
     
     # Display status for each database type
     for db_type in db_types:

@@ -1,7 +1,7 @@
 """Embedding service implementations."""
 
 import os
-from ..core.cache import Dependencies, cache_resource
+# from ..core.cache import Dependencies, cache_resource
 
 # Embeddings
 from langchain_openai import OpenAIEmbeddings

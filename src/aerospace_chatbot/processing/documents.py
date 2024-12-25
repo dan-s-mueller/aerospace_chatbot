@@ -131,9 +131,11 @@ class DocumentProcessor:
                     strategy=shared.Strategy.HI_RES,
                     languages=['eng'],
                     coordinates=True,
-                    split_pdf_page=True,            # If True, splits the PDF file into smaller chunks of pages.
-                    split_pdf_allow_failed=True,    # If True, the partitioning continues even if some pages fail.
-                    split_pdf_concurrency_level=15  # Set the number of concurrent request to the maximum value (number of pages): 15.
+                    split_pdf_page=True,             # If True, splits the PDF file into smaller chunks of pages.
+                    split_pdf_allow_failed=True,     # If True, the partitioning continues even if some pages fail.
+                    split_pdf_concurrency_level=15,  # Set the number of concurrent request to the maximum value (number of pages): 15.
+                    infer_table_structure=True,      # If True, the partitioning will infer the structure of tables as html.
+                    extract_image_block_types=["Image", "Table"]    # https://docs.unstructured.io/api-reference/how-to/extract-image-block-types#ingest-python-library
                 ),
             )
             res = client.general.partition(request=req)
@@ -148,7 +150,9 @@ class DocumentProcessor:
                 split_pdf_page=True,
                 split_pdf_allow_failed=True,
                 split_pdf_concurrency_level=15,
-                infer_table_structure=True
+                infer_table_structure=True,
+                extract_image_block_types=["Image", "Table"],
+                extract_image_block_to_payload=True
             )
             return [element.to_dict() for element in elements]
 

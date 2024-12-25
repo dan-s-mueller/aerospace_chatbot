@@ -2,21 +2,33 @@
 
 import logging
 
-from ..core.cache import Dependencies
+# Utilities
+from langchain.memory import ConversationBufferMemory
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from operator import itemgetter
+from langchain_core.messages import get_buffer_string
+from langchain.schema import format_document
+
+# from ..core.cache import Dependencies
 from ..services.prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT, 
                                 DEFAULT_DOCUMENT_PROMPT,
                                 GENERATE_SIMILAR_QUESTIONS_W_CONTEXT)
-from ..services.database import DatabaseService
-from ..processing.documents import DocumentProcessor
+# from ..services.database import DatabaseService
+# from ..processing.documents import DocumentProcessor
 
 class QAModel:
-    """Handles question answering and retrieval."""
-    
+    """
+    Handles question answering and retrieval.
+    """
+
     def __init__(self,
                  db_service,
                  llm_service,
                  k=8):
-        """Initialize QA model with necessary services."""
+        """
+        Initialize QA model with necessary services.
+        """
         self.db_service = db_service
         self.llm_service = llm_service
         self.k = k
@@ -28,18 +40,18 @@ class QAModel:
         self.logger = logging.getLogger(__name__)
 
         # Get chain utilities
-        _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
+        # _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
 
         # Create a separate database service for query storage
-        if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
-            self.query_db_service = DatabaseService(
-                db_type=self.db_service.db_type,
-                index_name=self.db_service.index_name,
-                rag_type="Standard",
-                embedding_service=self.db_service.embedding_service,
-                doc_type='question'
-            )
-            self.query_db_service.initialize_database(clear=False)   # TODO decide if this should clear every time
+        # if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
+        #     self.query_db_service = DatabaseService(
+        #         db_type=self.db_service.db_type,
+        #         index_name=self.db_service.index_name,
+        #         rag_type="Standard",
+        #         embedding_service=self.db_service.embedding_service,
+        #         doc_type='question'
+        #     )
+        #     self.query_db_service.initialize_database(clear=False)   # TODO decide if this should clear every time
         
         # Get retrievers from database services
         self.db_service.get_retriever(k=k)
@@ -56,7 +68,9 @@ class QAModel:
             raise ValueError("QA chain not initialized")
         
     def query(self,query): 
-        """Executes a query and retrieves the relevant documents."""       
+        """
+        Executes a query and retrieves the relevant documents.
+        """       
         # Retrieve memory, invoke chain
         self.memory.load_memory_variables({})
 
@@ -79,19 +93,22 @@ class QAModel:
             self.scores.append(answer_scores)
 
         # Add answer to memory
-        if self.llm_service.get_llm().__class__.__name__=='ChatOpenAI' or self.llm_service.get_llm().__class__.__name__=='ChatAnthropic':
-            self.ai_response = self.result[-1]['answer'].content
-        else:
-            raise NotImplementedError   # To catch any weird stuff I might add later
+        # if self.llm_service.get_llm().__class__.__name__=='ChatOpenAI' or self.llm_service.get_llm().__class__.__name__=='ChatAnthropic':
+        self.ai_response = self.result[-1]['answer'].content
+        # else:
+        #     raise NotImplementedError   # To catch any weird stuff I might add later
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
         # If compatible type, upsert query into query database
-        if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
-            self.logger.info(f'Upserting question into query database {self.query_db_service.index_name}')
-            self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
+        # if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
+        #     self.logger.info(f'Upserting question into query database {self.query_db_service.index_name}')
+        #     self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
+    
     def generate_alternative_questions(self, prompt):
-        """Generates alternative questions based on a prompt."""
-        _, StrOutputParser, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
+        """
+        Generates alternative questions based on a prompt.
+        """
+        # _, StrOutputParser, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
         # if self.ai_response:
         prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
         invoke_dict={'question':prompt,'context':self.ai_response}
@@ -103,21 +120,25 @@ class QAModel:
             )
         alternative_questions = chain.invoke(invoke_dict)
         self.logger.info(f'Generated alternative questions: {alternative_questions}')
+
         # Split the string into a list of questions, removing empty strings and stripping whitespace
         alternative_questions = [question.strip() for question in alternative_questions.split('\n') if question.strip()]
         self.logger.info(f'Alternative questions split up: {alternative_questions}')
         return alternative_questions
-    def _setup_memory(self):
-        """Initialize conversation memory."""
-        _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
-        self.memory = ConversationBufferMemory(
-            return_messages=True,
-            output_key='answer',
-            input_key='question'
-        )
+    # def _setup_memory(self):
+    #     """Initialize conversation memory."""
+    #     # _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
+    #     self.memory = ConversationBufferMemory(
+    #         return_messages=True,
+    #         output_key='answer',
+    #         input_key='question'
+    #     )
+    
     def _define_qa_chain(self):
-        """Defines the conversational QA chain."""
-        itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
+        """
+        Defines the conversational QA chain.
+        """
+        # itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
         
        # This adds a 'memory' key to the input object
         loaded_memory = RunnablePassthrough.assign(
@@ -139,7 +160,7 @@ class QAModel:
 
         retrieved_documents = RunnablePassthrough.assign(
             source_documents=lambda x: x['retrieval'][0],  # Get docs from first element of tuple
-            scores=lambda x: x['retrieval'][1]            # Get scores from second element of tuple
+            scores=lambda x: x['retrieval'][1]             # Get scores from second element of tuple
         )
         
         final_inputs = {
@@ -154,41 +175,50 @@ class QAModel:
             'scores': itemgetter('scores')}
         
         return loaded_memory | standalone_question | retrieval_results | retrieved_documents | answer
+    
     def _combine_documents(self, docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator='\n\n'):
-        """Combines a list of documents into a single string using the format_document function."""
-        _, _, _, _, _, _, _, format_document = Dependencies.LLM.get_chain_utils()
+        """
+        Combines a list of documents into a single string using the format_document function.
+        """
+        # _, _, _, _, _, _, _, format_document = Dependencies.LLM.get_chain_utils()
         
         # Format each document using the cached format_document function
         doc_strings = [format_document(doc, document_prompt) for doc in docs]
         
         # Join the formatted strings with the separator
         return document_separator.join(doc_strings)
-    @staticmethod
-    def _question_as_doc(question, rag_answer):
-        """Creates a Document object based on the given question and RAG answer."""
-        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+    
+    # @staticmethod
+    # def _question_as_doc(question, rag_answer):
+    #     """
+    #     Creates a Document object based on the given question and RAG answer.
+    #     """
+    #     # _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
 
-        # TODO this feels really fragile, but it's the best I can think of for now.
-        for i, doc in enumerate(rag_answer['references']):
-            for key, value in doc.metadata.items():
-                if isinstance(value, float) and not isinstance(value, (bool, int)):
-                    if key == 'score':
-                        doc.metadata[key] = f"{value:.5f}"  # Keep 5 decimal places of the score.
-                    else:
-                        doc.metadata[key] = int(value)
-                    rag_answer['references'][i] = doc
+    #     # TODO this feels really fragile, but it's the best I can think of for now.
+    #     for i, doc in enumerate(rag_answer['references']):
+    #         for key, value in doc.metadata.items():
+    #             if isinstance(value, float) and not isinstance(value, (bool, int)):
+    #                 if key == 'score':
+    #                     doc.metadata[key] = f"{value:.5f}"  # Keep 5 decimal places of the score.
+    #                 else:
+    #                     doc.metadata[key] = int(value)
+    #                 rag_answer['references'][i] = doc
 
-        sources = [DocumentProcessor.stable_hash_meta(doc.metadata) for doc in rag_answer['references']]
-        return Document(
-            page_content=question,
-            metadata={
-                "answer": rag_answer['answer'].content,
-                "sources": ','.join(sources),  # Now sources is a list of IDs, no need to join
-            },
-        )
+    #     sources = [DocumentProcessor.stable_hash_meta(doc.metadata) for doc in rag_answer['references']]
+    #     return Document(
+    #         page_content=question,
+    #         metadata={
+    #             "answer": rag_answer['answer'].content,
+    #             "sources": ','.join(sources),  # Now sources is a list of IDs, no need to join
+    #         },
+    #     )
+
     def _get_standalone_question(self, question, chat_history):
-        """Generate standalone question from conversation context."""
-        _, _, _, _, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
+        """
+        Generate standalone question from conversation context.
+        """
+        # _, _, _, _, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
 
         if not chat_history:
             return question
