@@ -2,15 +2,13 @@ from langchain.prompts.prompt import PromptTemplate
 
 CONDENSE_QUESTION_PROMPT=PromptTemplate.from_template(template=
 """
-Given the following conversation history and the user’s most recent question, generate one or more **standalone questions** that incorporate relevant context from the chat history. Always include the user’s exact question as the first standalone question. For additional questions, provide a **detailed summary of the relevant context** from the chat history to ensure the questions are well-informed and self-contained.
+Given the following conversation history and the user’s most recent question, generate exactly one **standalone question** that incorporates relevant context from the chat history. If, and only if, a relevant context is available, provide a **detailed summary of the relevant context** from the chat history alongside this question to ensure the the standalone question is well-informed and self-contained.
 
 ### Guidelines:
-1. **Include the Exact User Question**: The user’s original question must be included as the first standalone question, unaltered.
-2. **Provide Detailed Context for Additional Questions**: Summarize key details from the chat history that are relevant to the user’s question. Use paragraph-length summaries if necessary to capture important details.
-3. **Generate Additional Questions (If Applicable)**: If the user’s last question allows for multiple related questions, generate all relevant ones, each accompanied by its own detailed context.
-4. **Ensure Self-Containment**: Each question and its context should stand alone without requiring the full chat history.
-5. **Clarity and Precision**: Ensure both the context summaries and questions are clear, concise, and directly tied to the user’s last question.
-6. **Clean Output Format**: Present the user’s original question first, followed by additional standalone questions, each with its accompanying context.
+1. **Never attempt to answer the user's question**: Only generate a standalone question and summarize the relevant context from the chat history. If no relevant context is available, simply return the user's original question and provide an empty context summary.
+2. **If chat history is not empty, provide a detailed context summary**: Summarize key details from the chat history that are relevant to the user’s original question **only if the chat history is not empty**. Use paragraph-length summaries if necessary to capture important details. Only provide the context summary if there is relevant context available.
+3. **Clarity and Precision**: Ensure both the context summary and standalone question are clear, concise, and directly tied to the user’s last question.
+4. **Clean Output Format**: Present the context summary first under the header "Context Summary" and the standalone question only under the header "Standalone Question", no other text.
 
 ---
 **Chat History**:  

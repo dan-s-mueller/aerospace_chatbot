@@ -1,6 +1,6 @@
 from .database import (
     DatabaseService, 
-    get_docs_questions_df, 
+    get_docs_df, 
     add_clusters, 
     export_to_hf_dataset, 
     get_database_status,
@@ -19,7 +19,7 @@ from .prompts import (
 
 __all__ = [
     'DatabaseService',
-    'get_docs_questions_df', 
+    'get_docs_df', 
     'add_clusters', 
     'export_to_hf_dataset', 
     'get_database_status',

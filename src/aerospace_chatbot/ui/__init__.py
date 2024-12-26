@@ -6,7 +6,6 @@ from .utils import (
     show_connection_status,
     handle_file_upload,
     process_uploads,
-    get_or_create_spotlight_viewer,
 )
 
 __all__ = [
@@ -17,5 +16,4 @@ __all__ = [
     'handle_file_upload',
     'process_uploads',
     'show_connection_status',
-    'get_or_create_spotlight_viewer',
 ]

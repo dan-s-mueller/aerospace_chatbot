@@ -117,6 +117,10 @@ class DocumentProcessor:
         """
 
         def partition_with_api(pdf_path):
+            """
+            Partition documents using the Unstructured API.
+            TODO add in image extraction for multimodal. Not set up with embeddings yet.
+            """
             client = unstructured_client.UnstructuredClient(
                 api_key_auth=os.getenv("UNSTRUCTURED_API_KEY"),
                 server_url=os.getenv("UNSTRUCTURED_API_URL"),
@@ -135,7 +139,7 @@ class DocumentProcessor:
                     split_pdf_allow_failed=True,     # If True, the partitioning continues even if some pages fail.
                     split_pdf_concurrency_level=15,  # Set the number of concurrent request to the maximum value (number of pages): 15.
                     infer_table_structure=True,      # If True, the partitioning will infer the structure of tables as html.
-                    extract_image_block_types=["Image", "Table"]    # https://docs.unstructured.io/api-reference/how-to/extract-image-block-types#ingest-python-library
+                    # extract_image_block_types=["Image", "Table"]    # https://docs.unstructured.io/api-reference/how-to/extract-image-block-types#ingest-python-library
                 ),
             )
             res = client.general.partition(request=req)
@@ -151,8 +155,8 @@ class DocumentProcessor:
                 split_pdf_allow_failed=True,
                 split_pdf_concurrency_level=15,
                 infer_table_structure=True,
-                extract_image_block_types=["Image", "Table"],
-                extract_image_block_to_payload=True
+                # extract_image_block_types=["Image", "Table"],
+                # extract_image_block_to_payload=True
             )
             return [element.to_dict() for element in elements]
 

@@ -62,9 +62,9 @@ if cluster_data:
     n_clusters=st.number_input('Enter the number of clusters',value=10)
     docs_per_cluster=st.number_input('Enter the number of documents per cluster to generate label',value=10)
 
-spotlight_viewer=st.checkbox('Launch Spotlight viewer?',value=False,help='Launch the Spotlight viewer to visualize the data. If unselected, will provide link to static Spotlight viewer.')
-if spotlight_viewer:
-    port=st.number_input('Enter the port number',value=9000,help='The port number to run the viewer on. Default to 9000.')
+# spotlight_viewer=st.checkbox('Launch Spotlight viewer?',value=False,help='Launch the Spotlight viewer to visualize the data. If unselected, will provide link to static Spotlight viewer.')
+# if spotlight_viewer:
+#     port=st.number_input('Enter the port number',value=9000,help='The port number to run the viewer on. Default to 9000.')
 
 if st.button('Visualize'):
     with st.status('Processing visualization...', expanded=True):
@@ -95,9 +95,9 @@ if st.button('Visualize'):
             db_service.export_to_hf_dataset(df, dataset_name)
             st.markdown(f"The dataset is uploaded to: {'https://huggingface.co/datasets/'+dataset_name}")
 
-    if spotlight_viewer or st.session_state.viewer is not None:
-        st.markdown(f"Spotlight running on: {'http://'+'localhost'+':'+str(port)}")
-        st.info('Functionality only works with locally deployed versions.')
-        st.session_state.viewer = get_or_create_spotlight_viewer(df, port=port)
-    else:
-        st.info('Functionality only works with locally deployed versions.')
+    # if spotlight_viewer or st.session_state.viewer is not None:
+    #     st.markdown(f"Spotlight running on: {'http://'+'localhost'+':'+str(port)}")
+    #     st.info('Functionality only works with locally deployed versions.')
+    #     st.session_state.viewer = get_or_create_spotlight_viewer(df, port=port)
+    # else:
+    #     st.info('Functionality only works with locally deployed versions.')

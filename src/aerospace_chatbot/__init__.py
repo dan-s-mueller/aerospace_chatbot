@@ -13,7 +13,7 @@ from .processing import (
 )
 from .services import (
     DatabaseService, 
-    get_docs_questions_df, 
+    get_docs_df, 
     add_clusters, 
     export_to_hf_dataset, 
     get_database_status,
@@ -33,8 +33,7 @@ from .ui import (
     handle_sidebar_state,
     display_sources, 
     show_connection_status,
-    handle_file_upload,
-    get_or_create_spotlight_viewer
+    handle_file_upload
 )
 
 __version__ = "0.0.9"
@@ -53,7 +52,7 @@ __all__ = [
 
     # Services
     'DatabaseService',
-    'get_docs_questions_df', 
+    'get_docs_df', 
     'add_clusters', 
     'export_to_hf_dataset', 
     'get_database_status',
@@ -78,8 +77,7 @@ __all__ = [
     'handle_sidebar_state',
     'display_sources', 
     'show_connection_status',
-    'handle_file_upload',
-    'get_or_create_spotlight_viewer'
+    'handle_file_upload'
 ]
 
 def get_version():
