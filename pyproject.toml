@@ -43,6 +43,7 @@ pymupdf = "^1.24.13"
 unstructured = {extras = ["pdf"], version = "^0.16.11"}
 unstructured-client = "^0.28.1"
 pypdf = "^5.1.0"
+langgraph = "^0.2.60"
 
 [build-system]
 requires = ["poetry-core"]
