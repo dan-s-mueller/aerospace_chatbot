@@ -95,12 +95,7 @@ class DatabaseService:
         if not self.vectorstore:
             raise ValueError("Database not initialized. Please ensure database is initialized before getting retriever.")
 
-        if self.rag_type == 'Standard':
-            self._get_standard_retriever(search_kwargs)
-        elif self.rag_type in ['Parent-Child', 'Summary']:
-            self._get_multivector_retriever(search_kwargs)
-        else:
-            raise NotImplementedError(f"RAG type {self.rag_type} not supported")
+        self._get_standard_retriever(search_kwargs)
     
     def copy_vectors(self, source_namespace, batch_size=100):
         """
