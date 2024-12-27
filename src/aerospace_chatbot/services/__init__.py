@@ -9,7 +9,7 @@ from .database import (
 from .embeddings import EmbeddingService
 from .llm import LLMService
 from .prompts import (
-    CONDENSE_QUESTION_PROMPT,
+    CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
     SUMMARIZE_TEXT,
     GENERATE_SIMILAR_QUESTIONS_W_CONTEXT,
@@ -26,7 +26,7 @@ __all__ = [
     'get_available_indexes',
     'EmbeddingService',
     'LLMService',
-    'CONDENSE_QUESTION_PROMPT',
+    'CHATBOT_SYSTEM_PROMPT',
     'QA_PROMPT',
     'SUMMARIZE_TEXT',
     'GENERATE_SIMILAR_QUESTIONS_W_CONTEXT',

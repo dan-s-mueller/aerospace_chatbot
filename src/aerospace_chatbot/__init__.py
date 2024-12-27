@@ -20,12 +20,12 @@ from .services import (
     get_available_indexes,
     EmbeddingService, 
     LLMService,
-    CONDENSE_QUESTION_PROMPT,
+    CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
-    DEFAULT_DOCUMENT_PROMPT,
+    SUMMARIZE_TEXT,
     GENERATE_SIMILAR_QUESTIONS_W_CONTEXT,
     CLUSTER_LABEL,
-    SUMMARIZE_TEXT
+    DEFAULT_DOCUMENT_PROMPT,
 )
 from .ui import (
     SidebarManager,
@@ -59,12 +59,12 @@ __all__ = [
     'get_available_indexes',
     'EmbeddingService',
     'LLMService',
-    'CONDENSE_QUESTION_PROMPT',
+    'CHATBOT_SYSTEM_PROMPT',
     'QA_PROMPT',
-    'DEFAULT_DOCUMENT_PROMPT',
+    'SUMMARIZE_TEXT',
     'GENERATE_SIMILAR_QUESTIONS_W_CONTEXT',
     'CLUSTER_LABEL',
-    'SUMMARIZE_TEXT',
+    'DEFAULT_DOCUMENT_PROMPT',
     
     # Processing
     'ChunkingResult',

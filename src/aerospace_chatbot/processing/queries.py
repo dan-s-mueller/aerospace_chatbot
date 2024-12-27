@@ -11,7 +11,8 @@ from langchain_core.messages import get_buffer_string
 from langchain.schema import format_document
 
 # from ..core.cache import Dependencies
-from ..services.prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT, 
+# TODO update prompts
+from ..services.prompts import (CHATBOT_SYSTEM_PROMPT, QA_PROMPT, 
                                 DEFAULT_DOCUMENT_PROMPT,
                                 GENERATE_SIMILAR_QUESTIONS_W_CONTEXT)
 # from ..services.database import DatabaseService
@@ -113,11 +114,12 @@ class QAModel:
             | itemgetter('history'))  
         
         # Assemble main chain
+        # TODO broken, update with langgraph
         standalone_question = {
             'standalone_question': {
                 'question': lambda x: x['question'],
                 'chat_history': lambda x: get_buffer_string(x['chat_history'])}
-            | CONDENSE_QUESTION_PROMPT
+            # | CHATBOT_SYSTEM_PROMPT
             | self.llm_service.get_llm()
             | StrOutputParser()}
         
@@ -134,9 +136,10 @@ class QAModel:
             'context': lambda x: self._combine_documents(x['source_documents']),
             'question': itemgetter('standalone_question')}
         
+        # TODO broken, update with langgraph
         answer = {
             'answer': final_inputs 
-                        | QA_PROMPT 
+                        # | QA_PROMPT 
                         | self.llm_service.get_llm(),
             'references': itemgetter('source_documents'),
             'scores': itemgetter('scores')}
