@@ -44,6 +44,7 @@ unstructured = {extras = ["pdf"], version = "^0.16.11"}
 unstructured-client = "^0.28.1"
 pypdf = "^5.1.0"
 langgraph = "^0.2.60"
+cohere = "^5.13.4"
 
 [build-system]
 requires = ["poetry-core"]

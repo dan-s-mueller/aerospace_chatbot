@@ -80,7 +80,7 @@ Example Response:
 > {style_mode_str["example_response"]}
 """
 
-
+# TODO update so that the top 3 sources are always cited in the response. Add validation.
 CHATBOT_SYSTEM_PROMPT=SystemMessagePromptTemplate.from_template(
   template=
 """
