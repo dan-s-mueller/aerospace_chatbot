@@ -9,6 +9,9 @@ from .database import (
 from .embeddings import EmbeddingService
 from .llm import LLMService
 from .prompts import (
+    InLineCitationsResponse,
+    style_mode,
+    OUTPUT_PARSER,
     CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
     SUMMARIZE_TEXT,
@@ -26,6 +29,9 @@ __all__ = [
     'get_available_indexes',
     'EmbeddingService',
     'LLMService',
+    'InLineCitationsResponse',
+    'style_mode',
+    'OUTPUT_PARSER',
     'CHATBOT_SYSTEM_PROMPT',
     'QA_PROMPT',
     'SUMMARIZE_TEXT',

@@ -1,8 +1,88 @@
 from langchain.prompts.prompt import PromptTemplate
-from langchain.prompts import HumanMessagePromptTemplate
+from langchain.prompts import HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_core.messages import SystemMessage
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
+import re
+from typing import List
+import logging
+class InLineCitationsResponse(BaseModel):
+    content: str = Field(description="The main content of the response with in-line citations.")
+    citations: List[str] = Field(description="List of extracted source IDs from the response.")
 
-CHATBOT_SYSTEM_PROMPT=SystemMessage(content=
+    # Validator to ensure citations follow the <source id="#"> format
+    @field_validator('content')
+    def validate_citations(cls, v):
+        # Regex pattern to match <source id="1">, <source id="2">, etc.
+        pattern = r'<source id="(\d+)">'
+        matches = re.findall(pattern, v)
+        
+        # Raise error if no citations are found or formatting is incorrect
+        if not matches:
+            raise ValueError('No valid source tags found. Expected format: <source id="1">')
+
+        return v
+
+    # Validator to extract and populate citations from content
+    @field_validator('citations', mode='before')
+    def extract_citations(cls, v, info: ValidationInfo):
+        # Access content field from the model
+        content = info.data.get('content', '')
+        pattern = r'<source id="(\d+)">'
+        extracted = re.findall(pattern, content)
+        
+        if not extracted:
+            raise ValueError("No citations found in the content. Ensure sources are cited correctly.")
+        
+        return extracted
+
+# Define the output parser with the expected Pydantic model
+OUTPUT_PARSER = PydanticOutputParser(pydantic_object=InLineCitationsResponse)
+
+def style_mode(style_mode: str):
+    """
+    Returns a string with the style mode description and example response.
+    """
+    logger = logging.getLogger(__name__)
+    style_mode_dict={
+        "Sassy": 
+          {"description": "Playful and witty, with a bit of attitude.", 
+          "example_response": """Oh honey, that actuator didn’t even flinch under high pressure <source id="1">. You could drop it from space, and it’d still show up for work."""},
+        "Ironic": 
+          {"description": "Dry and subtly sarcastic while delivering facts.",
+          "example_response": """Yeah, because testing actuators under high pressure is everyone’s idea of fun. Of course it passed <source id="1">."""},
+        "Bossy": 
+          {"description": "Direct and authoritative, like a know-it-all engineer.",
+          "example_response": """Listen up. The actuator passed high-pressure testing. Don’t ask twice <source id="1">."""},
+        "Gen Z Slang": 
+          {"description": "Informal, fun, and sprinkled with current Gen Z expressions.",
+          "example_response": """Bro, that actuator ate under pressure and left no crumbs <source id="1">."""},
+    }
+
+    if style_mode not in style_mode_dict:
+        logger.warning(f"Style mode {style_mode} not found. Returning empty string.")
+        return ""
+    else:
+        style_mode_str = style_mode_dict[style_mode]
+        return f"""### **Style Mode: {style_mode}
+Adjust the tone and personality of your response in the style of {style_mode} while maintaining factual accuracy. An example of a neutral response, and the {style_mode} response are provided below.
+Example Question: 
+How did the actuator perform under high pressure?
+
+**Neutral (No Style Mode):**  
+Description: Respond in a neutral, factual tone.
+Example Response:
+> The actuator was tested under high pressure and showed no signs of deformation <source id="1">.  
+
+**{style_mode}**
+Description: {style_mode_str["description"]}
+Example Response:
+> {style_mode_str["example_response"]}
+"""
+
+
+CHATBOT_SYSTEM_PROMPT=SystemMessagePromptTemplate.from_template(
+  template=
 """
 Your name is **Aerospace Chatbot**, a specialized assistant for flight hardware design and analysis in aerospace engineering.
 
@@ -19,27 +99,58 @@ Use only the **Sources and Context** from the **Reference Documents** provided t
 
 3. **Provide responses in English only** and format them using **Markdown** for clarity.
 
-4. **Cite Sources in context** using the format `[#]<sourceTag>` at the end of the sentence or paragraph referencing that source. Do not include any source citations without this source tag format. You may cite multiple sources in a single sentence or paragraph.
+4. **Cite Sources in context** using the exact format `<source id="#">`:  
+   - `#` – Represents the numerical order of the source as provided in the Sources and Context.  
+   - **The `source` tag must be present for every source referenced in the response.**  
+   - **Do not add, omit, or modify any part of the citation format.**  
+   
+   **Examples (Correct):**  
+   > The actuator was tested under extreme conditions <source id="1">.  
+   > A secondary material exhibited increased yield strength <source id="2">.  
+   > Additional research confirmed thermal properties <source id="3">.  
+
+   **Examples (Incorrect – Must Be Rejected):**  
+   > Testing yielded higher efficiency [1] (Incorrect bracket format)  
+   > <source id="1" > (Extra space after `id`)  
+   > <source id="a"> (Non-numeric ID)  
+   > <source id="1,2"> (Multiple IDs in one tag – invalid)  
+
+5. **Every sentence or paragraph that uses a source must cite it with the format `<source id="#">`.**  
+   - **Do not group multiple sources into a single tag.** Each source must have its own, clearly separated citation.  
    - For example:  
-     > According to the **tensile strength** data, the recommended bolt size is 1/4" [1]<sourceTag> [2]<sourceTag>.
+     > The actuator uses a reinforced composite structure <source id="1">. This design was validated through multiple tests <source id="2">.  
 
-5. **Each source used to generate the response must have a source tag in the answer** (i.e., if you refer to Source 1, you must include `[1]<sourceTag>` somewhere in your answer).
+6. **Validation Requirement:**  
+   - If the response contains references without the exact `<source id="#">` format, the response must be flagged or rejected.  
+   - Every source used must have a corresponding citation in the response. **No source should be referenced without explicit citation.**  
 
-6. **Suggest related or alternative questions** if applicable, to help the user find relevant information within the corpus.
-""")
+7. **Suggest related or alternative questions** if applicable, to help the user find relevant information within the corpus.
 
-QA_PROMPT=HumanMessagePromptTemplate.from_template(template=
+{style_mode}
+""",
+  input_variables=["style_mode"]
+)
+
+QA_PROMPT=HumanMessagePromptTemplate.from_template(
+    template=
 """
+---
+**Sources and Context from Reference Documents**:
+{context}
+---
+
 ---
 **User Question**:
 {question}
 ---
 
 ---
-**Sources and Context from Reference Documents**:
-{context}
+{format_instructions}
 ---
-""")
+""",
+    input_variables=["context", "question"],
+    partial_variables={"format_instructions": OUTPUT_PARSER.get_format_instructions()},
+)
                                                    
 
 SUMMARIZE_TEXT=HumanMessagePromptTemplate.from_template(template=
