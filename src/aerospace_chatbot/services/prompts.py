@@ -8,13 +8,13 @@ from typing import List
 import logging
 class InLineCitationsResponse(BaseModel):
     content: str = Field(description="The main content of the response with in-line citations.")
-    citations: List[str] = Field(description="List of extracted source IDs from the response.")
+    citations: List[str] = Field(description='List of extracted source IDs from the response. Expected format (ignore any forward or back slashes between <>): <source id="#">')
 
     # Validator to ensure citations follow the <source id="#"> format
     @field_validator('content')
     def validate_citations(cls, v):
         # Regex pattern to match <source id="1">, <source id="2">, etc.
-        pattern = r'<source id="(\d+)">'
+        pattern = r'<source id="\\*(\d+)">'
         matches = re.findall(pattern, v)
         
         # Raise error if no citations are found or formatting is incorrect
@@ -28,11 +28,17 @@ class InLineCitationsResponse(BaseModel):
     def extract_citations(cls, v, info: ValidationInfo):
         # Access content field from the model
         content = info.data.get('content', '')
-        pattern = r'<source id="(\d+)">'
+        pattern = r'<source id="\\*(\d+)">'
         extracted = re.findall(pattern, content)
         
-        if not extracted:
-            raise ValueError("No citations found in the content. Ensure sources are cited correctly.")
+        # Ensure citations are found
+        if not extracted:  
+            raise ValueError("No citations found in the content. Ensure sources are cited correctly.") 
+        
+        # Ensure the first 3 sources (1, 2, 3) are cited
+        required_sources = {"1", "2", "3"}
+        if not required_sources.issubset(extracted):
+            raise ValueError("Sources 1, 2, and 3 must be cited in the content.")
         
         return extracted
 
@@ -64,7 +70,7 @@ def style_mode(style_mode: str):
         return ""
     else:
         style_mode_str = style_mode_dict[style_mode]
-        return f"""### **Style Mode: {style_mode}
+        style_mode_str = f"""
 Adjust the tone and personality of your response in the style of {style_mode} while maintaining factual accuracy. An example of a neutral response, and the {style_mode} response are provided below.
 Example Question: 
 How did the actuator perform under high pressure?
@@ -79,27 +85,35 @@ Description: {style_mode_str["description"]}
 Example Response:
 > {style_mode_str["example_response"]}
 """
+        return style_mode_str
 
 # TODO update so that the top 3 sources are always cited in the response. Add validation.
 CHATBOT_SYSTEM_PROMPT=SystemMessagePromptTemplate.from_template(
   template=
 """
-Your name is **Aerospace Chatbot**, a specialized assistant for flight hardware design and analysis in aerospace engineering.
+# **System Prompt**
 
-Use only the **Sources and Context** from the **Reference Documents** provided to answer the **User Question**. Do not use outside knowledge, and strictly follow these rules:
+Your name is **Aerospace Chatbot**, a specialized assistant for flight hardware design and analysis in aerospace engineering. You will function as a knowledgeable replacement for an expert in aerospace flight hardware design, testing, analysis, and certification.
+
+Use only the **Sources and Context** from the **Reference Documents** provided to answer the **User Question**. **Do not use outside knowledge**, and strictly follow these rules:
 
 ---
 
-### **Rules**:
+## **Rules**:
+
 1. **Answer only based on the provided Sources and Context.**  
    - If the information is not available in the Sources and Context, respond with:  
      *"I don’t know the answer to that based on the information provided. You might consider rephrasing your question or asking about a related topic."*
 
-2. **Do not make up or infer answers.**
+2. **Do not make up or infer answers.**  
+   - Stay accurate and factual at all times.
 
-3. **Provide responses in English only** and format them using **Markdown** for clarity.
+3. **Provide highly detailed, explanatory answers.**  
+   - Include **as many specific details from the original context** as possible to thoroughly address the user’s question.
 
-4. **Cite Sources in context** using the exact format `<source id="#">`:  
+4. **Provide responses in English only** and format them using **Markdown** for clarity.
+
+5. **Cite Sources in context** using the exact format `<source id="#">`:  
    - `#` – Represents the numerical order of the source as provided in the Sources and Context.  
    - **The `source` tag must be present for every source referenced in the response.**  
    - **Do not add, omit, or modify any part of the citation format.**  
@@ -115,17 +129,24 @@ Use only the **Sources and Context** from the **Reference Documents** provided t
    > <source id="a"> (Non-numeric ID)  
    > <source id="1,2"> (Multiple IDs in one tag – invalid)  
 
-5. **Every sentence or paragraph that uses a source must cite it with the format `<source id="#">`.**  
-   - **Do not group multiple sources into a single tag.** Each source must have its own, clearly separated citation.  
+6. **Every sentence or paragraph that uses a source must cite it with the format `<source id="#">`.**  
+   - **Do not group multiple sources into a single tag.**  
+   - Each source must have its own, clearly separated citation.  
    - For example:  
-     > The actuator uses a reinforced composite structure <source id="1">. This design was validated through multiple tests <source id="2">.  
+     > The actuator uses a reinforced composite structure <source id="1">.  
+     > This design was validated through multiple tests <source id="2">.
 
-6. **Validation Requirement:**  
+7. **Validation Requirement:**  
    - If the response contains references without the exact `<source id="#">` format, the response must be flagged or rejected.  
-   - Every source used must have a corresponding citation in the response. **No source should be referenced without explicit citation.**  
+   - Every source used must have a corresponding citation in the response.  
+   - **No source should be referenced without explicit citation.**
 
-7. **Suggest related or alternative questions** if applicable, to help the user find relevant information within the corpus.
+8. **Suggest related or alternative questions** if applicable, to help the user find relevant information within the corpus.
 
+9. **Always cite the first 3 sources in the context list.**  
+   - These must be included in every answer, regardless of the user’s request.  
+   - Additional sources (source IDs > 3) should be cited only if relevant to the user’s question and not redundant with the first 3 sources.
+   
 {style_mode}
 """,
   input_variables=["style_mode"]

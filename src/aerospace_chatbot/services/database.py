@@ -252,17 +252,28 @@ class DatabaseService:
         self.logger.info(f"RAGatouille index {self.index_name} initialized")
     
     def _get_standard_retriever(self, search_kwargs):
-        """Get standard retriever based on index type."""
-        if self.db_type in ['Pinecone', 'ChromaDB']:
-
+        """
+        Get standard retriever based on index type.
+        Returns a list of (doc, score) tuples sorted by score.
+        """
+        if self.db_type == 'Pinecone':
             # Callable retriever which adds score to the metadata of the documents
-            # FIXME make score a separate output from the metadata. Adding it to the metadata will break the hashing used to index
             @chain
             def retriever(query: str):
                 # Convert to a list from zip tuple
-                docs, scores = map(list, zip(*self.vectorstore.similarity_search_with_score(query, 
-                                                                                            **search_kwargs))) 
-                return docs, scores
+                docs, scores = map(
+                    list, 
+                    zip(*self.vectorstore.similarity_search_with_score(
+                        query, 
+                        **search_kwargs
+                    ))
+                )
+                
+                # Create list of (doc, score) tuples and sort by score
+                doc_scores = list(zip(docs, scores))
+                doc_scores_sorted = sorted(doc_scores, key=lambda x: x[1], reverse=True)
+                
+                return doc_scores_sorted
             self.retriever = retriever
         elif self.db_type == 'RAGatouille':
             self.retriever = self.vectorstore.as_langchain_retriever(
