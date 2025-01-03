@@ -205,11 +205,13 @@ You are an AI language model assistant. Your task is to generate **exactly three
 Do not provide more or fewer than three questions.
 
 ---
-**Original Question**: {question}  
+**Original Question**: 
+{question}  
 ---
 
 ---
-**AI Response (Context)**: {context}  
+**AI Response (Context)**: 
+{context}  
 ---
 """)    
 
