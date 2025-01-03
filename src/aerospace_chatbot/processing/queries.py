@@ -15,7 +15,13 @@ from typing_extensions import List
 from typing import List, Literal, Tuple
 
 # Services
-from aerospace_chatbot.services.prompts import InLineCitationsResponse, style_mode, CHATBOT_SYSTEM_PROMPT, QA_PROMPT, SUMMARIZE_TEXT
+from aerospace_chatbot.services.prompts import (InLineCitationsResponse, 
+                                                style_mode, 
+                                                CHATBOT_SYSTEM_PROMPT, 
+                                                QA_PROMPT, 
+                                                SUMMARIZE_TEXT, 
+                                                GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
+                                                )
 
 class QAModel:
     """
@@ -93,28 +99,7 @@ class QAModel:
         # Add answer to memory
         self.ai_response = self.result[-1]['answer'].content
         self.memory.save_context({'question': query}, {'answer': self.ai_response})
-
-
-    def generate_alternative_questions(self, prompt):
-        """
-        Generates alternative questions based on a prompt.
-        """
-        # prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
-        # invoke_dict={'question':prompt,'context':self.ai_response}
-        
-        # chain = (
-        #         prompt_template
-        #         | self.llm_service.get_llm()
-        #         | StrOutputParser()
-        #     )
-        # alternative_questions = chain.invoke(invoke_dict)
-        # self.logger.info(f'Generated alternative questions: {alternative_questions}')
-
-        # # Split the string into a list of questions, removing empty strings and stripping whitespace
-        # alternative_questions = [question.strip() for question in alternative_questions.split('\n') if question.strip()]
-        # self.logger.info(f'Alternative questions split up: {alternative_questions}')
-        # return alternative_questions
-    
+   
     # def _define_qa_chain(self):
     #     """
     #     Defines the conversational QA chain.
@@ -125,7 +110,6 @@ class QAModel:
     #         | itemgetter('history'))  
         
     #     # Assemble main chain
-    #     # TODO broken, update with langgraph
     #     standalone_question = {
     #         'standalone_question': {
     #             'question': lambda x: x['question'],
@@ -156,32 +140,6 @@ class QAModel:
     #         'scores': itemgetter('scores')}
         
     #     return loaded_memory | standalone_question | retrieval_results | retrieved_documents | answer
-    
-    # def _combine_documents(self, docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator='\n\n'):
-    #     """
-    #     Combines a list of documents into a single string using the format_document function.
-    #     """        
-        # FIXME update graph to have this
-        # Format each document using the cached format_document function
-    #     doc_strings = [format_document(doc, document_prompt) for doc in docs]
-        
-    #     # Join the formatted strings with the separator
-    #     return document_separator.join(doc_strings)
-
-    # def _get_standalone_question(self, question, chat_history):
-    #     """
-    #     Generate standalone question from conversation context.
-    #     """
-    #     if not chat_history:
-    #         return question
-            
-    #     prompt = CONDENSE_QUESTION_PROMPT.format(
-    #         chat_history=get_buffer_string(chat_history),
-    #         question=question
-    #     )
-        
-    #     response = self.llm_service.get_llm().invoke(prompt)
-    #     return response.content.strip()
 
     class State(MessagesState):
         """
@@ -189,6 +147,7 @@ class QAModel:
         """
         context: List[Tuple[Document, float, float]]
         cited_sources: List[Tuple[Document, float, float]]
+        alternative_questions: List[str]
         summary: str
 
     def _retrieve(self, state: State):
@@ -200,12 +159,8 @@ class QAModel:
         # Retrieve docs
         retrieved_docs = self.db_service.retriever.invoke(state["messages"][-1].content)
         self.logger.info(f"Retrieved docs")
+
         # Rerank docs
-        # reranked_docs = cohere_rerank(
-        #     state["messages"][-1].content, 
-        #     retrieved_docs, 
-        #     top_n=k_rerank
-        # )
         reranked_docs = self.db_service.rerank(
             state["messages"][-1].content, 
             retrieved_docs, 
@@ -224,7 +179,7 @@ class QAModel:
         # Get the summary, add system prompt
         summary = state.get("summary", "")
         system_prompt = CHATBOT_SYSTEM_PROMPT.format(style_mode=style_mode(self.style))
-        self.logger.info(f"generate_w_context system prompt: {system_prompt.content}")
+        self.logger.info(f" generate_w_context system prompt: {system_prompt.content}")
         if summary:
             system_message = f"Summary of conversation earlier: {summary}"
             messages = [system_prompt] + [SystemMessage(content=system_message)] + state["messages"]
@@ -233,7 +188,7 @@ class QAModel:
 
         # Add context to the prompt
         docs_content=""
-        for i, (doc, retrieved_score, rerank_score) in enumerate(state["context"]):
+        for i, (doc, _, rerank_score) in enumerate(state["context"]):
             # Source IDs in the order they show in in the array. Indexed from 1, retrieve with 0 index.
             if rerank_score is not None:    # Only include docs with a rerank score
                 docs_content += f"Source ID: {i+1}\n{doc.page_content}\n\n"
@@ -246,6 +201,7 @@ class QAModel:
         # Replace the last message (user question) with the prompt with context, return LLM response
         messages[-1] = prompt_with_context 
         response = self.llm_service.get_llm().invoke(messages)
+        self.logger.info('  Response generated')
 
         # Parse the response. This will return a InLineCitationsResponse object. 
         # This object has two fields: content and citations.
@@ -253,6 +209,7 @@ class QAModel:
         # AIMessage metadata will be incorrect.
         parsed_response = PydanticOutputParser(pydantic_object=InLineCitationsResponse).parse(response.content)
         response.content = parsed_response.content
+        self.logger.info('    Response parsed')
 
         # Return cited_sources as the list of tuples that matched the citations.
         existing_cited_sources = state.get("cited_sources", [])  # Grab whatever might already be in cited_sources
@@ -310,6 +267,31 @@ class QAModel:
         delete_messages = [RemoveMessage(id=m.id) for m in state["messages"][:-2]]
         return {"summary": response.content, "messages": delete_messages}
     
+    def _generate_alternative_questions(self, state: State):
+        """
+        Generates alternative questions based on the prompt provided.
+        """
+        self.logger.info(f"Node: generate_alternative_questions")
+
+        prompt = GENERATE_SIMILAR_QUESTIONS_W_CONTEXT.format(
+            question=state["messages"][-2].content,  # Last user message is 2 messages back
+            context=state["messages"][-1].content    # Last AI message is 1 message back
+        )
+        alternative_questions = self.llm_service.get_llm().invoke(prompt)
+        self.logger.info('    Alternative questions generated.')
+
+        # Split the string into a list of questions, removing empty strings and stripping whitespace
+        # FIXME use pydantic output parser to parse the response into a list of strings
+        alternative_questions = [question.strip() for question in alternative_questions.content.split('\n') if question.strip()]
+        self.logger.info(f'    Alternative questions parsed')
+
+        # Update the state with the new alternative questions
+        existing_alternative_questions = state.get("alternative_questions", [])  # Grab whatever might already be in cited_sources
+        existing_alternative_questions.append(alternative_questions)  # Append the new list as a sublist
+        state["alternative_questions"] = existing_alternative_questions
+        
+        return {"alternative_questions": state["alternative_questions"]}
+    
     def _compile_workflow(self):
         """
         Compile the workflow.
@@ -321,15 +303,16 @@ class QAModel:
         workflow.add_node("retrieve", self._retrieve) 
         workflow.add_node("generate_w_context", self._generate_w_context)
         workflow.add_node("summarize_conversation", self._summarize_conversation)
-
+        workflow.add_node("generate_alternative_questions", self._generate_alternative_questions)
         # Define edges
         workflow.add_edge(START, "retrieve")
         workflow.add_edge("retrieve", "generate_w_context")
+        workflow.add_edge("generate_w_context", "generate_alternative_questions")
 
         # We now add a conditional edge
         workflow.add_conditional_edges(
-            "generate_w_context",   # Define the start node. We use `generate_w_context`. This means these are the edges taken after the `conversation` node is called.
-            self._should_continue,    # Next, pass in the function that will determine which node is called next.
+            "generate_alternative_questions",     # Define the start node. We use `generate_alternative_questions`. This means these are the edges taken after the `conversation` node is called.
+            self._should_continue,                # Next, pass in the function that will determine which node is called next.
         )
 
         # Add a normal edge from `summarize_conversation` to END. This means that after `summarize_conversation` is called, we end.
