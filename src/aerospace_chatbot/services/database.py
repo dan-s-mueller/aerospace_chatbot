@@ -13,6 +13,7 @@ from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
 from langchain_voyageai import VoyageAIEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+import cohere
 
 # Utilities
 from langchain_core.documents import Document
@@ -21,10 +22,6 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
 from datasets import Dataset
-
-# Cache
-from ..services.prompts import CLUSTER_LABEL
-
 from tenacity import (
     retry, 
     stop_after_attempt, 
@@ -33,12 +30,19 @@ from tenacity import (
     wait_fixed
 )
 
+# Typing
+from typing_extensions import List
+from typing import List, Tuple
+
+# Services
+from ..services.prompts import CLUSTER_LABEL
+
 # TODO check if get_available_indexes works if there is an index with no metadata. Observed "no avaialble indexes" error when there was an index with no metadata and another with.
 
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
-    def __init__(self, db_type, index_name, rag_type, embedding_service):
+    def __init__(self, db_type, index_name, rag_type, embedding_service, rerank_service=None):
         """
         Initialize DatabaseService.
         """
@@ -46,6 +50,7 @@ class DatabaseService:
         self.index_name = index_name
         self.rag_type = rag_type
         self.embedding_service = embedding_service
+        self.rerank_service = rerank_service    # Optional, defaults to None. Exceptions raised if rerank_service is none if you you try to rerank.
         self.vectorstore = None
         self.retriever = None
         self.namespace = None
@@ -96,6 +101,42 @@ class DatabaseService:
             raise ValueError("Database not initialized. Please ensure database is initialized before getting retriever.")
 
         self._get_standard_retriever(search_kwargs)
+
+    def rerank(self, query: str, retrieved_docs: List[Tuple[Document, float]], top_n: int = None):
+        # TODO only works with cohere rerank, if others are used, consider using langchain reranker or updating the class.
+        # retrieved_docs contains a list of tuples, where the first element is the document and the second is the score
+
+        # Require top_n to be at least 3
+        if top_n is None:
+            top_n = 3
+        elif top_n < 3:
+            raise ValueError("top_n must be at least 3")
+        elif top_n > len(retrieved_docs):
+            raise ValueError("top_n must be less than or equal to the number of retrieved documents")
+
+        # Rerank docs
+        if self.rerank_service is None:
+            raise ValueError("Rerank service is not set. Please set rerank_service before calling this method.")
+        else:
+            rerank_results = self.rerank_service.rerank_docs(
+                query=query,
+                retrieved_docs=retrieved_docs,
+                top_n=top_n
+            )
+
+        # Create a dictionary to map document IDs to rerank scores
+        rerank_scores = {retrieved_docs[i][0].id: item.relevance_score for i, item in enumerate(rerank_results)}
+
+        # Create list of (doc, original_score, rerank_score) tuples
+        doc_scores = []
+        for doc, original_score in retrieved_docs:
+            rerank_score = rerank_scores.get(doc.id, None)  # Get the rerank score or None if not available
+            doc_scores.append((doc, original_score, rerank_score))
+
+        # Sort docs by rerank score in descending order, placing those without a rerank score at the end
+        doc_scores_sorted = sorted(doc_scores, key=lambda x: (x[2] is not None, x[2]), reverse=True)
+
+        return doc_scores_sorted
     
     def copy_vectors(self, source_namespace, batch_size=100):
         """

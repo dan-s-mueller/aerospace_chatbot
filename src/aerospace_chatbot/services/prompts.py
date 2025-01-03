@@ -1,6 +1,5 @@
 from langchain.prompts.prompt import PromptTemplate
 from langchain.prompts import HumanMessagePromptTemplate, SystemMessagePromptTemplate
-from langchain_core.messages import SystemMessage
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 import re
@@ -35,17 +34,14 @@ class InLineCitationsResponse(BaseModel):
         if not extracted:  
             raise ValueError("No citations found in the content. Ensure sources are cited correctly.") 
         
-        # Ensure the first 3 sources (1, 2, 3) are cited
-        required_sources = {"1", "2", "3"}
-        if not required_sources.issubset(extracted):
-            raise ValueError("Sources 1, 2, and 3 must be cited in the content.")
+        # # Ensure the first 3 sources (1, 2, 3) are cited
+        # required_sources = {"1", "2", "3"}
+        # if not required_sources.issubset(extracted):
+        #     raise ValueError("Sources 1, 2, and 3 must be cited in the content.")
         
         return extracted
 
-# Define the output parser with the expected Pydantic model
-OUTPUT_PARSER = PydanticOutputParser(pydantic_object=InLineCitationsResponse)
-
-def style_mode(style_mode: str):
+def style_mode(style_mode: str = None):
     """
     Returns a string with the style mode description and example response.
     """
@@ -65,9 +61,10 @@ def style_mode(style_mode: str):
           "example_response": """Bro, that actuator ate under pressure and left no crumbs <source id="1">."""},
     }
 
-    if style_mode not in style_mode_dict:
-        logger.warning(f"Style mode {style_mode} not found. Returning empty string.")
+    if style_mode is None:
         return ""
+    elif style_mode not in style_mode_dict:
+        raise ValueError(f"Style mode {style_mode} not found. Please choose from: {style_mode_dict.keys()} or None")
     else:
         style_mode_str = style_mode_dict[style_mode]
         style_mode_str = f"""
@@ -87,7 +84,9 @@ Example Response:
 """
         return style_mode_str
 
-# TODO update so that the top 3 sources are always cited in the response. Add validation.
+# Define the output parser with the expected Pydantic model
+# OUTPUT_PARSER = PydanticOutputParser(pydantic_object=InLineCitationsResponse)
+
 CHATBOT_SYSTEM_PROMPT=SystemMessagePromptTemplate.from_template(
   template=
 """
@@ -95,7 +94,9 @@ CHATBOT_SYSTEM_PROMPT=SystemMessagePromptTemplate.from_template(
 
 Your name is **Aerospace Chatbot**, a specialized assistant for flight hardware design and analysis in aerospace engineering. You will function as a knowledgeable replacement for an expert in aerospace flight hardware design, testing, analysis, and certification.
 
-Use only the **Sources and Context** from the **Reference Documents** provided to answer the **User Question**. **Do not use outside knowledge**, and strictly follow these rules:
+> **Important Note:** The **Sources and Context** you are provided are ranked from most relevant to least relevant by a state-of-the-art retrieval and ranking tool. Please take this ranking into consideration when determining which sources to cite.
+
+Use only the **Sources and Context** provided to answer the **User Question**. **Do not use outside knowledge**, and strictly follow these rules:
 
 ---
 
@@ -143,9 +144,10 @@ Use only the **Sources and Context** from the **Reference Documents** provided t
 
 8. **Suggest related or alternative questions** if applicable, to help the user find relevant information within the corpus.
 
-9. **Always cite the first 3 sources in the context list.**  
-   - These must be included in every answer, regardless of the user’s request.  
-   - Additional sources (source IDs > 3) should be cited only if relevant to the user’s question and not redundant with the first 3 sources.
+9. **Give preference to citing top-ranked sources.**  
+   - If the first sources in the list (i.e., the most relevant or highest-ranked) contain information that addresses the user’s question, cite them first.  
+   - Then cite additional sources only if they contain new or non-redundant details.  
+   - If the top-ranked sources are not relevant, skip them.
    
 {style_mode}
 """,
@@ -170,10 +172,9 @@ QA_PROMPT=HumanMessagePromptTemplate.from_template(
 ---
 """,
     input_variables=["context", "question"],
-    partial_variables={"format_instructions": OUTPUT_PARSER.get_format_instructions()},
+    partial_variables={"format_instructions": PydanticOutputParser(pydantic_object=InLineCitationsResponse).get_format_instructions()},
 )
                                                    
-
 SUMMARIZE_TEXT=HumanMessagePromptTemplate.from_template(template=
 """
 You will generate a concise, **entity-dense** summary of the conversation information provided. {augment}

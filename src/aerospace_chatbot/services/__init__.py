@@ -6,12 +6,11 @@ from .database import (
     get_database_status,
     get_available_indexes
 )
-from .embeddings import EmbeddingService
+from .embeddings import EmbeddingService, RerankService
 from .llm import LLMService
 from .prompts import (
     InLineCitationsResponse,
     style_mode,
-    OUTPUT_PARSER,
     CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
     SUMMARIZE_TEXT,
@@ -28,10 +27,10 @@ __all__ = [
     'get_database_status',
     'get_available_indexes',
     'EmbeddingService',
+    'RerankService',
     'LLMService',
     'InLineCitationsResponse',
     'style_mode',
-    'OUTPUT_PARSER',
     'CHATBOT_SYSTEM_PROMPT',
     'QA_PROMPT',
     'SUMMARIZE_TEXT',
