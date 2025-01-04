@@ -10,6 +10,7 @@ from .embeddings import EmbeddingService, RerankService
 from .llm import LLMService
 from .prompts import (
     InLineCitationsResponse,
+    AltQuestionsResponse,
     style_mode,
     CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
@@ -30,6 +31,7 @@ __all__ = [
     'RerankService',
     'LLMService',
     'InLineCitationsResponse',
+    'AltQuestionsResponse',
     'style_mode',
     'CHATBOT_SYSTEM_PROMPT',
     'QA_PROMPT',

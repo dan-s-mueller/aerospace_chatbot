@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 import re
 from typing import List
 import logging
+
 class InLineCitationsResponse(BaseModel):
     content: str = Field(description="The main content of the response with in-line citations.")
     citations: List[str] = Field(description='List of extracted source IDs from the response. Expected format (ignore any forward or back slashes between <>): <source id="#">')
@@ -40,6 +41,17 @@ class InLineCitationsResponse(BaseModel):
         #     raise ValueError("Sources 1, 2, and 3 must be cited in the content.")
         
         return extracted
+
+class AltQuestionsResponse(BaseModel):
+    questions: List[str] = Field(description="List of alternative questions based on the user's original question and the context provided.")
+
+    @field_validator("questions")
+    def ensure_exactly_three(cls, value):
+        if len(value) != 3:
+            raise ValueError(
+                f"Expected exactly 3 questions, but got {len(value)}."
+            )
+        return value
 
 def style_mode(style_mode: str = None):
     """
@@ -193,27 +205,38 @@ The summary should adhere to the following rules:
 
 """)  
 
-GENERATE_SIMILAR_QUESTIONS_W_CONTEXT=PromptTemplate.from_template(template=
+GENERATE_SIMILAR_QUESTIONS_W_CONTEXT=PromptTemplate(template=
 """
-You are an AI language model assistant. Your task is to generate **exactly three creative alternative questions** based on the user's original query and the context provided. These alternative questions should:
+You are an AI language model assistant. Your task is to generate **exactly three creative alternative questions** based on:
+- The user's original question.
+- The AI response (context) provided.
+
+These alternative questions should:
 
 1. Be different from the original question but remain related to the context provided.  
 2. Encourage curiosity and exploration while maintaining relevance to the topic.  
 3. Help overcome limitations of distance-based similarity search by rephrasing or approaching the topic from unique angles.  
-4. Be provided exactly as three separate questions, each on a new line.  
+4. Be provided exactly as three separate questions, with no additional explanation.
 
-Do not provide more or fewer than three questions.
-
----
-**Original Question**: 
-{question}  
----
+**Important**: Output must follow the JSON structure specified below. No other content or fields are allowed.
 
 ---
-**AI Response (Context)**: 
-{context}  
+**Original Question**:  
+{question}
 ---
-""")    
+
+---
+**AI Response (Context)**:  
+{context}
+---
+
+---
+{format_instructions}
+---
+""",
+    input_variables=["context", "question"],
+    partial_variables={"format_instructions": PydanticOutputParser(pydantic_object=AltQuestionsResponse).get_format_instructions()},
+)    
 
 CLUSTER_LABEL=PromptTemplate.from_template(template=
 """
