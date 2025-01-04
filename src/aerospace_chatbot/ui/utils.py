@@ -97,6 +97,48 @@ def handle_sidebar_state(sidebar_manager):
 #                             logger.error(f"Failed to display source: {e}")
 #                             st.error("Unable to display PDF. Please use the download link.")
 
+# FIXME integrate display_source_highlight functionalty into this and the display_source function so the GUI works.
+def display_pdf(upl_file, ui_width, ui_height):
+    """
+    Display a PDF file by converting pages to images.
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Read the PDF
+        pdf_bytes = upl_file.read()
+        pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
+        
+        # Set rendering parameters
+        zoom = 2.0
+        mat = fitz.Matrix(zoom, zoom)
+
+        # Display each page
+        for page_num in range(len(pdf_document)):
+            page = pdf_document[page_num]
+            pix = page.get_pixmap(matrix=mat)
+            
+            # Convert to PIL Image
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            
+            # Convert to bytes for display
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='PNG', optimize=True)
+            img_byte_arr = img_byte_arr.getvalue()
+
+            # Display the image
+            st.image(
+                img_byte_arr,
+                # caption=f"Page {page_num + 1}",
+                use_column_width=True
+            )
+
+        pdf_document.close()
+
+    except Exception as e:
+        logger.error(f"Failed to display PDF: {e}")
+        st.error(f"Error displaying PDF: {e}")
+
 def display_source_highlights(sources):
     """
     Display sources with highlights.
@@ -441,44 +483,3 @@ def _save_uploads_to_temp(uploaded_files):
             temp_file.write(uploaded_file.read())
         temp_files.append(temp_path)
     return temp_files
-       
-def display_pdf(upl_file, ui_width, ui_height):
-    """
-    Display a PDF file by converting pages to images.
-    """
-    logger = logging.getLogger(__name__)
-
-    try:
-        # Read the PDF
-        pdf_bytes = upl_file.read()
-        pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
-        
-        # Set rendering parameters
-        zoom = 2.0
-        mat = fitz.Matrix(zoom, zoom)
-
-        # Display each page
-        for page_num in range(len(pdf_document)):
-            page = pdf_document[page_num]
-            pix = page.get_pixmap(matrix=mat)
-            
-            # Convert to PIL Image
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            
-            # Convert to bytes for display
-            img_byte_arr = io.BytesIO()
-            img.save(img_byte_arr, format='PNG', optimize=True)
-            img_byte_arr = img_byte_arr.getvalue()
-
-            # Display the image
-            st.image(
-                img_byte_arr,
-                # caption=f"Page {page_num + 1}",
-                use_column_width=True
-            )
-
-        pdf_document.close()
-
-    except Exception as e:
-        logger.error(f"Failed to display PDF: {e}")
-        st.error(f"Error displaying PDF: {e}")
