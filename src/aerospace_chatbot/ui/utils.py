@@ -1,13 +1,16 @@
 """UI utility functions."""
 
-import streamlit as st
-import os, ast, tempfile, logging
+
 
 # Utilities
+import streamlit as st
+import os, ast, tempfile, logging
 import fitz
 import requests
 from PIL import Image
 import io
+import json, base64, zlib
+from typing import List, Dict, Any
 
 # from ..core.cache import Dependencies
 from ..core.config import get_secrets
@@ -41,10 +44,94 @@ def handle_sidebar_state(sidebar_manager):
     
     return current_state
 
-def display_sources(sources, expanded=False):
-    """Display reference sources in an expander with PDF preview functionality."""
-    logger = logging.getLogger(__name__)
+# def display_sources(sources, expanded=False):
+#     """Display reference sources in an expander with PDF preview functionality."""
+#     logger = logging.getLogger(__name__)
     
+#     with st.container():
+#         with st.spinner('Bringing you source documents...'):
+#             for source in sources:
+#                 # Parse and validate source information
+#                 page = source.get('page')
+#                 pdf_source = source.get('source')
+                
+#                 # Parse string representations of lists
+#                 try:
+#                     page = ast.literal_eval(page) if isinstance(page, str) else page
+#                     pdf_source = ast.literal_eval(pdf_source) if isinstance(pdf_source, str) else pdf_source
+#                 except (ValueError, SyntaxError):
+#                     continue
+                
+#                 # Extract first element if it's a list
+#                 page = page[0] if isinstance(page, list) and page else page
+#                 pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
+                
+#                 if pdf_source and page is not None:
+#                     selected_url = f"https://storage.googleapis.com/{pdf_source}"
+#                     st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
+                    
+#                     # Style the expander
+#                     st.markdown("""
+#                         <style>
+#                             .stExpander {
+#                                 max-height: 1000px;
+#                                 overflow-y: auto;
+#                             }
+#                         </style>
+#                     """, unsafe_allow_html=True)
+                    
+#                     # Display PDF content
+#                     with st.expander(":memo: View", expanded=expanded):
+#                         tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
+#                         try:
+#                             extracted_pdf = _extract_pages_from_pdf(selected_url, page)
+                            
+#                             with tab1:
+#                                 display_pdf(extracted_pdf, "100%", 1000)
+                            
+#                             with tab2:
+#                                 st.write("Disabled for now...see download link above!")
+                                
+#                         except Exception as e:
+#                             logger.error(f"Failed to display source: {e}")
+#                             st.error("Unable to display PDF. Please use the download link.")
+
+def display_sources(sources, expanded=False):
+    """
+    Display sources with highlights.
+    """
+    logger = logging.getLogger(__name__)
+
+    def extract_orig_elements(orig_elements):
+        """Extract the contents of an orig_elements field."""
+        decoded_orig_elements = base64.b64decode(orig_elements)
+        decompressed_orig_elements = zlib.decompress(decoded_orig_elements)
+        return decompressed_orig_elements.decode('utf-8')
+    
+    def get_chunked_elements(sources):
+        # result['context'][0][0].metadata['orig_elements']
+        # sources = result['context']
+        orig_elements_dict = []
+        for doc in sources:
+            # For each chunk that has an "orig_elements" field...
+            if "orig_elements" in doc[0]['metadata']:
+                # ...get the chunk's associated elements in context...
+                orig_elements = extract_orig_elements(doc[0]['metadata']['orig_elements'])
+                # ...and then transpose it and other associated fields into a separate dictionary.
+                orig_elements_dict.append({
+                    "element_id": doc[0]['metadata']['element_id'],
+                    "text": doc[0]['page_content'],
+                    "orig_elements": json.loads(orig_elements)
+                })
+            else:
+                raise ValueError("No orig_elements field found in document metadata, unable to display sources.")
+        return orig_elements_dict
+    
+    def annotate_pdf_with_highlights(orig_elements_dict):
+        pass
+
+    # FIXME continue working through original elements
+
     with st.container():
         with st.spinner('Bringing you source documents...'):
             for source in sources:
@@ -92,7 +179,7 @@ def display_sources(sources, expanded=False):
                         except Exception as e:
                             logger.error(f"Failed to display source: {e}")
                             st.error("Unable to display PDF. Please use the download link.")
-
+    
 def show_connection_status(expanded = True, delete_buttons = False):
     """Display connection status for various services with optional delete functionality. """
     with st.expander("Connection Status", expanded=expanded):

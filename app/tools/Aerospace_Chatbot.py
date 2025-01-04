@@ -72,6 +72,7 @@ with info_section:
         """)
 
 # Upload section - Only visible when no messages
+# FIXME definitely broken, fix later
 with upload_section:
     if len(st.session_state.get('messages', [])) == 0:
         with st.expander("Upload files to existing database", expanded=True):
@@ -168,6 +169,7 @@ with chat_section:
                                 k_rerank=st.session_state.sb['model_options']['k_rerank']
                             )
 
+                        # TODO write the workflow node status
                         st.write('*Searching vector database, generating prompt...*')
                         result = st.session_state.qa_model_obj.query(prompt)
                         ai_response = st.session_state.qa_model_obj.ai_response
@@ -180,9 +182,9 @@ with chat_section:
                         logger.info(f"Sources: {st.session_state.qa_model_obj.sources[-1]}")
                         st.session_state.messages.insert(0, {
                             'role': 'assistant', 
-                            'content': ai_response, 
-                            'sources': st.session_state.qa_model_obj.sources[-1],
-                            'alternative_questions': similar_questions,
+                            'content': result['messages'][-1].content, 
+                            'sources': result['context'][:st.session_state.sb['model_options']['k_retrieve']],
+                            'alternative_questions': result['alternative_questions'][-1],
                             'response_time': response_time,
                             'message_id': st.session_state.message_id
                         })

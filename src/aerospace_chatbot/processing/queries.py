@@ -16,6 +16,7 @@ from typing import List, Literal, Tuple
 
 # Services
 from aerospace_chatbot.services.prompts import (InLineCitationsResponse, 
+                                                AltQuestionsResponse,
                                                 style_mode, 
                                                 CHATBOT_SYSTEM_PROMPT, 
                                                 QA_PROMPT, 
@@ -42,28 +43,14 @@ class QAModel:
         self.llm_service = llm_service
         self.k_retrieve = k_retrieve
         self.k_rerank = k_rerank
-        # self.sources = []
-        # self.scores = []
-        # self.ai_response = ""
-        # self.result = []
         self.style = style   # Validated when style_mode is called
         self.workflow = None
+        self.result = None
         self.memory_config = memory_config
         self.logger = logging.getLogger(__name__)
         
         # Get retrievers from database services
         self.db_service.get_retriever(k=self.k_retrieve)
-
-        # # Initialize memory
-        # self.memory = ConversationBufferMemory(
-        #     return_messages=True, 
-        #     output_key='answer', 
-        #     input_key='question'
-        # )
-        # self.conversational_qa_chain = self._define_qa_chain()
-
-        # if self.conversational_qa_chain is None:
-        #     raise ValueError("QA chain not initialized")
 
         # Compile workflow
         if self.memory_config is None: 
@@ -74,72 +61,32 @@ class QAModel:
     def query(self,query): 
         """
         Executes a query and retrieves the relevant documents.
-        """       
-        # Retrieve memory, invoke chain
-        # self.memory.load_memory_variables({})
+        """
 
         # Add answer to response, create an array as more prompts come in
-        self.logger.info(f'Invoking QA chain with query: {query}')
-        answer_result = self.conversational_qa_chain.invoke({'question': query})
-        if not hasattr(self, 'result') or self.result is None:
-            self.result = [answer_result]
-        else:
-            self.result.append(answer_result)
+        self.logger.info(f'Running query through workflow: {query}')
+        self.result = self.workflow.workflow.invoke(
+            {"messages": [("human", query)]}, 
+            self.memory_config
+        )
+        # if not hasattr(self, 'result') or self.result is None:
+        #     self.result = [answer_result]
+        # else:
+        #     self.result.append(answer_result)
 
-        # Add sources to response, create an array as more prompts come in
-        answer_sources = [data.metadata for data in self.result[-1]['references']]
-        answer_scores =  self.result[-1]['scores']
-        if not hasattr(self, 'sources') or self.sources is None:
-            self.sources = [answer_sources]
-            self.scores = [answer_scores]
-        else:
-            self.sources.append(answer_sources)
-            self.scores.append(answer_scores)
+        # # Add sources to response, create an array as more prompts come in
+        # answer_sources = [data.metadata for data in self.result[-1]['references']]
+        # answer_scores =  self.result[-1]['scores']
+        # if not hasattr(self, 'sources') or self.sources is None:
+        #     self.sources = [answer_sources]
+        #     self.scores = [answer_scores]
+        # else:
+        #     self.sources.append(answer_sources)
+        #     self.scores.append(answer_scores)
 
         # Add answer to memory
-        self.ai_response = self.result[-1]['answer'].content
-        self.memory.save_context({'question': query}, {'answer': self.ai_response})
-   
-    # def _define_qa_chain(self):
-    #     """
-    #     Defines the conversational QA chain.
-    #     """
-    #    # This adds a 'memory' key to the input object
-    #     loaded_memory = RunnablePassthrough.assign(
-    #         chat_history=RunnableLambda(self.memory.load_memory_variables) 
-    #         | itemgetter('history'))  
-        
-    #     # Assemble main chain
-    #     standalone_question = {
-    #         'standalone_question': {
-    #             'question': lambda x: x['question'],
-    #             'chat_history': lambda x: get_buffer_string(x['chat_history'])}
-    #         # | CHATBOT_SYSTEM_PROMPT
-    #         | self.llm_service.get_llm()
-    #         | StrOutputParser()}
-        
-    #     retrieval_results = RunnablePassthrough.assign(
-    #         retrieval=lambda x: self.db_service.retriever.invoke(x['standalone_question'])
-    #     )
-
-    #     retrieved_documents = RunnablePassthrough.assign(
-    #         source_documents=lambda x: x['retrieval'][0],  # Get docs from first element of tuple
-    #         scores=lambda x: x['retrieval'][1]             # Get scores from second element of tuple
-    #     )
-        
-    #     final_inputs = {
-    #         'context': lambda x: self._combine_documents(x['source_documents']),
-    #         'question': itemgetter('standalone_question')}
-        
-    #     # TODO broken, update with langgraph
-    #     answer = {
-    #         'answer': final_inputs 
-    #                     # | QA_PROMPT 
-    #                     | self.llm_service.get_llm(),
-    #         'references': itemgetter('source_documents'),
-    #         'scores': itemgetter('scores')}
-        
-    #     return loaded_memory | standalone_question | retrieval_results | retrieved_documents | answer
+        # self.ai_response = self.result[-1]['answer'].content
+        # self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
     class State(MessagesState):
         """
@@ -201,7 +148,7 @@ class QAModel:
         # Replace the last message (user question) with the prompt with context, return LLM response
         messages[-1] = prompt_with_context 
         response = self.llm_service.get_llm().invoke(messages)
-        self.logger.info('  Response generated')
+        self.logger.info('Response generated')
 
         # Parse the response. This will return a InLineCitationsResponse object. 
         # This object has two fields: content and citations.
@@ -209,7 +156,7 @@ class QAModel:
         # AIMessage metadata will be incorrect.
         parsed_response = PydanticOutputParser(pydantic_object=InLineCitationsResponse).parse(response.content)
         response.content = parsed_response.content
-        self.logger.info('    Response parsed')
+        self.logger.info('Response parsed')
 
         # Return cited_sources as the list of tuples that matched the citations.
         existing_cited_sources = state.get("cited_sources", [])  # Grab whatever might already be in cited_sources
@@ -236,7 +183,6 @@ class QAModel:
         
         # Otherwise just end
         self.logger.info(f"Ending conversation")
-        # logger.info(f"Messages before ending: {messages}")
         return END
 
     def _summarize_conversation(self, state: State):
@@ -277,17 +223,16 @@ class QAModel:
             question=state["messages"][-2].content,  # Last user message is 2 messages back
             context=state["messages"][-1].content    # Last AI message is 1 message back
         )
-        alternative_questions = self.llm_service.get_llm().invoke(prompt)
-        self.logger.info('    Alternative questions generated.')
+        response = self.llm_service.get_llm().invoke(prompt)
+        self.logger.info('Alternative questions generated.')
 
         # Split the string into a list of questions, removing empty strings and stripping whitespace
-        # FIXME use pydantic output parser to parse the response into a list of strings
-        alternative_questions = [question.strip() for question in alternative_questions.content.split('\n') if question.strip()]
-        self.logger.info(f'    Alternative questions parsed')
+        alternative_questions = PydanticOutputParser(pydantic_object=AltQuestionsResponse).parse(response.content)
+        self.logger.info(f'Alternative questions parsed')
 
         # Update the state with the new alternative questions
         existing_alternative_questions = state.get("alternative_questions", [])  # Grab whatever might already be in cited_sources
-        existing_alternative_questions.append(alternative_questions)  # Append the new list as a sublist
+        existing_alternative_questions.append(alternative_questions.questions)  # Append the new list as a sublist
         state["alternative_questions"] = existing_alternative_questions
         
         return {"alternative_questions": state["alternative_questions"]}
