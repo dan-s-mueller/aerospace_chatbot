@@ -179,7 +179,7 @@ class QAModel:
         # Get the summary, add system prompt
         summary = state.get("summary", "")
         system_prompt = CHATBOT_SYSTEM_PROMPT.format(style_mode=style_mode(self.style))
-        self.logger.info(f" generate_w_context system prompt: {system_prompt.content}")
+        # self.logger.info(f" generate_w_context system prompt: {system_prompt.content}")
         if summary:
             system_message = f"Summary of conversation earlier: {summary}"
             messages = [system_prompt] + [SystemMessage(content=system_message)] + state["messages"]

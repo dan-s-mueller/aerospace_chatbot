@@ -4,7 +4,7 @@ import os, time
 from aerospace_chatbot.core.config import setup_logging
 from aerospace_chatbot.ui import SidebarManager, display_sources, handle_file_upload, handle_sidebar_state
 from aerospace_chatbot.processing import QAModel
-from aerospace_chatbot.services import EmbeddingService, LLMService, DatabaseService
+from aerospace_chatbot.services import EmbeddingService, RerankService, LLMService, DatabaseService
 
 logger = setup_logging()
 
@@ -129,6 +129,11 @@ with chat_section:
                             model_service=st.session_state.sb['embedding_service'],
                             model=st.session_state.sb['embedding_model']
                         )
+
+                        rerank_service = RerankService(
+                            model_service=st.session_state.sb['rerank_service'],
+                            model=st.session_state.sb['rerank_model']
+                        )
                         
                         llm_service = LLMService(
                             model_service=st.session_state.sb['llm_service'],
@@ -143,7 +148,7 @@ with chat_section:
                             index_name=st.session_state.sb['index_selected'],
                             rag_type=st.session_state.sb['rag_type'],
                             embedding_service=embedding_service,
-                            doc_type='document'
+                            rerank_service=rerank_service
                         )
                         
                         try:
@@ -159,7 +164,8 @@ with chat_section:
                             st.session_state.qa_model_obj = QAModel(
                                 db_service=db_service,
                                 llm_service=llm_service,
-                                k=st.session_state.sb['model_options']['k']
+                                k_retrieve=st.session_state.sb['model_options']['k_retrieve'],
+                                k_rerank=st.session_state.sb['model_options']['k_rerank']
                             )
 
                         st.write('*Searching vector database, generating prompt...*')

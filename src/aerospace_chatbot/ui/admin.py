@@ -27,9 +27,10 @@ class SidebarManager:
             elements = {
                 'index': ['index_selected', 'index_type'],
                 'embeddings': ['embedding_service', 'embedding_model', 'embedding_endpoint'],
+                'rerankers': ['rerank_service', 'rerank_model'],
                 'rag': ['rag_type', 'rag_llm_service', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_service', 'llm_model', 'llm_endpoint'],
-                'model_options': ['temperature', 'output_level', 'k'],
+                'model_options': ['temperature', 'output_level', 'k_retrieve', 'k_rerank'],
                 'api_keys': ['openai_key', 'anthropic_key', 'hf_key', 'voyage_key', 'pinecone_key']
             }
             
@@ -72,6 +73,7 @@ class SidebarManager:
             self._render_model_options()
             self._render_vector_database()
             self._render_embeddings()
+            self._render_rerankers()
             self._render_secret_keys()
 
             # Update session state with final values
@@ -255,25 +257,35 @@ class SidebarManager:
         )
         
         st.sidebar.title('Retrieval Options')
-        k = st.sidebar.number_input(
-            'Number of items per prompt',
+        k_retrieve = st.sidebar.number_input(
+            'Number of chunks retrieved per prompt',
             min_value=1,
             step=1,
-            value=8,
-            disabled=st.session_state.k_disabled,
-            help='Number of items to retrieve per query. Many retrievals max exceed model context window.'
+            value=20,
+            disabled=st.session_state.k_retrieve_disabled,
+            help='Number of items to retrieve per query.'
+        )
+
+        k_rerank = st.sidebar.number_input(
+            'Number of docs reranked to use for response',
+            min_value=1,
+            step=1,
+            value=5,
+            disabled=st.session_state.k_rerank_disabled,
+            help='Number of items to rerank from retrieved chunks. This many chunks are ranked by relevance and provided to the LLM for a response. Must be at least k_retrieve.'
         )
         
         if self.sb_out['index_type'] != 'RAGatouille':
             self.sb_out['model_options'] = {
                 'output_level': output_level,
-                'k': k,
+                'k_retrieve': k_retrieve,
                 'temperature': temperature
             }
         else:
             self.sb_out['model_options'] = {
                 'output_level': output_level,
-                'k': k,
+                'k_retrieve': k_retrieve,
+                'k_rerank': k_rerank,
                 'temperature': temperature
             }
 
@@ -296,7 +308,9 @@ class SidebarManager:
         self.logger.info(f"Index type: {self.sb_out['index_type']}")
 
     def _render_embeddings(self):
-        """Render embeddings configuration section."""
+        """
+        Render embeddings configuration section.
+        """
         st.sidebar.title('Embeddings', 
                         help='See embedding leaderboard here for performance overview: https://huggingface.co/spaces/mteb/leaderboard')
         
@@ -345,8 +359,35 @@ class SidebarManager:
 
         self.logger.info(f"Embedding service: {self.sb_out['embedding_service']}, embedding model: {self.sb_out['embedding_model']}")
 
+    def _render_rerankers(self):
+        """
+        Render rerankers configuration section.
+        """
+        st.sidebar.title('Rerankers')
+
+        rerank_services = [reranker["service"] for reranker in self._config['rerankers']]
+
+        self.sb_out['rerank_service'] = st.sidebar.selectbox(
+            'Reranker service',
+            rerank_services,
+            disabled=st.session_state.rerank_service_disabled
+        )
+
+        # Find the reranker config for the selected model
+        reranker_config = next(e for e in self._config['rerankers'] if e['service'] == self.sb_out['rerank_service'])
+        
+        self.sb_out['rerank_model'] = st.sidebar.selectbox(
+            'Reranker model',
+            reranker_config['models'],
+            disabled=st.session_state.rerank_model_disabled
+        )
+
+        self.logger.info(f"Reranker service: {self.sb_out['rerank_service']}, reranker model: {self.sb_out['rerank_model']}")
+
     def _render_secret_keys(self):
-        """Render secret keys configuration section."""
+        """
+        Render secret keys configuration section.
+        """
         self.sb_out['keys'] = {}
         st.sidebar.title('Secret keys', help='See Home page under Connection Status for status of keys.')
         
@@ -423,7 +464,9 @@ class SidebarManager:
             st.stop()
 
     def _check_local_db_path(self):
-        """Check and set local database path if not already set"""
+        """
+        Check and set local database path if not already set.
+        """
         if not os.environ.get('LOCAL_DB_PATH'):
             local_db_path_input = st.empty()
             warn_db_path = st.warning('Local Database Path is required to initialize. Use an absolute path.')

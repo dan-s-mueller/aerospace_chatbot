@@ -11,6 +11,12 @@
             "models": ["text-embedding-3-large"]
         }
     ],
+    "rerankers": [
+        {
+            "service": "Cohere",
+            "models": ["rerank-v3.5"]
+        }
+    ],
     "llms": [
         {
             "service": "OpenAI",
@@ -30,6 +36,7 @@
     "rag_types": ["Standard"],
     "disabled_controls": {
         "embeddings": ["embedding_service", "embedding_model", "embedding_endpoint"],
+        "rerankers": ["rerank_service", "rerank_model"],
         "rag": ["rag_type", "rag_llm_service", "rag_llm_model", "rag_endpoint"],
         "llm": ["llm_service", "llm_model", "llm_endpoint"],
         "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"],
