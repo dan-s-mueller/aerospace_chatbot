@@ -11,6 +11,7 @@ from PIL import Image
 import io
 import json, base64, zlib
 from typing import List, Dict, Any
+import random
 
 # from ..core.cache import Dependencies
 from ..core.config import get_secrets
@@ -96,89 +97,147 @@ def handle_sidebar_state(sidebar_manager):
 #                             logger.error(f"Failed to display source: {e}")
 #                             st.error("Unable to display PDF. Please use the download link.")
 
-def display_sources(sources, expanded=False):
+def display_source_highlights(sources):
     """
     Display sources with highlights.
     """
     logger = logging.getLogger(__name__)
 
-    def extract_orig_elements(orig_elements):
+    def extract_pages_from_pdf(url, page_range, page_buffer=1):
+        """
+        Extracts specified pages from a PDF file.
+        page_range is a list with the first and last page number of the source
+        page_buffer is the number of pages to include before and after the source
+        """     
+        if page_buffer<1:
+            raise ValueError("Page buffer must be at least 1")
+        
+        try:
+            # Download PDF
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            
+            # Open PDF and extract pages
+            doc = fitz.open(stream=response.content, filetype="pdf")
+            original_page_count = doc.page_count
+            extracted_doc = fitz.open()
+            
+            # Add page buffer to the start and end page range, this is now zero indexed
+            if page_range[0] == 1:
+                # Don't buffer a first page
+                start_page = 0
+            else:
+                start_page = page_range[0] - page_buffer - 1
+
+            if page_range[1] == original_page_count:
+                # Don't buffer a last page
+                end_page = original_page_count - 1
+            else:
+                end_page = page_range[1] + page_buffer - 1
+            
+            extracted_doc.insert_pdf(doc, from_page=start_page, to_page=end_page)
+            
+            # Get bytes and cleanup
+            extracted_pdf_bytes = extracted_doc.tobytes()
+            extracted_doc.close()
+            doc.close()
+
+            logger.info(f"Extracted pdf from {url} for pages {start_page} to {end_page}")
+            
+            return (io.BytesIO(extracted_pdf_bytes), start_page, end_page)
+                    
+        except Exception as e:
+            logger.error(f"Failed to extract PDF pages: {e}")
+            raise ValueError(f"PDF extraction failed: {str(e)}")
+
+    def extract_orig_elements(orig_element_metadata):
         """Extract the contents of an orig_elements field."""
-        decoded_orig_elements = base64.b64decode(orig_elements)
+        decoded_orig_elements = base64.b64decode(orig_element_metadata)
         decompressed_orig_elements = zlib.decompress(decoded_orig_elements)
         return decompressed_orig_elements.decode('utf-8')
     
-    def get_chunked_elements(sources):
+    def get_chunked_elements(source):
         # result['context'][0][0].metadata['orig_elements']
         # sources = result['context']
-        orig_elements_dict = []
-        for doc in sources:
-            # For each chunk that has an "orig_elements" field...
-            if "orig_elements" in doc[0]['metadata']:
-                # ...get the chunk's associated elements in context...
-                orig_elements = extract_orig_elements(doc[0]['metadata']['orig_elements'])
-                # ...and then transpose it and other associated fields into a separate dictionary.
-                orig_elements_dict.append({
-                    "element_id": doc[0]['metadata']['element_id'],
-                    "text": doc[0]['page_content'],
-                    "orig_elements": json.loads(orig_elements)
-                })
-            else:
-                raise ValueError("No orig_elements field found in document metadata, unable to display sources.")
+        if "orig_elements" in source[0].metadata:
+            orig_elements = extract_orig_elements(source[0].metadata['orig_elements'])
+            orig_elements_dict = {
+                "element_id": source[0].metadata['element_id'],
+                "text": source[0].page_content,
+                "orig_elements": json.loads(orig_elements)
+            }
+        else:
+            raise ValueError("No orig_elements field found in document metadata, unable to display sources.")
         return orig_elements_dict
     
-    def annotate_pdf_with_highlights(orig_elements_dict):
-        pass
+    def annotate_pdf_with_highlights(pdf_file, orig_elements, page_range):
+        """
+        Annotate a PDF with highlights.
+        page_range is a list with the first and last page number of the extracted document from the original source
+        """
+        # Load the PDF
+        pdf_bytes = pdf_file.read()
+        annotated_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
 
-    # FIXME continue working through original elements
+        # Get PDF dimensions
+        first_page = annotated_doc[0]
+        pdf_width = first_page.rect.width
+        pdf_height = first_page.rect.height
 
-    with st.container():
-        with st.spinner('Bringing you source documents...'):
-            for source in sources:
-                # Parse and validate source information
-                page = source.get('page')
-                pdf_source = source.get('source')
-                
-                # Parse string representations of lists
-                try:
-                    page = ast.literal_eval(page) if isinstance(page, str) else page
-                    pdf_source = ast.literal_eval(pdf_source) if isinstance(pdf_source, str) else pdf_source
-                except (ValueError, SyntaxError):
-                    continue
-                
-                # Extract first element if it's a list
-                page = page[0] if isinstance(page, list) and page else page
-                pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
-                
-                if pdf_source and page is not None:
-                    selected_url = f"https://storage.googleapis.com/{pdf_source}"
-                    st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
-                    
-                    # Style the expander
-                    st.markdown("""
-                        <style>
-                            .stExpander {
-                                max-height: 1000px;
-                                overflow-y: auto;
-                            }
-                        </style>
-                    """, unsafe_allow_html=True)
-                    
-                    # Display PDF content
-                    with st.expander(":memo: View", expanded=expanded):
-                        tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
-                        try:
-                            extracted_pdf = _extract_pages_from_pdf(selected_url, page)
-                            
-                            with tab1:
-                                display_pdf(extracted_pdf, "100%", 1000)
-                            
-                            with tab2:
-                                st.write("Disabled for now...see download link above!")
-                                
-                        except Exception as e:
-                            logger.error(f"Failed to display source: {e}")
-                            st.error("Unable to display PDF. Please use the download link.")
+        # Process each chunk
+        for chunk in orig_elements['orig_elements']:            
+            # Subtract page_range[0] to get the page number in the extracted document with buffer pages, index by 0
+            extracted_doc_page_num = chunk['metadata']['page_number'] - page_range[0] - 1
+            extracted_doc_page = annotated_doc[extracted_doc_page_num]
+            
+            # Get pixel dimensions from the element's metadata
+            pixel_width = chunk['metadata']['coordinates']['layout_width']
+            pixel_height = chunk['metadata']['coordinates']['layout_height']
+            
+            # Calculate scale factors for both dimensions
+            scale_x = pdf_width / pixel_width
+            scale_y = pdf_height / pixel_height
+            
+            points = chunk['metadata']['coordinates']['points']
+            
+            # Scale the coordinates
+            x0 = points[0][0] * scale_x
+            y0 = points[0][1] * scale_y
+            x2 = points[2][0] * scale_x
+            y2 = points[2][1] * scale_y
+            
+            # Add rectangle annotation
+            rect = extracted_doc_page.add_rect_annot(fitz.Rect(x0, y0, x2, y2))
+            rect.set_colors(stroke=(1, 1, 0), fill=(1, 1, 0))  # set both outline and fill color. Use yellow for all
+            rect.set_opacity(0.3)  # make it semi-transparent
+            rect.set_border(width=0.5)  # set border width
+            rect.update()
+
+            logger.info(f"Annotated pdf on extracted page {extracted_doc_page_num}")
+
+        # Get bytes and cleanup
+        annotated_doc_bytes = annotated_doc.tobytes()
+        annotated_doc.close()
+
+        return io.BytesIO(annotated_doc_bytes)
+
+    annotated_pdfs=[]
+    for source in sources:
+        orig_elements = get_chunked_elements(source)
+
+        # pages is the first and last page number of the source
+        page_range = [orig_elements['orig_elements'][0]['metadata']['page_number'], orig_elements['orig_elements'][-1]['metadata']['page_number']]
+        pdf_source = orig_elements['orig_elements'][0]['metadata']['data_source']['url'].replace('gs://', '')
+        
+        if pdf_source and page_range:
+            selected_url = f"https://storage.googleapis.com/{pdf_source}"
+            extracted_pdf, min_page, max_page = extract_pages_from_pdf(selected_url, page_range)
+            annotated_pdfs.append(annotate_pdf_with_highlights(extracted_pdf, orig_elements, [min_page, max_page]))
+            # display_pdf(annotated_pdf, "100%", 1000)
+        else:
+            raise ValueError(f"Missing metadata for {source}, unable to display sources.")
+
+    return annotated_pdfs
     
 def show_connection_status(expanded = True, delete_buttons = False):
     """Display connection status for various services with optional delete functionality. """
@@ -358,7 +417,9 @@ def _determine_rag_type(index_name):
     return 'Standard'
 
 def _validate_upload_settings(sb):
-    """Validate RAG type and index type settings."""
+    """
+    Validate RAG type and index type settings.
+    """
     if sb['rag_type'] != "Standard":
         st.error("Only Standard RAG is supported for user document upload.")
         return False
@@ -370,7 +431,9 @@ def _validate_upload_settings(sb):
     return True
 
 def _save_uploads_to_temp(uploaded_files):
-    """Save uploaded files to temporary directory."""
+    """
+    Save uploaded files to temporary directory.
+    """
     temp_files = []
     for uploaded_file in uploaded_files:
         temp_path = os.path.join(tempfile.gettempdir(), uploaded_file.name)
@@ -378,41 +441,11 @@ def _save_uploads_to_temp(uploaded_files):
             temp_file.write(uploaded_file.read())
         temp_files.append(temp_path)
     return temp_files
-
-def _extract_pages_from_pdf(url, target_page, page_range=5):
-    """Extracts specified pages from a PDF file."""
-    logger = logging.getLogger(__name__)
-    # fitz, requests, _, _, _, io = Dependencies.Document.get_processors()
-    
-    try:
-        # Download PDF
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
-        
-        # Open PDF and extract pages
-        doc = fitz.open(stream=response.content, filetype="pdf")
-        extracted_doc = fitz.open()
-        
-        start_page = max(target_page, 0)
-        end_page = min(target_page + page_range - 1, doc.page_count - 1)
-        
-        for i in range(start_page, end_page + 1):
-            extracted_doc.insert_pdf(doc, from_page=i, to_page=i)
-        
-        # Get bytes and cleanup
-        extracted_pdf_bytes = extracted_doc.tobytes()
-        extracted_doc.close()
-        doc.close()
-        
-        return io.BytesIO(extracted_pdf_bytes)
-                
-    except Exception as e:
-        logger.error(f"Failed to extract PDF pages: {e}")
-        raise ValueError(f"PDF extraction failed: {str(e)}")
-        
+       
 def display_pdf(upl_file, ui_width, ui_height):
-    """Display a PDF file by converting pages to images."""
-    # fitz, _, _, _, Image, io = Dependencies.Document.get_processors()
+    """
+    Display a PDF file by converting pages to images.
+    """
     logger = logging.getLogger(__name__)
 
     try:
