@@ -65,7 +65,7 @@ class QAModel:
 
         # Add answer to response, create an array as more prompts come in
         self.logger.info(f'Running query through workflow: {query}')
-        self.result = self.workflow.workflow.invoke(
+        self.result = self.workflow.invoke(
             {"messages": [("human", query)]}, 
             self.memory_config
         )

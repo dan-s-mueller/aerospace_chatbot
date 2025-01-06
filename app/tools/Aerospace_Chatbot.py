@@ -170,21 +170,20 @@ with chat_section:
                             )
 
                         # TODO write the workflow node status
+                        # TODO rewrite this to use the structure from langgraph, lots of redundancy here.
                         st.write('*Searching vector database, generating prompt...*')
-                        result = st.session_state.qa_model_obj.query(prompt)
-                        ai_response = st.session_state.qa_model_obj.ai_response
-                        similar_questions = st.session_state.qa_model_obj.generate_alternative_questions(prompt)
+                        st.session_state.qa_model_obj.query(prompt)
                         
-                        message_placeholder.markdown(ai_response)
+                        message_placeholder.markdown(st.session_state.qa_model_obj.result['messages'][-1].content)
                         response_time = time.time() - t_start
                         
                         # Add messages to session state in correct order
-                        logger.info(f"Sources: {st.session_state.qa_model_obj.sources[-1]}")
+                        logger.info(f"Sources: {st.session_state.qa_model_obj.result['context']}")
                         st.session_state.messages.insert(0, {
                             'role': 'assistant', 
-                            'content': result['messages'][-1].content, 
-                            'sources': result['context'][:st.session_state.sb['model_options']['k_retrieve']],
-                            'alternative_questions': result['alternative_questions'][-1],
+                            'content': st.session_state.qa_model_obj.result['messages'][-1].content, 
+                            'sources': st.session_state.qa_model_obj.result['context'][:st.session_state.sb['model_options']['k_retrieve']],
+                            'alternative_questions': st.session_state.qa_model_obj.result['alternative_questions'][-1],
                             'response_time': response_time,
                             'message_id': st.session_state.message_id
                         })
@@ -192,6 +191,8 @@ with chat_section:
                         st.rerun()
                 except Exception as e:
                     st.error(f"An error occurred: {str(e)}")
+                    # TODO remove this later
+                    raise e
                     st.stop()
         
         # Always show message history
@@ -227,7 +228,7 @@ with chat_section:
             with st.container():
                 if 'sources' in last_message:
                     st.markdown("📚 Source Documents")
-                    display_sources(last_message['sources'])
+                    display_sources(last_message['sources'], st.session_state.sb['model_options']['k_rerank'])
 
         # If we're processing a new message, show its info too
         if prompt:

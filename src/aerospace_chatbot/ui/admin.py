@@ -279,13 +279,13 @@ class SidebarManager:
             self.sb_out['model_options'] = {
                 'output_level': output_level,
                 'k_retrieve': k_retrieve,
+                'k_rerank': k_rerank,
                 'temperature': temperature
             }
         else:
             self.sb_out['model_options'] = {
                 'output_level': output_level,
                 'k_retrieve': k_retrieve,
-                'k_rerank': k_rerank,
                 'temperature': temperature
             }
 

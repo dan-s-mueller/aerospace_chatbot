@@ -11,7 +11,6 @@ from PIL import Image
 import io
 import json, base64, zlib
 from typing import List, Dict, Any
-import random
 
 # from ..core.cache import Dependencies
 from ..core.config import get_secrets
@@ -45,103 +44,50 @@ def handle_sidebar_state(sidebar_manager):
     
     return current_state
 
-# def display_sources(sources, expanded=False):
-#     """Display reference sources in an expander with PDF preview functionality."""
-#     logger = logging.getLogger(__name__)
-    
-#     with st.container():
-#         with st.spinner('Bringing you source documents...'):
-#             for source in sources:
-#                 # Parse and validate source information
-#                 page = source.get('page')
-#                 pdf_source = source.get('source')
-                
-#                 # Parse string representations of lists
-#                 try:
-#                     page = ast.literal_eval(page) if isinstance(page, str) else page
-#                     pdf_source = ast.literal_eval(pdf_source) if isinstance(pdf_source, str) else pdf_source
-#                 except (ValueError, SyntaxError):
-#                     continue
-                
-#                 # Extract first element if it's a list
-#                 page = page[0] if isinstance(page, list) and page else page
-#                 pdf_source = pdf_source[0] if isinstance(pdf_source, list) and pdf_source else pdf_source
-                
-#                 if pdf_source and page is not None:
-#                     selected_url = f"https://storage.googleapis.com/{pdf_source}"
-#                     st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page}")
-                    
-#                     # Style the expander
-#                     st.markdown("""
-#                         <style>
-#                             .stExpander {
-#                                 max-height: 1000px;
-#                                 overflow-y: auto;
-#                             }
-#                         </style>
-#                     """, unsafe_allow_html=True)
-                    
-#                     # Display PDF content
-#                     with st.expander(":memo: View", expanded=expanded):
-#                         tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
-#                         try:
-#                             extracted_pdf = _extract_pages_from_pdf(selected_url, page)
-                            
-#                             with tab1:
-#                                 display_pdf(extracted_pdf, "100%", 1000)
-                            
-#                             with tab2:
-#                                 st.write("Disabled for now...see download link above!")
-                                
-#                         except Exception as e:
-#                             logger.error(f"Failed to display source: {e}")
-#                             st.error("Unable to display PDF. Please use the download link.")
-
-# FIXME integrate display_source_highlight functionalty into this and the display_source function so the GUI works.
-def display_pdf(upl_file, ui_width, ui_height):
+def display_sources(sources, n_display, expanded=False):
     """
-    Display a PDF file by converting pages to images.
+    Display reference sources in an expander with PDF preview functionality.
     """
     logger = logging.getLogger(__name__)
 
-    try:
-        # Read the PDF
-        pdf_bytes = upl_file.read()
-        pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
-        
-        # Set rendering parameters
-        zoom = 2.0
-        mat = fitz.Matrix(zoom, zoom)
+    annotated_pdfs, page_ranges, pdf_sources, selected_urls = process_source_documents(sources, n_display)
+    
+    with st.container():
+        with st.spinner('Bringing you source documents...'):
+            for i, (annotated_pdf, page_range, pdf_source, selected_url) in enumerate(zip(annotated_pdfs, page_ranges, pdf_sources, selected_urls)):
+                # Style the expander
+                st.markdown("""
+                    <style>
+                        .stExpander {
+                            max-height: 1000px;
+                            overflow-y: auto;
+                        }
+                    </style>
+                """, unsafe_allow_html=True)
+                
+                # Display PDF content
+                with st.expander(f":memo: Source {i+1}", expanded=expanded):
+                    selected_url = f"https://storage.googleapis.com/{pdf_source}"
+                    st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page_range[0]}")
+                    # tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
+                    try:
+                    #     extracted_pdf = _extract_pages_from_pdf(selected_url, page)
+                        
+                        # with tab1:
+                        display_pdf(annotated_pdf)
+                        
+                        # with tab2:
+                        #     st.write("Disabled for now...see download link above!")
+                            
+                    except Exception as e:
+                        logger.error(f"Failed to display source: {e}")
+                        st.error("Unable to display PDF. Please use the download link.")
+                        raise e
 
-        # Display each page
-        for page_num in range(len(pdf_document)):
-            page = pdf_document[page_num]
-            pix = page.get_pixmap(matrix=mat)
-            
-            # Convert to PIL Image
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            
-            # Convert to bytes for display
-            img_byte_arr = io.BytesIO()
-            img.save(img_byte_arr, format='PNG', optimize=True)
-            img_byte_arr = img_byte_arr.getvalue()
-
-            # Display the image
-            st.image(
-                img_byte_arr,
-                # caption=f"Page {page_num + 1}",
-                use_column_width=True
-            )
-
-        pdf_document.close()
-
-    except Exception as e:
-        logger.error(f"Failed to display PDF: {e}")
-        st.error(f"Error displaying PDF: {e}")
-
-def display_source_highlights(sources):
+def process_source_documents(sources, n_display):
     """
-    Display sources with highlights.
+    Process source documents and display them with highlights.
+    Will display the first n_display sources. Recommended that this aligns with the k_rerank docs that are returned.
     """
     logger = logging.getLogger(__name__)
 
@@ -184,7 +130,7 @@ def display_source_highlights(sources):
             extracted_doc.close()
             doc.close()
 
-            logger.info(f"Extracted pdf from {url} for pages {start_page} to {end_page}")
+            logger.info(f"Extracted pdf from {url} for pages (1 indexed) {start_page+1} to {end_page+1}")
             
             return (io.BytesIO(extracted_pdf_bytes), start_page, end_page)
                     
@@ -255,7 +201,7 @@ def display_source_highlights(sources):
             rect.set_border(width=0.5)  # set border width
             rect.update()
 
-            logger.info(f"Annotated pdf on extracted page {extracted_doc_page_num}")
+        logger.info(f"Annotated pdf with {len(orig_elements['orig_elements'])} chunks")
 
         # Get bytes and cleanup
         annotated_doc_bytes = annotated_doc.tobytes()
@@ -264,7 +210,10 @@ def display_source_highlights(sources):
         return io.BytesIO(annotated_doc_bytes)
 
     annotated_pdfs=[]
-    for source in sources:
+    page_ranges=[]
+    pdf_sources=[]
+    selected_urls=[]
+    for source in sources[:n_display]:
         orig_elements = get_chunked_elements(source)
 
         # pages is the first and last page number of the source
@@ -274,15 +223,58 @@ def display_source_highlights(sources):
         if pdf_source and page_range:
             selected_url = f"https://storage.googleapis.com/{pdf_source}"
             extracted_pdf, min_page, max_page = extract_pages_from_pdf(selected_url, page_range)
+
             annotated_pdfs.append(annotate_pdf_with_highlights(extracted_pdf, orig_elements, [min_page, max_page]))
-            # display_pdf(annotated_pdf, "100%", 1000)
+            page_ranges.append(page_range)  # This is 1 indexed since it comes directly from the metadata
+            pdf_sources.append(pdf_source)
+            selected_urls.append(selected_url)
         else:
             raise ValueError(f"Missing metadata for {source}, unable to display sources.")
 
-    return annotated_pdfs
+    return annotated_pdfs, page_ranges, pdf_sources, selected_urls
     
+def display_pdf(annotated_pdf):
+    """
+    Display a PDF file by converting pages to images.
+    """
+    logger = logging.getLogger(__name__)
+
+    # Set rendering parameters
+    zoom = 2.0
+    mat = fitz.Matrix(zoom, zoom)
+
+    try:
+        # Read the PDF
+        pdf_bytes = annotated_pdf.read()
+        pdf_document = fitz.open(stream=pdf_bytes, filetype="pdf")
+        
+        # Display each page
+        for page_num in range(len(pdf_document)):
+            page = pdf_document[page_num]
+            pix = page.get_pixmap(matrix=mat)
+            
+            # Convert to PIL Image
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            
+            # Convert to bytes for display
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='PNG', optimize=True)
+            img_byte_arr = img_byte_arr.getvalue()
+
+            # Display the image
+            st.image(
+                img_byte_arr,
+                use_container_width=True
+            )
+        pdf_document.close()
+    except Exception as e:
+        logger.error(f"Failed to display PDF: {e}")
+        st.error(f"Error displaying PDF: {e}")
+
 def show_connection_status(expanded = True, delete_buttons = False):
-    """Display connection status for various services with optional delete functionality. """
+    """
+    Display connection status for various services with optional delete functionality. 
+    """
     with st.expander("Connection Status", expanded=expanded):
         # API Keys Status
         st.markdown("**API Keys Status:**")
@@ -291,8 +283,11 @@ def show_connection_status(expanded = True, delete_buttons = False):
         # Database Status and Management
         st.markdown("**Database Status:**")
         _display_database_status(delete_buttons)
+
 def handle_file_upload(sb):
-    """Handle file upload functionality for the chatbot."""
+    """
+    Handle file upload functionality for the chatbot.
+    """
     if not _validate_upload_settings(sb):
         return
 
@@ -308,7 +303,9 @@ def handle_file_upload(sb):
             return user_upload
 
 def process_uploads(sb, temp_files):
-    """Process uploaded files and merge them into the vector database."""
+    """
+    Process uploaded files and merge them into the vector database.
+    """
     logger = logging.getLogger(__name__)
     
     # Generate unique identifier
@@ -398,13 +395,17 @@ def process_uploads(sb, temp_files):
 #     return viewer
 
 def _display_api_key_status():
-    """Display API key status."""
+    """
+    Display API key status.
+    """
     secrets = get_secrets()
     markdown_str = "\n".join([f"- {name}: {'✅' if secret else '❌'}" for name, secret in secrets.items()])
     st.markdown(markdown_str)
 
 def _display_database_status(delete_buttons=False):
-    """Display database status and management options."""
+    """
+    Display database status and management options.
+    """
     if not os.getenv('LOCAL_DB_PATH'):
         st.error("Local database path not set")
         return
@@ -429,7 +430,9 @@ def _display_database_status(delete_buttons=False):
     st.markdown(f"**Local database path:** `{os.getenv('LOCAL_DB_PATH')}`")
 
 def _handle_index_deletion(db_type, index_name):
-    """Handle deletion of database indexes."""
+    """
+    Handle deletion of database indexes.
+    """
     if st.button(f'Delete {index_name}', help='This is permanent!'):
         try:
             rag_type = _determine_rag_type(index_name)
@@ -451,7 +454,9 @@ def _handle_index_deletion(db_type, index_name):
             st.error(f"Error deleting index: {str(e)}")
 
 def _determine_rag_type(index_name):
-    """Determine RAG type from index name."""
+    """
+    Determine RAG type from index name.
+    """
     if index_name.endswith('-parent-child'):
         return 'Parent-Child'
     elif '-summary-' in index_name or index_name.endswith('-summary'):

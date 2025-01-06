@@ -35,7 +35,8 @@ from .ui import (
     SidebarManager,
     setup_page_config,
     handle_sidebar_state,
-    display_source_highlights, 
+    display_sources,
+    process_source_documents,
     show_connection_status,
     handle_file_upload
 )
@@ -83,7 +84,8 @@ __all__ = [
     'SidebarManager',
     'setup_page_config',
     'handle_sidebar_state',
-    'display_source_highlights', 
+    'display_sources',
+    'process_source_documents',
     'show_connection_status',
     'handle_file_upload'
 ]
