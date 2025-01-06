@@ -1,7 +1,7 @@
 """Configuration management and environment setup."""
 
 import os, json
-from dotenv import load_dotenv, find_dotenv
+# from dotenv import load_dotenv, find_dotenv
 
 class ConfigurationError(Exception):
     """Raised when there are configuration related errors."""
@@ -29,7 +29,7 @@ def load_config(config_path):
     
 def get_secrets():
     """Load and return secrets from environment"""
-    load_dotenv(find_dotenv())
+    # load_dotenv(find_dotenv())
     return {
         'OPENAI_API_KEY': os.getenv('OPENAI_API_KEY'),
         'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY'),
