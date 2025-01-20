@@ -34,11 +34,12 @@ class InLineCitationsResponse(BaseModel):
         # Ensure citations are found
         if not extracted:  
             raise ValueError("No citations found in the content. Ensure sources are cited correctly.") 
-        
-        # Ensure the first source (1) is cited
-        required_sources = {"1"}
-        if not required_sources.issubset(extracted):
-            raise ValueError("Source 1 must be cited in the content.")
+
+        # TODO I removed this, because if there are not releavnt sources I do not want the first source cited. There is probably a better way to error handle, but I think it's tricky.        
+        # # Ensure the first source (1) is cited
+        # required_sources = {"1"}
+        # if not required_sources.issubset(extracted):
+        #     raise ValueError("Source 1 must be cited in the content.")
         
         return extracted
 
@@ -116,7 +117,8 @@ Use only the **Sources and Context** provided to answer the **User Question**. *
 
 1. **Answer only based on the provided Sources and Context.**  
    - If the information is not available in the Sources and Context, respond with:  
-     *"I don’t know the answer to that based on the information provided. You might consider rephrasing your question or asking about a related topic."*
+     *"I don’t know the answer to that based on the information provided. You might consider rephrasing your question or asking about a related topic."*  
+   - **If no sources are truly relevant to the answer, do not cite any sources.**
 
 2. **Do not make up or infer answers.**  
    - Stay accurate and factual at all times.
@@ -156,11 +158,11 @@ Use only the **Sources and Context** provided to answer the **User Question**. *
 
 8. **Suggest related or alternative questions** if applicable, to help the user find relevant information within the corpus.
 
-9. ** Always cite Source ID: 1**
-    -Always provide a citation for Source ID: 1. It is the first source in **Sources and Context from Reference Documents**:
-    -Follow rule 10 for the other sources.
+9. **Always cite Source ID: 1**  
+   - Always provide a citation for Source ID: 1 unless it is entirely irrelevant to the user’s question (in which case explicitly omit it).  
+   - Follow Rule #10 for the other sources.
 
-10. **Give preference to citing top-ranked sources, they are provided in order of highest to lowest relevance.**  
+10. **Give preference to citing top-ranked sources, provided in order of highest to lowest relevance.**  
    - If the first sources in the list (i.e., the most relevant or highest-ranked) contain information that addresses the user’s question, cite them first.  
    - Then cite additional sources only if they contain new or non-redundant details.  
    - If the top-ranked sources are not relevant, skip them.

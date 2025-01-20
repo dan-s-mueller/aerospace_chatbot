@@ -148,7 +148,6 @@ with chat_section:
                         db_service = DatabaseService(
                             db_type=st.session_state.sb['index_type'],
                             index_name=st.session_state.sb['index_selected'],
-                            rag_type=st.session_state.sb['rag_type'],
                             embedding_service=embedding_service,
                             rerank_service=rerank_service
                         )
