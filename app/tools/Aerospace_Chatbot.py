@@ -1,8 +1,8 @@
 import streamlit as st
-import os, time
+import os, time, re
 
 from aerospace_chatbot.core.config import setup_logging
-from aerospace_chatbot.ui import SidebarManager, display_sources, handle_file_upload, handle_sidebar_state
+from aerospace_chatbot.ui import SidebarManager, replace_source_tags, display_sources, handle_file_upload, handle_sidebar_state
 from aerospace_chatbot.processing import QAModel
 from aerospace_chatbot.services import EmbeddingService, RerankService, LLMService, DatabaseService
 
@@ -122,6 +122,7 @@ with chat_section:
                 try:
                     t_start = time.time()
                     with st.status('Generating response...') as status:
+                        st.session_state.message_id += 1
                         st.write(f'*Starting response generation for message: {str(st.session_state.message_id)}*')
                         st.write(f'*Prompt: {prompt}*')
                         
@@ -162,11 +163,13 @@ with chat_section:
 
                         # Initialize QA model
                         if not st.session_state.qa_model_obj:
+                            style = None if st.session_state.sb['model_options']['style_mode'] == "Standard" else st.session_state.sb['model_options']['style_mode']
                             st.session_state.qa_model_obj = QAModel(
                                 db_service=db_service,
                                 llm_service=llm_service,
                                 k_retrieve=st.session_state.sb['model_options']['k_retrieve'],
-                                k_rerank=st.session_state.sb['model_options']['k_rerank']
+                                k_rerank=st.session_state.sb['model_options']['k_rerank'],
+                                style=style
                             )
 
                         # TODO write the workflow node status
@@ -179,6 +182,7 @@ with chat_section:
                         
                         # Add messages to session state in correct order
                         logger.info(f"Sources: {st.session_state.qa_model_obj.result['context']}")
+                        # Extract assistant response and replace source tags
                         st.session_state.messages.insert(0, {
                             'role': 'assistant', 
                             'content': st.session_state.qa_model_obj.result['messages'][-1].content, 
@@ -187,6 +191,13 @@ with chat_section:
                             'response_time': response_time,
                             'message_id': st.session_state.message_id
                         })
+                        st.session_state.messages[0]['content'] = replace_source_tags(
+                            st.session_state.messages[0]['content'], 
+                            st.session_state.messages[0]['sources'],
+                            st.session_state.message_id
+                        )
+
+                        # Add user message to session state
                         st.session_state.messages.insert(1, {"role": "user", "content": prompt})
                         st.rerun()
                 except Exception as e:
@@ -198,7 +209,10 @@ with chat_section:
         # Always show message history
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+                # Display the message. Source tags have already been replaced.
+                st.markdown(message["content"], unsafe_allow_html=True)
+
+                # Dropdown for response status, if it is an assistant message
                 if message["role"] == "assistant":
                     with st.status('Response Status', state="complete") as status:
                         st.write(f'Message ID: {message.get("message_id", "N/A")}')
@@ -228,7 +242,11 @@ with chat_section:
             with st.container():
                 if 'sources' in last_message:
                     st.markdown("📚 Source Documents")
-                    display_sources(last_message['sources'], st.session_state.sb['model_options']['k_rerank'])
+                    display_sources(
+                        last_message['sources'], 
+                        st.session_state.sb['model_options']['k_rerank'], 
+                        st.session_state.message_id
+                    )
 
         # If we're processing a new message, show its info too
         if prompt:

@@ -22,15 +22,17 @@ class SidebarManager:
         self.logger = logging.getLogger(__name__)
         
     def initialize_session_state(self):
-        """Initialize session state for all sidebar elements."""
+        """
+        Initialize session state for all sidebar elements.
+        """
         if 'sidebar_state_initialized' not in st.session_state:
             elements = {
                 'index': ['index_selected', 'index_type'],
-                'embeddings': ['embedding_service', 'embedding_model', 'embedding_endpoint'],
-                'rerankers': ['rerank_service', 'rerank_model'],
                 'rag': ['rag_type', 'rag_llm_service', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_service', 'llm_model', 'llm_endpoint'],
-                'model_options': ['temperature', 'output_level', 'k_retrieve', 'k_rerank'],
+                'model_options': ['temperature', 'output_level', 'k_retrieve', 'k_rerank', 'style_mode'],
+                'embeddings': ['embedding_service', 'embedding_model', 'embedding_endpoint'],
+                'rerankers': ['rerank_service', 'rerank_model'],
                 'api_keys': ['openai_key', 'anthropic_key', 'hf_key', 'voyage_key', 'pinecone_key']
             }
             
@@ -52,7 +54,9 @@ class SidebarManager:
             st.session_state.sidebar_state_initialized = True
             
     def render_sidebar(self):
-        """Render the complete sidebar based on enabled options."""
+        """
+        Render the complete sidebar based on enabled options.
+        """
         try:
             # Sync any changed values from session state first
             for key in ['index_type', 'rag_type', 'embedding_model', 'embedding_service', 
@@ -216,23 +220,23 @@ class SidebarManager:
         self.sb_out['rag_type'] = rag_type
         st.session_state.sb = self.sb_out
         
-        if rag_type == 'Summary':
-            self._render_rag_llm_config()
+        # if rag_type == 'Summary':
+        #     self._render_rag_llm_config()
 
         self.logger.info(f"RAG type: {self.sb_out['rag_type']}")
 
-    def _render_rag_llm_config(self):
-        """Render RAG LLM configuration section."""
-        self.sb_out['rag_llm_service'] = st.sidebar.selectbox(
-            'RAG LLM model',
-            list(self._config['llms'].keys()),
-            disabled=st.session_state.rag_llm_service_disabled,
-            help='Select the LLM model for RAG.'
-        )
+    # def _render_rag_llm_config(self):
+    #     """Render RAG LLM configuration section."""
+    #     self.sb_out['rag_llm_service'] = st.sidebar.selectbox(
+    #         'RAG LLM model',
+    #         list(self._config['llms'].keys()),
+    #         disabled=st.session_state.rag_llm_service_disabled,
+    #         help='Select the LLM model for RAG.'
+    #     )
         
-        self._render_llm_model_selection('rag_')
+    #     self._render_llm_model_selection('rag_')
 
-        self.logger.info(f"RAG LLM service: {self.sb_out['rag_llm_service']}")
+    #     self.logger.info(f"RAG LLM service: {self.sb_out['rag_llm_service']}")
 
     def _render_model_options(self):
         """Render model options section."""
@@ -254,6 +258,13 @@ class SidebarManager:
             value=5000,
             disabled=st.session_state.output_level_disabled,
             help='Max output tokens for LLM. Concise: 50, Verbose: 1000+. Limit depends on model.'
+        )
+
+        style_mode = st.sidebar.selectbox(
+            'Style mode',
+            self._config['style_modes'],
+            disabled=st.session_state.style_mode_disabled,
+            help='Select the style mode for the chatbot. Standard is the default, which is neutral and informative. All styles will remain factual and accurate.'
         )
         
         st.sidebar.title('Retrieval Options')
@@ -278,15 +289,17 @@ class SidebarManager:
         if self.sb_out['index_type'] != 'RAGatouille':
             self.sb_out['model_options'] = {
                 'output_level': output_level,
+                'style_mode': style_mode,
                 'k_retrieve': k_retrieve,
                 'k_rerank': k_rerank,
-                'temperature': temperature
+                'temperature': temperature,
             }
         else:
             self.sb_out['model_options'] = {
                 'output_level': output_level,
+                'style_mode': style_mode,
                 'k_retrieve': k_retrieve,
-                'temperature': temperature
+                'temperature': temperature,
             }
 
         self.logger.info(f"Model options: {self.sb_out['model_options']}")

@@ -59,5 +59,10 @@
     ],
     "rag_types": ["Standard",
                   "Parent-Child",
-                  "Summary"]
+                  "Summary"],
+    "style_modes": ["Standard",
+                    "Sassy",
+                    "Ironic",
+                    "Bossy",
+                    "Gen Z Slang"]
 }

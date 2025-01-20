@@ -4,7 +4,7 @@
 
 # Utilities
 import streamlit as st
-import os, ast, tempfile, logging
+import os, tempfile, logging, re
 import fitz
 import requests
 from PIL import Image
@@ -44,7 +44,24 @@ def handle_sidebar_state(sidebar_manager):
     
     return current_state
 
-def display_sources(sources, n_display, expanded=False):
+def replace_source_tags(content, sources, message_id):
+    """
+    Replace source tags with hyperlinks in the content.
+    """
+    def replace_tag(match):
+        # Convert 1-indexed to 0-indexed
+        source_id = int(match.group(1)) - 1
+        if 0 <= source_id < len(sources):
+            source = sources[source_id]
+            pdf_source = source[0].metadata['data_source.url'].replace('gs://', '')
+            selected_url = f"https://storage.googleapis.com/{pdf_source}"
+            page_number = int(source[0].metadata['page_number'])
+            return f'(<a href="{selected_url}#page={page_number}" target="_blank">📝 Source {message_id}.{source_id + 1}: {os.path.basename(pdf_source)}, page: {page_number}</a>)'
+        return match.group(0)  # Return the original tag if no source found
+
+    return re.sub(r'<source id="(\d+)">', replace_tag, content)
+
+def display_sources(sources, n_display, message_id, expanded=False):
     """
     Display reference sources in an expander with PDF preview functionality.
     """
@@ -66,7 +83,9 @@ def display_sources(sources, n_display, expanded=False):
                 """, unsafe_allow_html=True)
                 
                 # Display PDF content
-                with st.expander(f":memo: Source {i+1}", expanded=expanded):
+                score=sources[i][2]
+                formatted_score = f"{score:.3f}"    # Format the score to 3 decimal places
+                with st.expander(f":memo: Source {message_id}.{i+1} (Score: {formatted_score})", expanded=expanded):
                     selected_url = f"https://storage.googleapis.com/{pdf_source}"
                     st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page_range[0]}")
                     # tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])

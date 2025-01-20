@@ -34,14 +34,19 @@
         }
     ],
     "rag_types": ["Standard"],
+    "style_modes": ["Standard",
+                    "Sassy",
+                    "Ironic",
+                    "Bossy",
+                    "Gen Z Slang"],
     "disabled_controls": {
-        "embeddings": ["embedding_service", "embedding_model", "embedding_endpoint"],
-        "rerankers": ["rerank_service", "rerank_model"],
+        "index": ["index_type"],
         "rag": ["rag_type", "rag_llm_service", "rag_llm_model", "rag_endpoint"],
         "llm": ["llm_service", "llm_model", "llm_endpoint"],
-        "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"],
-        "index": ["index_type"],
-        "model_options": ["output_level", "search_type"]
+        "model_options": ["output_level", "search_type"],
+        "embeddings": ["embedding_service", "embedding_model", "embedding_endpoint"],
+        "rerankers": ["rerank_service", "rerank_model"],
+        "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"]
     },
     "available_indexes": ["text-embedding-3-large-test"]
 }
