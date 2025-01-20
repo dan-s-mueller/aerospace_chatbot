@@ -1,4 +1,5 @@
 import os, sys, time
+# from langchain_core.documents import Document
 import streamlit as st
 
 from aerospace_chatbot.ui import SidebarManager, show_connection_status, handle_sidebar_state
@@ -78,6 +79,7 @@ st.session_state.index_name = (st.session_state.sb['embedding_model'].replace('/
 # Add an expandable box for options
 with st.expander("Options",expanded=True):
     clear_database = st.checkbox('Delete existing database?',value=True,help='If checked, the existing database will be deleted. New databases will have metadata added to the index for chunking and embedding model.')
+    partition_by_api=st.checkbox('Partition by API?',value=False,help='If checked, documents will be partitioned by the API instead of locally.')
     batch_size=st.number_input('Batch size for upsert', 
                     min_value=1, max_value=1000, step=1, value=500,
                     help='''The number of documents to upsert at a time. 
@@ -85,48 +87,42 @@ with st.expander("Options",expanded=True):
                             When using hugging face embeddings without a dedicated endpoint, batch size recommmended maximum is 32.''')
     
     # Merge pages before processing
-    merge_pages=st.checkbox('Merge pages before processing?',value=True,
-                            help='If checked, pages will be merged before processing.')
-    n_merge_pages=st.number_input('Number of pages to merge', min_value=2, step=1, value=2, 
-                                    help='''Number of pages to merge into a single document. 
-                                    This is done before chunking occurs. 
-                                    If zero, each page is processed independently before chunking.''') if merge_pages else None
+    # merge_pages=st.checkbox('Merge pages before processing?',value=True,
+    #                         help='If checked, pages will be merged before processing.')
+    # n_merge_pages=st.number_input('Number of pages to merge', min_value=2, step=1, value=2, 
+    #                                 help='''Number of pages to merge into a single document. 
+    #                                 This is done before chunking occurs. 
+    #                                 If zero, each page is processed independently before chunking.''') if merge_pages else None
     
     # For each rag_type, set chunk parameters
-    if st.session_state.sb['rag_type'] != 'Summary':
-        if st.session_state.sb['rag_type']=='Parent-Child':
-            st.info('''
-                    Chunk method applies to parent document. Child documents are default split into 4 smaller chunks.
-                    If no chunk method is selected, 4 chunks will be created for each parent document.
-                    ''')
-        chunk_method= st.selectbox('Chunk method', ['None','character_recursive'],
-                                    index=0,
-                                    help='''https://python.langchain.com/docs/modules/data_connection/document_transformers/. 
-                                            None will take whole PDF pages as documents in the database.''')
-        if chunk_method=='character_recursive':
-            chunk_size=st.number_input('Chunk size (characters)', min_value=1, step=1, value=400, help='An average paragraph is around 400 characters.')
-            chunk_overlap=st.number_input('Chunk overlap (characters)', min_value=0, step=1, value=0)
-        elif chunk_method=='None':
-            chunk_size=None
-            chunk_overlap=None
-        else:
-            raise NotImplementedError
-    else:
-        chunk_method=None
-        chunk_size=None
-        chunk_overlap=None
-        st.session_state.sb['model_options']={}
-        st.session_state.sb['model_options']['temperature'] = st.slider('Summary model remperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
-        st.session_state.sb['model_options']['output_level'] = st.number_input('Summary model max output tokens', min_value=50, step=10, value=4000,
-                                            help='Max output tokens for LLM. Concise: 50, Verbose: >1000. Limit depends on model.')
+    # if st.session_state.sb['rag_type'] != 'Summary':
+        # if st.session_state.sb['rag_type']=='Parent-Child':
+        #     st.info('''
+        #             Chunk method applies to parent document. Child documents are default split into 4 smaller chunks.
+        #             If no chunk method is selected, 4 chunks will be created for each parent document.
+        #             ''')
+        # chunk_method= st.selectbox('Chunk method', ['None','character_recursive'],
+        #                             index=0,
+        #                             help='''https://python.langchain.com/docs/modules/data_connection/document_transformers/. 
+        #                                     None will take whole PDF pages as documents in the database.''')
+    chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=400, help='Token dependent on model.')
+    chunk_overlap=st.number_input('Chunk overlap (tokens)', min_value=0, step=1, value=0)
+
+    # else:
+    #     chunk_method=None
+    #     chunk_size=None
+    #     chunk_overlap=None
+    #     st.session_state.sb['model_options']={}
+    #     st.session_state.sb['model_options']['temperature'] = st.slider('Summary model remperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
+    #     st.session_state.sb['model_options']['output_level'] = st.number_input('Summary model max output tokens', min_value=50, step=10, value=4000,
+    #                                         help='Max output tokens for LLM. Concise: 50, Verbose: >1000. Limit depends on model.')
 
 # Initialize database service
 db_service = DatabaseService(
     db_type=st.session_state.sb['index_type'],
     index_name=st.session_state.index_name,
     rag_type=st.session_state.sb['rag_type'],
-    embedding_service=embedding_service,
-    doc_type='document'
+    embedding_service=embedding_service
 )
 
 # Add a button to run the function
@@ -138,11 +134,9 @@ if st.button('Load docs into vector database'):
         doc_processor = DocumentProcessor(
             embedding_service=embedding_service,
             rag_type=st.session_state.sb['rag_type'],
-            chunk_method=chunk_method,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
-            merge_pages=n_merge_pages if merge_pages else None,
-            llm_service=llm_service
+            work_dir='../data/document_processing'
         )
 
         try:
@@ -150,13 +144,19 @@ if st.button('Load docs into vector database'):
             db_service.initialize_database(clear=clear_database)
             
             # Process documents
-            chunking_result = doc_processor.process_documents(documents=docs)
+            # chunking_result = doc_processor.process_documents(documents=docs)
+            print(docs)
+            partitioned_docs = doc_processor.load_and_partition_documents(
+                docs,
+                partition_by_api=partition_by_api, 
+                upload_bucket=bucket_name
+            )
+            chunk_obj, output_paths = doc_processor.chunk_documents(partitioned_docs)
+            print(f"Type of first chunk: {type(chunk_obj.chunks[0])}")
+            # chunk_obj.chunk_convert(destination_type=Document)
                     
             # Index documents
-            db_service.index_data(
-                data=chunking_result,
-                batch_size=batch_size
-            )
+            db_service.index_data(chunk_obj,batch_size=batch_size)
             
             end_time = time.time()
             elapsed_time = end_time - start_time

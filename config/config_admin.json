@@ -57,9 +57,7 @@
             "service": "LM Studio (local)"
         }
     ],
-    "rag_types": ["Standard",
-                  "Parent-Child",
-                  "Summary"],
+    "rag_types": ["Standard"],
     "style_modes": ["Standard",
                     "Sassy",
                     "Ironic",
