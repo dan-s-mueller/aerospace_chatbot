@@ -40,7 +40,6 @@ llm_service = LLMService(
 db_service = DatabaseService(
     db_type=st.session_state.sb['index_type'],
     index_name=st.session_state.sb['index_selected'],
-    rag_type=st.session_state.sb['rag_type'],
     embedding_service=embedding_service,
     doc_type='document'
 )
@@ -94,10 +93,3 @@ if st.button('Visualize'):
             st.markdown('Uploading Hugging Face dataset...')
             db_service.export_to_hf_dataset(df, dataset_name)
             st.markdown(f"The dataset is uploaded to: {'https://huggingface.co/datasets/'+dataset_name}")
-
-    # if spotlight_viewer or st.session_state.viewer is not None:
-    #     st.markdown(f"Spotlight running on: {'http://'+'localhost'+':'+str(port)}")
-    #     st.info('Functionality only works with locally deployed versions.')
-    #     st.session_state.viewer = get_or_create_spotlight_viewer(df, port=port)
-    # else:
-    #     st.info('Functionality only works with locally deployed versions.')

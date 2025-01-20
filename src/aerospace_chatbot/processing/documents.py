@@ -23,12 +23,10 @@ import fitz
 class ChunkingResult:
     def __init__(
             self, 
-            rag_type: str, 
             chunks: List[Element], 
             chunk_size: Optional[int], 
             chunk_overlap: Optional[int]
         ):
-        self.rag_type = rag_type
         self.chunks = chunks
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
@@ -63,7 +61,6 @@ class ChunkingResult:
                 doc_metadata = _flatten_metadata(chunk['metadata'])
                 doc_metadata['element_id']=chunk['element_id']
                 doc_metadata['type']=chunk['type']
-                doc_metadata['rag_type']=self.rag_type
                 doc_metadata['chunk_size']=self.chunk_size
                 doc_metadata['chunk_overlap']=self.chunk_overlap
 
@@ -81,7 +78,6 @@ class DocumentProcessor:
         self, 
         embedding_service,
         work_dir='./document_processing',
-        rag_type='Standard',
         chunk_size=500,
         chunk_overlap=0,
         # merge_pages=None,
@@ -90,17 +86,9 @@ class DocumentProcessor:
     ):
         self.embedding_service = embedding_service
         self.work_dir = work_dir
-        self.rag_type = rag_type
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.logger = logging.getLogger(__name__)
-        # self.splitter = None
-        # self.merge_pages = merge_pages
-        # self.chunk_method = chunk_method
-        # self.llm_service = llm_service  # Only for rag_type=='Summary', otherwise ignored
-        # self._deps = Dependencies()
-        # if self.rag_type == 'Summary' and not self.llm_service:
-        #     raise ValueError("LLM service is required for Summary RAG type")
 
         os.makedirs(self.work_dir, exist_ok=True)
 
@@ -277,23 +265,7 @@ class DocumentProcessor:
         self.logger.info(f"Total number of chunks: {len(chunks_out)}")
         self.logger.info(f"Output paths: {output_paths}")
 
-        # TODO remove later, this is from previous code setup with rag_type
-        # if self.rag_type == 'Standard':
-        #     return self._chunk_standard(local_partition_paths)
-        # elif self.rag_type == 'Parent-Child':
-        #     return self._chunk_parent_child(local_partition_paths)
-        # elif self.rag_type == 'Summary':
-        #     return self._chunk_summary(local_partition_paths)
-        # else:
-        #     raise ValueError(f"Unsupported RAG type: {self.rag_type}")
-        # chunks = self._chunk_documents(documents)
-        # return ChunkingResult(rag_type=self.rag_type,
-        #                       chunks=chunks,
-        #                       chunk_size=self.chunk_size,
-        #                       chunk_overlap=self.chunk_overlap)
-
         chunk_obj=ChunkingResult(
-            rag_type=self.rag_type,
             chunks=chunks_out,
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap
@@ -441,12 +413,7 @@ class DocumentProcessor:
 
             print(f"Chunked data saved at {output_path}")
 
-        # chunks = self._chunk_documents(documents)
         self.logger.info(f"Number of chunks: {len(chunks)}")
-        # return ChunkingResult(rag_type=self.rag_type,
-        #                       chunks=chunks,
-        #                       chunk_size=self.chunk_size,
-        #                       chunk_overlap=self.chunk_overlap)
         return chunks_out, output_paths
     
     @staticmethod
@@ -458,158 +425,3 @@ class DocumentProcessor:
         bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(file_gcs)
         blob.upload_from_filename(file_local)
-
-    # TODO Removed parent-child chunking for now. Too complex with breaking down unstructured.io parent into child. No clear use case now.
-    # def _chunk_parent_child(self, documents):
-    #     """Chunk documents for parent-child RAG."""
-    #     chunks, parent_chunks = self._chunk_documents(documents)
-    #     self.logger.info(f"Number of chunks: {len(chunks)}")
-    #     return ChunkingResult(rag_type=self.rag_type,
-    #                           chunks=chunks,
-    #                           parent_chunks=parent_chunks,
-    #                           chunk_size=self.chunk_size,
-    #                           chunk_overlap=self.chunk_overlap)
-    # def _chunk_summary(self, documents):
-    #     """Chunk documents for summary RAG."""
-    #     _, StrOutputParser, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
-        
-    #     chunks = self._chunk_documents(documents)
-
-    #     # Create unique ids for each chunk, set up chain
-    #     id_key = "doc_id"
-    #     doc_ids = [str(self.stable_hash_meta(chunk.metadata)) for chunk in chunks]
-    #     # Setup the summarization chain
-    #     chain = (
-    #         {"doc": lambda x: x.page_content}
-    #         | SUMMARIZE_TEXT
-    #         | self.llm_service.get_llm()
-    #         | StrOutputParser()
-    #     )
-        
-    #     # Process documents in batches
-    #     summaries = []
-    #     batch_size=10   # make this a parameter
-    #     for i in range(0, len(chunks), batch_size):
-    #         batch = chunks[i:i + batch_size]
-    #         batch_summaries = chain.batch(batch, config={"max_concurrency": batch_size})
-    #         summaries.extend(batch_summaries)
-        
-    #     # Create summary documents with metadata
-    #     summary_chunks = [
-    #         Document(page_content=summary, metadata={id_key: doc_ids[i]})
-    #         for i, summary in enumerate(summaries)
-    #     ]        
-            
-    #     self.logger.info(f"Number of summaries: {len(summary_chunks)}")
-    #     return ChunkingResult(rag_type=self.rag_type,
-    #                           chunks={'doc_ids':doc_ids,'chunks':chunks},
-    #                           summary_chunks=summary_chunks, 
-    #                           llm_service=self.llm_service,
-    #                           chunk_size=self.chunk_size,
-    #                           chunk_overlap=self.chunk_overlap,
-    #     )
-
-    # TODO Removed parent-child chunking for now. Too complex with breaking down unstructured.io parent into child. No clear use case now.
-    # def _chunk_documents(self, documents):
-        # """Chunk documents using specified parameters."""
-        # RecursiveCharacterTextSplitter = Dependencies.Document.get_splitters()
-        # chunks = []
-        # if self.rag_type != 'Parent-Child':
-            # for i, doc in enumerate(documents):
-            #     self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-            #                                                     chunk_overlap=self.chunk_overlap,
-            #                                                     add_start_index=True)
-            #     page_chunks = self.splitter.split_documents([doc])
-            #     chunks.extend(page_chunks)  # Use extend to flatten the list
-
-        # elif self.rag_type == 'Parent-Child':
-            # parent_chunks = []
-            # for i, doc in enumerate(documents):
-            #     self.k_child = 4
-            #     self.parent_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-            #                                                         chunk_overlap=self.chunk_overlap,
-            #                                                         add_start_index=True)
-            #     parent_page_chunks = self.parent_splitter.split_documents([doc])
-            #     parent_chunks.extend(parent_page_chunks)  # Use extend to flatten the list
-                
-            # doc_ids = [str(self.stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
-            # doc_ids = [parent_chunk.element_id for parent_chunk in parent_chunks]
-            # id_key = "doc_id"
-            # for i, doc in enumerate(parent_chunks):
-            #     _id = doc_ids[i]
-            #     self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size / self.k_child, 
-            #                                                         chunk_overlap=self.chunk_overlap,
-            #                                                         add_start_index=True)
-            #     _chunks = self.child_splitter.split_documents([doc])
-            #     for _doc in _chunks:
-            #         _doc.metadata[id_key] = _id
-            #     chunks.extend(_chunks)  # Use extend to flatten the list
-            # return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
-        # else:
-        #     raise NotImplementedError
-
-    # @staticmethod
-    # def _sanitize_page(doc):
-    #     """Clean up page content and metadata."""
-        
-    #     # Clean up content
-    #     content = doc.page_content
-    #     content = re.sub(r"(\w+)-\n(\w+)", r"\1\2", content)
-    #     content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", content.strip())
-    #     content = re.sub(r"\n\s*\n", "\n\n", content)
-        
-    #     # Validate content
-    #     if len(content) == 0:
-    #         return None
-            
-    #     num_words = len(content.split())
-    #     alphanumeric_pct = sum(c.isalnum() for c in content) / len(content)
-        
-    #     if num_words < 5 or alphanumeric_pct < 0.3:
-    #         return None
-            
-    #     doc.page_content = content
-    #     return doc
-
-    # @staticmethod
-    # def _merge_pages(docs, n_pages):
-    #     """Merge consecutive pages."""
-    #     _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
-
-    #     merged = []
-    #     for i in range(0, len(docs), n_pages):
-    #         batch = docs[i:i + n_pages]
-    #         merged_content = "\n\n".join(d.page_content for d in batch)
-    #         merged_metadata = batch[0].metadata.copy()
-    #         merged_metadata['merged_pages'] = n_pages
-    #         merged.append(Document(
-    #             page_content=merged_content,
-    #             metadata=merged_metadata
-    #         ))
-    #     return merged
-
-    # TODO removed parent/child/summary doc storage for now. No clear use case now.
-    # def _store_parent_docs(self, index_name, chunking_result, rag_type):
-    #     """Store parent documents or original documents for Parent-Child or Summary RAG types."""
-    #     from pathlib import Path
-    #     import json
-    #     import os
-
-    #     # Create local file store directory if it doesn't exist
-    #     lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / index_name
-    #     lfs_path.mkdir(parents=True, exist_ok=True)
-
-    #     if rag_type == 'Parent-Child':
-    #         # Store parent documents
-    #         for doc_id, parent_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.parent_chunks):
-    #             file_path = lfs_path / str(doc_id)
-    #             with open(file_path, "w") as f:
-    #                 json.dump({"kwargs": {"page_content": parent_doc.page_content}}, f)
-        
-    #     elif rag_type == 'Summary':
-    #         # Store original documents
-    #         for doc_id, orig_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.pages['docs']):
-    #             file_path = lfs_path / str(doc_id)
-    #             with open(file_path, "w") as f:
-    #                 json.dump({"kwargs": {"page_content": orig_doc.page_content}}, f)
-    

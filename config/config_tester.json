@@ -33,7 +33,6 @@
             ]
         }
     ],
-    "rag_types": ["Standard"],
     "style_modes": ["Standard",
                     "Sassy",
                     "Ironic",

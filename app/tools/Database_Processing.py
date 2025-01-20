@@ -35,16 +35,6 @@ embedding_service = EmbeddingService(
     model=st.session_state.sb['embedding_model']
 )
 
-# Initialize LLM service if using Summary RAG
-llm_service = None
-if st.session_state.sb['rag_type'] == 'Summary':
-    llm_service = LLMService(
-        model_service=st.session_state.sb['rag_llm_service'],
-        model=st.session_state.sb['rag_llm_model'],
-        temperature=st.session_state.sb['model_options']['temperature'],
-        max_tokens=st.session_state.sb['model_options']['output_level']
-    )
-
 # Find docs
 # TODO add option for local documents
 st.session_state.buckets = None
@@ -85,43 +75,13 @@ with st.expander("Options",expanded=True):
                     help='''The number of documents to upsert at a time. 
                             Useful for hosted databases (e.g. Pinecone), or those that require long processing times.
                             When using hugging face embeddings without a dedicated endpoint, batch size recommmended maximum is 32.''')
-    
-    # Merge pages before processing
-    # merge_pages=st.checkbox('Merge pages before processing?',value=True,
-    #                         help='If checked, pages will be merged before processing.')
-    # n_merge_pages=st.number_input('Number of pages to merge', min_value=2, step=1, value=2, 
-    #                                 help='''Number of pages to merge into a single document. 
-    #                                 This is done before chunking occurs. 
-    #                                 If zero, each page is processed independently before chunking.''') if merge_pages else None
-    
-    # For each rag_type, set chunk parameters
-    # if st.session_state.sb['rag_type'] != 'Summary':
-        # if st.session_state.sb['rag_type']=='Parent-Child':
-        #     st.info('''
-        #             Chunk method applies to parent document. Child documents are default split into 4 smaller chunks.
-        #             If no chunk method is selected, 4 chunks will be created for each parent document.
-        #             ''')
-        # chunk_method= st.selectbox('Chunk method', ['None','character_recursive'],
-        #                             index=0,
-        #                             help='''https://python.langchain.com/docs/modules/data_connection/document_transformers/. 
-        #                                     None will take whole PDF pages as documents in the database.''')
     chunk_size=st.number_input('Chunk size (tokens)', min_value=1, step=1, value=400, help='Token dependent on model.')
     chunk_overlap=st.number_input('Chunk overlap (tokens)', min_value=0, step=1, value=0)
-
-    # else:
-    #     chunk_method=None
-    #     chunk_size=None
-    #     chunk_overlap=None
-    #     st.session_state.sb['model_options']={}
-    #     st.session_state.sb['model_options']['temperature'] = st.slider('Summary model remperature', min_value=0.0, max_value=2.0, value=0.1, step=0.1,help='Temperature for LLM.')
-    #     st.session_state.sb['model_options']['output_level'] = st.number_input('Summary model max output tokens', min_value=50, step=10, value=4000,
-    #                                         help='Max output tokens for LLM. Concise: 50, Verbose: >1000. Limit depends on model.')
 
 # Initialize database service
 db_service = DatabaseService(
     db_type=st.session_state.sb['index_type'],
     index_name=st.session_state.index_name,
-    rag_type=st.session_state.sb['rag_type'],
     embedding_service=embedding_service
 )
 
@@ -133,7 +93,6 @@ if st.button('Load docs into vector database'):
         # Initialize document processor
         doc_processor = DocumentProcessor(
             embedding_service=embedding_service,
-            rag_type=st.session_state.sb['rag_type'],
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             work_dir='../data/document_processing'
@@ -143,17 +102,13 @@ if st.button('Load docs into vector database'):
             # Initialize database
             db_service.initialize_database(clear=clear_database)
             
-            # Process documents
-            # chunking_result = doc_processor.process_documents(documents=docs)
-            print(docs)
+            # Process documents (partition and chunk)
             partitioned_docs = doc_processor.load_and_partition_documents(
                 docs,
                 partition_by_api=partition_by_api, 
                 upload_bucket=bucket_name
             )
             chunk_obj, output_paths = doc_processor.chunk_documents(partitioned_docs)
-            print(f"Type of first chunk: {type(chunk_obj.chunks[0])}")
-            # chunk_obj.chunk_convert(destination_type=Document)
                     
             # Index documents
             db_service.index_data(chunk_obj,batch_size=batch_size)

@@ -42,13 +42,12 @@ from ..services.prompts import CLUSTER_LABEL
 class DatabaseService:
     """Handles database operations for different vector stores."""
     
-    def __init__(self, db_type, index_name, rag_type, embedding_service, rerank_service=None):
+    def __init__(self, db_type, index_name, embedding_service, rerank_service=None):
         """
         Initialize DatabaseService.
         """
         self.db_type = db_type
         self.index_name = index_name
-        self.rag_type = rag_type
         self.embedding_service = embedding_service
         self.rerank_service = rerank_service    # Optional, defaults to None. Exceptions raised if rerank_service is none if you you try to rerank.
         self.vectorstore = None
@@ -62,7 +61,7 @@ class DatabaseService:
         Initialize and store database connection.
         """
         # Validate index name and RAG type
-        self.logger.info(f"Validating index {self.index_name} and RAG type {self.rag_type}")
+        self.logger.info(f"Validating index {self.index_name}")
         self._validate_index()
         self.namespace = namespace
 
@@ -647,32 +646,12 @@ def export_to_hf_dataset(df, dataset_name):
         token=os.getenv('HUGGINGFACEHUB_API_KEY')
     )
 
-def get_available_indexes(db_type, embedding_model=None, rag_type=None):
+def get_available_indexes(db_type, embedding_model=None):
     """
-    Get available indexes based on current settings. If embedding_model or rag_type are None, 
+    Get available indexes based on current settings. If embedding_model is None, 
     returns all indexes without filtering on those criteria.
     """
     logger = logging.getLogger(__name__)
-
-    def _check_get_index_criteria(index_name, rag_type):
-        """
-        Check if index meets criteria for inclusion.
-        """
-        # Never include query indexes when filtering
-        if index_name.endswith('-q'):
-            return False
-            
-        # Check RAG type criteria if specified
-        if rag_type is not None:
-            rag_matches = (
-                (rag_type == 'Parent-Child' and index_name.endswith('-parent-child')) or
-                (rag_type == 'Summary' and index_name.endswith('-summary')) or
-                (rag_type == 'Standard' and not index_name.endswith(('-parent-child', '-summary')))
-            )
-            if not rag_matches:
-                return False
-                
-        return True
 
     def _process_pinecone_indexes():
         """
@@ -683,13 +662,8 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
         available_indexes = []
         index_metadatas = []
         
-        for index_name in db_status['message']:
-            # First check if index meets basic criteria
-            if not _check_get_index_criteria(index_name, rag_type):
-                continue
-                
+        for index_name in db_status['message']:                
             index_obj = pc.Index(index_name)
-            
             try:
                 metadata = index_obj.fetch(ids=['db_metadata'])
                 # Check embedding model if specified
@@ -710,10 +684,6 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
         index_metadatas = []
         
         for index_name in db_status['message']:
-            # First check if index meets basic criteria
-            if not _check_get_index_criteria(index_name, rag_type,):
-                continue
-                
             available_indexes.append(index_name)
             # RAGatouille doesn't support metadata storage currently
             index_metadatas.append({})
@@ -722,7 +692,7 @@ def get_available_indexes(db_type, embedding_model=None, rag_type=None):
 
     # Get database status
     db_status = get_database_status(db_type)
-    logger.info(f"Database status in get_available_indexes for {db_type}, {embedding_model}, {rag_type}: {db_status}")
+    logger.info(f"Database status in get_available_indexes for {db_type}, {embedding_model}: {db_status}")
     
     if not db_status['status']:
         return [], []

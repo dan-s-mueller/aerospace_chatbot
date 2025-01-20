@@ -17,7 +17,7 @@ def load_config(config_path):
             config = json.load(f)
             
         # Validate config structure
-        required_sections = ['databases', 'embeddings', 'llms', 'rag_types']
+        required_sections = ['databases', 'embeddings', 'llms']
         for section in required_sections:
             if section not in config:
                 raise ConfigurationError(f"Missing required section: {section}")

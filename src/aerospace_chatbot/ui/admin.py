@@ -28,7 +28,7 @@ class SidebarManager:
         if 'sidebar_state_initialized' not in st.session_state:
             elements = {
                 'index': ['index_selected', 'index_type'],
-                'rag': ['rag_type', 'rag_llm_service', 'rag_llm_model', 'rag_endpoint'],
+                'rag': ['rag_llm_service', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_service', 'llm_model', 'llm_endpoint'],
                 'model_options': ['temperature', 'output_level', 'k_retrieve', 'k_rerank', 'style_mode'],
                 'embeddings': ['embedding_service', 'embedding_model', 'embedding_endpoint'],
@@ -59,7 +59,7 @@ class SidebarManager:
         """
         try:
             # Sync any changed values from session state first
-            for key in ['index_type', 'rag_type', 'embedding_model', 'embedding_service', 
+            for key in ['index_type', 'embedding_model', 'embedding_service', 
                        'openai_key', 'anthropic_key', 'voyage_key', 'pinecone_key', 'hf_key']:
                 if f'{key}_select' in st.session_state:
                     self.sb_out[key] = st.session_state[f'{key}_select']
@@ -72,7 +72,6 @@ class SidebarManager:
 
             # Render GUI elements
             self.available_indexes, self.index_metadatas = self._render_index_selection()
-            self._render_rag_type()    
             self._render_llm()
             self._render_model_options()
             self._render_vector_database()
@@ -108,12 +107,6 @@ class SidebarManager:
                 self.sb_out['embedding_model'] = embedding_config['models'][0]  # Default to first embedding model in config
             
             self.logger.info(f"Embedding service: {self.sb_out['embedding_service']}, embedding model: {self.sb_out['embedding_model']}")
-        
-        if 'rag_type' not in self.sb_out:
-            self.sb_out['rag_type'] = (
-                'Standard' if self.sb_out['index_type'] == 'RAGatouille'
-                else self._config['rag_types'][0]
-            )
 
         # Validate required API keys based on config
         secrets = get_secrets()
@@ -155,7 +148,6 @@ class SidebarManager:
             available_indexes, index_metadatas = get_available_indexes(
                 self.sb_out['index_type'],
                 self.sb_out['embedding_model'],
-                self.sb_out['rag_type']
             )
             self.logger.info(f"Available indexes for sidebar: {available_indexes}")
 
@@ -195,48 +187,6 @@ class SidebarManager:
             disabled=st.session_state.llm_model_disabled
         )
         self.logger.info(f"LLM service: {self.sb_out['llm_service']}, LLM model: {self.sb_out['llm_model']}")
-
-    def _render_rag_type(self):
-        """Render RAG type configuration section."""
-        st.sidebar.title('RAG Type')
-        if self.sb_out['index_type'] == 'RAGatouille':
-            rag_type = st.sidebar.selectbox(
-                'RAG type',
-                ['Standard'],
-                disabled=st.session_state.rag_type_disabled,
-                help='Only Standard is available for RAGatouille.',
-                key='rag_type_select'
-            )
-        else:
-            rag_type = st.sidebar.selectbox(
-                'RAG type',
-                self._config['rag_types'],
-                disabled=st.session_state.rag_type_disabled,
-                help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.',
-                key='rag_type_select'
-            )
-        
-        # Update both local state and session state immediately
-        self.sb_out['rag_type'] = rag_type
-        st.session_state.sb = self.sb_out
-        
-        # if rag_type == 'Summary':
-        #     self._render_rag_llm_config()
-
-        self.logger.info(f"RAG type: {self.sb_out['rag_type']}")
-
-    # def _render_rag_llm_config(self):
-    #     """Render RAG LLM configuration section."""
-    #     self.sb_out['rag_llm_service'] = st.sidebar.selectbox(
-    #         'RAG LLM model',
-    #         list(self._config['llms'].keys()),
-    #         disabled=st.session_state.rag_llm_service_disabled,
-    #         help='Select the LLM model for RAG.'
-    #     )
-        
-    #     self._render_llm_model_selection('rag_')
-
-    #     self.logger.info(f"RAG LLM service: {self.sb_out['rag_llm_service']}")
 
     def _render_model_options(self):
         """Render model options section."""

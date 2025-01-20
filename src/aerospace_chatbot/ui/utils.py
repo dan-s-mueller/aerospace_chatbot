@@ -36,7 +36,6 @@ def handle_sidebar_state(sidebar_manager):
     
     # Check if critical values changed that would affect dependencies
     if (previous_state.get('index_type') != current_state.get('index_type') or
-        previous_state.get('rag_type') != current_state.get('rag_type') or
         previous_state.get('embedding_model') != current_state.get('embedding_model') or
         previous_state.get('embedding_service') != current_state.get('embedding_service') or
         previous_state.get('llm_service') != current_state.get('llm_service')):
@@ -340,8 +339,7 @@ def process_uploads(sb, temp_files):
     # Get available indexes and their metadata using the standalone function
     available_indexes, index_metadatas = get_available_indexes(
         db_type=sb['index_type'],
-        embedding_model=sb['embedding_model'],
-        rag_type=sb['rag_type']
+        embedding_model=sb['embedding_model']
     )
 
     logger.info(f"Available indexes: {available_indexes}")
@@ -349,9 +347,9 @@ def process_uploads(sb, temp_files):
     logger.info(f"Selected index: {sb['index_selected']}")
 
     if sb['index_selected'] not in available_indexes:
-        raise ValueError(f"Selected index {sb.get('index_selected')} not found for compatible index type {sb.get('index_type')}, rag type {sb.get('rag_type')}, and embedding model {sb.get('embedding_model')}")
+        raise ValueError(f"Selected index {sb.get('index_selected')} not found for compatible index type {sb.get('index_type')}, and embedding model {sb.get('embedding_model')}")
     else:
-        logger.info(f"Selected index {sb['index_selected']} found for compatible index type {sb['index_type']}, rag type {sb['rag_type']}, and embedding model {sb['embedding_model']}")
+        logger.info(f"Selected index {sb['index_selected']} found for compatible index type {sb['index_type']}, and embedding model {sb['embedding_model']}")
 
     # Get metadata for the selected index
     selected_metadata = index_metadatas[available_indexes.index(sb['index_selected'])]
@@ -369,7 +367,6 @@ def process_uploads(sb, temp_files):
     db_service = DatabaseService(
         db_type=sb['index_type'],
         index_name=sb['index_selected'],
-        rag_type=sb['rag_type'],
         embedding_service=embedding_service,
         doc_type='document'
     )
@@ -379,7 +376,6 @@ def process_uploads(sb, temp_files):
     # Initialize document processor with default values if metadata fields don't exist
     doc_processor = DocumentProcessor(
         embedding_service=embedding_service,
-        rag_type=sb['rag_type'],
         chunk_method=selected_metadata.get('chunk_method', None),
         chunk_size=selected_metadata.get('chunk_size', None),
         chunk_overlap=selected_metadata.get('chunk_overlap', None),
@@ -430,7 +426,6 @@ def _display_database_status(delete_buttons=False):
         return
 
     db_types = ['Pinecone', 'RAGatouille']
-    # rag_types = ['Standard', 'Parent-Child', 'Summary']
     
     # Display status for each database type
     for db_type in db_types:
@@ -454,7 +449,6 @@ def _handle_index_deletion(db_type, index_name):
     """
     if st.button(f'Delete {index_name}', help='This is permanent!'):
         try:
-            rag_type = _determine_rag_type(index_name)
             if index_name.endswith('-q'):
                 doc_type = 'question'
             else:
@@ -462,7 +456,6 @@ def _handle_index_deletion(db_type, index_name):
             db_service = DatabaseService(
                 db_type=db_type,
                 index_name=index_name,
-                rag_type=rag_type,
                 embedding_service=None,
                 doc_type=doc_type
             )
@@ -472,23 +465,10 @@ def _handle_index_deletion(db_type, index_name):
         except Exception as e:
             st.error(f"Error deleting index: {str(e)}")
 
-def _determine_rag_type(index_name):
-    """
-    Determine RAG type from index name.
-    """
-    if index_name.endswith('-parent-child'):
-        return 'Parent-Child'
-    elif '-summary-' in index_name or index_name.endswith('-summary'):
-        return 'Summary'
-    return 'Standard'
-
 def _validate_upload_settings(sb):
     """
-    Validate RAG type and index type settings.
+    Validate index type settings.
     """
-    if sb['rag_type'] != "Standard":
-        st.error("Only Standard RAG is supported for user document upload.")
-        return False
     if sb['index_type'] != 'Pinecone':
         st.error("Only Pinecone is supported for user document upload.")
         return False
