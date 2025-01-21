@@ -49,6 +49,7 @@ sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 # Low priority updates:
 # TODO add tests to check conversation history functionality
 # TODO add apptest from streamlit
+# TODO add partitioned docs for faster testing to avoid doc parsing and indexing each time.
 
 def permute_tests(test_data):
     """
@@ -1066,7 +1067,9 @@ def test_sidebar_manager(setup_fixture):
     assert 'model_options' in sb_out
     assert 'temperature' in sb_out['model_options']
     assert 'output_level' in sb_out['model_options']
-    assert 'k' in sb_out['model_options']
+    assert 'k_retrieve' in sb_out['model_options']
+    assert 'k_rerank' in sb_out['model_options']
+    assert 'style_mode' in sb_out['model_options']
 
 def test_sidebar_manager_invalid_config(setup_fixture):
     """
