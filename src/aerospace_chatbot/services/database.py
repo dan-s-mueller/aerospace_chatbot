@@ -86,7 +86,7 @@ class DatabaseService:
             raise ValueError("Database not initialized. Call initialize_database() before indexing data.")
 
         self._store_index_metadata(chunks)    # Only store metadata if documents are being indexed
-        chunks.chunk_convert(destination_type=Document)
+        chunks.chunk_convert()
         self._upsert_data(chunks, batch_size)
 
     def get_retriever(self, k=8):
@@ -349,7 +349,9 @@ class DatabaseService:
             index_metadata['chunk_size'] = chunks.chunk_size
         if chunks.chunk_overlap is not None:
             index_metadata['chunk_overlap'] = chunks.chunk_overlap
-        if isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
+        if self.db_type == 'RAGatouille':
+            pass    # Do nothing because, metadata vector not used
+        elif isinstance(self.embedding_service.get_embeddings(), OpenAIEmbeddings):
             index_metadata['embedding_family']= "OpenAI"
             index_metadata['embedding_model'] = self.embedding_service.model
         elif isinstance(self.embedding_service.get_embeddings(), VoyageAIEmbeddings):
@@ -410,11 +412,10 @@ class DatabaseService:
         name = self.index_name.lower().strip()  # Clean the base name
 
         # Database-specific validation
-        if self.db_type == "Pinecone":
-            if len(name) > 45:
-                raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {name}")
-            if '_' in name:
-                raise ValueError(f"The Pinecone index name cannot contain underscores. Entry: {name}")
+        if len(name) > 45:
+            raise ValueError(f"The index name must be less than 45 characters. Entry: {name}")
+        if '_' in name:
+            raise ValueError(f"The index name cannot contain underscores. Entry: {name}")
 
     def _upsert_data(self, upsert_data, batch_size):
         """
@@ -500,7 +501,7 @@ def pinecone_retry(func):
         reraise=True
     )(func)
 
-def get_docs_df(db_service, query_db_service, logger=False):
+def get_docs_df(db_service, logger=False):
     """
     Get documents from database as a DataFrame.
     # TODO add back in question mapping for future work
@@ -538,27 +539,27 @@ def get_docs_df(db_service, query_db_service, logger=False):
         """
         return pd.DataFrame({
             "id": [data['id'] for data in docs],
-            "question": [data['metadata'].get('page_content', '') for data in docs],
-            "answer": [data['metadata'].get('answer', '') for data in docs],
-            "sources": [data['metadata'].get('sources', '').split(',') if data['metadata'].get('sources') else [] for data in docs],
+            "page_content": [data['metadata'].get('page_content', '') for data in docs],
+            "page_number": [data['metadata'].get('page_number', '') for data in docs],
+            "file_name": [data['metadata'].get('file_name', '') for data in docs],
             "embedding": [data['values'] for data in docs],
         })
 
-    def _add_rag_columns(df, index_name):
-        """
-        Add RAG-specific columns to document DataFrame if needed.
-        """
-        json_data_list = []
-        for i, row in df.iterrows():
-            doc_id = row['metadata']['doc_id']
-            file_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', index_name, f"{doc_id}")
-            with open(file_path, "r") as f:
-                json_data = json.load(f)
-            json_data = json_data['kwargs']['page_content']
-            json_data_list.append(json_data)
+    # def _add_rag_columns(df, index_name):
+    #     """
+    #     Add RAG-specific columns to document DataFrame if needed.
+    #     """
+    #     json_data_list = []
+    #     for i, row in df.iterrows():
+    #         doc_id = row['metadata']['doc_id']
+    #         file_path = os.path.join(os.getenv('LOCAL_DB_PATH'), 'local_file_store', index_name, f"{doc_id}")
+    #         with open(file_path, "r") as f:
+    #             json_data = json.load(f)
+    #         json_data = json_data['kwargs']['page_content']
+    #         json_data_list.append(json_data)
             
-        df['original-doc'] = json_data_list
-        return df
+    #     df['original-doc'] = json_data_list
+    #     return df
 
     def _get_dataframe_from_store(db_type, index_name):
         """
@@ -570,7 +571,7 @@ def get_docs_df(db_service, query_db_service, logger=False):
         else:
             raise ValueError(f"Unsupported database type: {db_type}")
 
-        df = _add_rag_columns(df, index_name)
+        # df = _add_rag_columns(df, index_name)
 
         return df
 
@@ -579,16 +580,8 @@ def get_docs_df(db_service, query_db_service, logger=False):
     if not db_status['status']:
         raise Exception('Unable to access database')
         
-    if db_service.db_type == 'Pinecone':
-        collections = db_status['message']  # Already a list of index names
-    else:
+    if db_service.db_type == 'RAGatouille':
         raise ValueError(f"Unsupported database type: {db_service.db_type}. RAGatouille not supported.")
-    
-    matching_collection = [collection for collection in collections if collection == query_db_service.index_name]
-    if len(matching_collection) > 1:
-        raise Exception('Multiple matching query collections found.')
-    if not matching_collection:
-        raise Exception('Query database not found. Please create a query database using the Chatbot page and a selected index.')
 
     # Get documents and questions dataframes
     docs_df = _get_dataframe_from_store(
@@ -603,7 +596,6 @@ def add_clusters(df, n_clusters, llm_service=None, docs_per_cluster: int = 10):
     """
     Add cluster labels to DataFrame using KMeans clustering.
     """
-    
     # Perform clustering
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     df['cluster'] = kmeans.fit_predict(np.stack(df['embedding'].values))
@@ -612,7 +604,7 @@ def add_clusters(df, n_clusters, llm_service=None, docs_per_cluster: int = 10):
     if llm_service is not None:
         cluster_labels = []
         for i in range(n_clusters):
-            cluster_docs = df[df['cluster'] == i]['document'].head(docs_per_cluster).tolist()
+            cluster_docs = df[df['cluster'] == i]['page_content'].head(docs_per_cluster).tolist()
             prompt = CLUSTER_LABEL.format(
                 documents="\n\n".join(cluster_docs),
                 n=docs_per_cluster

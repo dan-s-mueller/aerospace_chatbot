@@ -79,10 +79,7 @@ class DocumentProcessor:
         embedding_service,
         work_dir='./document_processing',
         chunk_size=500,
-        chunk_overlap=0,
-        # merge_pages=None,
-        # chunk_method='character_recursive',
-        # llm_service=None
+        chunk_overlap=0
     ):
         self.embedding_service = embedding_service
         self.work_dir = work_dir

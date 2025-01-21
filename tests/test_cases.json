@@ -3,6 +3,8 @@
             "index_type": "Pinecone",
             "embedding_service": "Voyage",
             "embedding_model": "voyage-3",
+            "rerank_service": "Cohere",
+            "rerank_model": "rerank-v3.5",
             "llm_service": "OpenAI",
             "llm_model": "gpt-4o-mini",
             "id": 1
@@ -11,6 +13,8 @@
             "index_type": "Pinecone",
             "embedding_service": "Hugging Face",
             "embedding_model": "mixedbread-ai/mxbai-embed-large-v1",
+            "rerank_service": "Cohere",
+            "rerank_model": "rerank-v3.5",
             "llm_service": "OpenAI",
             "llm_model": "gpt-4o-mini",
             "id": 2
@@ -19,6 +23,8 @@
             "index_type": "Pinecone",
             "embedding_service": "OpenAI",
             "embedding_model": "text-embedding-3-small",
+            "rerank_service": "Cohere",
+            "rerank_model": "rerank-v3.5",
             "llm_service": "Hugging Face",
             "llm_model": "mistralai/Mistral-7B-Instruct-v0.2",
             "id": 3
@@ -27,6 +33,8 @@
             "index_type": "Pinecone",
             "embedding_service": "OpenAI",
             "embedding_model": "text-embedding-3-large",
+            "rerank_service": "Cohere",
+            "rerank_model": "rerank-v3.5",
             "llm_service": "Anthropic",
             "llm_model": "claude-3-5-sonnet-latest",
             "id": 4
@@ -35,6 +43,8 @@
             "index_type": "RAGatouille",
             "embedding_service": "RAGatouille",
             "embedding_model": "colbert-ir/colbertv2.0",
+            "rerank_service": "Cohere",
+            "rerank_model": "rerank-v3.5",
             "llm_service": "OpenAI",
             "llm_model": "gpt-4o-mini",
             "id": 5

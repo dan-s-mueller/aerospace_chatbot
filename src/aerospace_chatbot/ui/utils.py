@@ -376,7 +376,6 @@ def process_uploads(sb, temp_files):
     # Initialize document processor with default values if metadata fields don't exist
     doc_processor = DocumentProcessor(
         embedding_service=embedding_service,
-        chunk_method=selected_metadata.get('chunk_method', None),
         chunk_size=selected_metadata.get('chunk_size', None),
         chunk_overlap=selected_metadata.get('chunk_overlap', None),
         merge_pages=selected_metadata.get('merge_pages', None)

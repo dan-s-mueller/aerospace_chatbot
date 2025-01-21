@@ -8,7 +8,10 @@ from dotenv import load_dotenv, find_dotenv
 from pinecone import Pinecone as pinecone_client
 from ragatouille import RAGPretrainedModel
 
+from langchain_core.documents import Document
 from langchain_pinecone import PineconeVectorStore
+from langchain.prompts.prompt import PromptTemplate
+from langchain.prompts import HumanMessagePromptTemplate, SystemMessagePromptTemplate
 
 from aerospace_chatbot.core import (
     ConfigurationError,
@@ -23,8 +26,11 @@ from aerospace_chatbot.services import (
     get_docs_df, 
     add_clusters,
     get_available_indexes,
+    DatabaseService,
     EmbeddingService, 
+    RerankService,
     LLMService,
+    CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
     SUMMARIZE_TEXT,
     GENERATE_SIMILAR_QUESTIONS_W_CONTEXT,
@@ -44,7 +50,6 @@ sys.path.append(os.path.join(current_dir, '../src/aerospace_chatbot'))
 # TODO add tests to check conversation history functionality
 # TODO add apptest from streamlit
 
-# Functions
 def permute_tests(test_data):
     """
     Generate permutations of test cases.
@@ -82,6 +87,8 @@ def parse_test_case(setup, test_case):
         'index_type': setup['index_type'][test_case['index_type']],
         'embedding_service': test_case['embedding_service'],
         'embedding_model': test_case['embedding_model'],
+        'rerank_service': test_case['rerank_service'],
+        'rerank_model': test_case['rerank_model'],
         'llm_service': test_case['llm_service'],
         'llm_model': test_case['llm_model']
     }
@@ -89,7 +96,6 @@ def parse_test_case(setup, test_case):
 
     return parsed_test, print_str
 
-# Fixtures
 @pytest.fixture(autouse=True)
 def setup_fixture():
     """
@@ -146,7 +152,6 @@ def setup_fixture():
     for i in range(len(docs)):
         docs[i] = os.path.join(os.path.abspath(os.path.dirname(__file__)), docs[i])
 
-    chunk_method = 'character_recursive'
     chunk_size = 400
     chunk_overlap = 0
     batch_size = 50
@@ -158,6 +163,11 @@ def setup_fixture():
     mock_embedding_service = EmbeddingService(
         model_service='OpenAI',
         model='text-embedding-3-small'
+    )
+
+    mock_rerank_service = RerankService(
+        model_service='Cohere',
+        model='rerank-v3.5'
     )
 
     mock_llm_service = LLMService(
@@ -172,7 +182,6 @@ def setup_fixture():
         **mock_keys,
         'LOCAL_DB_PATH': LOCAL_DB_PATH,
         'docs': docs,
-        'chunk_method': chunk_method,
         'chunk_size': chunk_size,
         'chunk_overlap': chunk_overlap,
         'batch_size': batch_size,
@@ -180,6 +189,7 @@ def setup_fixture():
         'index_type': index_type,
         # Add mock services
         'mock_embedding_service': mock_embedding_service,
+        'mock_rerank_service': mock_rerank_service,
         'mock_llm_service': mock_llm_service
     }
 
@@ -191,13 +201,11 @@ def setup_fixture():
             os.environ.pop(key, None)
         else:
             os.environ[key] = value
+
 def test_validate_index(setup_fixture):
     """
     Test edge cases for validate_index function.
-    """
-    from aerospace_chatbot.services.database import DatabaseService
-    from aerospace_chatbot.processing import DocumentProcessor
-    
+    """    
     logger = setup_fixture['logger']
     logger.info("Starting validate_index test")
 
@@ -207,105 +215,138 @@ def test_validate_index(setup_fixture):
         db_type=db_type,
         index_name='',
         embedding_service=setup_fixture['mock_embedding_service'],
-        doc_type='document'
-    )
-
-    doc_processor = DocumentProcessor(
-        embedding_service=setup_fixture['mock_embedding_service'],
-        chunk_size=400,
-        chunk_overlap=50
+        rerank_service=setup_fixture['mock_rerank_service']
     )
     
     with pytest.raises(ValueError, match="Index name cannot be empty"):
         db_service.index_name = ""
         db_service._validate_index()
 
-    # Test case 2: Whitespace-only index name
+    # Test case: Whitespace-only index name
     with pytest.raises(ValueError, match="Index name cannot be empty"):
         db_service.index_name = "   "
         db_service._validate_index()
 
-    # Test case 3: invalid characters
-    with pytest.raises(ValueError, match="can only contain alphanumeric characters"):
-        db_service.index_name = "test@index"
+    # Test case: consecutive periods
+    with pytest.raises(ValueError, match="cannot contain underscores"):
+        db_service.index_name = "test_index"
         db_service._validate_index()
 
-    # Test case 4: consecutive periods
-    with pytest.raises(ValueError, match="can only contain alphanumeric characters, underscores, or hyphens"):
-        db_service.index_name = "test..index"
-        db_service._validate_index()
-
-    # Test case 5: non-alphanumeric start/end
-    with pytest.raises(ValueError, match="must start and end with an alphanumeric character"):
-        db_service.index_name = "-testindex-"
-        db_service._validate_index()
-
-    # Test case 6: name too long
-    with pytest.raises(ValueError, match="must be less than 63 characters"):
-        db_service.index_name = "a" * 64
-        db_service._validate_index()
-
-    # Test case 7: Pinecone name too long
-    db_type='Pinecone'
-    db_service = DatabaseService(
-        db_type=db_type,
-        index_name='',
-        embedding_service=setup_fixture['mock_embedding_service'],
-        doc_type='document'
-    )
-
+    # Test case: name too long
     with pytest.raises(ValueError, match="must be less than 45 characters"):
         db_service.index_name = "a" * 46
         db_service._validate_index()
 
-def test_process_documents(setup_fixture):
+def test_load_documents(setup_fixture):
     """
-    Test document processing with standard RAG.
+    Test document loading with various input types and edge cases.
     """
     logger = setup_fixture['logger']
-    logger.info("Starting process_documents test")
+    logger.info("Starting load_documents test")
+    
+    doc_processor = DocumentProcessor(
+        embedding_service=setup_fixture['mock_embedding_service']
+    )
+    
+    # Test loading local PDFs
+    local_docs, gcs_docs = doc_processor._load_documents(setup_fixture['docs'])
+    assert len(local_docs) == len(setup_fixture['docs'])
+    assert all(os.path.exists(doc) for doc in local_docs)
+    assert len(gcs_docs) == 0  # No GCS docs in test setup
+    
+    # Test invalid PDF
+    invalid_path = os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'invalid.pdf')
+    with open(invalid_path, 'w') as f:
+        f.write('Not a PDF')
+    
+    with pytest.raises(ValueError, match="Invalid PDF documents detected"):
+        doc_processor._load_documents([invalid_path])
+    
+    # Test non-PDF file
+    with pytest.raises(ValueError, match="Invalid PDF documents detected"):
+        doc_processor._load_documents(['test.txt'])
+    
+    # Cleanup
+    try:
+        os.remove(invalid_path)
+    except:
+        pass
+
+def test_partition_methods(setup_fixture):
+    """
+    Test both API and local partitioning methods.
+    """
+    logger = setup_fixture['logger']
+    logger.info("Starting partition_methods test")
     
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
-        chunk_size=setup_fixture['chunk_size'],
-        chunk_overlap=setup_fixture['chunk_overlap']
+        work_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'document_processing') # Put partitioned files in same directory as original files
     )
     
-    result = doc_processor.process_documents(setup_fixture['docs'])
+    # Test API partitioning
+    api_partitioned = doc_processor.load_and_partition_documents(
+        setup_fixture['docs'],
+        partition_by_api=True
+    )
+    assert len(api_partitioned) == len(setup_fixture['docs'])
+    assert all(os.path.exists(doc) for doc in api_partitioned)
+    assert all(doc.endswith('-partitioned.json') for doc in api_partitioned)
     
-    page_ids = [DocumentProcessor.stable_hash_meta(page.metadata) for page in result.pages]
-    chunk_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in result.chunks]
+    # Test local partitioning
+    local_partitioned = doc_processor.load_and_partition_documents(
+        setup_fixture['docs'],
+        partition_by_api=False
+    )
+    assert len(local_partitioned) == len(setup_fixture['docs'])
+    assert all(os.path.exists(doc) for doc in local_partitioned)
+    assert all(doc.endswith('-partitioned.json') for doc in local_partitioned)
     
-    assert result.pages is not None
-    assert len(page_ids) == len(set(page_ids))
-    assert result.chunks is not None
-    assert len(chunk_ids) == len(set(chunk_ids))
-    assert result.splitters is not None
+    # Compare results (should have similar structure)
+    with open(api_partitioned[0], 'r') as f:
+        api_data = json.load(f)
+    with open(local_partitioned[0], 'r') as f:
+        local_data = json.load(f)
+    
+    assert len(api_data) > 0
+    assert len(local_data) > 0
+    # Check that both methods produce similar structure
+    assert set(api_data[0].keys()) == set(local_data[0].keys())
 
-def test_process_documents_nochunk(setup_fixture):
+def test_chunking_result(setup_fixture):
     """
-    Test document processing with no chunking.
+    Test ChunkingResult class functionality.
     """
     logger = setup_fixture['logger']
-    logger.info("Starting process_documents_nochunk test")
+    logger.info("Starting chunking_result test")
     
     doc_processor = DocumentProcessor(
         embedding_service=setup_fixture['mock_embedding_service'],
-        chunk_method='None',
-        chunk_size=setup_fixture['chunk_size'],
-        chunk_overlap=setup_fixture['chunk_overlap']
+        work_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'document_processing') # Put partitioned files in same directory as original files
     )
     
-    result = doc_processor.process_documents(setup_fixture['docs'])
+    # Get chunks
+    partitioned_docs = doc_processor.load_and_partition_documents(
+        setup_fixture['docs'],
+        partition_by_api=False
+    )
+    chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
     
-    page_ids = [DocumentProcessor.stable_hash_meta(page.metadata) for page in result.pages]
-    chunk_ids = [DocumentProcessor.stable_hash_meta(chunk.metadata) for chunk in result.chunks]
-
-    assert result.pages is not None
-    assert len(page_ids) == len(set(page_ids))
-    assert result.chunks is result.pages
-    assert len(chunk_ids) == len(set(chunk_ids))
-    assert result.splitters is None
+    # Test chunk conversion to Document type
+    chunk_obj.chunk_convert()
+    
+    # Verify converted chunks
+    assert all(isinstance(chunk, Document) for chunk in chunk_obj.chunks)
+    for chunk in chunk_obj.chunks:
+        # Check required metadata fields
+        assert 'element_id' in chunk.metadata
+        assert 'type' in chunk.metadata
+        assert 'chunk_size' in chunk.metadata
+        assert 'chunk_overlap' in chunk.metadata
+        assert 'data_source.url' not in chunk.metadata  # Because files are local
+        # Check metadata types
+        assert all(isinstance(v, (str, int, float, bool, list)) 
+                  for v in chunk.metadata.values())
 
 @pytest.mark.parametrize('test_index', [
     {
@@ -339,8 +380,7 @@ def test_initialize_database(monkeypatch, test_index):
     db_service = DatabaseService(
         db_type=test_index['index_type'],
         index_name=index_name,
-        embedding_service=embedding_service,
-        doc_type='document'
+        embedding_service=embedding_service
     )
 
     # Clean up any existing database first
@@ -374,13 +414,13 @@ def test_initialize_database(monkeypatch, test_index):
         db_service = DatabaseService(
             db_type=test_index['index_type'],
             index_name=index_name,
-            embedding_service=embedding_service,
-            doc_type='document'
+            embedding_service=embedding_service
         )
         db_service.initialize_database(
             namespace=db_service.namespace,
             clear=True
         )
+
 @pytest.mark.parametrize('test_index', [
     # Pinecone test
     {
@@ -423,8 +463,7 @@ def test_delete_database(setup_fixture, test_index):
         db_service = DatabaseService(
             db_type=db_type,
             index_name=index_name,
-            embedding_service=embedding_service,
-            doc_type='document'
+            embedding_service=embedding_service
         )
 
         # Clean up any existing test indexes first
@@ -501,14 +540,8 @@ def test_get_available_indexes(setup_fixture, test_index):
         model_service=test_index['embedding_service'],
         model=test_index['embedding_model']
     )
-    
-    llm_service = LLMService(
-        model_service='OpenAI',
-        model='gpt-4o-mini'
-    )
 
-    # Create and index test documents for each RAG type
-    test_indexes = []
+    # Create and index test documents
     index_name_initialized = f"test-{test_index['index_type'].lower()}"
     logger.info(f"Creating test index: {index_name_initialized}")
     try:
@@ -516,26 +549,27 @@ def test_get_available_indexes(setup_fixture, test_index):
         db_service = DatabaseService(
             db_type=test_index['index_type'],
             index_name=index_name_initialized,
-            embedding_service=embedding_service,
-            doc_type='document'
+            embedding_service=embedding_service
         )
         db_service.initialize_database(clear=True)
 
         # Initialize document processor
         doc_processor = DocumentProcessor(
             embedding_service=embedding_service,
-            chunk_method=setup_fixture['chunk_method'],
             chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap']
+            chunk_overlap=setup_fixture['chunk_overlap'],
+            work_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'document_processing') # Put partitioned files in same directory as original files
         )
+        
+        # Get chunks
+        partitioned_docs = doc_processor.load_and_partition_documents(
+            setup_fixture['docs'],
+            partition_by_api=False
+        )
+        chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
 
         # Process and index documents
-        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_data(
-            data=chunking_result,
-            batch_size=setup_fixture['batch_size']
-        )
-        test_indexes.append(db_service.index_name)
+        db_service.index_data(chunk_obj)
 
     except Exception as e:
         logger.error(f"Error creating index {index_name_initialized}: {str(e)}")
@@ -543,7 +577,7 @@ def test_get_available_indexes(setup_fixture, test_index):
         raise e
 
     try:
-        # First test: Check specific configurations
+        # Check if index is found
         logger.info(f"Testing for getting available indexes")
         try:
             expected_index = f"test-{test_index['index_type'].lower()}"
@@ -568,44 +602,277 @@ def test_get_available_indexes(setup_fixture, test_index):
             logger.error(f"Error in specific configuration test: {str(e)}")
             raise e
 
-        # Second test: Check "all indexes" case after testing all RAG types
-        logger.info(f"Testing retrieval of all indexes for {test_index['index_type']}")
-        try:
-            all_available_indexes, all_index_metadatas = get_available_indexes(
-                test_index['index_type'],
-                None,  # No specific embedding model
-                None   # No specific RAG type
-            )
-
-            # Verify all created indexes are returned
-            for test_index_name in test_indexes:
-                assert test_index_name in all_available_indexes, \
-                    f"Expected index {test_index_name} not found in all available indexes"
-
-            # Verify we got metadata for all indexes
-            assert len(all_index_metadatas) >= len(test_indexes), \
-                "Not all index metadata was returned"
-
-            logger.info(f"Successfully verified all indexes for {test_index['index_type']}")
-
-        except Exception as e:
-            logger.error(f"Error in all indexes test: {str(e)}")
-            raise e
-
     finally:
-        # Clean up all test indexes
-        for i, index_name in enumerate(test_indexes):
-            try:
-                db_service = DatabaseService(
-                    db_type=test_index['index_type'],
-                    index_name=index_name,
-                    embedding_service=embedding_service,
-                    doc_type='document'
-                )
-                db_service.delete_index()
-                logger.info(f"Deleted test index: {index_name}")
-            except Exception as e:
-                logger.error(f"Error deleting index {index_name}: {str(e)}")
+        # Clean up test index
+        try:
+            db_service = DatabaseService(
+                db_type=test_index['index_type'],
+                index_name=index_name_initialized,
+                embedding_service=embedding_service,
+                rerank_service=setup_fixture['mock_rerank_service']
+            )
+            db_service.delete_index()
+            logger.info(f"Deleted test index: {index_name_initialized}")
+        except Exception as e:
+            logger.error(f"Error deleting index {index_name_initialized}: {str(e)}")
+
+def test_prompt_templates():
+    """
+    Test that prompt templates have expected input variables and correct types.
+    """
+    # Test CHATBOT_SYSTEM_PROMPT (SystemMessagePromptTemplate)
+    assert isinstance(CHATBOT_SYSTEM_PROMPT, SystemMessagePromptTemplate)
+    assert set(CHATBOT_SYSTEM_PROMPT.input_variables) == {"style_mode"}
+
+    # Test QA_PROMPT (HumanMessagePromptTemplate)
+    assert isinstance(QA_PROMPT, HumanMessagePromptTemplate)
+    assert set(QA_PROMPT.input_variables) == {"context", "question"}
+
+    # Test SUMMARIZE_TEXT (HumanMessagePromptTemplate)
+    assert isinstance(SUMMARIZE_TEXT, HumanMessagePromptTemplate)
+    assert set(SUMMARIZE_TEXT.input_variables) == {"augment", "summary"}
+
+    # Test GENERATE_SIMILAR_QUESTIONS_W_CONTEXT (PromptTemplate)
+    assert isinstance(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT, PromptTemplate)
+    assert set(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT.input_variables) == {"context", "question"}
+
+    # Test CLUSTER_LABEL (PromptTemplate)
+    assert isinstance(CLUSTER_LABEL, PromptTemplate)
+    assert set(CLUSTER_LABEL.input_variables) == {"documents"}
+
+    # Test DEFAULT_DOCUMENT_PROMPT (PromptTemplate)
+    assert isinstance(DEFAULT_DOCUMENT_PROMPT, PromptTemplate)
+    assert set(DEFAULT_DOCUMENT_PROMPT.input_variables) == {"page_content"}
+
+@pytest.mark.parametrize('test_index', [
+    {
+        'db_type': 'Pinecone',
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
+    }
+])
+def test_index_with_different_metadatas(setup_fixture, test_index):
+    """
+    Test that an exception is raised when indexing documents with different chunking parameters.
+    """
+    # TODO figure out how to with RAGatouille eventually...
+    logger = setup_fixture['logger']
+    logger.info(f"Starting index_with_different_metadatas test with {test_index['db_type']}")
+    
+    index_name = 'test-different-params'
+
+    # Initialize services
+    embedding_service = EmbeddingService(
+        model_service=test_index['embedding_service'],
+        model=test_index['embedding_model']
+    )
+
+    db_service = DatabaseService(
+        db_type=test_index['db_type'],
+        index_name=index_name,
+        embedding_service=embedding_service
+    )
+
+    try:
+        # Test Case: Initialize with chunking and try to add different chunk size later
+        logger.info("Test different chunk sizes in the same index")
+        
+        # Initialize database with chunking parameters
+        initial_chunk_size = 400
+        initial_chunk_overlap = 50
+        
+        db_service.initialize_database(clear=True)
+        
+        # Process and index initial documents with chunking
+        doc_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            chunk_size=initial_chunk_size,
+            chunk_overlap=initial_chunk_overlap
+        )      
+
+        # Process and index documents
+        partitioned_docs = doc_processor.load_and_partition_documents(
+            setup_fixture['docs'],
+            partition_by_api=False
+        )
+        chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
+        db_service.index_data(chunk_obj)
+
+
+        # Try to add unchunked documents (copy original doc processor and change chunk size and overlap)
+        doc_processor_different_chunk_size = doc_processor
+        doc_processor_different_chunk_size.chunk_size = initial_chunk_size*2
+        doc_processor_different_chunk_size.chunk_overlap = initial_chunk_overlap*2
+        chunk_obj_different_chunk_size, _ = doc_processor_different_chunk_size.chunk_documents(partitioned_docs)
+        with pytest.raises(ValueError):
+            db_service.index_data(chunk_obj_different_chunk_size)
+
+        # Cleanup
+        db_service.delete_index()
+        logger.info(f'Database deleted: {test_index["db_type"]}')
+
+    except Exception as e:
+        # If there is an error, be sure to delete the database
+        try:
+            db_service.delete_index()
+        except:
+            pass
+        raise e
+
+
+@pytest.mark.parametrize('test_index', [
+    {
+        'db_type': 'Pinecone',
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
+    }
+])
+def test_get_docs_df(setup_fixture, test_index):
+    """
+    Test function for the get_docs_df() method.
+    """
+    logger = setup_fixture['logger']
+    logger.info(f"Starting get_docs_df test with {test_index['db_type']}")
+    
+    index_name = 'test-viz-df-export'
+
+    # Initialize services
+    embedding_service = EmbeddingService(
+        model_service=test_index['embedding_service'],
+        model=test_index['embedding_model']
+    )
+    db_service = DatabaseService(
+        db_type=test_index['db_type'],
+        index_name=index_name,
+        embedding_service=embedding_service
+    )
+    db_service.initialize_database(clear=True)
+
+    try:
+        # Initialize the document processor with services
+        doc_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap']
+        )
+
+        # Process and index documents
+        partitioned_docs = doc_processor.load_and_partition_documents(
+            setup_fixture['docs'],
+            partition_by_api=False
+        )
+        chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
+        db_service.index_data(chunk_obj)
+
+        # Get combined dataframe
+        df = get_docs_df(
+            db_service=db_service,  # Main document database service
+        )
+
+        # Assert the result
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) > 0
+        assert all(col in df.columns for col in [
+            "id", "page_content", "page_number", "file_name", "embedding", "type",
+        ])
+
+        # Verify there is at least one document and one question
+        assert len(df[df['type'] == 'doc']) > 0, "No documents found in DataFrame"
+        
+        # Cleanup
+        db_service.delete_index()
+        logger.info(f'Database deleted: {test_index["db_type"]}')
+
+    except Exception as e:  # If there is an error, be sure to delete the database
+        try:
+            db_service.delete_index()
+        except:
+            pass
+        raise e
+    
+@pytest.mark.parametrize('test_index', [
+    {
+        'db_type': 'Pinecone',
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small'
+    }
+])
+def test_add_clusters(setup_fixture, test_index):
+    """
+    Test function for the add_clusters function.
+    """
+    logger = setup_fixture['logger']
+    logger.info(f"Starting add_clusters test with {test_index['db_type']}")
+    
+    index_name = 'test-visualization-add-clusters'
+
+    # Initialize services
+    embedding_service = EmbeddingService(
+        model_service=test_index['embedding_service'],
+        model=test_index['embedding_model']
+    )
+    llm_service = LLMService(
+        model_service='OpenAI',
+        model='gpt-4o-mini'
+    )
+    db_service = DatabaseService(
+        db_type=test_index['db_type'],
+        index_name=index_name,
+        embedding_service=embedding_service,
+        rerank_service=setup_fixture['mock_rerank_service']
+    )
+
+    try:
+        # Initialize the document processor with services
+        doc_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap']
+        )
+
+        # Process and index documents
+        db_service.initialize_database(
+            clear=True
+        )
+        partitioned_docs = doc_processor.load_and_partition_documents(
+            setup_fixture['docs'],
+            partition_by_api=False
+        )
+        chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
+        db_service.index_data(chunk_obj)
+
+        # Get combined dataframe
+        df = get_docs_df(
+            db_service=db_service,  # Main document database service
+        )
+
+        # Test clustering without labels
+        n_clusters = 2
+        df_with_clusters = add_clusters(df, n_clusters)
+        assert len(df_with_clusters["cluster"].unique()) == n_clusters
+        for cluster in df_with_clusters["cluster"].unique():
+            assert len(df_with_clusters[df_with_clusters["cluster"] == cluster]) >= 1
+
+        # Test clustering with labels
+        df_with_clusters = add_clusters(df, n_clusters, llm_service, 2)
+        assert len(df_with_clusters["cluster"].unique()) == n_clusters
+        assert "cluster_label" in df_with_clusters.columns
+        assert df_with_clusters["cluster_label"].notnull().all()
+        assert df_with_clusters["cluster_label"].apply(lambda x: isinstance(x, str)).all()
+        for cluster in df_with_clusters["cluster"].unique():
+            assert len(df_with_clusters[df_with_clusters["cluster"] == cluster]) > 0
+
+        # Cleanup
+        db_service.delete_index()
+        logger.info(f'Database deleted: {test_index["db_type"]}')
+
+    except Exception as e:  # If there is an error, be sure to delete the database
+        try:
+            db_service.delete_index()
+        except:
+            pass
+        raise e
+
 def test_database_setup_and_query(test_input, setup_fixture):
     """
     Tests the entire process of initializing a database, upserting documents, and deleting a database.
@@ -625,6 +892,10 @@ def test_database_setup_and_query(test_input, setup_fixture):
         model_service=test['embedding_service'],
         model=test['embedding_model']
     )
+    rerank_service = RerankService(
+        model_service=test['rerank_service'],
+        model=test['rerank_model']
+    )
     llm_service = LLMService(
         model_service=test['llm_service'],
         model=test['llm_model']
@@ -634,17 +905,15 @@ def test_database_setup_and_query(test_input, setup_fixture):
         db_type=test['index_type'],
         index_name=index_name,
         embedding_service=embedding_service,
-        doc_type='document'
+        rerank_service=rerank_service
     )
 
     try:
         # Initialize the document processor with services
         doc_processor = DocumentProcessor(
             embedding_service=embedding_service,
-            chunk_method=setup_fixture['chunk_method'],
             chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap'],
-            llm_service=llm_service
+            chunk_overlap=setup_fixture['chunk_overlap']
         )
         # Process and index documents
         db_service.initialize_database(
@@ -658,11 +927,12 @@ def test_database_setup_and_query(test_input, setup_fixture):
         logger.info('Vectorstore created.')
 
         # Process and index documents
-        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_data(
-            data=chunking_result,
-            batch_size=setup_fixture['batch_size']
+        partitioned_docs = doc_processor.load_and_partition_documents(
+            setup_fixture['docs'],
+            partition_by_api=False
         )
+        chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
+        db_service.index_data(chunk_obj)
 
         # Initialize QA model
         qa_model = QAModel(
@@ -674,26 +944,86 @@ def test_database_setup_and_query(test_input, setup_fixture):
 
         # Run a query and verify results
         qa_model.query(setup_fixture['test_prompt'])
-        assert qa_model.ai_response is not None
-        assert qa_model.sources is not None
-        assert qa_model.memory is not None
-
-        # Generate alternative questions
-        alternate_question = qa_model.generate_alternative_questions(setup_fixture['test_prompt'])
-        assert alternate_question is not None
-        logger.info('Query and alternative question successful!')
+        assert qa_model.result['messages'] is not None
+        assert qa_model.result['context'] is not None
+        assert qa_model.result['alternative_questions'] is not None
 
         # Delete the indexes
         db_service.delete_index()
-        if db_service.db_type is 'Pinecone':
-            qa_model.query_db_service.delete_index()  # Delete the query database index
         
         logger.info('Databases deleted.')
 
     except Exception as e:  # If there is an error, be sure to delete the database
         db_service.delete_index()
-        if db_service.db_type is 'Pinecone':
-            qa_model.query_db_service.delete_index()  # Delete the query database index
+        raise e
+
+def test_process_user_doc_uploads(setup_fixture):
+    """
+    Test processing and merging user uploads into existing database.
+    """
+    logger = setup_fixture['logger']
+    logger.info("Starting process_user_doc_uploads test")
+
+    # Create mock sidebar settings
+    mock_sb = {
+        'index_type': 'Pinecone',
+        'index_selected': 'test-process-uploads',
+        'embedding_service': 'OpenAI',
+        'embedding_model': 'text-embedding-3-small',
+    }
+    upsert_docs = [os.path.join(os.path.abspath(os.path.dirname(__file__)), '1999_honnen_reocr.pdf')]
+
+    try:
+        # First create and populate initial database with setup docs
+        embedding_service = EmbeddingService(
+            model_service=mock_sb['embedding_service'],
+            model=mock_sb['embedding_model']
+        )
+        
+        db_service = DatabaseService(
+            db_type=mock_sb['index_type'],
+            index_name=mock_sb['index_selected'],
+            embedding_service=embedding_service,
+            rerank_service=setup_fixture['mock_rerank_service']
+        )
+
+        # Initialize database and index setup docs
+        db_service.initialize_database(clear=True)
+        
+        doc_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap']
+        )
+        
+        # Process and index initial documents
+        partitioned_docs = doc_processor.load_and_partition_documents(
+            setup_fixture['docs'],
+            partition_by_api=False
+        )
+        chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
+        db_service.index_data(chunk_obj) 
+        
+        # Process the "uploaded" docs
+        user_upload = process_uploads(mock_sb, upsert_docs)
+        logger.info(f"User upload from process_uploads: {user_upload}")
+
+        # Verify documents were indexed in new namespace
+        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
+        index = pc.Index(mock_sb['index_selected'])
+        stats = index.describe_index_stats()
+        logger.info(f"Index stats: {stats}")
+        assert stats['namespaces'][user_upload]['vector_count'] > 0
+        
+        # Cleanup
+        db_service.delete_index()
+
+    except Exception as e:
+        # Ensure cleanup on failure
+        try:
+            db_service.delete_index()
+        except:
+            pass
         raise e
 
 ### Frontend tests
@@ -737,6 +1067,7 @@ def test_sidebar_manager(setup_fixture):
     assert 'temperature' in sb_out['model_options']
     assert 'output_level' in sb_out['model_options']
     assert 'k' in sb_out['model_options']
+
 def test_sidebar_manager_invalid_config(setup_fixture):
     """
     Test SidebarManager initialization with invalid config file path
@@ -746,6 +1077,7 @@ def test_sidebar_manager_invalid_config(setup_fixture):
     
     with pytest.raises(ConfigurationError):
         SidebarManager('nonexistent_config.json')
+
 def test_sidebar_manager_malformed_config(setup_fixture):
     """
     Test SidebarManager with malformed config file
@@ -760,6 +1092,7 @@ def test_sidebar_manager_malformed_config(setup_fixture):
         tf.flush()
         with pytest.raises(ConfigurationError):
             SidebarManager(tf.name)
+
 def test_sidebar_manager_missing_required_sections(setup_fixture):
     """
     Test SidebarManager with config missing required sections
@@ -774,6 +1107,7 @@ def test_sidebar_manager_missing_required_sections(setup_fixture):
         tf.flush()
         with pytest.raises(ConfigurationError):
             SidebarManager(tf.name)
+
 def test_set_secrets_with_valid_input(setup_fixture):
     """
     Test case for set_secrets function with valid input.
@@ -786,7 +1120,9 @@ def test_set_secrets_with_valid_input(setup_fixture):
         'VOYAGE_API_KEY': 'voyage_key',
         'PINECONE_API_KEY': 'pinecone_key',
         'HUGGINGFACEHUB_API_KEY': 'huggingface_key',
-        'ANTHROPIC_API_KEY': 'anthropic_key'
+        'ANTHROPIC_API_KEY': 'anthropic_key',
+        'UNSTRUCTURED_API_KEY': 'unstructured_key',
+        'UNSTRUCTURED_API_URL': 'unstructured_url'
     }
     
     # Set secrets and verify return
@@ -796,447 +1132,3 @@ def test_set_secrets_with_valid_input(setup_fixture):
     # Verify environment variables were set
     for key, value in test_secrets.items():
         assert os.environ[key] == value
-@pytest.mark.parametrize('test_index', [
-    {
-        'db_type': 'Pinecone',
-        'embedding_service': 'OpenAI',
-        'embedding_model': 'text-embedding-3-small'
-    }
-])
-def test_get_docs_df(setup_fixture, test_index):
-    """
-    Test function for the get_docs_df() method.
-    """
-    logger = setup_fixture['logger']
-    logger.info(f"Starting get_docs_df test with {test_index['db_type']}")
-    
-    index_name = 'test-viz-df-export'
-
-    # Initialize services
-    embedding_service = EmbeddingService(
-        model_service=test_index['embedding_service'],
-        model=test_index['embedding_model']
-    )
-    llm_service = LLMService(
-        model_service='OpenAI',
-        model='gpt-4o-mini'
-    )
-    db_service = DatabaseService(
-        db_type=test_index['db_type'],
-        index_name=index_name,
-        embedding_service=embedding_service,
-        doc_type='document'
-    )
-    db_service.initialize_database(clear=True)
-
-    try:
-        # Initialize the document processor with services
-        doc_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method=setup_fixture['chunk_method'],
-            chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap'],
-            llm_service=llm_service
-        )
-
-        # Process and index documents
-        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_data(
-            data=chunking_result,
-            batch_size=setup_fixture['batch_size']
-        )
-
-        # Initialize QA model
-        n_retrievals = 4
-        qa_model = QAModel(
-            db_service=db_service,
-            llm_service=llm_service,
-            k=n_retrievals
-        )
-
-        # Run a query to create the query database
-        qa_model.query(setup_fixture['test_prompt'])
-
-        # Get combined dataframe
-        df = get_docs_df(
-            db_service=db_service,  # Main document database service
-            query_db_service=qa_model.query_db_service  # Query database service from QA model
-        )
-
-        # Assert the result
-        assert isinstance(df, pd.DataFrame)
-        assert len(df) > 0
-        assert all(col in df.columns for col in [
-            "id", "source", "page", "document", "embedding", "type",
-            "first_source", "used_by_questions", "used_by_num_questions",
-            "used_by_question_first"
-        ])
-
-        # Verify there is at least one document and one question
-        assert len(df[df['type'] == 'doc']) > 0, "No documents found in DataFrame"
-        assert len(df[df['type'] == 'question']) > 0, "No questions found in DataFrame" # Indicates the question was not recorded properly
-        
-        # Check that exactly n_retrievals sources were used (have non-zero values in used_by_num_questions)
-        nonzero_count = len(df[df['used_by_num_questions'] > 0])
-        assert nonzero_count == n_retrievals, f"Expected {n_retrievals} sources to have non-zero values in used_by_num_questions, but got {nonzero_count}"
-
-        # Cleanup
-        db_service.delete_index()
-        qa_model.query_db_service.delete_index()
-        logger.info(f'Database deleted: {test_index["db_type"]}')
-
-    except Exception as e:  # If there is an error, be sure to delete the database
-        try:
-            db_service.delete_index()
-            qa_model.query_db_service.delete_index()
-        except:
-            pass
-        raise e
-@pytest.mark.parametrize('test_index', [
-    {
-        'db_type': 'Pinecone',
-        'embedding_service': 'OpenAI',
-        'embedding_model': 'text-embedding-3-small'
-    }
-])
-def test_add_clusters(setup_fixture, test_index):
-    """
-    Test function for the add_clusters function.
-    """
-    logger = setup_fixture['logger']
-    logger.info(f"Starting add_clusters test with {test_index['db_type']}")
-    
-    index_name = 'test-visualization-add-clusters'
-
-    # Initialize services
-    embedding_service = EmbeddingService(
-        model_service=test_index['embedding_service'],
-        model=test_index['embedding_model']
-    )
-    llm_service = LLMService(
-        model_service='OpenAI',
-        model='gpt-4o-mini'
-    )
-    db_service = DatabaseService(
-        db_type=test_index['db_type'],
-        index_name=index_name,
-        embedding_service=embedding_service,
-        doc_type='document'
-    )
-
-    try:
-        # Initialize the document processor with services
-        doc_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method=setup_fixture['chunk_method'],
-            chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap'],
-            llm_service=llm_service
-        )
-
-        # Process and index documents
-        db_service.initialize_database(
-            clear=True
-        )
-        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_data(
-            data=chunking_result,
-            batch_size=setup_fixture['batch_size']
-        )
-
-        # Initialize QA model
-        qa_model = QAModel(
-            db_service=db_service,
-            llm_service=llm_service
-        )
-
-        # Run a query to create the query database
-        qa_model.query(setup_fixture['test_prompt'])
-
-        # Get combined dataframe
-        df = get_docs_df(
-            db_service=db_service,  # Main document database service
-            query_db_service=qa_model.query_db_service  # Query database service from QA model
-        )
-
-        # Test clustering without labels
-        n_clusters = 2
-        df_with_clusters = add_clusters(df, n_clusters)
-        assert len(df_with_clusters["cluster"].unique()) == n_clusters
-        for cluster in df_with_clusters["cluster"].unique():
-            assert len(df_with_clusters[df_with_clusters["cluster"] == cluster]) >= 1
-
-        # Test clustering with labels
-        df_with_clusters = add_clusters(df, n_clusters, llm_service, 2)
-        assert len(df_with_clusters["cluster"].unique()) == n_clusters
-        assert "cluster_label" in df_with_clusters.columns
-        assert df_with_clusters["cluster_label"].notnull().all()
-        assert df_with_clusters["cluster_label"].apply(lambda x: isinstance(x, str)).all()
-        for cluster in df_with_clusters["cluster"].unique():
-            assert len(df_with_clusters[df_with_clusters["cluster"] == cluster]) > 0
-
-        # Cleanup
-        db_service.delete_index()
-        qa_model.query_db_service.delete_index()
-        logger.info(f'Database deleted: {test_index["db_type"]}')
-
-    except Exception as e:  # If there is an error, be sure to delete the database
-        try:
-            db_service.delete_index()
-            qa_model.query_db_service.delete_index()
-        except:
-            pass
-        raise e
-
-def test_prompt_templates():
-    """
-    Test that prompt templates have expected input variables.
-    """
-    # Test QA_PROMPT
-    assert set(QA_PROMPT.input_variables) == {"question", "context"}
-
-    # Test SUMMARIZE_TEXT
-    assert set(SUMMARIZE_TEXT.input_variables) == {"doc"}
-
-    # Test GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
-    assert set(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT.input_variables) == {"question", "context"}
-
-    # Test CLUSTER_LABEL
-    assert set(CLUSTER_LABEL.input_variables) == {"documents"}
-
-    # Test DEFAULT_DOCUMENT_PROMPT
-    assert set(DEFAULT_DOCUMENT_PROMPT.input_variables) == {"page_content"}
-
-def test_process_user_doc_uploads(setup_fixture):
-    """
-    Test processing and merging user uploads into existing database.
-    """
-    logger = setup_fixture['logger']
-    logger.info("Starting process_user_doc_uploads test")
-
-    # Create mock sidebar settings
-    mock_sb = {
-        'index_type': 'Pinecone',
-        'index_selected': 'test-process-uploads',
-        'embedding_service': 'OpenAI',
-        'embedding_model': 'text-embedding-3-small',
-    }
-    upsert_docs = [os.path.join(os.path.abspath(os.path.dirname(__file__)), '1999_honnen_reocr.pdf')]
-
-    try:
-        # First create and populate initial database with setup docs
-        embedding_service = EmbeddingService(
-            model_service=mock_sb['embedding_service'],
-            model=mock_sb['embedding_model']
-        )
-        
-        db_service = DatabaseService(
-            db_type=mock_sb['index_type'],
-            index_name=mock_sb['index_selected'],
-            embedding_service=embedding_service,
-            doc_type='document'
-        )
-
-        # Initialize database and index setup docs
-        db_service.initialize_database(clear=True)
-        
-        doc_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method=setup_fixture['chunk_method'],
-            chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap']
-        )
-        
-        # Process and index initial documents
-        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_data(
-            data=chunking_result,
-            batch_size=setup_fixture['batch_size']
-        )     
-        
-        # Process the "uploaded" docs
-        user_upload = process_uploads(mock_sb, upsert_docs)
-        logger.info(f"User upload from process_uploads: {user_upload}")
-
-        # Verify documents were indexed in new namespace
-        pc = pinecone_client(api_key=os.getenv('PINECONE_API_KEY'))
-        index = pc.Index(mock_sb['index_selected'])
-        stats = index.describe_index_stats()
-        logger.info(f"Index stats: {stats}")
-        assert stats['namespaces'][user_upload]['vector_count'] > 0
-        
-        # Cleanup
-        db_service.delete_index()
-
-    except Exception as e:
-        # Ensure cleanup on failure
-        try:
-            db_service.delete_index()
-        except:
-            pass
-        raise e
-
-@pytest.mark.parametrize('test_index', [
-    {
-        'db_type': 'Pinecone',
-        'embedding_service': 'OpenAI',
-        'embedding_model': 'text-embedding-3-small'
-    }
-])
-def test_index_with_different_parameters(setup_fixture, test_index):
-    """
-    Test that an exception is raised when indexing documents with different chunking parameters.
-    """
-    logger = setup_fixture['logger']
-    logger.info(f"Starting index_with_different_parameters test with {test_index['db_type']}")
-    
-    index_name = 'test-different-params'
-
-    # Initialize services
-    embedding_service = EmbeddingService(
-        model_service=test_index['embedding_service'],
-        model=test_index['embedding_model']
-    )
-
-    db_service = DatabaseService(
-        db_type=test_index['db_type'],
-        index_name=index_name,
-        embedding_service=embedding_service,
-        doc_type='document'
-    )
-
-    try:
-        # Test Case 1: Initialize with chunking and try to add unchunked/merged docs
-        logger.info("Test Case 1: Chunked vs Unchunked")
-        
-        # Initialize database with chunking parameters
-        initial_chunk_size = 400
-        initial_chunk_overlap = 50
-        initial_chunk_method = 'character_recursive'
-        
-        db_service.initialize_database(clear=True)
-        
-        # Process and index initial documents with chunking
-        doc_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method=initial_chunk_method,
-            chunk_size=initial_chunk_size,
-            chunk_overlap=initial_chunk_overlap
-        )
-        
-        chunking_result = doc_processor.process_documents(setup_fixture['docs'])
-        db_service.index_data(
-            data=chunking_result,
-            batch_size=setup_fixture['batch_size']
-        )
-
-        # Try to add unchunked documents
-        unchunked_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method='None'  # No chunking
-        )
-        
-        unchunked_result = unchunked_processor.process_documents(setup_fixture['docs'])
-        
-        with pytest.raises(ValueError):
-            db_service.index_data(
-                data=unchunked_result,
-                batch_size=setup_fixture['batch_size']
-            )
-
-        # Try to add merged documents
-        merged_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method='None',
-            merge_pages=2  # Merge every 2 pages
-        )
-        
-        merged_result = merged_processor.process_documents(setup_fixture['docs'])
-        
-        with pytest.raises(ValueError):
-            db_service.index_data(
-                data=merged_result,
-                batch_size=setup_fixture['batch_size']
-            )
-
-        # Test Case 2: Initialize with no chunking and try to add chunked docs
-        logger.info("Test Case 2: Unchunked vs Chunked")
-        
-        # Reinitialize database with no chunking
-        db_service.delete_index()
-        db_service.initialize_database(clear=True)
-        
-        # Process and index initial documents without chunking
-        unchunked_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method='None'
-        )
-        
-        unchunked_result = unchunked_processor.process_documents(setup_fixture['docs'])
-        db_service.index_data(
-            data=unchunked_result,
-            batch_size=setup_fixture['batch_size']
-        )
-
-        # Try to add chunked documents
-        chunked_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method='character_recursive',
-            chunk_size=400,
-            chunk_overlap=50
-        )
-        
-        chunked_result = chunked_processor.process_documents(setup_fixture['docs'])
-        
-        with pytest.raises(ValueError):
-            db_service.index_data(
-                data=chunked_result,
-                batch_size=setup_fixture['batch_size']
-            )
-
-        # Test Case 3: Initialize with merged docs and try to add differently processed docs
-        logger.info("Test Case 3: Merged vs Other Processing")
-        
-        # Reinitialize database with merged documents
-        db_service.delete_index()
-        db_service.initialize_database(clear=True)
-        
-        # Process and index initial merged documents
-        merged_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method='None',
-            merge_pages=2
-        )
-        
-        merged_result = merged_processor.process_documents(setup_fixture['docs'])
-        db_service.index_data(
-            data=merged_result,
-            batch_size=setup_fixture['batch_size']
-        )
-
-        # Try to add documents with different merge settings
-        different_merge_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_method='None',
-            merge_pages=3  # Different merge setting
-        )
-        
-        different_merge_result = different_merge_processor.process_documents(setup_fixture['docs'])
-        
-        with pytest.raises(ValueError):
-            db_service.index_data(
-                data=different_merge_result,
-                batch_size=setup_fixture['batch_size']
-            )
-
-        # Cleanup
-        db_service.delete_index()
-        logger.info(f'Database deleted: {test_index["db_type"]}')
-
-    except Exception as e:
-        # If there is an error, be sure to delete the database
-        try:
-            db_service.delete_index()
-        except:
-            pass
-        raise e
