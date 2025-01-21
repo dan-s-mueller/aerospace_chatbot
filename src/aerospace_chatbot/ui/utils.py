@@ -368,7 +368,6 @@ def process_uploads(sb, temp_files):
         db_type=sb['index_type'],
         index_name=sb['index_selected'],
         embedding_service=embedding_service,
-        doc_type='document'
     )
     db_service.initialize_database(namespace=user_upload)
     logger.info(f"Initialized database with namespace {db_service.namespace}")
@@ -377,16 +376,18 @@ def process_uploads(sb, temp_files):
     doc_processor = DocumentProcessor(
         embedding_service=embedding_service,
         chunk_size=selected_metadata.get('chunk_size', None),
-        chunk_overlap=selected_metadata.get('chunk_overlap', None),
-        merge_pages=selected_metadata.get('merge_pages', None)
+        chunk_overlap=selected_metadata.get('chunk_overlap', None)
     )
     
     # Process and index documents
     logger.info("Uploading user documents to namespace...")
-    chunking_result = doc_processor.process_documents(temp_files)
-    db_service.index_data(
-        data=chunking_result
+    partitioned_docs = doc_processor.load_and_partition_documents(
+        temp_files,
+        partition_by_api=False
     )
+    chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
+    db_service.index_data(chunk_obj) 
+
     # Copy vectors to merge namespaces
     logger.info("Merging user document with existing documents...")
     db_service.copy_vectors(
@@ -394,19 +395,6 @@ def process_uploads(sb, temp_files):
     )
     logger.info("Merged user document with existing documents.")
     return user_upload
-
-# def get_or_create_spotlight_viewer(df, port: int = 9000):
-#     """Create or get existing Spotlight viewer instance."""
-#     # deps = Dependencies()
-#     spotlight = deps.get_spotlight()
-    
-#     viewer = spotlight.show(
-#         df,
-#         port=port,
-#         return_viewer=True,
-#         open_browser=False
-#     )
-#     return viewer
 
 def _display_api_key_status():
     """
