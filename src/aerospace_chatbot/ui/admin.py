@@ -433,7 +433,7 @@ class SidebarManager:
         if not os.environ.get('LOCAL_DB_PATH'):
             local_db_path_input = st.empty()
             warn_db_path = st.warning('Local Database Path is required to initialize. Use an absolute path.')
-            local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. chroma).')
+            local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. RAGatouille).')
             
             if local_db_path:
                 os.environ['LOCAL_DB_PATH'] = local_db_path

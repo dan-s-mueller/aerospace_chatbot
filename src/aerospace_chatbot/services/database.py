@@ -415,15 +415,6 @@ class DatabaseService:
                 raise ValueError(f"The Pinecone index name must be less than 45 characters. Entry: {name}")
             if '_' in name:
                 raise ValueError(f"The Pinecone index name cannot contain underscores. Entry: {name}")
-        elif self.db_type == "ChromaDB":
-            if len(name) > 63:
-                raise ValueError(f"The ChromaDB collection name must be less than 63 characters. Entry: {name}")
-            if not name[0].isalnum() or not name[-1].isalnum():
-                raise ValueError(f"The ChromaDB collection name must start and end with an alphanumeric character. Entry: {name}")
-            if not re.match(r"^[a-zA-Z0-9_-]+$", name):
-                raise ValueError(f"The ChromaDB collection name can only contain alphanumeric characters, underscores, or hyphens. Entry: {name}")
-            if ".." in name:
-                raise ValueError(f"The ChromaDB collection name cannot contain two consecutive periods. Entry: {name}")
 
     def _upsert_data(self, upsert_data, batch_size):
         """
@@ -452,8 +443,6 @@ class DatabaseService:
                 
                 if self.db_type == "Pinecone":
                     _upsert_pinecone(batch, batch_ids)
-                elif self.db_type == "ChromaDB":
-                    self.vectorstore.add_documents(documents=batch, ids=batch_ids)
                 elif self.db_type == "RAGatouille":
                     continue
                 else:
