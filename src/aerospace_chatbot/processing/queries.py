@@ -108,11 +108,16 @@ class QAModel:
         self.logger.info(f"Retrieved docs")
 
         # Rerank docs
-        reranked_docs = self.db_service.rerank(
-            state["messages"][-1].content, 
-            retrieved_docs, 
-            top_n=self.k_rerank
-        )
+        if self.db_service.rerank_service is not None:
+            reranked_docs = self.db_service.rerank(
+                state["messages"][-1].content, 
+                retrieved_docs, 
+                top_n=self.k_rerank
+            )
+        else:
+            reranked_docs = retrieved_docs
+            if self.k_rerank is not None:
+                self.logger.warning(f"Rerank service is not set, but k_rerank is set to {self.k_rerank}. Reranking will not be performed.")
         self.logger.info(f"Reranked docs")
 
         return {"context": reranked_docs}
@@ -134,11 +139,21 @@ class QAModel:
             messages = [system_prompt] + state["messages"]
 
         # Add context to the prompt
-        docs_content=""
-        for i, (doc, _, rerank_score) in enumerate(state["context"]):
-            # Source IDs in the order they show in in the array. Indexed from 1, retrieve with 0 index.
-            if rerank_score is not None:    # Only include docs with a rerank score
-                docs_content += f"Source ID: {i+1}\n{doc.page_content}\n\n"
+        docs_content = ""
+        for i, item in enumerate(state["context"]):
+            # Handle both 2-tuple (doc, retrieval_score) and 3-tuple (doc, retrieval_score, rerank_score) cases
+            doc = item[0]
+            retrieval_score = item[1]
+            
+            if len(item) == 3:
+                # If reranked, only include docs with a rerank score
+                rerank_score = item[2]
+                if rerank_score is not None:
+                    docs_content += f"Source ID: {i+1}\n{doc.page_content}\n\n"
+            else:
+                # If not reranked, include docs with a retrieval score
+                if retrieval_score is not None:
+                    docs_content += f"Source ID: {i+1}\n{doc.page_content}\n\n"
 
         # Prompt with context and pydantic output parser
         prompt_with_context = QA_PROMPT.format(

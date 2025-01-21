@@ -88,8 +88,8 @@ def parse_test_case(setup, test_case):
         'index_type': setup['index_type'][test_case['index_type']],
         'embedding_service': test_case['embedding_service'],
         'embedding_model': test_case['embedding_model'],
-        'rerank_service': test_case['rerank_service'],
-        'rerank_model': test_case['rerank_model'],
+        'rerank_service': test_case.get('rerank_service', None),
+        'rerank_model': test_case.get('rerank_model', None),
         'llm_service': test_case['llm_service'],
         'llm_model': test_case['llm_model']
     }
@@ -893,10 +893,15 @@ def test_database_setup_and_query(test_input, setup_fixture):
         model_service=test['embedding_service'],
         model=test['embedding_model']
     )
-    rerank_service = RerankService(
-        model_service=test['rerank_service'],
-        model=test['rerank_model']
-    )
+    
+    if test['rerank_service'] is not None:
+        rerank_service = RerankService(
+            model_service=test['rerank_service'],
+            model=test['rerank_model']
+        )
+    else:
+        rerank_service = None
+
     llm_service = LLMService(
         model_service=test['llm_service'],
         model=test['llm_model']

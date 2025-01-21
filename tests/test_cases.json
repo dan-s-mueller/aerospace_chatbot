@@ -23,8 +23,6 @@
             "index_type": "RAGatouille",
             "embedding_service": "RAGatouille",
             "embedding_model": "colbert-ir/colbertv2.0",
-            "rerank_service": "Cohere",
-            "rerank_model": "rerank-v3.5",
             "llm_service": "OpenAI",
             "llm_model": "gpt-4o",
             "id": 3
