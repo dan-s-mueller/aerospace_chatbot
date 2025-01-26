@@ -6,21 +6,33 @@ import re
 from typing import List
 import logging
 
+class NoSourceCitationsFound(ValueError):
+    """Raised when no source citations are found in the content, indicating no relevant information in the knowledge base."""
+    pass
+
 class InLineCitationsResponse(BaseModel):
     content: str = Field(description="The main content of the response with in-line citations.")
     citations: List[str] = Field(description='List of extracted source IDs from the response. Expected format (ignore any forward or back slashes between <>): <source id="#">')
 
-    # Validator to ensure citations follow the <source id="#"> format
+    # Validator to ensure citations follow the <source id="#"> format and return content.
     @field_validator('content')
     def validate_citations(cls, v):
-        # Regex pattern to match <source id="1">, <source id="2">, etc.
-        pattern = r'<source id="\\*(\d+)">'
-        matches = re.findall(pattern, v)
+        # Check for any potential malformed tags first
+        malformed_pattern = r'<\s*source\s*id\s*=\s*["\']?\s*\d+\s*["\']?\s*>'  # Will catch variations like <source id=1>, < source id="1">, <source id = "1">, etc.
+        malformed_matches = re.findall(malformed_pattern, v)
         
-        # Raise error if no citations are found or formatting is incorrect
-        if not matches:
-            raise ValueError('No valid source tags found. Expected format: <source id="1">')
-
+        # Strict pattern that must be followed
+        correct_pattern = r'<source id="\\*(\d+)">'
+        correct_matches = re.findall(correct_pattern, v)
+        
+        # If we find malformed tags that don't match our strict pattern
+        if malformed_matches and len(malformed_matches) != len(correct_matches):
+            raise ValueError('Malformed source tags detected. All tags must exactly match the format: <source id="1">')
+        
+        # If no citations are found at all, raise our custom exception
+        if not correct_matches:
+            raise NoSourceCitationsFound('No source citations found. This likely means no relevant information was found in the knowledge base. Consider rephrasing your question.')
+        
         return v
 
     # Validator to extract and populate citations from content
@@ -30,19 +42,8 @@ class InLineCitationsResponse(BaseModel):
         content = info.data.get('content', '')
         pattern = r'<source id="\\*(\d+)">'
         extracted = re.findall(pattern, content)
-        
-        # Ensure citations are found
-        if not extracted:  
-            raise ValueError("No citations found in the content. Ensure sources are cited correctly.") 
 
-        # TODO I removed this, because if there are not releavnt sources I do not want the first source cited. There is probably a better way to error handle, but I think it's tricky.        
-        # # Ensure the first source (1) is cited
-        # required_sources = {"1"}
-        # if not required_sources.issubset(extracted):
-        #     raise ValueError("Source 1 must be cited in the content.")
-        
         return extracted
-
 class AltQuestionsResponse(BaseModel):
     questions: List[str] = Field(description="List of alternative questions based on the user's original question and the context provided.")
 
@@ -62,13 +63,13 @@ def style_mode(style_mode: str = None):
     style_mode_dict={
         "Sassy": 
           {"description": "Playful and witty, with a bit of attitude.", 
-          "example_response": """Oh honey, that actuator didn’t even flinch under high pressure <source id="1">. You could drop it from space, and it’d still show up for work."""},
+          "example_response": """Oh honey, that actuator didn't even flinch under high pressure <source id="1">. You could drop it from space, and it'd still show up for work."""},
         "Ironic": 
           {"description": "Dry and subtly sarcastic while delivering facts.",
-          "example_response": """Yeah, because testing actuators under high pressure is everyone’s idea of fun. Of course it passed <source id="1">."""},
+          "example_response": """Yeah, because testing actuators under high pressure is everyone's idea of fun. Of course it passed <source id="1">."""},
         "Bossy": 
           {"description": "Direct and authoritative, like a know-it-all engineer.",
-          "example_response": """Listen up. The actuator passed high-pressure testing. Don’t ask twice <source id="1">."""},
+          "example_response": """Listen up. The actuator passed high-pressure testing. Don't ask twice <source id="1">."""},
         "Gen Z Slang": 
           {"description": "Informal, fun, and sprinkled with current Gen Z expressions.",
           "example_response": """Bro, that actuator ate under pressure and left no crumbs <source id="1">."""},
@@ -117,14 +118,14 @@ Use only the **Sources and Context** provided to answer the **User Question**. *
 
 1. **Answer only based on the provided Sources and Context.**  
    - If the information is not available in the Sources and Context, respond with:  
-     *"I don’t know the answer to that based on the information provided. You might consider rephrasing your question or asking about a related topic."*  
+     *"I don't know the answer to that based on the information provided. You might consider rephrasing your question or asking about a related topic."*  
    - **If no sources are truly relevant to the answer, do not cite any sources.**
 
 2. **Do not make up or infer answers.**  
    - Stay accurate and factual at all times.
 
 3. **Provide highly detailed, explanatory answers.**  
-   - Include **as many specific details from the original context** as possible to thoroughly address the user’s question.
+   - Include **as many specific details from the original context** as possible to thoroughly address the user's question.
 
 4. **Provide responses in English only** and format them using **Markdown** for clarity.
 
@@ -159,11 +160,11 @@ Use only the **Sources and Context** provided to answer the **User Question**. *
 8. **Suggest related or alternative questions** if applicable, to help the user find relevant information within the corpus.
 
 9. **Always cite Source ID: 1**  
-   - Always provide a citation for Source ID: 1 unless it is entirely irrelevant to the user’s question (in which case explicitly omit it).  
+   - Always provide a citation for Source ID: 1 unless it is entirely irrelevant to the user's question (in which case explicitly omit it).  
    - Follow Rule #10 for the other sources.
 
 10. **Give preference to citing top-ranked sources, provided in order of highest to lowest relevance.**  
-   - If the first sources in the list (i.e., the most relevant or highest-ranked) contain information that addresses the user’s question, cite them first.  
+   - If the first sources in the list (i.e., the most relevant or highest-ranked) contain information that addresses the user's question, cite them first.  
    - Then cite additional sources only if they contain new or non-redundant details.  
    - If the top-ranked sources are not relevant, skip them.
    

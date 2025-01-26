@@ -12,6 +12,7 @@ from langchain_core.documents import Document
 from langchain_pinecone import PineconeVectorStore
 from langchain.prompts.prompt import PromptTemplate
 from langchain.prompts import HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from langchain.output_parsers import PydanticOutputParser
 
 from aerospace_chatbot.core import (
     ConfigurationError,
@@ -30,6 +31,8 @@ from aerospace_chatbot.services import (
     EmbeddingService, 
     RerankService,
     LLMService,
+    NoSourceCitationsFound,
+    InLineCitationsResponse,
     CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
     SUMMARIZE_TEXT,
@@ -617,34 +620,7 @@ def test_get_available_indexes(setup_fixture, test_index):
         except Exception as e:
             logger.error(f"Error deleting index {index_name_initialized}: {str(e)}")
 
-def test_prompt_templates():
-    """
-    Test that prompt templates have expected input variables and correct types.
-    """
-    # Test CHATBOT_SYSTEM_PROMPT (SystemMessagePromptTemplate)
-    assert isinstance(CHATBOT_SYSTEM_PROMPT, SystemMessagePromptTemplate)
-    assert set(CHATBOT_SYSTEM_PROMPT.input_variables) == {"style_mode"}
-
-    # Test QA_PROMPT (HumanMessagePromptTemplate)
-    assert isinstance(QA_PROMPT, HumanMessagePromptTemplate)
-    assert set(QA_PROMPT.input_variables) == {"context", "question"}
-
-    # Test SUMMARIZE_TEXT (HumanMessagePromptTemplate)
-    assert isinstance(SUMMARIZE_TEXT, HumanMessagePromptTemplate)
-    assert set(SUMMARIZE_TEXT.input_variables) == {"augment", "summary"}
-
-    # Test GENERATE_SIMILAR_QUESTIONS_W_CONTEXT (PromptTemplate)
-    assert isinstance(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT, PromptTemplate)
-    assert set(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT.input_variables) == {"context", "question"}
-
-    # Test CLUSTER_LABEL (PromptTemplate)
-    assert isinstance(CLUSTER_LABEL, PromptTemplate)
-    assert set(CLUSTER_LABEL.input_variables) == {"documents"}
-
-    # Test DEFAULT_DOCUMENT_PROMPT (PromptTemplate)
-    assert isinstance(DEFAULT_DOCUMENT_PROMPT, PromptTemplate)
-    assert set(DEFAULT_DOCUMENT_PROMPT.input_variables) == {"page_content"}
-
+    
 @pytest.mark.parametrize('test_index', [
     {
         'db_type': 'Pinecone',
@@ -720,6 +696,209 @@ def test_index_with_different_metadatas(setup_fixture, test_index):
             pass
         raise e
 
+def test_prompt_templates():
+    """
+    Test that prompt templates have expected input variables and correct types.
+    """
+    # Test CHATBOT_SYSTEM_PROMPT (SystemMessagePromptTemplate)
+    assert isinstance(CHATBOT_SYSTEM_PROMPT, SystemMessagePromptTemplate)
+    assert set(CHATBOT_SYSTEM_PROMPT.input_variables) == {"style_mode"}
+
+    # Test QA_PROMPT (HumanMessagePromptTemplate)
+    assert isinstance(QA_PROMPT, HumanMessagePromptTemplate)
+    assert set(QA_PROMPT.input_variables) == {"context", "question"}
+
+    # Test SUMMARIZE_TEXT (HumanMessagePromptTemplate)
+    assert isinstance(SUMMARIZE_TEXT, HumanMessagePromptTemplate)
+    assert set(SUMMARIZE_TEXT.input_variables) == {"augment", "summary"}
+
+    # Test GENERATE_SIMILAR_QUESTIONS_W_CONTEXT (PromptTemplate)
+    assert isinstance(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT, PromptTemplate)
+    assert set(GENERATE_SIMILAR_QUESTIONS_W_CONTEXT.input_variables) == {"context", "question"}
+
+    # Test CLUSTER_LABEL (PromptTemplate)
+    assert isinstance(CLUSTER_LABEL, PromptTemplate)
+    assert set(CLUSTER_LABEL.input_variables) == {"documents"}
+
+    # Test DEFAULT_DOCUMENT_PROMPT (PromptTemplate)
+    assert isinstance(DEFAULT_DOCUMENT_PROMPT, PromptTemplate)
+    assert set(DEFAULT_DOCUMENT_PROMPT.input_variables) == {"page_content"}
+
+def test_prompt_validation():
+    """
+    Test the validation of prompts and citations in InLineCitationsResponse.
+    """
+    # Test valid response with correct citation format
+    valid_content = """This is a test response with a valid citation <source id="1">."""
+    response = InLineCitationsResponse(content=valid_content, citations=["1"])
+    assert response.content == valid_content
+
+    # Test response with no citations (should raise NoSourceCitationsFound)
+    with pytest.raises(Exception) as exc_info:
+        InLineCitationsResponse(content="This is a test response with no citations.", citations=[])
+    assert "No source citations found" in str(exc_info.value)
+
+    # Test response with malformed citations
+    malformed_cases = [
+        "Test with space after id <source id=\"1\" >",
+        "Test with no quotes <source id=1>",
+        "Test with single quotes <source id='1'>",
+        "Test with space in tag < source id=\"1\">",
+    ]
+    for case in malformed_cases:
+        with pytest.raises(Exception) as exc_info:
+            InLineCitationsResponse(content=case, citations=["1"])
+        assert "Malformed source tags detected" in str(exc_info.value)
+
+    # Test multiple valid citations
+    multi_citation = """First citation <source id="1">. Second citation <source id="2">."""
+    response = InLineCitationsResponse(content=multi_citation, citations=["1", "2"])
+    assert response.content == multi_citation
+
+def test_qa_prompt_generation(setup_fixture):
+    """
+    Test the generation and validation of QA prompts as used in queries.py.
+    """
+    logger = setup_fixture['logger']
+    logger.info("Starting qa_prompt_generation test")
+
+    llm_service = setup_fixture['mock_llm_service']
+
+    # Create test documents with citations
+    test_docs = [
+        Document(
+            page_content="Test content about aerospace systems.",
+            metadata={"source": "test1.pdf", "page": 1}
+        )
+    ]
+
+    # Format documents as they would appear in the context
+    docs_content = "Source ID: 1\n" + test_docs[0].page_content + "\n\n"
+    
+    # Test question
+    test_question = "What can you tell me about aerospace systems?"
+
+    # Generate the prompt
+    system_prompt = CHATBOT_SYSTEM_PROMPT.format(style_mode=None)
+    prompt_with_context = QA_PROMPT.format(
+        context=docs_content,
+        question=test_question
+    )
+    messages = [system_prompt, prompt_with_context]
+
+    # Get response from LLM
+    response = llm_service.get_llm().invoke(messages)
+    
+    try:
+        # Parse response - should contain citations
+        parsed_response = PydanticOutputParser(pydantic_object=InLineCitationsResponse).parse(response.content)
+        assert isinstance(parsed_response, InLineCitationsResponse)
+        assert "<source id=\"1\">" in parsed_response.content
+        assert "1" in parsed_response.citations
+    except Exception as e:
+        logger.error(f"Failed to parse response: {response.content}")
+        raise e
+
+    # Test with empty context - should raise NoSourceCitationsFound
+    empty_prompt = QA_PROMPT.format(
+        context="",
+        question=test_question
+    )
+    messages = [system_prompt, empty_prompt]
+    response = llm_service.get_llm().invoke(messages)
+
+    with pytest.raises(Exception) as exc_info:
+        PydanticOutputParser(pydantic_object=InLineCitationsResponse).parse(response.content)
+    assert "No source citations found" in str(exc_info.value)
+
+def test_database_setup_and_query(test_input, setup_fixture):
+    """
+    Tests the entire process of initializing a database, upserting documents, and deleting a database.
+    """
+    logger = setup_fixture['logger']
+    test, print_str = parse_test_case(setup_fixture, test_input)
+    logger.info(f"Starting database_setup_and_query test: {print_str}")
+
+    from aerospace_chatbot.services.database import DatabaseService
+    from aerospace_chatbot.processing import DocumentProcessor
+
+    index_name = 'test' + str(test['id'])
+    logger.info(f'Starting test: {print_str}')
+
+    # Get services
+    embedding_service = EmbeddingService(
+        model_service=test['embedding_service'],
+        model=test['embedding_model']
+    )
+    
+    if test['rerank_service'] is not None:
+        rerank_service = RerankService(
+            model_service=test['rerank_service'],
+            model=test['rerank_model']
+        )
+    else:
+        rerank_service = None
+
+    llm_service = LLMService(
+        model_service=test['llm_service'],
+        model=test['llm_model']
+    )
+
+    db_service = DatabaseService(
+        db_type=test['index_type'],
+        index_name=index_name,
+        embedding_service=embedding_service,
+        rerank_service=rerank_service
+    )
+
+    try:
+        # Initialize the document processor with services
+        doc_processor = DocumentProcessor(
+            embedding_service=embedding_service,
+            chunk_size=setup_fixture['chunk_size'],
+            chunk_overlap=setup_fixture['chunk_overlap']
+        )
+        # Process and index documents
+        db_service.initialize_database(
+            clear=True
+        )
+        # Verify the vectorstore type
+        if db_service.db_type == 'Pinecone':
+            assert isinstance(db_service.vectorstore, PineconeVectorStore)
+        elif db_service.db_type == 'RAGatouille':
+            assert isinstance(db_service.vectorstore, RAGPretrainedModel)
+        logger.info('Vectorstore created.')
+
+        # Process and index documents
+        partitioned_docs = doc_processor.load_partitioned_documents(
+            setup_fixture['docs'],
+            partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
+        )
+        chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
+        db_service.index_data(chunk_obj)
+
+        # Initialize QA model
+        qa_model = QAModel(
+            db_service=db_service,
+            llm_service=llm_service
+        )
+        logger.info('QA model object created.')
+        assert qa_model is not None
+
+        # Run a query and verify results
+        qa_model.query(setup_fixture['test_prompt'])
+        assert qa_model.result['messages'] is not None
+        assert qa_model.result['context'] is not None
+        assert qa_model.result['alternative_questions'] is not None
+
+        # Delete the indexes
+        db_service.delete_index()
+        
+        logger.info('Databases deleted.')
+
+    except Exception as e:  # If there is an error, be sure to delete the database
+        db_service.delete_index()
+        raise e
 
 @pytest.mark.parametrize('test_index', [
     {
@@ -872,95 +1051,6 @@ def test_add_clusters(setup_fixture, test_index):
             db_service.delete_index()
         except:
             pass
-        raise e
-
-def test_database_setup_and_query(test_input, setup_fixture):
-    """
-    Tests the entire process of initializing a database, upserting documents, and deleting a database.
-    """
-    logger = setup_fixture['logger']
-    test, print_str = parse_test_case(setup_fixture, test_input)
-    logger.info(f"Starting database_setup_and_query test: {print_str}")
-
-    from aerospace_chatbot.services.database import DatabaseService
-    from aerospace_chatbot.processing import DocumentProcessor
-
-    index_name = 'test' + str(test['id'])
-    logger.info(f'Starting test: {print_str}')
-
-    # Get services
-    embedding_service = EmbeddingService(
-        model_service=test['embedding_service'],
-        model=test['embedding_model']
-    )
-    
-    if test['rerank_service'] is not None:
-        rerank_service = RerankService(
-            model_service=test['rerank_service'],
-            model=test['rerank_model']
-        )
-    else:
-        rerank_service = None
-
-    llm_service = LLMService(
-        model_service=test['llm_service'],
-        model=test['llm_model']
-    )
-
-    db_service = DatabaseService(
-        db_type=test['index_type'],
-        index_name=index_name,
-        embedding_service=embedding_service,
-        rerank_service=rerank_service
-    )
-
-    try:
-        # Initialize the document processor with services
-        doc_processor = DocumentProcessor(
-            embedding_service=embedding_service,
-            chunk_size=setup_fixture['chunk_size'],
-            chunk_overlap=setup_fixture['chunk_overlap']
-        )
-        # Process and index documents
-        db_service.initialize_database(
-            clear=True
-        )
-        # Verify the vectorstore type
-        if db_service.db_type == 'Pinecone':
-            assert isinstance(db_service.vectorstore, PineconeVectorStore)
-        elif db_service.db_type == 'RAGatouille':
-            assert isinstance(db_service.vectorstore, RAGPretrainedModel)
-        logger.info('Vectorstore created.')
-
-        # Process and index documents
-        partitioned_docs = doc_processor.load_partitioned_documents(
-            setup_fixture['docs'],
-            partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
-        )
-        chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
-        db_service.index_data(chunk_obj)
-
-        # Initialize QA model
-        qa_model = QAModel(
-            db_service=db_service,
-            llm_service=llm_service
-        )
-        logger.info('QA model object created.')
-        assert qa_model is not None
-
-        # Run a query and verify results
-        qa_model.query(setup_fixture['test_prompt'])
-        assert qa_model.result['messages'] is not None
-        assert qa_model.result['context'] is not None
-        assert qa_model.result['alternative_questions'] is not None
-
-        # Delete the indexes
-        db_service.delete_index()
-        
-        logger.info('Databases deleted.')
-
-    except Exception as e:  # If there is an error, be sure to delete the database
-        db_service.delete_index()
         raise e
 
 def test_process_user_doc_uploads(setup_fixture):

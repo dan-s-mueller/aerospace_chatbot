@@ -9,6 +9,7 @@ from .database import (
 from .embeddings import EmbeddingService, RerankService
 from .llm import LLMService
 from .prompts import (
+    NoSourceCitationsFound,
     InLineCitationsResponse,
     AltQuestionsResponse,
     style_mode,
@@ -30,6 +31,7 @@ __all__ = [
     'EmbeddingService',
     'RerankService',
     'LLMService',
+    'NoSourceCitationsFound',
     'InLineCitationsResponse',
     'AltQuestionsResponse',
     'style_mode',
