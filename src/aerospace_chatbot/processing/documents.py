@@ -134,6 +134,7 @@ class DocumentProcessor:
             """
             Partition documents using the Unstructured API.
             TODO add in image extraction for multimodal. Not set up with embeddings yet.
+            TODO add async call for api https://docs.unstructured.io/api-reference/api-services/sdk-python#async-partitioning
             """
             client = unstructured_client.UnstructuredClient(
                 api_key_auth=os.getenv("UNSTRUCTURED_API_KEY"),
@@ -167,7 +168,6 @@ class DocumentProcessor:
                 languages=['eng'],
                 split_pdf_page=True,
                 split_pdf_allow_failed=True,
-                split_pdf_concurrency_level=15,
                 infer_table_structure=True,
                 # extract_image_block_types=["Image", "Table"],
                 # extract_image_block_to_payload=True
