@@ -108,7 +108,7 @@ class DatabaseService:
         # Require top_n to be at least 3
         if top_n is None:
             top_n = 3
-        elif top_n < 3:
+        if top_n < 3:
             raise ValueError("top_n must be at least 3")
         elif top_n > len(retrieved_docs):
             raise ValueError("top_n must be less than or equal to the number of retrieved documents")
@@ -316,9 +316,48 @@ class DatabaseService:
                 return doc_scores_sorted
             self.retriever = retriever
         elif self.db_type == 'RAGatouille':
-            self.retriever = self.vectorstore.as_langchain_retriever(
-                k=search_kwargs['k']
-            )
+            @chain
+            def retriever(query: str):
+                # Get raw search results
+                raw_results = self.vectorstore.search(
+                    query=query,
+                    k=search_kwargs['k']
+                )
+                
+                # Find max score for normalization
+                max_score = max(result['score'] for result in raw_results)
+                
+                # Convert results to LangChain document format
+                docs = []
+                scores = []
+                for result in raw_results:
+                    # Create metadata dict combining document_metadata and top-level metadata
+                    metadata = {
+                        **result.get('document_metadata', {}),
+                        'passage_id': result.get('passage_id'),
+                        'rank': result.get('rank')
+                    }
+                    
+                    # Create LangChain document
+                    doc = Document(
+                        id=result.get('document_id'),
+                        page_content=result['content'],
+                        metadata=metadata
+                    )
+                    
+                    # Normalize score
+                    normalized_score = result['score'] / max_score
+                    
+                    docs.append(doc)
+                    scores.append(normalized_score)
+                
+                # Create list of (doc, score) tuples and sort by score
+                doc_scores = list(zip(docs, scores))
+                doc_scores_sorted = sorted(doc_scores, key=lambda x: x[1], reverse=True)
+                
+                return doc_scores_sorted
+                
+            self.retriever = retriever
         else:
             raise ValueError(f"Unsupported database type: {self.db_type}")
 
@@ -341,7 +380,8 @@ class DatabaseService:
         return search_kwargs
     def _store_index_metadata(self, chunks):
         """
-        Store index metadata based on the database type.
+        Store index metadata based on the database type. 
+        This only works for Pinecone. RAGatouille does not support metadata vectors and will allow any chunk type to be upserted.
         """
 
         index_metadata = {}
@@ -400,7 +440,7 @@ class DatabaseService:
         if self.db_type == "Pinecone":
             _store_pinecone_metadata()
         elif self.db_type == "RAGatouille":
-            self.logger.warning("Metadata storage is not yet supported for RAGatouille indexes")
+            self.logger.warning("Metadata storage is not yet supported for RAGatouille indexes. Any chunk type will be upserted, regardless of existing metadata.")
         
     def _validate_index(self):
         """

@@ -1,0 +1,1172 @@
+[
+    {
+        "type": "CompositeElement",
+        "element_id": "9e0c8349-a635-4dd2-93c8-bce103cd4ace",
+        "text": "Efficacy of Lead Naphthenate for Wear Protection in High Vacuum Space Mechanisms\n\nJason T. Galary*\n\nAbstract",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJzdVMFq3DAQ/RXhY0lty5ItO7dCS0JpQ6Db9rAEM5ZGuwLbMrLcZgn990pmtyztXhrIJWAQ782M5HnzmO1Tgj0OOPrWqOSaJMCwKZqKcaGprjiISgimoVGlYLWou+SKJAN6UOAh5D8l0lqnzAge5xX3cLCLb/dodnsfmKLI81BzpH8a5feBpWJlJ2tGH+u2W5YXqbgiRTjowxX5g+siLSKmPBDlJWKtCEwyH2aPQ+zi3jxi/2UCicmvEFDoUXpjx1b2MM/t5GwX0vK0yllZhwRtemyVcSHLukO8Ifs6o5szBeOwYN+jy95buUSh5uzG+NulywCdneMbrdyD76zPggahm+N9IwwYb4okTSelTwF/mNYATFNvJMT/yo7hHsbdArtVym2C4y55WNnZt4NVRhtchxRa5m/z8JWborjOy2vaxOopVLbjMnToosSxc4+PcQjJB63DU/JArCafEBS5g2nv9xjnRrR15DuCI/fOHoUiZiS3YYLkG8hlGciqJfmModPRzMPa5KmPjfH9qvPfXiqxKmgNHevyRteUS1YpimH0hZKc6+bFvCR4lQaK0TwV0SonHA4WcVPlF/Ga/2wnsfK1Omll3H8siXPrfYQ5+GmTkhvowR3enFvnDpwLv/0DNzH5goW4pogKqnBCU+Siq1BXVS5RIgcK7OUs1LC4XDg9rqMT5iKtV8tQHi3zD6bPX0ZC1Ll4rRY6d8S7bvYOpL+wRB5+A0KgBMM="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "787e3ce7-8dd2-4b17-8f46-f17585903ec5",
+        "text": "The purpose of this research is to investigate the efficacy of lead naphthenate as a wear additive in a multi- alkylated cyclopentane (MAC) fluid for use in high vacuum space mechanism applications. The use of lead naphthenate in MAC lubricants has a spaceflight history of over thirty years. However, despite the history of use for this additive in a variety of rolling and sliding applications,",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtU11r3DAQ/CuLn1q4+GzH9+G8lRaal5ZC06cjmLW0PovIkpHku5iQ/96VckdTWjDYmt1Z7c6ODy8ZaRrJhFbJ7A4yon2z7/ZVWXd9XXdNsylFtb8td9UWZdPsshVkIwWUGJDzXzJhrZPKYCCfzhoXO4d2IHUcAiNVVRTMucBnJcPAaLlL6GSVCZF3OJRNk29WUO/2+eZxBdfztt7mdTpvil2+/Q/wxmAk84sPNMYpfqhn0j8nFJS9ckBSIBGUNa3Q6H07OdtxWpE39Y4rZL3S1ErlOMm6JRZY//Lk/FqiGWfSmtz6ixVz1Mmvv6pwP3drJGd9vKIVA4bOhjVLwMNc6hkcKVaKYJlPsr8GwjKlAE6TVgJjW+tLWKM5znhMSh4yMsfsMaE+tKOVqleUdlQVVX1T8LN5qKq7YnNXNpE9MbM189iRiwonxP3ZbN2XRBK3/MamKnbdlvrtthAkqMYSb5NSgZ7j0rKHgWCa3WQ9ge0hDMqDI0/oxAD8HSwoc+LR1JE3z3EC6nseRywxXxNKMDgNHIjWAPSAcGY6oJQqqBMxn6Fx1kHdAOqnRXOeBLEIbSfuGg3Bh2+fPn+EXs9KQm8dzD7RBrYWnFDM8whpAzAS78AoP8I7VX0OcYz5bYR/WuJCXB703Dkm8GJhSF2mir2O9uWbfHRE5NsTuaiDCwssPAhXv7dnYnQFkvykLjK8o8SbY9tJvb/nPqFT7ISY5azWyhwBjQSvlUzf76ZYgVYhaIqyPxl7NhCVMJL9GayVgB3/WOnq4FRnxUAjUzWwyQV5D90C50Hx2jiFG7r24aGfTfop8mieqyu/o3MY4w/RCa+PvwEjxWDZ"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "8feb1296-8bf7-470f-a7a3-7ddef3cab5a4",
+        "text": "little is known or understood about the tribochemical process by which these additives function.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtU11r3DAQ/CuLn1q4+GzH9+G8lRaal5ZC06cjmLW0PovIkpHku5iQ/96VckdTWjDYmt1Z7c6ODy8ZaRrJhFbJ7A4yon2z7/ZVWXd9XXdNsylFtb8td9UWZdPsshVkIwWUGJDzXzJhrZPKYCCfzhoXO4d2IHUcAiNVVRTMucBnJcPAaLlL6GSVCZF3OJRNk29WUO/2+eZxBdfztt7mdTpvil2+/Q/wxmAk84sPNMYpfqhn0j8nFJS9ckBSIBGUNa3Q6H07OdtxWpE39Y4rZL3S1ErlOMm6JRZY//Lk/FqiGWfSmtz6ixVz1Mmvv6pwP3drJGd9vKIVA4bOhjVLwMNc6hkcKVaKYJlPsr8GwjKlAE6TVgJjW+tLWKM5znhMSh4yMsfsMaE+tKOVqleUdlQVVX1T8LN5qKq7YnNXNpE9MbM189iRiwonxP3ZbN2XRBK3/MamKnbdlvrtthAkqMYSb5NSgZ7j0rKHgWCa3WQ9ge0hDMqDI0/oxAD8HSwoc+LR1JE3z3EC6nseRywxXxNKMDgNHIjWAPSAcGY6oJQqqBMxn6Fx1kHdAOqnRXOeBLEIbSfuGg3Bh2+fPn+EXs9KQm8dzD7RBrYWnFDM8whpAzAS78AoP8I7VX0OcYz5bYR/WuJCXB703Dkm8GJhSF2mir2O9uWbfHRE5NsTuaiDCwssPAhXv7dnYnQFkvykLjK8o8SbY9tJvb/nPqFT7ISY5azWyhwBjQSvlUzf76ZYgVYhaIqyPxl7NhCVMJL9GayVgB3/WOnq4FRnxUAjUzWwyQV5D90C50Hx2jiFG7r24aGfTfop8mieqyu/o3MY4w/RCa+PvwEjxWDZ",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "26fab46f-ceb1-45aa-a208-a69a46a87332",
+        "text": "This research looks at the performance of this additive in simulated contact tests using SRV (Sliding in Atmospheric and Vacuum Conditions), as well as a scuffing test performed in a mixed rolling/sliding contact. In addition, application simulation tests are being performed including high vacuum spiral orbit tribometry (SOT) and vacuum angular contact ball bearing testing. This test program",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtVNtq3DAQ/ZXBTw1sfdtbNm+lhbYvbWnSvISwjKXxWlSWjC5JlpB/78hebxIoLGg1OnM5Z2Z895yRpp5M2CuZXUFWN9u63a6blVzL7W692QlBNa221GyoWVabbAFZTwElBmT8cyasdVIZDOTHu8ajjWHfkTp0gS11XZbsczI/Khk6tlbb0TpYZULyu7urdrt8tYDNZZlf3i9gvu+qZV6N93V5mS//Y5g82JL5ow/UJxa/1BPp6wEFZS/8ICmQCMqavdDo/X5wtmFYme/W9bJiQKs07aVyjLLumCIUfzw5X0g0fSStyRVfrIhJKF98VeFbbAokZ33KsRcdhsaGgjVgNqd4BntKkZKxygfZzg/hOIwPOAxaCUx1FadnjeYQ8TBKeZeROWT3o9WHfW+lahVNTSrr1ceSf+ubur4q11fVLnkP7Lk3sW/IJYlHi3tt7aqtiCRu+MRdXW65o+1mUwoStMIKl6NUgZ5S17KbTnlw5Amd6EBb+9cDBggdwUCuta5HIwhsyyZGopQqqAcCZcCrPmqeBwnCmoCCvZIuEL0yB7j+fQsfrrWS6cLoT6FnFTtySgAaCbcoYuzhszUpojX+YgHo4ZGbkE4EL2LbJucUdS6Gk3EshJ4bL8FZrRlR+FOaUx05fDenSq3hqK/6zzWnv1OxLBw0lJzfZhA6jgE7Hm54mCr1g3KowbpGMVOnGsv74Y5M8ufNxUjpBEy91ejOqjTIlBoWeCbDZw6j8BM1Zw8Oe6AH1DHt16j+W6V55rozaR6tfkzX2GgkcgU6Nm4mOCflJ3KvFUlu6qv+4iw6BMulhcDY0cOHhO3s4/sa2mjEhLej+vxh0OCja3krTlQcDdaFaVDoHTEPIro0n5OBPHdZsSSTzPRO5FkmrVqatVqcmRaTAm/5nqfkkT0XwN+eA2/+6JWYcG/ytDLzLv5A5zBRuknz/3L/D4qXvi0="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "0e6c3e83-25ca-4b49-ad62-2d9c2fbc5c03",
+        "text": "evaluates the additive in both a mixed film and boundary lubrication contact under vacuum and atmospheric conditions to better understand how the additive functions on a metal surface. This report of the test programs current progress will include high vacuum bearing life testing, boundary/mixed lubrication scuffing wear, outgassing, and SOT.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtVNtq3DAQ/ZXBTw1sfdtbNm+lhbYvbWnSvISwjKXxWlSWjC5JlpB/78hebxIoLGg1OnM5Z2Z895yRpp5M2CuZXUFWN9u63a6blVzL7W692QlBNa221GyoWVabbAFZTwElBmT8cyasdVIZDOTHu8ajjWHfkTp0gS11XZbsczI/Khk6tlbb0TpYZULyu7urdrt8tYDNZZlf3i9gvu+qZV6N93V5mS//Y5g82JL5ow/UJxa/1BPp6wEFZS/8ICmQCMqavdDo/X5wtmFYme/W9bJiQKs07aVyjLLumCIUfzw5X0g0fSStyRVfrIhJKF98VeFbbAokZ33KsRcdhsaGgjVgNqd4BntKkZKxygfZzg/hOIwPOAxaCUx1FadnjeYQ8TBKeZeROWT3o9WHfW+lahVNTSrr1ceSf+ubur4q11fVLnkP7Lk3sW/IJYlHi3tt7aqtiCRu+MRdXW65o+1mUwoStMIKl6NUgZ5S17KbTnlw5Amd6EBb+9cDBggdwUCuta5HIwhsyyZGopQqqAcCZcCrPmqeBwnCmoCCvZIuEL0yB7j+fQsfrrWS6cLoT6FnFTtySgAaCbcoYuzhszUpojX+YgHo4ZGbkE4EL2LbJucUdS6Gk3EshJ4bL8FZrRlR+FOaUx05fDenSq3hqK/6zzWnv1OxLBw0lJzfZhA6jgE7Hm54mCr1g3KowbpGMVOnGsv74Y5M8ufNxUjpBEy91ejOqjTIlBoWeCbDZw6j8BM1Zw8Oe6AH1DHt16j+W6V55rozaR6tfkzX2GgkcgU6Nm4mOCflJ3KvFUlu6qv+4iw6BMulhcDY0cOHhO3s4/sa2mjEhLej+vxh0OCja3krTlQcDdaFaVDoHTEPIro0n5OBPHdZsSSTzPRO5FkmrVqatVqcmRaTAm/5nqfkkT0XwN+eA2/+6JWYcG/ytDLzLv5A5zBRuknz/3L/D4qXvi0=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "b4e4d66b-1c7a-4c8e-a63c-f4defedffd7e",
+        "text": "The results of this work will help the design engineer understand how materials, including lubricants, play a critical role in the performance and life of space mechanisms in demanding high vacuum environments. A greater understanding of the relationship between lead content and tribological performance will be developed along with further understanding of the tribochemical degradation process.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJx1U9GK2zAQ/JXFz6lj52xffG+Fg/apFHp9CodZS2tbVJaMJCcXjvv3rnSXNpQGDMaj3dHs7PjwmpGmmUzolMweIKO+2dOdaOv9UDZ1VfRSEAmBdUH7qhB32QaymQJKDMj1r5mw1kllMJBP3xrPdg3dRGqcAiO7XVFwzwd8UjJMjJb3CV2sMiH2HQ5l2+T7DbRVnRfPG7h8l2XV5FUC6uI+r/+HvPcwkvmzDzTHOb6rF9I/FhSUvfGBpEAiKGs6odH7bnG257Iib6u2bblgUJo6qRxXWXeODNufnpzfSjTzSlqT2z5asUar/PaLCl/XfovkrI93dGLC0NuwZRd4ng8+gzNFpgiW+SKHy0E4L+kAl0UrgVHX9uNYoxlXHJOZh4zMmD0n1IdutlINitKadsWu+lTwUz/tdg9F/VC2sXvhzs6sc08umpwQ93e51VASSWz4je2uuO8bGpqmECSowhLvklWBXuLesqeJwJFfdfBgBwiT8nCy7heclNYwkV4YI5Dk1WiAlSpD5GA1km0LaCRM9gQzB8Mp1H4Dygi9clRG0GvveG52cgMLJwMQhFOBIQ3OauLSxL2QG6yb0QiCSKjVQFFL8hxmYteN8rOP9ZK4LrFPnDw4oljXmWUdlbMmbS2HzzA6ioKuVMaONF6cVqdd+Ekt0FM4ERnQhBKENYEpkojgVG+1HZPaa4XJlz46ciRtF5KA2jL7SYUJhtXxFTcuTpRiojlxShpd/L9YCXBOBXmW/sj/G4wYOZh4cHaGE6GDmK3IFJVdxQm8mtf3aa6WxmxHJa+c+3d7/l0sxulv2nTTgEtK/qwXUEpe65HyGM5L6r+hcxjRp5i0t+ffAguKiw=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "91b1fe1a-05fb-486e-8acb-889f4ea4d98f",
+        "text": "Data gathered from wear testing and application simulation work will provide mechanism design engineers with a better understanding of the tribological performance of this lubricant additive.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJx1U9GK2zAQ/JXFz6lj52xffG+Fg/apFHp9CodZS2tbVJaMJCcXjvv3rnSXNpQGDMaj3dHs7PjwmpGmmUzolMweIKO+2dOdaOv9UDZ1VfRSEAmBdUH7qhB32QaymQJKDMj1r5mw1kllMJBP3xrPdg3dRGqcAiO7XVFwzwd8UjJMjJb3CV2sMiH2HQ5l2+T7DbRVnRfPG7h8l2XV5FUC6uI+r/+HvPcwkvmzDzTHOb6rF9I/FhSUvfGBpEAiKGs6odH7bnG257Iib6u2bblgUJo6qRxXWXeODNufnpzfSjTzSlqT2z5asUar/PaLCl/XfovkrI93dGLC0NuwZRd4ng8+gzNFpgiW+SKHy0E4L+kAl0UrgVHX9uNYoxlXHJOZh4zMmD0n1IdutlINitKadsWu+lTwUz/tdg9F/VC2sXvhzs6sc08umpwQ93e51VASSWz4je2uuO8bGpqmECSowhLvklWBXuLesqeJwJFfdfBgBwiT8nCy7heclNYwkV4YI5Dk1WiAlSpD5GA1km0LaCRM9gQzB8Mp1H4Dygi9clRG0GvveG52cgMLJwMQhFOBIQ3OauLSxL2QG6yb0QiCSKjVQFFL8hxmYteN8rOP9ZK4LrFPnDw4oljXmWUdlbMmbS2HzzA6ioKuVMaONF6cVqdd+Ekt0FM4ERnQhBKENYEpkojgVG+1HZPaa4XJlz46ciRtF5KA2jL7SYUJhtXxFTcuTpRiojlxShpd/L9YCXBOBXmW/sj/G4wYOZh4cHaGE6GDmK3IFJVdxQm8mtf3aa6WxmxHJa+c+3d7/l0sxulv2nTTgEtK/qwXUEpe65HyGM5L6r+hcxjRp5i0t+ffAguKiw==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "fffc3b73-dd10-485f-bbd9-eccd0e41d1aa",
+        "text": "Introduction and Background",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtkc1u6yAQhV/FYp3aQPyTZHlVqe2uUttVFFljmDjoYrBgrDaq+u4FN72rK7HhO3OGmcPxk6HFCR31RrNDwTq+E7tmq7pByrZuG6EHNZz3NequQd7VbFOwCQk0EKT6T6a8D9o4IIzr3cLVL9Rf0IwXSkRKzpPnht+Npkuiolvp7I2j7Dse24aX7aYQouvK3WlT/ANS1GWTgeCNKPf/JT+mhFi8RsIpb/JsPtC+zKCQfSVBI6Ei412vLMTYz8EPqYyXu23biVRwNhZ7bUKq8uGaO1RvEUOsNLhpQWsxVPdeLTmsWD0YelyGCjD4mN/o1QVo8FSlHNJGt34OJsydMhTlrM+/Al3nVYB5tkZBnqu6yRbcuMC4xnlk6EZ2WmmkfvLanA2uHyW5rO94Os2rlAfeHMQ+u+fk7N0yDRhyzHlzwo/8EezJUfB6WUMowOniD6i/Y/CL09n5O9KrIZsiO30DwX6luA=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "26774717-dacb-439e-ae16-cff64ca551b0",
+        "text": "Lead naphthenate has been used heavily as an anti-wear and extreme pressure additive in multi alkylated cyclopentane lubricants for high vacuum space mechanisms. The additive consists of a centralized lead ion that is bonded with the oxygen atoms of two carboxylate groups each attached to naphthenate aromatic rings. The naphthenate aromatic hydrocarbon rings provide solubility of the lead",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtU12P1DoM/StWn5eZttvO7OwzEjwghMTytFqN3MRtLdKkysfMFsR/xwm73AtCqtT2xD62z3Eev1dkaCEbz6yre6j6pj7djsOdau6GozrUx248yd9A49DdtqqtbqBaKKLGiBL/vVLOec0WI4Xyb3BzKZ5n4mmOgrRtXUvOC3xlHWdBm2NBV8c25rzHRwnbCdS03Wl3eLqB30DXN7suA01fH3eHfyK/kgSqwhYiLXmST/xM5vOKiqofcqApkors7FkZDOG8ejdIWL079bddJwEjGzpr9hLl/JYZ9l8C+bDXaJdExpDfv3UqZbHC/h3H92nYI3kXco2zmjEOLu5FB5nohc/iQpkpg81u1ePrQdzWcoDralhh7mv/cmzQTgmnIudjRXaqngoa4nlxmkemYlRbt92bWp7+oW3v6/6+OeXsVTLPNi0D+SxzQfx/9h7ru+auv1XHoW0P3aFv9KCG8dSRPvYkZhepIj1n56oPhBosrnOcKRsMMwYYiCykQBpmwgubDQREK0/kN1dCL18ahMHLWsHqKYTkCVBrjnwhYAtLMpEBzdfNCKsGtSnjVmkSLYFJgxdFRGMYnYdZ1gguqFJaoAgNC4nUlsMSdvAw/49ZORtYxAc3AoISPo+Gv0kBkwcRiSGKScAyhLNa8CvHWTAC97xNMhZGt5T0eHWg0A+C5xZh8i6tAQjVLEFRXpId3R/ioHeLGKnAs51eevvn+bxp7wq7/RUrKrkLa4LgZHo2HLfShBCYvy0Q+WQHRsqe/sHk2IQbGFIseVfcyvu3OF56F2nKxHJDyBSbpHC+FWLghGxDhGKg1LigZ5fCqxt5P4Vi4oVC1i9ENgasizAmIyuQRE4fonN6l5fwdbs/oveYyz/kjfrx9BN0939o"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "05ef5871-3ef0-43e4-942e-dbade48f4d4a",
+        "text": "naphthenate in different hydrocarbon oils, but the way the additive reacts with steel and protects against wear in various lubrication regimes is still not fully understood.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtU12P1DoM/StWn5eZttvO7OwzEjwghMTytFqN3MRtLdKkysfMFsR/xwm73AtCqtT2xD62z3Eev1dkaCEbz6yre6j6pj7djsOdau6GozrUx248yd9A49DdtqqtbqBaKKLGiBL/vVLOec0WI4Xyb3BzKZ5n4mmOgrRtXUvOC3xlHWdBm2NBV8c25rzHRwnbCdS03Wl3eLqB30DXN7suA01fH3eHfyK/kgSqwhYiLXmST/xM5vOKiqofcqApkors7FkZDOG8ejdIWL079bddJwEjGzpr9hLl/JYZ9l8C+bDXaJdExpDfv3UqZbHC/h3H92nYI3kXco2zmjEOLu5FB5nohc/iQpkpg81u1ePrQdzWcoDralhh7mv/cmzQTgmnIudjRXaqngoa4nlxmkemYlRbt92bWp7+oW3v6/6+OeXsVTLPNi0D+SxzQfx/9h7ru+auv1XHoW0P3aFv9KCG8dSRPvYkZhepIj1n56oPhBosrnOcKRsMMwYYiCykQBpmwgubDQREK0/kN1dCL18ahMHLWsHqKYTkCVBrjnwhYAtLMpEBzdfNCKsGtSnjVmkSLYFJgxdFRGMYnYdZ1gguqFJaoAgNC4nUlsMSdvAw/49ZORtYxAc3AoISPo+Gv0kBkwcRiSGKScAyhLNa8CvHWTAC97xNMhZGt5T0eHWg0A+C5xZh8i6tAQjVLEFRXpId3R/ioHeLGKnAs51eevvn+bxp7wq7/RUrKrkLa4LgZHo2HLfShBCYvy0Q+WQHRsqe/sHk2IQbGFIseVfcyvu3OF56F2nKxHJDyBSbpHC+FWLghGxDhGKg1LigZ5fCqxt5P4Vi4oVC1i9ENgasizAmIyuQRE4fonN6l5fwdbs/oveYyz/kjfrx9BN0939o",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "3bfbc8ef-29e5-44af-9fb3-995d9af16bfd",
+        "text": "The historical use of lead naphthenate originates from industrial gears and bearings where it was used an extreme pressure additive over fifty years ago. Over the last thirty years, it has gained a lot of spaceflight history although there are still many questions regarding its efficacy, primarily how does it function in various lubrication regimes, the effects of different metallurgy, and how",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtU02PnDAM/SsW5ylfAwOz50rtqa3U7Wm0QoE4ECkkNAkzi1b732szs+2lEkjhOX623zOXtwQNzmhjp2XyBMlRilPdY32s2+Jct81wLlVVYNNig31TDskBkhmjkCIKuv+WDM55qa2IGPZvIza3xm5CPU6RkLLMc8p5wDct40Ro0ezo4rSNnHe5FOc2bQ9QVG2dHl8O8Bc41UVa7UCdN+npv8g9iaAkbCHizJP80K9ofi5iwOSdAhIjDlE72w1GhNAt3vV0LU/PVXMs6YLSBjupPd1yfmOG7FdAHzIp7LyiMeizz25YWayQfdHx69pnAr0LXKMbJhF7FzPSgSZ68FkxIzMxWKSLVB+BuC17QCyL0YPgvrJH2Ag7rmLc5bwkaMfkZUdD7GYntdK4G1XmZfUpp6d+LsunvH4qzpy9UGZn17lHzzLviP9nb5O3RVsfh6Yvy1NFQsp+6NW5QtnUmDfVLlXEV3YueZ4QJh1IDmrRwBoQnAKDQoIVyxQnZNuBwuN9AUB5N4O2cg3Ra0oZUfgAwkro6aTtGOA2oUfQEW4iMKWkMFBBT1sIi8cQVooLKXXUVyK/ogelVdxgu5ONLoXvjFJ9YFnooP1H/MDUE1GPQlsmB+Mit727pAxv5WOoDYSJk1vHiam4KL0hamNgFnaD3yu5RsYE8DgKXvKRyAOgUqTHsB2oXT3TWGaDyd1AOlKAqqvV7otGQsCVwm4NYNbeP3xmNj0jdcoDEBktXOAOyVuF7BXwD2bM6keqweIxO9qr9s7y9pGwf4W65+99LeiV89T6gCmvwseOfRPeCxbzmX19f/kDkKlRhw=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "104c5e5c-4f32-409d-b9ce-c0c6c41243c5",
+        "text": "environmental pressure effect its performance.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtU02PnDAM/SsW5ylfAwOz50rtqa3U7Wm0QoE4ECkkNAkzi1b732szs+2lEkjhOX623zOXtwQNzmhjp2XyBMlRilPdY32s2+Jct81wLlVVYNNig31TDskBkhmjkCIKuv+WDM55qa2IGPZvIza3xm5CPU6RkLLMc8p5wDct40Ro0ezo4rSNnHe5FOc2bQ9QVG2dHl8O8Bc41UVa7UCdN+npv8g9iaAkbCHizJP80K9ofi5iwOSdAhIjDlE72w1GhNAt3vV0LU/PVXMs6YLSBjupPd1yfmOG7FdAHzIp7LyiMeizz25YWayQfdHx69pnAr0LXKMbJhF7FzPSgSZ68FkxIzMxWKSLVB+BuC17QCyL0YPgvrJH2Ag7rmLc5bwkaMfkZUdD7GYntdK4G1XmZfUpp6d+LsunvH4qzpy9UGZn17lHzzLviP9nb5O3RVsfh6Yvy1NFQsp+6NW5QtnUmDfVLlXEV3YueZ4QJh1IDmrRwBoQnAKDQoIVyxQnZNuBwuN9AUB5N4O2cg3Ra0oZUfgAwkro6aTtGOA2oUfQEW4iMKWkMFBBT1sIi8cQVooLKXXUVyK/ogelVdxgu5ONLoXvjFJ9YFnooP1H/MDUE1GPQlsmB+Mit727pAxv5WOoDYSJk1vHiam4KL0hamNgFnaD3yu5RsYE8DgKXvKRyAOgUqTHsB2oXT3TWGaDyd1AOlKAqqvV7otGQsCVwm4NYNbeP3xmNj0jdcoDEBktXOAOyVuF7BXwD2bM6keqweIxO9qr9s7y9pGwf4W65+99LeiV89T6gCmvwseOfRPeCxbzmX19f/kDkKlRhw==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "af7cd600-b483-4855-ba24-00d2a55d8112",
+        "text": "With the increasing number of space mechanisms being developed and launched as well as the increasing length of mission time required, it is critical to have a robust design with high reliability. To improve the reliability, it is necessary to have long lives for all of the components in the design. This will require that the lubricants used for space mechanisms must also improve. The use of lead",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJx1U11v2zAM/CuEn7vEdj4c93nA9jQMWIc9BIVBS3QsVJY8SU5qFPvvI520HTYMCBD4yDuSR+r4kpGlgVxqjM7uIas35YEObVuUOdZ5Xu2rPW7Lquqq/aata8zuIBsoocaEnP+SKe+DNg4TxeXb4uyn1PRkTn1ipCzznDk3+GJ06hktqgUdvXFJeMdjUder6g6K/WG/2jzewRtw2BWr7QLs8uo/yJXEUBbnmGiQSb6aZ7LfRlSU/eKApkQqGe8aZTHGZgy+5bR8VW/zcs8JnbHUaBM4y4dZFNbfI4W41uiGiaylsP7o1SRmxfUnkz5P7Rop+Cg1GtVjan1asw880U3P4UCiJGCxGnX3GkjzuARwHK1RKH2tb2GL7jThabHzmJE7ZY8LGlMzeG06Q8uiyrzcfsj5t3soy/t8d1/Uwh6Z2bhpaCmIzQsS3tdb5Qe2b6Oqtiz32/2u0K1qu3pLutpRXm0XqxI9y+ayHyb1kHoC41QgjMad4CoNvoNlbBiIB3cmDhFakgRNZ7J+JA3oNFicnOrlI8KFPZT/vxTZpRPXYcXBxMhGQDIDQaCfEy9D34FJYCKoYBI7ZSF56PFMgMAbnGLiitGcHFyk256vjqnWYGusSfMKHjyYgZfNDCn8R+xV2ZGiGDHMb9LWS1/mTBE6HwC5b25P6MoPo3dyATzCglyrc52epS6GU2+dcxTTkmKnNnDrQpoieyGa/7g3yCho41u7IklCkNqWUIPDsWc9eWuAWrMfZ3GSqTYZ5j7NlkMa1KxkAy6hI+jsZHSUOREWXffO5R6e+F6u1i0ddVaeLdsY5RFAOyUpwC+cd87u3JYrh/Z6wV8wBBS1B7maX4+/ARs/cbw="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "b77d8a7a-ab48-4db3-9431-f77114919ef2",
+        "text": "naphthenate additive in multi alkylated cyclopentane fluids is a proven additive package with spaceflight history but in order to develop",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJx1U11v2zAM/CuEn7vEdj4c93nA9jQMWIc9BIVBS3QsVJY8SU5qFPvvI520HTYMCBD4yDuSR+r4kpGlgVxqjM7uIas35YEObVuUOdZ5Xu2rPW7Lquqq/aata8zuIBsoocaEnP+SKe+DNg4TxeXb4uyn1PRkTn1ipCzznDk3+GJ06hktqgUdvXFJeMdjUder6g6K/WG/2jzewRtw2BWr7QLs8uo/yJXEUBbnmGiQSb6aZ7LfRlSU/eKApkQqGe8aZTHGZgy+5bR8VW/zcs8JnbHUaBM4y4dZFNbfI4W41uiGiaylsP7o1SRmxfUnkz5P7Rop+Cg1GtVjan1asw880U3P4UCiJGCxGnX3GkjzuARwHK1RKH2tb2GL7jThabHzmJE7ZY8LGlMzeG06Q8uiyrzcfsj5t3soy/t8d1/Uwh6Z2bhpaCmIzQsS3tdb5Qe2b6Oqtiz32/2u0K1qu3pLutpRXm0XqxI9y+ayHyb1kHoC41QgjMad4CoNvoNlbBiIB3cmDhFakgRNZ7J+JA3oNFicnOrlI8KFPZT/vxTZpRPXYcXBxMhGQDIDQaCfEy9D34FJYCKoYBI7ZSF56PFMgMAbnGLiitGcHFyk256vjqnWYGusSfMKHjyYgZfNDCn8R+xV2ZGiGDHMb9LWS1/mTBE6HwC5b25P6MoPo3dyATzCglyrc52epS6GU2+dcxTTkmKnNnDrQpoieyGa/7g3yCho41u7IklCkNqWUIPDsWc9eWuAWrMfZ3GSqTYZ5j7NlkMa1KxkAy6hI+jsZHSUOREWXffO5R6e+F6u1i0ddVaeLdsY5RFAOyUpwC+cd87u3JYrh/Z6wV8wBBS1B7maX4+/ARs/cbw=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "0cd92818-7e01-4040-a0cb-e5098ed38bd3",
+        "text": "* Nye Lubricants, Inc., Fairhaven, MA\n\nProceedings of the 45th Aerospace Mechanisms Symposium, NASA Johnson Space Center, 2020\n\n301\n\nand advance the lubrication technology for high vacuum space mechanisms, additional understanding of its tribological performance is needed to facilitate innovations.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJzlVU2L3DgQ/SvCx9DrlmzLH3MbsmQ3YTMEJjkNQ6OPcltgS0aSe9MJ+e8pubuTYenNITCXBPqip6pXqnqvyw+fMxhhAht3Rmc3JOtrrXjb9Ir3gglNC636VgnOGfCubmm2IdkEUWgRBcZ/zpRzXhsrIoT1PIqjW+JuALMfIiJFQSnmnOF/jY4DoqxZ0dkZG1PewwPr6rzaENaxImePG/IdqIq8TEBdVzm9CqwpiGThGCJMqY935iOM97NQkH3BCw0RVDTO7tQoQtjN3kkMoznntGoxoDcj7LTxGOX8MTFsPwTwYauFnRYYR/DbP51a0qjC9i8T/17kVoB3IdXYqUFE6eIWp4D9nPmsmCAxJZDls+4vF/E4rxdinkejRHrX9nw9CrtfxH4d5kMGdp89rmiIu8lp0xtYZSpoUf1B8cffF8UN5TesS9kzZu7sMknwacip8wgfkwzZC3J3BPLPIj1WxB425LVV+Ya8EsYP4gB2Q97eJo7L4145F5EGOf7rkabjtVIF6ErItu9kJXkpZVs0qtHAlXw2j5S0Olmi4SePnAFML/J2NU3ZNXl9DTkn/ZxL2obX5e/gknfeKQDUah+I60kcgFQ8DuT20gN5C9iFNWEK5P44zS6YZdqQu9v7W/LGDTY4S9aBkpc4A/BJioI+9dWd8B6bOcD7VPOKvUqpCgaqkpWW+GdH4TrdtbzrayaZ7Nmz2ast6rxJD0anrAvmAjBa5nQFWnodOKX80Fy/vHdKyp7q/MFiXdg7bz6B/j+tW9ZwViloqWY144JC2XCoqQSuy6psn01rDEvfjoKiwknIy7nuTmfGaZPza8Ca8XNrpGMV5b+oFYqnVhBWE6EPwuIeSDtkPH12Um2CsxmsG93+SHrnyYDCkYNQyzKR04aZvm2YDZJok7LESBarcUQRqXE7peVkYiDRG5m4kHwkM3hknNaqJhCLiww0iY70QpnRRDQNMda6w/qQkP9gKz1+BbZD11k="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "b393bceb-bc1e-4d06-81b3-0b24c720b1eb",
+        "text": "When considering how to research the efficacy of lead naphthenate and how it functions as a tribofilm, it is important to look at various methodologies to characterize its performance. In the beginning stages, this is easiest performed by using simulated contact testing. In this respect, an SRV makes the best choice as it is very flexible regarding the contact mechanics and environmental",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtVMtu40YQ/JUGTwmg6GXLtnwOkOTgJIiV7MEwhOZMU2zsPIiZoWxlsf+e7pHoCMkCPHD6WVVT5MuXhhx5CmXPtnmEZnNzd9Ot7x/u8OEWt2tjt9ZsscVu2eJqtTHNDBpPBS0WlPovjYkxWQ5YKNezw1Mcy74nPvRFIuv1cik9l/Ab29JLdHVfo0PkULTv5UXK5hK6Wd7O719nMJ3vbu7mt3pebZb384dvBM4dEmnyKRfyyuJ3fif3PKCh5qskLBUyhWPYG4c574cUWylbzrebzWotBR072ltOUhXTSScs/syU8sJi8CM5R2nxYzSjCpUXP3H5eWwXSClm3bE3PZY2loVoIGwu8wJ60kkaXM0H202JchpqAofBsUHFtbikHYbDiIcq5UtD4dC81mguex8td0z1ktbL9e0PS3k2u/X6cbl5XG21e5DOfRh9S0mFV+aF3vUSmk89BTAxZLaUOBygj29QIiTKhMn0UHoC6jrBY04QO3CEFgIOvST0cgGDrU1coBtDVTMDygMlcRuFmJ9pkjOwH2IqGIpucDF+BixwxMRxzCDm6aONLh6YshaIeAlNEVh/kwzIMFDqYvIYDM3hl1ChtXTgEBR4LqrPTKK6KQNhlkFl6iIL7QnGXEvZj06wW2VeZAfoXUjmMla6hf8glz4TevD8x1/g8bOiqhtlqOkjG1KaZ2ZHSifoHL1z60iaD6jeP9SGaYcnYRTY5CoZhSOnGNQ46LTGcpVuDjvpwSOyw5Ydl6r682+7CaOuy9HTm3gLHHtWHu1YRPAnDgw7FU0mwROangPBd0+7p+/BCJGWRACp5iDFomOgpEJPclS0WdwJ6kRde+XEK4jwxqWXCS06B2k8y68zA8TUsvIZsMjFyVk3Wc5m6vH8XsZUh6fonHQusmNbtf/Uy0dQQQhiBRyiKD2mJBq5k246Iz+iGUf/L6Bqr2t+wmkM4mexhCitA8WZFj+09oPeVFGffcvRUSyDZSL1X5xKQXZcSaPIKXwYT+a3ors9U9btZ8ALLF7+C70Y2nxcZjzbWCw2qy9XHldsGvofvgtVj1beJZsozfUzn/4fv2JS/Efa6Uf+9fUf+o3/7Q=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "72699112-e9aa-4d7d-9521-9717dfcef23e",
+        "text": "conditions. The availability of SOT testing is somewhat limited but a Mini Traction Machine (MTM) can be used in a manner to simulate the same type of application conditions with a ball running in an orbital pattern on a disc with a mixture of rolling/sliding. While the MTM cannot currently run in a vacuum condition, it can be used to understand the fundamental complexities of lead naphthenate",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtVMtu40YQ/JUGTwmg6GXLtnwOkOTgJIiV7MEwhOZMU2zsPIiZoWxlsf+e7pHoCMkCPHD6WVVT5MuXhhx5CmXPtnmEZnNzd9Ot7x/u8OEWt2tjt9ZsscVu2eJqtTHNDBpPBS0WlPovjYkxWQ5YKNezw1Mcy74nPvRFIuv1cik9l/Ab29JLdHVfo0PkULTv5UXK5hK6Wd7O719nMJ3vbu7mt3pebZb384dvBM4dEmnyKRfyyuJ3fif3PKCh5qskLBUyhWPYG4c574cUWylbzrebzWotBR072ltOUhXTSScs/syU8sJi8CM5R2nxYzSjCpUXP3H5eWwXSClm3bE3PZY2loVoIGwu8wJ60kkaXM0H202JchpqAofBsUHFtbikHYbDiIcq5UtD4dC81mguex8td0z1ktbL9e0PS3k2u/X6cbl5XG21e5DOfRh9S0mFV+aF3vUSmk89BTAxZLaUOBygj29QIiTKhMn0UHoC6jrBY04QO3CEFgIOvST0cgGDrU1coBtDVTMDygMlcRuFmJ9pkjOwH2IqGIpucDF+BixwxMRxzCDm6aONLh6YshaIeAlNEVh/kwzIMFDqYvIYDM3hl1ChtXTgEBR4LqrPTKK6KQNhlkFl6iIL7QnGXEvZj06wW2VeZAfoXUjmMla6hf8glz4TevD8x1/g8bOiqhtlqOkjG1KaZ2ZHSifoHL1z60iaD6jeP9SGaYcnYRTY5CoZhSOnGNQ46LTGcpVuDjvpwSOyw5Ydl6r682+7CaOuy9HTm3gLHHtWHu1YRPAnDgw7FU0mwROangPBd0+7p+/BCJGWRACp5iDFomOgpEJPclS0WdwJ6kRde+XEK4jwxqWXCS06B2k8y68zA8TUsvIZsMjFyVk3Wc5m6vH8XsZUh6fonHQusmNbtf/Uy0dQQQhiBRyiKD2mJBq5k246Iz+iGUf/L6Bqr2t+wmkM4mexhCitA8WZFj+09oPeVFGffcvRUSyDZSL1X5xKQXZcSaPIKXwYT+a3ors9U9btZ8ALLF7+C70Y2nxcZjzbWCw2qy9XHldsGvofvgtVj1beJZsozfUzn/4fv2JS/Efa6Uf+9fUf+o3/7Q==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "0de579d1-24b2-42cb-994b-97c13d03f004",
+        "text": "operating in a rolling/sliding mixed application. When this is combined with the vacuum/atmospheric testing on the SRV, the performance of the lead naphthenate can be made clearer.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtVMtu40YQ/JUGTwmg6GXLtnwOkOTgJIiV7MEwhOZMU2zsPIiZoWxlsf+e7pHoCMkCPHD6WVVT5MuXhhx5CmXPtnmEZnNzd9Ot7x/u8OEWt2tjt9ZsscVu2eJqtTHNDBpPBS0WlPovjYkxWQ5YKNezw1Mcy74nPvRFIuv1cik9l/Ab29JLdHVfo0PkULTv5UXK5hK6Wd7O719nMJ3vbu7mt3pebZb384dvBM4dEmnyKRfyyuJ3fif3PKCh5qskLBUyhWPYG4c574cUWylbzrebzWotBR072ltOUhXTSScs/syU8sJi8CM5R2nxYzSjCpUXP3H5eWwXSClm3bE3PZY2loVoIGwu8wJ60kkaXM0H202JchpqAofBsUHFtbikHYbDiIcq5UtD4dC81mguex8td0z1ktbL9e0PS3k2u/X6cbl5XG21e5DOfRh9S0mFV+aF3vUSmk89BTAxZLaUOBygj29QIiTKhMn0UHoC6jrBY04QO3CEFgIOvST0cgGDrU1coBtDVTMDygMlcRuFmJ9pkjOwH2IqGIpucDF+BixwxMRxzCDm6aONLh6YshaIeAlNEVh/kwzIMFDqYvIYDM3hl1ChtXTgEBR4LqrPTKK6KQNhlkFl6iIL7QnGXEvZj06wW2VeZAfoXUjmMla6hf8glz4TevD8x1/g8bOiqhtlqOkjG1KaZ2ZHSifoHL1z60iaD6jeP9SGaYcnYRTY5CoZhSOnGNQ46LTGcpVuDjvpwSOyw5Ydl6r682+7CaOuy9HTm3gLHHtWHu1YRPAnDgw7FU0mwROangPBd0+7p+/BCJGWRACp5iDFomOgpEJPclS0WdwJ6kRde+XEK4jwxqWXCS06B2k8y68zA8TUsvIZsMjFyVk3Wc5m6vH8XsZUh6fonHQusmNbtf/Uy0dQQQhiBRyiKD2mJBq5k246Iz+iGUf/L6Bqr2t+wmkM4mexhCitA8WZFj+09oPeVFGffcvRUSyDZSL1X5xKQXZcSaPIKXwYT+a3ors9U9btZ8ALLF7+C70Y2nxcZjzbWCw2qy9XHldsGvofvgtVj1beJZsozfUzn/4fv2JS/Efa6Uf+9fUf+o3/7Q==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "48658dd5-e53f-4831-a258-bddf69cbf030",
+        "text": "In more recent research done on lead naphthenate using the SRV and other sliding tribometers, results have typically been inconclusive regarding the efficacy of this additive to protect a lubricated contact. The standard SRV testing includes conditions that could be inappropriate for evaluating many anti-wear additives including lead naphthenate. This includes the sliding speed which would create",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtU9tu2zAM/RXCz2niBLn2bcCAbQ8bhjXbS1AYtETHQmXJkOSkQdF/H6nG7dYNMGDwdnh4SB2eCrLUkUuV0cUtFLRZbteNatYrqpflkhTtyvVqp+sNrVU53xYTKDpKqDEh5z8VyvugjcNEMdsWL35IVUvm2Cb2LBZlyTVX99no1LJ3vsne3huXpO5wmO+2U3Zxr+nyfgKjvVusrvaq3E43/3G8VLCniJeYqJMpvptHsnc9KiqeOaApkUrGu0pZjLHqg685rZzuVuvtjhMaY6nSJnCWDxdBmP2MFOJMo+sGspbC7KNXgwgVZ59M+jzUM6Tgo/SoVIup9mnGGvA0VzyHHQmSOOfTXjdjIF36HMC+t0ah8JpdwxbdccBjlvJQkDsW99kbU9V5bRpDeUmLcrG8Kflb7ReL23J1O99Jdc+VlRu6moIIL5MnepQlFF8cdD4Q8IQ8Av8iYVAtaO8IvANLqMFh36aWZJcwROOOwBbc/fgF6DR4NgJEa3SOBFN7PgQWaSJwg00RWjwR8Hg8lbUXqIkcGKe8U5bxTtL+iEGPyNQ0nKku4Bu2TQTU2iTJSx54R7I0QLBDHUQn0sBQCVWawp7LY2JaDJcZisqCa6SXpiipAuZdZGxMbA9WMyXOYOGD74ORORsfgE5oB8zlHboLT5vMzZkFeiUUr7iS8l4qIWPiW2OZbFQp9sSsz61hqc+ZgAokbVEGVg8sKF9Ex8PSifcyCvOqQzO4fLfQBN8x+YyZmAfpFw2ugrCTd8AkWEMbPXQDN2z5BXID496U+nC3/5qliiMpYy1nNHYgpwhaf84E8naFGePx1byQ1vkMGE4yFEaSvb1XY5Kj19Z/s2NtcrtRAv2yH7SQtf6DECfI5l1eeORXB3hCY7G29O+ldviQF59gcG9pfEGvUl9PKR/WONhUHsz4Er9hCCjxvTyX5/vfVljBsg=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "58887820-f255-4a34-83ee-bd164717322c",
+        "text": "a thicker film preventing the additive function from being studied. The contact stress is also much higher in standard ASTM tests which will influence how the tribofilms are created and in the case of lead naphthenate, the higher contact stresses will create additional wear which will react and consume available lead naphthenate making it unavailable to create a protective tribofilm.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtU9tu2zAM/RXCz2niBLn2bcCAbQ8bhjXbS1AYtETHQmXJkOSkQdF/H6nG7dYNMGDwdnh4SB2eCrLUkUuV0cUtFLRZbteNatYrqpflkhTtyvVqp+sNrVU53xYTKDpKqDEh5z8VyvugjcNEMdsWL35IVUvm2Cb2LBZlyTVX99no1LJ3vsne3huXpO5wmO+2U3Zxr+nyfgKjvVusrvaq3E43/3G8VLCniJeYqJMpvptHsnc9KiqeOaApkUrGu0pZjLHqg685rZzuVuvtjhMaY6nSJnCWDxdBmP2MFOJMo+sGspbC7KNXgwgVZ59M+jzUM6Tgo/SoVIup9mnGGvA0VzyHHQmSOOfTXjdjIF36HMC+t0ah8JpdwxbdccBjlvJQkDsW99kbU9V5bRpDeUmLcrG8Kflb7ReL23J1O99Jdc+VlRu6moIIL5MnepQlFF8cdD4Q8IQ8Av8iYVAtaO8IvANLqMFh36aWZJcwROOOwBbc/fgF6DR4NgJEa3SOBFN7PgQWaSJwg00RWjwR8Hg8lbUXqIkcGKe8U5bxTtL+iEGPyNQ0nKku4Bu2TQTU2iTJSx54R7I0QLBDHUQn0sBQCVWawp7LY2JaDJcZisqCa6SXpiipAuZdZGxMbA9WMyXOYOGD74ORORsfgE5oB8zlHboLT5vMzZkFeiUUr7iS8l4qIWPiW2OZbFQp9sSsz61hqc+ZgAokbVEGVg8sKF9Ex8PSifcyCvOqQzO4fLfQBN8x+YyZmAfpFw2ugrCTd8AkWEMbPXQDN2z5BXID496U+nC3/5qliiMpYy1nNHYgpwhaf84E8naFGePx1byQ1vkMGE4yFEaSvb1XY5Kj19Z/s2NtcrtRAv2yH7SQtf6DECfI5l1eeORXB3hCY7G29O+ldviQF59gcG9pfEGvUl9PKR/WONhUHsz4Er9hCCjxvTyX5/vfVljBsg==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "522981aa-2b28-4c2a-9c17-f22f0d77a5a6",
+        "text": "From the authors previous research [7], the following was determined: In oscillatory testing, Lead Naphthenate had better anti-wear performance at lower temperatures (~20°C) and increasing the amount of lead directly reduced the wear rate. Under high vacuum conditions, the samples with lead naphthenate offered twice the wear protection with 440C performing the best. At higher temperatures (75°C)",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJylVu9rIzcQ/VeE4aAFx15vvXGdbyGlvUJ7FJr7lAajXc16RbXSImntmOP6t/eN1us4lx/QBvwhO9LMvDdvZpS7LxMy1JKNG60mV2KylpfLiqhcqB+zYpVTUWbycrUmqi8zRcvLyVRMWopSyShx/8ukcs4rbWWkkL6NPLg+bhrS2ybCkudZBp+jea9VbGBdrJK1c9pG9ru7W6zXs/VUrC/z2ep+KsbvRbHOZ3kyFNlqtnrJMvjAMgmHEKllHn/oBzJ/drKiyVccKIpURe3spjIyhE3nXYlr2WxdZMsCF2ptaKO0xy3nDxxh/jmQD3MlbduTMeTnP7mq51KF+S86fuzLuSTvAufYVI2MpYtzVAF8jvGsbIkjsXEx61Q9HsRDlw5k1xldScY1Px4babe93KZi3k3Ibif3yRripnVK15qSTHmWLy8y/IrbPL/KiqvFmr07eG5s35bkufTMPNIDyzD52btWxIaE7GPjfBCdp512fRCeAklfNeKOC89XameM22u7FXsZBNfOt9qSuhK/WuFCpY2RXCbBzHBtKn4jqcQn2TVw514QDb5LivAU0kZ9sUcK0ZGvnW+lrQAjCuTAMQSDXcYeOMR3/+TZX32WldnN93BUQtvKkwyMJYFvXW+jcLUwnHEQzBzAQfUVqXQnpUJAmonPViFDg1YUO1n1fSsqZ5XmgoeBapBtZ5B4r2MzxLRnLFxdk+ewew3Ip+DonmM7DX7LZXYzkhuRlijNTFzHlP0ZzVVxYvkEciq4NK0LUSjXl4bF8M+RyjEs+EQ6q4is0JIcwgh6QEKdGnYmbhHhlHTUDdUVHQA90TQYrfgM5Ip8kWUCI0VmKkIDubjCUO7tqiGqxC+CRQeMuhJkd9o7y1jGOiHUHm0ISUOiByIVjn2ahhOdo/ykZuIj0u/IT8UeaVKOUdOz6NOXw53CfFNtRafw6Owk46mln3Mcu6HvRHRv9ITb0SCZpbNavYI4ZW6xrZTwGDukno8KnAn4Pycsdf6Tznv/TF2/PLjF49yC6SABwpK/AK84yJCicIGnb4xa4wllBe3w8sCd1P/hwzcqMze8ZjtcePQ/c+VJKj4MqSvXdjLlc49S/X59I2rTa/X64C5e5/mfaNZ69w6WcY/vw/tZYitg+vEMIX3gSyWmF00ikMyGtCdFeqO50/YETIDDAMYE59T2KVjqqJ3URvLyGlBgG6DhqjjMEt7JZthova8lN6pNuwBjgH8sDMPg/kREid2DMdkeV9upy6PXpcND2jID4D19D9sJliGA4j9H5PnFMilX8C1d/T2kbfAcC83IsDEr2fNCGiaYV+i4N1iKGotsECCeo58+6ocJOq6eyGSRe8swHkdpxm/0+Ph/kp4V3dEtv9Bf7/8FKnZUjw=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "1144adf8-7bde-49cf-9155-45a3ec7b8cb0",
+        "text": "the wear rate was almost double for the samples with a higher content of lead across all experiments. The 75°C testing in pure oscillatory sliding on 52100 steel, showed that samples with lead naphthenate in an atmospheric environment performed worse as the concentration of lead increased. However, when in a vacuum environment, as the concentration increased the wear rate decreased. In 440C",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJylVu9rIzcQ/VeE4aAFx15vvXGdbyGlvUJ7FJr7lAajXc16RbXSImntmOP6t/eN1us4lx/QBvwhO9LMvDdvZpS7LxMy1JKNG60mV2KylpfLiqhcqB+zYpVTUWbycrUmqi8zRcvLyVRMWopSyShx/8ukcs4rbWWkkL6NPLg+bhrS2ybCkudZBp+jea9VbGBdrJK1c9pG9ru7W6zXs/VUrC/z2ep+KsbvRbHOZ3kyFNlqtnrJMvjAMgmHEKllHn/oBzJ/drKiyVccKIpURe3spjIyhE3nXYlr2WxdZMsCF2ptaKO0xy3nDxxh/jmQD3MlbduTMeTnP7mq51KF+S86fuzLuSTvAufYVI2MpYtzVAF8jvGsbIkjsXEx61Q9HsRDlw5k1xldScY1Px4babe93KZi3k3Ibif3yRripnVK15qSTHmWLy8y/IrbPL/KiqvFmr07eG5s35bkufTMPNIDyzD52btWxIaE7GPjfBCdp512fRCeAklfNeKOC89XameM22u7FXsZBNfOt9qSuhK/WuFCpY2RXCbBzHBtKn4jqcQn2TVw514QDb5LivAU0kZ9sUcK0ZGvnW+lrQAjCuTAMQSDXcYeOMR3/+TZX32WldnN93BUQtvKkwyMJYFvXW+jcLUwnHEQzBzAQfUVqXQnpUJAmonPViFDg1YUO1n1fSsqZ5XmgoeBapBtZ5B4r2MzxLRnLFxdk+ewew3Ip+DonmM7DX7LZXYzkhuRlijNTFzHlP0ZzVVxYvkEciq4NK0LUSjXl4bF8M+RyjEs+EQ6q4is0JIcwgh6QEKdGnYmbhHhlHTUDdUVHQA90TQYrfgM5Ip8kWUCI0VmKkIDubjCUO7tqiGqxC+CRQeMuhJkd9o7y1jGOiHUHm0ISUOiByIVjn2ahhOdo/ykZuIj0u/IT8UeaVKOUdOz6NOXw53CfFNtRafw6Owk46mln3Mcu6HvRHRv9ITb0SCZpbNavYI4ZW6xrZTwGDukno8KnAn4Pycsdf6Tznv/TF2/PLjF49yC6SABwpK/AK84yJCicIGnb4xa4wllBe3w8sCd1P/hwzcqMze8ZjtcePQ/c+VJKj4MqSvXdjLlc49S/X59I2rTa/X64C5e5/mfaNZ69w6WcY/vw/tZYitg+vEMIX3gSyWmF00ikMyGtCdFeqO50/YETIDDAMYE59T2KVjqqJ3URvLyGlBgG6DhqjjMEt7JZthova8lN6pNuwBjgH8sDMPg/kREid2DMdkeV9upy6PXpcND2jID4D19D9sJliGA4j9H5PnFMilX8C1d/T2kbfAcC83IsDEr2fNCGiaYV+i4N1iKGotsECCeo58+6ocJOq6eyGSRe8swHkdpxm/0+Ph/kp4V3dEtv9Bf7/8FKnZUjw==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "26d7318a-e575-4337-9ebc-3c1c0dee0ff1",
+        "text": "testing, samples with lead offered up to twice the wear protection over the neat samples in a vacuum environment. In mixed rolling/sliding experiments, Lead Naphthenate had better anti-wear performance at high temperatures and increasing the amount of lead directly reduced the wear rate. At lower temperatures (50°C) in the counter- rotation wear test, lead naphthenate offered three times the wear",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJylVu9rIzcQ/VeE4aAFx15vvXGdbyGlvUJ7FJr7lAajXc16RbXSImntmOP6t/eN1us4lx/QBvwhO9LMvDdvZpS7LxMy1JKNG60mV2KylpfLiqhcqB+zYpVTUWbycrUmqi8zRcvLyVRMWopSyShx/8ukcs4rbWWkkL6NPLg+bhrS2ybCkudZBp+jea9VbGBdrJK1c9pG9ru7W6zXs/VUrC/z2ep+KsbvRbHOZ3kyFNlqtnrJMvjAMgmHEKllHn/oBzJ/drKiyVccKIpURe3spjIyhE3nXYlr2WxdZMsCF2ptaKO0xy3nDxxh/jmQD3MlbduTMeTnP7mq51KF+S86fuzLuSTvAufYVI2MpYtzVAF8jvGsbIkjsXEx61Q9HsRDlw5k1xldScY1Px4babe93KZi3k3Ibif3yRripnVK15qSTHmWLy8y/IrbPL/KiqvFmr07eG5s35bkufTMPNIDyzD52btWxIaE7GPjfBCdp512fRCeAklfNeKOC89XameM22u7FXsZBNfOt9qSuhK/WuFCpY2RXCbBzHBtKn4jqcQn2TVw514QDb5LivAU0kZ9sUcK0ZGvnW+lrQAjCuTAMQSDXcYeOMR3/+TZX32WldnN93BUQtvKkwyMJYFvXW+jcLUwnHEQzBzAQfUVqXQnpUJAmonPViFDg1YUO1n1fSsqZ5XmgoeBapBtZ5B4r2MzxLRnLFxdk+ewew3Ip+DonmM7DX7LZXYzkhuRlijNTFzHlP0ZzVVxYvkEciq4NK0LUSjXl4bF8M+RyjEs+EQ6q4is0JIcwgh6QEKdGnYmbhHhlHTUDdUVHQA90TQYrfgM5Ip8kWUCI0VmKkIDubjCUO7tqiGqxC+CRQeMuhJkd9o7y1jGOiHUHm0ISUOiByIVjn2ahhOdo/ykZuIj0u/IT8UeaVKOUdOz6NOXw53CfFNtRafw6Owk46mln3Mcu6HvRHRv9ITb0SCZpbNavYI4ZW6xrZTwGDukno8KnAn4Pycsdf6Tznv/TF2/PLjF49yC6SABwpK/AK84yJCicIGnb4xa4wllBe3w8sCd1P/hwzcqMze8ZjtcePQ/c+VJKj4MqSvXdjLlc49S/X59I2rTa/X64C5e5/mfaNZ69w6WcY/vw/tZYitg+vEMIX3gSyWmF00ikMyGtCdFeqO50/YETIDDAMYE59T2KVjqqJ3URvLyGlBgG6DhqjjMEt7JZthova8lN6pNuwBjgH8sDMPg/kREid2DMdkeV9upy6PXpcND2jID4D19D9sJliGA4j9H5PnFMilX8C1d/T2kbfAcC83IsDEr2fNCGiaYV+i4N1iKGotsECCeo58+6ocJOq6eyGSRe8swHkdpxm/0+Ph/kp4V3dEtv9Bf7/8FKnZUjw==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "6594ad6a-18d9-4875-8e7f-681ff34a570f",
+        "text": "protection when in a 3% concentration and eleven times the protection for 5% lead compared to the neat MAC fluid. At higher temperatures (150°C) in the counter-rotation wear test, lead naphthenate offered five times the wear protection when in a 3% concentration and twenty times the protection for 5% lead compared to the neat MAC fluid. There appears to be is a transition point between 3% and 5%",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJylVu9rIzcQ/VeE4aAFx15vvXGdbyGlvUJ7FJr7lAajXc16RbXSImntmOP6t/eN1us4lx/QBvwhO9LMvDdvZpS7LxMy1JKNG60mV2KylpfLiqhcqB+zYpVTUWbycrUmqi8zRcvLyVRMWopSyShx/8ukcs4rbWWkkL6NPLg+bhrS2ybCkudZBp+jea9VbGBdrJK1c9pG9ru7W6zXs/VUrC/z2ep+KsbvRbHOZ3kyFNlqtnrJMvjAMgmHEKllHn/oBzJ/drKiyVccKIpURe3spjIyhE3nXYlr2WxdZMsCF2ptaKO0xy3nDxxh/jmQD3MlbduTMeTnP7mq51KF+S86fuzLuSTvAufYVI2MpYtzVAF8jvGsbIkjsXEx61Q9HsRDlw5k1xldScY1Px4babe93KZi3k3Ibif3yRripnVK15qSTHmWLy8y/IrbPL/KiqvFmr07eG5s35bkufTMPNIDyzD52btWxIaE7GPjfBCdp512fRCeAklfNeKOC89XameM22u7FXsZBNfOt9qSuhK/WuFCpY2RXCbBzHBtKn4jqcQn2TVw514QDb5LivAU0kZ9sUcK0ZGvnW+lrQAjCuTAMQSDXcYeOMR3/+TZX32WldnN93BUQtvKkwyMJYFvXW+jcLUwnHEQzBzAQfUVqXQnpUJAmonPViFDg1YUO1n1fSsqZ5XmgoeBapBtZ5B4r2MzxLRnLFxdk+ewew3Ip+DonmM7DX7LZXYzkhuRlijNTFzHlP0ZzVVxYvkEciq4NK0LUSjXl4bF8M+RyjEs+EQ6q4is0JIcwgh6QEKdGnYmbhHhlHTUDdUVHQA90TQYrfgM5Ip8kWUCI0VmKkIDubjCUO7tqiGqxC+CRQeMuhJkd9o7y1jGOiHUHm0ISUOiByIVjn2ahhOdo/ykZuIj0u/IT8UeaVKOUdOz6NOXw53CfFNtRafw6Owk46mln3Mcu6HvRHRv9ITb0SCZpbNavYI4ZW6xrZTwGDukno8KnAn4Pycsdf6Tznv/TF2/PLjF49yC6SABwpK/AK84yJCicIGnb4xa4wllBe3w8sCd1P/hwzcqMze8ZjtcePQ/c+VJKj4MqSvXdjLlc49S/X59I2rTa/X64C5e5/mfaNZ69w6WcY/vw/tZYitg+vEMIX3gSyWmF00ikMyGtCdFeqO50/YETIDDAMYE59T2KVjqqJ3URvLyGlBgG6DhqjjMEt7JZthova8lN6pNuwBjgH8sDMPg/kREid2DMdkeV9upy6PXpcND2jID4D19D9sJliGA4j9H5PnFMilX8C1d/T2kbfAcC83IsDEr2fNCGiaYV+i4N1iKGotsECCeo58+6ocJOq6eyGSRe8swHkdpxm/0+Ph/kp4V3dEtv9Bf7/8FKnZUjw==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "4fad930d-0c7f-4aa9-a1bb-97265d49ccfc",
+        "text": "lead naphthenate where the available lead can react with both the surface and worn metal to create a strong lead anti-wear tribofilm. This tribofilm that is created is between 2-4µm thick and while it will cause an overall increase in friction at the surface, the wear of the contact is greatly reduced.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJylVu9rIzcQ/VeE4aAFx15vvXGdbyGlvUJ7FJr7lAajXc16RbXSImntmOP6t/eN1us4lx/QBvwhO9LMvDdvZpS7LxMy1JKNG60mV2KylpfLiqhcqB+zYpVTUWbycrUmqi8zRcvLyVRMWopSyShx/8ukcs4rbWWkkL6NPLg+bhrS2ybCkudZBp+jea9VbGBdrJK1c9pG9ru7W6zXs/VUrC/z2ep+KsbvRbHOZ3kyFNlqtnrJMvjAMgmHEKllHn/oBzJ/drKiyVccKIpURe3spjIyhE3nXYlr2WxdZMsCF2ptaKO0xy3nDxxh/jmQD3MlbduTMeTnP7mq51KF+S86fuzLuSTvAufYVI2MpYtzVAF8jvGsbIkjsXEx61Q9HsRDlw5k1xldScY1Px4babe93KZi3k3Ibif3yRripnVK15qSTHmWLy8y/IrbPL/KiqvFmr07eG5s35bkufTMPNIDyzD52btWxIaE7GPjfBCdp512fRCeAklfNeKOC89XameM22u7FXsZBNfOt9qSuhK/WuFCpY2RXCbBzHBtKn4jqcQn2TVw514QDb5LivAU0kZ9sUcK0ZGvnW+lrQAjCuTAMQSDXcYeOMR3/+TZX32WldnN93BUQtvKkwyMJYFvXW+jcLUwnHEQzBzAQfUVqXQnpUJAmonPViFDg1YUO1n1fSsqZ5XmgoeBapBtZ5B4r2MzxLRnLFxdk+ewew3Ip+DonmM7DX7LZXYzkhuRlijNTFzHlP0ZzVVxYvkEciq4NK0LUSjXl4bF8M+RyjEs+EQ6q4is0JIcwgh6QEKdGnYmbhHhlHTUDdUVHQA90TQYrfgM5Ip8kWUCI0VmKkIDubjCUO7tqiGqxC+CRQeMuhJkd9o7y1jGOiHUHm0ISUOiByIVjn2ahhOdo/ykZuIj0u/IT8UeaVKOUdOz6NOXw53CfFNtRafw6Owk46mln3Mcu6HvRHRv9ITb0SCZpbNavYI4ZW6xrZTwGDukno8KnAn4Pycsdf6Tznv/TF2/PLjF49yC6SABwpK/AK84yJCicIGnb4xa4wllBe3w8sCd1P/hwzcqMze8ZjtcePQ/c+VJKj4MqSvXdjLlc49S/X59I2rTa/X64C5e5/mfaNZ69w6WcY/vw/tZYitg+vEMIX3gSyWmF00ikMyGtCdFeqO50/YETIDDAMYE59T2KVjqqJ3URvLyGlBgG6DhqjjMEt7JZthova8lN6pNuwBjgH8sDMPg/kREid2DMdkeV9upy6PXpcND2jID4D19D9sJliGA4j9H5PnFMilX8C1d/T2kbfAcC83IsDEr2fNCGiaYV+i4N1iKGotsECCeo58+6ocJOq6eyGSRe8swHkdpxm/0+Ph/kp4V3dEtv9Bf7/8FKnZUjw==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "612ffde0-5cff-4696-841f-1bbd5f1e4149",
+        "text": "Previous Lessons Learned from AMS 2018:\n\n- The additive function of lead naphthenate is a combination of physical absorption through rubbing or pressure and chemisorption.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJzlk9tq3DAQhl9F+Hpjy/Jh7b0LBNpCWgrZXi2LGVtjW2BLQoc0S8i7V3J3aSm5KvSqYDD+9M9oDr9PrwkuuKJ0neDJgSQlLQvet2woigZpzoo6B9bQhvOSYlVDsiPJig44OAj612RQynAhwaHdvhe4KO+6GcU0u0AYozTEXPF3wd0caL7fqFZCuhh3OuVtmzY7ktesSOvzjvwCVZPuI9iXVUrfBVtIIIm9WIdr7OOreMHlScOAyVs44OhwcELJbljA2k4b1QcZTRsaOgyCUSzYcWGCSplLzJB9s2hsxkGuHpcFTfagBh9HZbMPwn30fQZolI13dMMMrlcuC1MI/VzzSVgxZoowTzUfbwfuorcD0HoRA8S6suvxAnLyMG3DPCUop+S8Ueu6VXExCtzWxCgr72h4qiNjB1od8jZG6xDZSb/2aOLoY+cOX9w2EIPPQnlLHtFaJeMbjERORqNWcv/5iTCaN4eY5VbeFzAmFPeMx5gjJPvTLJRViEPdtmPDGda86EdaNAxaKHPGx/qfmYWVZcri5mua0miFG9izKi0291R0n5bvkp9Bf2eXNvwexf9glztynJEA5yIagIxebvMgaiQLAicS9OxmjKskwhIgg1r7uNmrSM8XG2pdCPRWGb1hNxvlp5kY3wfpRJQh2gQ3ehNukpwMM67ipk5/d+KjsO5TXNXb+QcQFnhp"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "1daf1066-6ade-4f4c-bd3a-f87dc390be82",
+        "text": "- Depending on the mechanics in the contact (sliding versus rolling), the effect of temperature had a significant influence. This appears to indicate that higher concentrations of lead would be required for more severe applications involving pure sliding and/or high temperatures as the lead is consumed faster through reaction with surface layer steel oxides and sublayers.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtUk1v2zAM/SuETxuQ2oobO03PBbYBOwxYdwoKg7boWIAseRKVNij630e5H+hhgC9+fCTfe9TxuSBLMznujC5uoTjQDe5wR9ftrq2btm1VjX2tml61NKpaFRsoZmLUyCj852LwPmjjkCmu/xYvPnE3kTlNLEhdKyU9b/Cj0TwJut2v6OKN49x3PNaNKgXa7uu2VA8b+ABumptyn4Ftow7l/r/Ia5NARbxEpjk7+WWeyP5ecKDiRQqamAY23nWDxRi7JfheaKo8XF/XByGMxlKnTRCWD5c8ofoTKcRKo5sTWUuhuvNDymHF6pvh76mvkIKPeUc3TMi950pyEEdv8xzOlCdlcFsuenwv8GVZC7gs1gyYdVVvZYvulPC0xnksyJ2KhxWN3M1em9HQeqha1bsrJV9zX9e3qrndHnL3Ip2dS3NPIYefnTM95UMUV3BHCzk51gm8A54IZhLZzgwRzCsweMc4MHyJ1qzEsySQIgRvrfx+3awsGkdJCfwIkvVCATkFggk1IERzciJyQMcydLSJ3EAl3E8mgrglDBHYS0ln3yTzkGGSx0Ihbx8k3bDmEfN8SzL00SeroScI9DfJgTSMPsDsZWckEUjwKcZs5eztOYtfsqx3J+h0JW151WfZoiquptZVIlJERDmyLJHIRRRPwSfpCYTr+4FHwxPEFEY5O8i7Fo4QyYJ/MjrPc1rK/VqJZT7K+7V/msg/8vN8efgH0Kgm0A=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "264c0583-5a60-4041-8634-1cd7b11d2844",
+        "text": "- In rolling and mixed contacts, lead naphthenate creates a strong tribofilm on the steel surface that aids in protecting from wear but at the same time will increase the friction in the contact.\n\n- The formation and durability of lead naphthenate tribofilm is dependent on the environment with higher performance coming under vacuum conditions. It is also believed the lack of oxygen\n\n302",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJzlk9Fr2zAQxv8V4efWkRU7jvs82Ap7GKx9CsWcpXMsJktGkttmpf/7Tk7Sja2MMejLBiGQT/eddN/9snvK0OCINrZaZVcsK7GqRAVcFE25Vhus11IoXm3LRgEWANkFy0aMoCAC1T9l0jmvtIWIYflt4ODm2A6o90MkRQjOyXOSH7SKA6lFvaiT0zYm324nyiYnqdhueF7eXbAXoRHVUSiqosjLV5WjiaQsHELEMU3yST+i+TyBxOyZDhRGlFE720oDIbSTdx2V8bzhQhRU0GuDrdKeqpw/pA6r24A+rBTYcUZj0K/eOTmnsMLqvY4f5m4F6F1Id7RygNi5uKIcaKJTPwsjpk5JLPJJ9eeDeJiWA5gmoyWkd61Oxwbsfob9EucuQ7vP7hY1xHZ0Svcal0UJLspLTp/qRogrXl0VTXJP5GztPHboU/hp8oiPaRHZJbu2zDtjtN0zsIqNlJBi0tkIMoYLZhAUszANccC0UCY9pr0yYCF6R67odefo/SNzllEV6YiGhdn3lAEpEBloFZi2jAJeEidb793IHhA862YqiEcrZcOipq8HbQw50m0Bl7Pe62VXqU/6fXpjniY8R/dRh3iddk0z/kxxV6tCiLKoVVVvOt4Tx2LTlNgL0XS4fkOKK/4CbbNQfBYakfMjs7zJxevKYvpLigteiP+D4psEiPPjct8Cspo9dNroeGCu/xXj79TqwBROaBVNf0YY7b0muFMgRGIc2EA7R88m9MstVib+xsTxTEbP7kHO85iYVDo9IeTsOqbWYIJjHRqN9/S/Sr0NyC/pSe7xsEf7p/TKjay4UErKplFbVFUp10JtoO6xLvqOvxm9W7HJ6wsmeF3l64TmWSj4+sjqdstfF46W37L7z6O55uLHFd9auhf3zuuvqG5SzfPdN8YjW7s="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "fbfd5f4f-847c-408a-be8a-493dddb6eb35",
+        "text": "promotes this life due to the lack of oxide formation on the steel and degradation of the lead naphthenate.\n\nIn general, an increase in lead content will decrease the wear rate.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJzlUk2L2zAQ/SvC59Qfsh3HORfahVIK3Z7CYsbSKBGVJSPJTcKy/70jJ9vDsqdCTwUdPO/NG8/HOzxnaHBCGwctsz3LsOulQiGEVNUo6m3LpSx5p0QlQcpWZhuWTRhBQgTKf86Ec15qCxHDGhu4uiUOJ9THUySE87IkzR0+axlPhFbdis5O25h0hwPv25xvGC93efe0YX/ibX+Lq7bs8u17wKogJAvXEHFKU3zTFzTfZxCYvRAhMaKI2tlBGAhhmL0bKa3Me07lKEFpg4PUnrKcv6YKxY+APhQS7LSgMeiLj04saVGh+KTj52UsAL0L6R+DOEEcXSxoBzTNvZ6FCVOlBFb5LNUrEa/zSsA8Gy0g9VXcaQP2uMBxXeUhQ3vMnlY0xGFyUiuN65F4yZsPJb32kfN92e6rPqlnUg52mUb0lFWnySNe0hEymnhy1AmLJx2Y0QqZXJBFRwAyA+Inc4q5i5bIlPPT2hWjl2jaKhoGVjKJR59Ov5LqpkWQzMJ8oiC5IE+dvI74Fbyn7F/4mPqght7abddy1TTbtgdAPqqmrhpeVUrWjep2Nef/zm5tmRPEuybfrXa7xXVZ5+XqrqrmefcOcFP8nd12Tdfu/ge7PVh2RIsezIZ8w7QVHiEgfdz8IpyNNBs7a2PIVHc22emM4Jl/66MvOsSHtOyXp9+rqnoy"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "39bccfce-2b2e-4262-81e7-c4304421f555",
+        "text": "Mixed Lubrication Wear Rate 20°C Mixed Lubrication Wear Rate 75°C e (um ?/mer y y ee Y : 5 ZuZe : Z Z F 5 GaZ Y Z g 7, ‘. 5. GUGn 7 ) 2 GOZh 2 Ze Y : go Y GEG GG — -su = G AY AY Ziggy 20Ge 7 A AA A WM AA WZ V AWA AN An 0 ABZ ZEZ ZEZ Poe witied ead\n\nFigure 1: Mixed Film Oscillatory Wear Results from AMS 2018",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJzlU9tq20AQ/ZVBTy040mp1sw2lqGmiFuomNE1N5ASx0o7lBd2QViQm5N87K9tQSshbn8quGM2Zi+ZytHm2sMIaG50paS3BWhQskPNiwbwFl2EQzeeSo+/Lrc9CnkfMmoFVoxZSaEH+z1bRtr1UjdA4THol9u2osx2qcqcJ4ZwxijnCj0rqHaFuNKFdqxpt4jYb7gV2OAPP82zvYQYnPfJDOzC664fc5q8AhwhCrGE/aKxNF9fqCaubThRovZBhqyrMpOqx0G2/Nw7O7YD94EjR1CNWFfbO57YYzRwGJ1H6y5g7Avt2MCmyYid03mqHWqRij/kaUaPJZEDX7uT2ZND7bjKIrqtUIbRqG+dorkRTjqKcJrWxsCmthwkddFa3Um0VTjvgjPtnjG7wk/MlC5buwkR3FJk1Y51jT16eaUzjk5mxtaJ+JXwb8/74RVij6OEHbQU4ux8Zy9k5vOUVBScvhHdjDR+dGnvY00GEO1hCAOmYIr2kdC5JTURKhhRKiGZwP3Lmzm0IbEhukwYieA8ckqt0RyI9ZChbEslFAkly8PfhbBjhAyQQ35mbqrLcU70JlQMxxHRhvTJyncIviNcEfIe4AQbxJyrj4vBctwiPStPwAIU0kzqt4GtNIzMM+Jvlgeu73MWwkG7IRTHf5iKUYpETlzAIt/yfsdwPQ5vGFQWevTAkPulzz2YTqbk3fx2YIt5kuURNBKe1ZgVRasi6vs3JjdmR77n/w19wqcqxR3CXR6ZfqqqGq6FQVSVMy0e64zBWeoBt39YQr27AMPdP1hzSnIvOFG29PPwGGqqLUA=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "16045ae1-54d6-4485-955d-9e8c798d9c08",
+        "text": "Scope of Work\n\nThe following work was covered in this research.\n\n• Fluid Lubricant Evaluation: The performance of five multi-alkylated cyclopentane (MAC) fluid lubricants were performed included the heritage material Synthetic Oil 2001A, two lead naphthenate versions (2001-3PB and 2001-5PB), and comparable versions that utilize triphenyl phosphate (2001B) and tricresyl phosphate (2001T).",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJztlE1v3DYQhv/KQKcYWGtFabmSfIv7DaStAW+Rg2ssKHK0IkKRAkV5swny3zvk2oWT+tIAuRQF9rDz9XKG81B3HzM0OKINe62yK8hEhbxnTFZtzRRvCy7qtuUNtpuiw61k2QqyEYNQIgjK/5hJ57zSVgSck23EyS1hP6A+DIE8ZVkUVPPoPmoVBvKyOnknp22IdXd3NS/zegUN2+bb+xX8bXOWs2i3fPOinfLJkc2nOeAYZ7jR79HcTkJi9okCCgPKoJ3dSyPmeT9511FakW95zUgi67XBvdKespw/RYX1HzP6ea2EHRc0Bv36eyeXeE3z+icdfl66tUDv5njGXg4idC6s6QZolkc9K0aMStHJ8kn1T4FwmlJATJPRUsS+1o9hI+xhEYd0kXcZ2kN2n7xz2I9O6V5jWlFZlJvLgn58V5ZXBb9ibayeqHJvl7FDT1lVnDzg+7iC7Fa6CcH18Nb5dzH3qYmdDiZd0pcYsJZVsi7qvt5sSmw7lAXrq2JTKL4t26r/ZhhQWk6upinPa360W1rzJtpNWcS1f2mf878Og4Zv+H8Wg+Tx/+J9P+dmNyD0zhh31PYAR4IHjmIG6R7QowJtIQx6Bo8zCi+H/DlavwnvaawH3EWxFxAr64aXjSyabatawTusFKHGRNMqRK7Kb4fYpslLQogXeZkQO9usaKozU4wXdd685DnXfB1mbcX/x+xFzP5c6JASfjSLVvBm6Tx1agP88CDMklq+gkjihL53fhRWpm9ZT2zBuJigL4V5dzLEhQJ5koa+dTYIi/Dq19ffXUCfZM2T7AxHgvdJLFEszaLoT6AzBvQ60GgwkpzXwsDtyVIgaAm/awOEGHu9gnB0YFAosGIaKByhBHoUMzU7w6uYdVndXIOwKpVc8pvri1UypRvppkRnnhUE2iksQRv9ASF4PZHiycA00M6HKJ0Ury+SAMUlvbh/xncXnz3AN3oOv0RGP93/BW7TdzI="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "eb1053e9-6574-4c3f-8d34-b9a02244dace",
+        "text": "• Grease Lubricant Evaluation: The grease counterparts to the materials in the fluid evaluation (Rheolube 2000F, 2004, 2000-5PB, 2000B, and 2000T) were tested under a vacuum bearing configuration.\n\nTesting Apparatus",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJzdkstq3DAUhl9FeNXCxCPJ1tieXUvbtJBFaKeraTDH0vGMwJaNLkmG0Hev5EnSULIqdFMwtvydi45+/fuHDAcc0fhWq2xLsobKkm+6SqoCkSqUDeurWhYIWFZiA9mKZCN6UOAh5j9kcpqs0gY8uuV/gNMUfHtEfTj6SDinNNY84jut/DFSVi10nrTxqW6/5yXPNyvCaF3m7GZFngGri7xKgAlW5OJVci6KKHMn53FMJ7nW9zh8m0Fi9jMGFHqUXk+mlQM418526mIazRveiCIm9HrAVmkbsyZ7Sh3W3x1at1ZgxoDDgHb9YZIhieXWl9p/Dt0a0E4u7dHKI/hu8uuoQzzRYz8DI6ZOCbJ8Vv1TwJ/mJQDzPGgJaa71Y3gAcwhwWOTcZ2gO2c1CnW/HSele43JRnPLygsZH7DjfUrFlTaqeY2VrwtihjVnFQuzv64UCRc+YLJqKKdFQAVXTiBqbkna4kWyRyuN9urnsR4ibcHJpERySq9DZOKrx5OMtDGGZeUt2RySHc4KcgvFo437eET8RH0Nj9IXVMDiizQL6IWhF8LkDefP1iNMQOiTRKPTTKn3K5U0vxPX78yp+wKhluXtL7tAiSZKiIsEotATILcgQRtIhWG0OcRbT60Owyx55EuZJ8Svt/JdkkXjSP83fq5LWCHUvFO02HYdGyr4vaVUgF11Z/DPzV7zOI2KclWdnPwPB8jqBpmry6lWwlPyd9etNJf5X57808i4OkVzxbo7mBB/cS0PstB+iTje/AFvkj8g="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "378a46f8-cf9d-41bd-84da-a032eb70f36a",
+        "text": "Three different tribological test methods were used in this research. One of the methods is run in pure sliding under both atmospheric and vacuum conditions (5 x 10-5 Torr Min) while the other two methods utilize a mixed rolling/sliding contact in atmospheric conditions for both mixed film and boundary lubrication. The friction/traction properties along with the wear rates were measured for two",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJxtVF1v2zoM/SuEgQEt0Ca2YzdJ37Z7gbuXbQWWPRVFQEt0LEyWDH009Yb991FK0hXYBfIQUeQ5h4eiH38WpGkkE/ZKFvdQUCtpu25W21VTVUJUd4TUbFBs7qiummZV3EAxUkCJATn/ZyGsdVIZDOTzWeNsY9gPpA5D4EhdlyXXnMNHJcPA0Wqdo5NVJqS6x8dqu11sb6CqN/WiebqB10DbludAW64Xm/+NnIo4VPjZBxpTJw/qhfTXCQUVv/hCUiARlDV7odH7/eRsx2nlYttuqjUn9ErTXirHWdbNCWH5zZPzS4lmjKQ1ueW/VsRkll/+p8LH2C2RnPWJYy8GDJ0NS/aBOzrjGRwpIaVgtZhkf7kI85QvcJq0Eph0Lc/XGs0h4iHb+ViQORRPOerDfrRS9YryoOqybm5L/rW7ur4v2/tqm6onrtybOHbkOGuVI+7PeHvZlBvCTd/KsrvratwK0fdNuV5R3XY83mRVoJc0uWI3OCJgyp4SBASnOqvtgQVrSC0Bv4TBSg9HToDoSYIyEAblwZEndGJYwBdDYHuO0mt6uo8m5U6RC71W/IIOEI0kB2ziABhG9nUgpwSgkfCMIsYRhDVSJbM8XLXwAlV528LOOgeflLmG48DWZibGYKhwtK+cMSitfhAgjPwwJDirNZMuL+QMHVCEJOot+RvG3p7FnQB4jGPW1lkWjm4GHTt3HuYCdqyi52MebXCY/wC/uolcUOQBtWXao2LApPjIdoFLa3RycyT0bI7MtLmRqIOa9MyF32fNiRLELDTjsXD2+OrT+3+uYZilswJdx2RW6ayaK3N65lq9y6Lbd6AJJRicBqZP+wtXvKrV7erhQ87Ih/bhw/VbpdG8wWPCxHGqe3996vkv1D/Pgp8EeBwnnXpEfxlqcJThJqdSq/ZVcjKMj2pk157pks6fkQMvcJ7ZgMlYHpQPSvgse8TvBCqAjypgx88h+YeQl5RN5RKj/HiZlQmLtDWXdfyMjkegnmmXVuDX02+iTbk1"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "eddc00f5-c53f-46b0-bf06-c53717e148ea",
+        "text": "multiply alkylated cyclopentane (MAC) hydrocarbon oils formulated with 3% and 5% lead naphthenate (2001-3PB and 2001-5PB) along with unformulated MAC oil (2001A). The lead naphthenate used in these samples was vacuum treated prior to formulation to improve vacuum outgassing characteristics and make it suitable for a space mechanism lubricant.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJxtVF1v2zoM/SuEgQEt0Ca2YzdJ37Z7gbuXbQWWPRVFQEt0LEyWDH009Yb991FK0hXYBfIQUeQ5h4eiH38WpGkkE/ZKFvdQUCtpu25W21VTVUJUd4TUbFBs7qiummZV3EAxUkCJATn/ZyGsdVIZDOTzWeNsY9gPpA5D4EhdlyXXnMNHJcPA0Wqdo5NVJqS6x8dqu11sb6CqN/WiebqB10DbludAW64Xm/+NnIo4VPjZBxpTJw/qhfTXCQUVv/hCUiARlDV7odH7/eRsx2nlYttuqjUn9ErTXirHWdbNCWH5zZPzS4lmjKQ1ueW/VsRkll/+p8LH2C2RnPWJYy8GDJ0NS/aBOzrjGRwpIaVgtZhkf7kI85QvcJq0Eph0Lc/XGs0h4iHb+ViQORRPOerDfrRS9YryoOqybm5L/rW7ur4v2/tqm6onrtybOHbkOGuVI+7PeHvZlBvCTd/KsrvratwK0fdNuV5R3XY83mRVoJc0uWI3OCJgyp4SBASnOqvtgQVrSC0Bv4TBSg9HToDoSYIyEAblwZEndGJYwBdDYHuO0mt6uo8m5U6RC71W/IIOEI0kB2ziABhG9nUgpwSgkfCMIsYRhDVSJbM8XLXwAlV528LOOgeflLmG48DWZibGYKhwtK+cMSitfhAgjPwwJDirNZMuL+QMHVCEJOot+RvG3p7FnQB4jGPW1lkWjm4GHTt3HuYCdqyi52MebXCY/wC/uolcUOQBtWXao2LApPjIdoFLa3RycyT0bI7MtLmRqIOa9MyF32fNiRLELDTjsXD2+OrT+3+uYZilswJdx2RW6ayaK3N65lq9y6Lbd6AJJRicBqZP+wtXvKrV7erhQ87Ih/bhw/VbpdG8wWPCxHGqe3996vkv1D/Pgp8EeBwnnXpEfxlqcJThJqdSq/ZVcjKMj2pk157pks6fkQMvcJ7ZgMlYHpQPSvgse8TvBCqAjypgx88h+YeQl5RN5RKj/HiZlQmLtDWXdfyMjkegnmmXVuDX02+iTbk1",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "babc5b6d-6853-44e6-a053-47f683f714d2",
+        "text": "Spiral Orbit Tribometer",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJxtkUFv4yAQhf+KxblrA47jNOdK21srNT1FkYXNJBkJA4Kx2qjqf9/Bze5pJS58772BmTl+CXAwg6cBrdhXQlu12Sp7VrJtrZQtPG6U3raTtLZjosVDJWYgYw0Z9n+JKYRk0RuCvN6duYWFhivg5UpMtJaSM3f8gZauTFW/0hjQU8kdj2yrGalu19b69FD9A1vV17KAzW5X9/8DPxEmIt8ywVz6eMVPcG/RTCC+WbBAMBEGP0zO5DzEFEa2ybrvd7JjwxkdDBYTu0K6lQrNe4aUG2v8vIBzkJqnMC1lVLn5jfS8jI2BFHJ5Y5iuhsZADU+B+7nX82aGUqlAVUd7/ivQLa6CidHhZMq/mrvsjL8s5rIO8yjAX8RppZmGOVg8I/ysSerNL8mnO2i9l91ePZZ05OTgl3mExK62dE7wWdYg3iIm46qXNCJVh4Rj4DWyrVju3zkgOR7X6Q99k6NM"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "7f8deb8e-009e-4d49-8edc-3ee498587815",
+        "text": "The Spiral Orbit Tribometer (SOT) is a single contact simulation that replicates Angular Contact Ball Bearings in a semi-starved lubrication mode while under vacuum. It is simply a ball held between two parallel plates which essentially makes it a thrust bearing. The SOT utilizes two flat, concentric discs between which a ½” lubricated ball rolls and pivots during test operation. A very small",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJxtVE1v2zgQ/SsDnVrAlSU5sp3c2i3Q7mVTIN5TGhgUObKIpUSBH07cov+9j5TT7gIL+GC/mXnz5s3Qj98LNjzyFI5aFXdUcNvud82GZdvt9tvuhvu+ququq/b7266XTbGiYuQglAgC+d8Laa1TehKBff5txMXGcBxYn4YApGmqCjVX+FmrMACtdxmdrZ5Cqnt8RFoJqN7Wu3L7tKJfwH6/KXcJqNsKof9FliJAhb/4wGOa5It+YfMwC8nFDwQUB5ZB2+kojfD+ODvbIa0qb9vtfo+EXhs+Ku2QZd0lMaz/9uz8WolpjGwMu/VHK2Myy68/6fA5dmvBzvrU4ygHETob1vABE135JjFyYkpgXc6qfw2Ey5wDYp6NliLpWl/DRkynKE7ZzseCp1PxlFEfjqNVutecF9VUzc27Cp/20DR3VXtX36bqGZXHKY4dO2RtMuJ+r7dR9c22Vn1dbTaqqjZ8e1M3242slGqBNNmqwC9pc8VhYHqYtROG7l2nAx2c7iy2z47ePNwf3pL2JMjr6WSYpJ2CkAE/x2jyRBTgCTleRmRP7zGZEY7+uKZ+EMbQBxYODJ70lMh41O98EO7Mikzs3NUdwuxMzwO8ozgpKDgLGeNY0p8hyUDX2VxA0CXOgY2ijsMzM1Q8W4IJwNnQbLISEMmB2HtYoxG50Cj+AY4hBWS76APqs7CSsg/3B4pBG/0NWYmxB9EqDS1BAZWktJf+V9OlgaCvsao69TU2Vf17HoyWZTprDBycFM36bIMnFVNHSudCdmaXRy/pPZ3ZXciPqUiMNk4I9690E3Tgjpx90SO4MUtboe2mk6dV3lC6MbQMFpPx0hnfefLRcYaWR3PtyHkTORONlEDjf+/B8UmPvCL0O2uV1ArqcZx5DPxbaKlhCHnpYEMK414Gq/6jl9Cot24UMG+xN86AsoVXuemwjBXqaiSqYC127tIkimeecm+7KFXs8XAVfWYXvmnkvl7YQ3BYMr1JxjgsepVJV1lsNkJpsRz0wgnpb8v0jl4f6F/CpS2c+ZAexY+nnxWiwBs="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "4fb814a7-fc4d-414a-baf3-bc531680eb0d",
+        "text": "amount of lubricant, approximately 50μg, is applied to the ball to ensure the system operates in the boundary lubrication regime, providing a fast and efficient screening method of lubricant performance. The upper disc applies a load which can be varied depending on the desired Hertzian Contact Stress (material, load, and ball diameter dependent).",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJxtVE1v2zgQ/SsDnVrAlSU5sp3c2i3Q7mVTIN5TGhgUObKIpUSBH07cov+9j5TT7gIL+GC/mXnz5s3Qj98LNjzyFI5aFXdUcNvud82GZdvt9tvuhvu+ququq/b7266XTbGiYuQglAgC+d8Laa1TehKBff5txMXGcBxYn4YApGmqCjVX+FmrMACtdxmdrZ5Cqnt8RFoJqN7Wu3L7tKJfwH6/KXcJqNsKof9FliJAhb/4wGOa5It+YfMwC8nFDwQUB5ZB2+kojfD+ODvbIa0qb9vtfo+EXhs+Ku2QZd0lMaz/9uz8WolpjGwMu/VHK2Myy68/6fA5dmvBzvrU4ygHETob1vABE135JjFyYkpgXc6qfw2Ey5wDYp6NliLpWl/DRkynKE7ZzseCp1PxlFEfjqNVutecF9VUzc27Cp/20DR3VXtX36bqGZXHKY4dO2RtMuJ+r7dR9c22Vn1dbTaqqjZ8e1M3242slGqBNNmqwC9pc8VhYHqYtROG7l2nAx2c7iy2z47ePNwf3pL2JMjr6WSYpJ2CkAE/x2jyRBTgCTleRmRP7zGZEY7+uKZ+EMbQBxYODJ70lMh41O98EO7Mikzs3NUdwuxMzwO8ozgpKDgLGeNY0p8hyUDX2VxA0CXOgY2ijsMzM1Q8W4IJwNnQbLISEMmB2HtYoxG50Cj+AY4hBWS76APqs7CSsg/3B4pBG/0NWYmxB9EqDS1BAZWktJf+V9OlgaCvsao69TU2Vf17HoyWZTprDBycFM36bIMnFVNHSudCdmaXRy/pPZ3ZXciPqUiMNk4I9690E3Tgjpx90SO4MUtboe2mk6dV3lC6MbQMFpPx0hnfefLRcYaWR3PtyHkTORONlEDjf+/B8UmPvCL0O2uV1ArqcZx5DPxbaKlhCHnpYEMK414Gq/6jl9Cot24UMG+xN86AsoVXuemwjBXqaiSqYC127tIkimeecm+7KFXs8XAVfWYXvmnkvl7YQ3BYMr1JxjgsepVJV1lsNkJpsRz0wgnpb8v0jl4f6F/CpS2c+ZAexY+nnxWiwBs=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "18a0803f-2d3c-41a8-a360-65cbe687c2d4",
+        "text": "During test operation, the lack of a ball retainer allows the ball to orbit in an opening spiral pattern whose orbit radius continuously increases throughout the course of one revolution of the bottom sample disc. Since\n\n303",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJztk01vnDAQhv+KxXkLxsACOUdqT1WlJKdVhAZ7AKvGRrZJso3632s7G6WKotx6q8SFZ+Ydz+fpOUOFK2o/SJFdkQw73gjGmCgr7AX0vK36pqdVPdXVxKDODiRb0YMAD8H/OePGWCE1eHTpX8HZ7H5YUM6LD4QxSoPmgh+l8EugZZvoZqT2UXc6lX2f9wdS9mWXV/cH8ga6Km8TaGibHz8mSRRQ5s7O4xor+SGfUN1swDH7HQwCPXIvjR64AueGzZoxuNG8Z3UwT1LhIKQNPsaeo764c2hdIUCvOyqFtrg2fI+tcsVX6b/tYwFojYsvDHwBPxpfhC6Eei7xNKwYI0VY5puYXg3+vCUDbJuSHGJWxcWsQM87zKmZpwz1nN0n6vywGiEniWlMjLL6Cw1fc8vYFW2uyj6qt6Ac9L6OaINXlYh9G26Yan0sxVTSqhKUhgnXJTtWnArRBMJSozw+xbll17uVeiYxeWI2tCnNA/ELEgX8JzETATKCUsSGfZAaLQk/5tEll2Twhhg7Sk+kJqBjFB1Duk1aUGQD79Fq8rgYhxdHC0LujnCjvdS72Z06BzG3CA5jYGv2eQmLlN7gZrdRORGjMWTxYNQek4wk5WC8NytxsG4KiZCO5+QmRMPYqtcZfAcbS3vA21h3aMD7i+hEx2tWlyNrECsKx2akbV1j13ZNN4rmn11Ex455eyCMts3LRbyCML6cJtDRj8GL5NN7+L/w7xe+otXfi3GnQ6I4Gyt/oXhZjvs/cYSfZw=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "98284180-f80b-45ea-bc65-cdff520b483b",
+        "text": "there is no retainer, if this orbit was left unchecked, it would result in the ball orbiting out of the two parallel sample discs, causing the two plates to contact each other. Fortunately, as the ball reaches the completion of each revolution, it is pushed back into its original orbit radius by contacting what is known as the guide plate. The test is initiated with the sample ball touching the",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVMuO4zYQ/JWGzo6sx9hezy1AkOQUBMjkNBgYFNmSmKFIhWyu11jsv6dbsmb2EcAXFftRXdXt588FOpzQ08Wa4hGKuj6r07k6nc/q2J2NUW1n1OnYt6b9cDJVU+ygmJCUUaQ4/nOhQ4jGekWYlm+nbiHTZUQ7jMRI01QV59zhqzU0MlqfFnQO1pPkPT9zWMlQUx3K9mUH2/ehastKvutDdSqP/wOsGYwU6ZYIJ5niT/sJ3V+z0lh84QeDhJps8BftVEqXOYaOw6ryfDh8qDmgtw4vxkaOCvEmFfZ/J4xpb5SfMjqHcf9L0FmESvvfLP2eu73CGJL0uOhRURdozxrwNPd6Xk0olQSsy9n02wPd5uVBzbOzWgmv/f3ZKT9kNSxSPhfoh+JlQRNdpmBsb3Exqamah58q/h2emuaxOjzWZ8meOfPi89Rh5KiHBYnv1jamfjjWpq+rtjVV1eL5oW6Ora6MOTDSLFIRfqKF9YgRwSbwASL7bT3GHdgeaGQwxM4SXFUChz1B9npE/YqGIxgO2RlOStkRWM8ZCJ1ybs2yfgDeBAj98kDXAMySn9FBUtPsEIxNOu1Aq5wk+i3MyZIBBdDBk9IEqPQIQaiW8GuIlGUN3W0HTOyta5QoXAEdpIEoLv2X9Igfg8sCLeR5uDmnEQ0n61emz+0sycR24C2/DwFRGZsTdLeNixC98hpIgVcfrn7jMGRrcOVewpOMwvsgUdazGIwauFoal9j7/AttClmP2/hfFdlxG8u8E9LaYK3zLTFWwBtposw/OZHq3L35V4Vg8dHyfjAFtknBHJJdtEncmmvLNLQNeBdQwuNm3uqq/17IEn4mEtGNmEU/tlXAFxMHBJlXtjpCH6JmbaLyyWQthj7Jon0Pw4Qq5Xi3U6yVhire7pER/818xkY+3ykyi47V1TF33Q/OfqufsXy29NbfhfVAuVYMeRhlc6XsGiwuGlZkOczN8KUNExlWJVbQ5S7yrXtiIryEzJ9lTfx/YrgUGBzYN2Tb6H3oq2XmvNBZjuPGNDWPm7CUS9/+Qv5QMTK/j/gkZ/vl5T+uRvuZ"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "b2443214-9868-4052-941e-00f8225a992d",
+        "text": "guide plate, which sets the initial orbit radius, and is adjustable. The guide plate is oriented in a position such that it contacts the center of the ball on each revolution. Attached to the guide plate is a charge amplifier force transducer. This force transducer measures the reactionary force required for the ball to be scrubbed back into its initial orbit diameter. This location throughout the",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVMuO4zYQ/JWGzo6sx9hezy1AkOQUBMjkNBgYFNmSmKFIhWyu11jsv6dbsmb2EcAXFftRXdXt588FOpzQ08Wa4hGKuj6r07k6nc/q2J2NUW1n1OnYt6b9cDJVU+ygmJCUUaQ4/nOhQ4jGekWYlm+nbiHTZUQ7jMRI01QV59zhqzU0MlqfFnQO1pPkPT9zWMlQUx3K9mUH2/ehastKvutDdSqP/wOsGYwU6ZYIJ5niT/sJ3V+z0lh84QeDhJps8BftVEqXOYaOw6ryfDh8qDmgtw4vxkaOCvEmFfZ/J4xpb5SfMjqHcf9L0FmESvvfLP2eu73CGJL0uOhRURdozxrwNPd6Xk0olQSsy9n02wPd5uVBzbOzWgmv/f3ZKT9kNSxSPhfoh+JlQRNdpmBsb3Exqamah58q/h2emuaxOjzWZ8meOfPi89Rh5KiHBYnv1jamfjjWpq+rtjVV1eL5oW6Ora6MOTDSLFIRfqKF9YgRwSbwASL7bT3GHdgeaGQwxM4SXFUChz1B9npE/YqGIxgO2RlOStkRWM8ZCJ1ybs2yfgDeBAj98kDXAMySn9FBUtPsEIxNOu1Aq5wk+i3MyZIBBdDBk9IEqPQIQaiW8GuIlGUN3W0HTOyta5QoXAEdpIEoLv2X9Igfg8sCLeR5uDmnEQ0n61emz+0sycR24C2/DwFRGZsTdLeNixC98hpIgVcfrn7jMGRrcOVewpOMwvsgUdazGIwauFoal9j7/AttClmP2/hfFdlxG8u8E9LaYK3zLTFWwBtposw/OZHq3L35V4Vg8dHyfjAFtknBHJJdtEncmmvLNLQNeBdQwuNm3uqq/17IEn4mEtGNmEU/tlXAFxMHBJlXtjpCH6JmbaLyyWQthj7Jon0Pw4Qq5Xi3U6yVhire7pER/818xkY+3ykyi47V1TF33Q/OfqufsXy29NbfhfVAuVYMeRhlc6XsGiwuGlZkOczN8KUNExlWJVbQ5S7yrXtiIryEzJ9lTfx/YrgUGBzYN2Tb6H3oq2XmvNBZjuPGNDWPm7CUS9/+Qv5QMTK/j/gkZ/vl5T+uRvuZ",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "86ad75d7-7298-4a62-b767-69b02dc0a02a",
+        "text": "orbit is identified as the scrub region. As the lubricant becomes consumed or degrades, this force will naturally increase.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVMuO4zYQ/JWGzo6sx9hezy1AkOQUBMjkNBgYFNmSmKFIhWyu11jsv6dbsmb2EcAXFftRXdXt588FOpzQ08Wa4hGKuj6r07k6nc/q2J2NUW1n1OnYt6b9cDJVU+ygmJCUUaQ4/nOhQ4jGekWYlm+nbiHTZUQ7jMRI01QV59zhqzU0MlqfFnQO1pPkPT9zWMlQUx3K9mUH2/ehastKvutDdSqP/wOsGYwU6ZYIJ5niT/sJ3V+z0lh84QeDhJps8BftVEqXOYaOw6ryfDh8qDmgtw4vxkaOCvEmFfZ/J4xpb5SfMjqHcf9L0FmESvvfLP2eu73CGJL0uOhRURdozxrwNPd6Xk0olQSsy9n02wPd5uVBzbOzWgmv/f3ZKT9kNSxSPhfoh+JlQRNdpmBsb3Exqamah58q/h2emuaxOjzWZ8meOfPi89Rh5KiHBYnv1jamfjjWpq+rtjVV1eL5oW6Ora6MOTDSLFIRfqKF9YgRwSbwASL7bT3GHdgeaGQwxM4SXFUChz1B9npE/YqGIxgO2RlOStkRWM8ZCJ1ybs2yfgDeBAj98kDXAMySn9FBUtPsEIxNOu1Aq5wk+i3MyZIBBdDBk9IEqPQIQaiW8GuIlGUN3W0HTOyta5QoXAEdpIEoLv2X9Igfg8sCLeR5uDmnEQ0n61emz+0sycR24C2/DwFRGZsTdLeNixC98hpIgVcfrn7jMGRrcOVewpOMwvsgUdazGIwauFoal9j7/AttClmP2/hfFdlxG8u8E9LaYK3zLTFWwBtposw/OZHq3L35V4Vg8dHyfjAFtknBHJJdtEncmmvLNLQNeBdQwuNm3uqq/17IEn4mEtGNmEU/tlXAFxMHBJlXtjpCH6JmbaLyyWQthj7Jon0Pw4Qq5Xi3U6yVhire7pER/818xkY+3ykyi47V1TF33Q/OfqufsXy29NbfhfVAuVYMeRhlc6XsGiwuGlZkOczN8KUNExlWJVbQ5S7yrXtiIryEzJ9lTfx/YrgUGBzYN2Tb6H3oq2XmvNBZjuPGNDWPm7CUS9/+Qv5QMTK/j/gkZ/vl5T+uRvuZ",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "577fb20a-6770-499e-9bdb-1ab3adb71ef3",
+        "text": "Stationary Plate 1 (tilted up for clarity) Spiral Orbit ——— Ball Orbit Guide Plate Force — transducer 2. Ball Scrub Spiral Orbit Rotating Plate\n\nFigure 2. Spiral Orbit Tribometer mechanisms, Image courtesy of Spiralab\n\nVacuum Bearing Testing:",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJzlVE2L2zAQ/SvCpxZSW5I/leNSdttTlybtJV2MLI0SgW0ZWaIblv73Sk5SdtvQ254WjI3ezBvPx9PsnhLoYYDRtVoma5RIKcoqF7IoVUXrjsiciaIBXFSq5AWoZIWSARyX3PHg/5QIY6zUI3cwL+eeH4137QH0/uACQinGgXOGf2rpDgEl9YJORo8u8na7grGUrVCZN2n+sEKXM8FNkeIIEMKatL6GnDgBSebj7GCIddzrR+g3ExeQ/AoGpXtopbYgnLHH6JB9m8HOmeTj4KHvwWYfjfCxE3N2p90n32UcrJljiFYcuOuMy0KRId1zvJEPECNFkKSTVBeDO06LgU9TrwV32ozZ2dzzce/5funVLoFxnzws6OzawUitNCxToJgWH3B4yi2la1yuCYvsKTDb0Q8d2OBVxMIcPMYuJxu3/IfbI7rvwzAQQe+c7h1I5CekjEWi51a743u0mbTlPfpiO+3QD08xKZ6/0Q3vL9Y7ryWcA94aK+Dsj5zl4yy9AItoemJshPXdy+BfTcxq3J8ixAourfk8hFLiZP7WX8cxy6HLOeMYV12FO141pSIKSlnKir2a/nJWpXhRV5M2UV0XgFCa0kVuOcnT/CpyIr1tBd7qvbcQ5fBCA1urOxMmFpQyQKhi1PMwr9AiACSMtyH5IzLqzOLdc5lsteuvykTxRjFM67KiUClFqi6HqmZM5DUTSrzemiJhLZVRA2Vx2lN/gKY+baWSsGVN/QsslP+KRIY+iTitNtzWeW4na7rghtO6Kgr6FlT0nQvvB3QDYVmFxbENOYXv+oooHn4DVWAW8g=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "28ec8347-2321-447f-b38f-e4e606b5f53d",
+        "text": "The apparatus used for these experiments tests a single angular contact ball bearing. The system operates at a vacuum level better than 5.0 x 10-7 Pa, from 1 to 500 RPM, up to 200°C, and loads to 450 N. The system uses dead weight loading and either a heat lamp or band heater. The system also measures cross bearing electrical resistance, which is used to monitor the operating regime. Bearing",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVE1v4zYQ/SsDnVrAK1OKZEc5tkVboOgi6KanNDBG1MhiQZFakkocLPa/d4a2d5tuAV345vO9mdHjp4IszeTSwQzFHRQKVVfX44CdboaxaoeuapXeNRXd6nbEpthAMVPCAROy/6dCex8G4zBRzG+Lr35Nh4nMcUqM1LVSHHOBX8yQJkarfUYXb1ySuMfHquvKbgNV1amyetrAF6C53ZcqA63al7v/Rc5BDBXxNSaahcm9OZH9sKCm4jMbBkqkk/HuoC3GeFiC79lNlV3b3N6ww2gsHQYT2MuHV8mw/TNSiNsB3byStRS2P3m9ilhx+4tJv679Fin4KDUOesLU+7RlHZjRJZ/DmSSTgFW5DOPVkF6XbMBlsUaj9LW9mC2644rHLOdjQe5YPGU0psPsBzMayoOqVd28U/y1D3V9p9q7qpPohSMPbp17CuzVZCR8He+It2On6n27q2k3jtWuv6Hdvuv0zb7Tox6zVIlOMrniYSLgBjFgWiOskQYYfYA0USSg00LBZDEgcwaEaNzRcgwTsBhAe5dQJ+jRWugJA5tLkKznKYHnFLI4gImjn1Gv6wyWnkncUyKphQ7aUsEJKvVuD/e4gTH4GSpIHlql4I/73zewLvLkTftrVapXP264hwGsxyGKoWkVvH9TmclEGAgHeMmLmn25vRxHhikG7mgibszivADT7sUkCIU3qdBGDzNhXAPn1LwP8UoW+LZ0CjxgC2w0MaHTtIGXyegJzEVTbnD2zqSztBdRJDrQkQUu4YdLNvb4uHK49LoBXjiZMiycWWqfOb+t/7Uo8BbwU/Oxcsk1Zq4gVwyoP64mGtnBC6dvpfoy2w+//Qz7WjVQ1VUH37V1xTNgP7Lffzv3f4/82tKEnM0B/wyiGQgGwycik/YjNHuYZ6YBvedmGahVBkhWwnHFUhzyOsVMFs+VmVdC465zuVZifWe/usR8jWPf0ZwS6yQ7lWDyVnZD9F6lfEDRiHMGn/JKisk4dzFxZprzYCSDcXwHc75aqXJE2Re5DtlMlNAwe+3XhQW7tvD3GkUR61/+m1rO9vo/eI9Bhv9MD3KDn5/+Afd/3jg="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "abbfc8a5-fd0c-4a7d-af6d-8a47946a9627",
+        "text": "torque, load, chamber pressure, and cross bearing resistance are recorded using a data acquisition system. The system uses a single SKF 7204 1219 (52100 steel) angular contact bearing. The bearing has an outside diameter of 47 mm, a bore of 20 mm, eleven 12.7 mm balls and a steel retainer. The bearing is mounted in a fixture that holds the outer race and rotates the inner race. Temperature",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVE1v4zYQ/SsDnVrAK1OKZEc5tkVboOgi6KanNDBG1MhiQZFakkocLPa/d4a2d5tuAV345vO9mdHjp4IszeTSwQzFHRQKVVfX44CdboaxaoeuapXeNRXd6nbEpthAMVPCAROy/6dCex8G4zBRzG+Lr35Nh4nMcUqM1LVSHHOBX8yQJkarfUYXb1ySuMfHquvKbgNV1amyetrAF6C53ZcqA63al7v/Rc5BDBXxNSaahcm9OZH9sKCm4jMbBkqkk/HuoC3GeFiC79lNlV3b3N6ww2gsHQYT2MuHV8mw/TNSiNsB3byStRS2P3m9ilhx+4tJv679Fin4KDUOesLU+7RlHZjRJZ/DmSSTgFW5DOPVkF6XbMBlsUaj9LW9mC2644rHLOdjQe5YPGU0psPsBzMayoOqVd28U/y1D3V9p9q7qpPohSMPbp17CuzVZCR8He+It2On6n27q2k3jtWuv6Hdvuv0zb7Tox6zVIlOMrniYSLgBjFgWiOskQYYfYA0USSg00LBZDEgcwaEaNzRcgwTsBhAe5dQJ+jRWugJA5tLkKznKYHnFLI4gImjn1Gv6wyWnkncUyKphQ7aUsEJKvVuD/e4gTH4GSpIHlql4I/73zewLvLkTftrVapXP264hwGsxyGKoWkVvH9TmclEGAgHeMmLmn25vRxHhikG7mgibszivADT7sUkCIU3qdBGDzNhXAPn1LwP8UoW+LZ0CjxgC2w0MaHTtIGXyegJzEVTbnD2zqSztBdRJDrQkQUu4YdLNvb4uHK49LoBXjiZMiycWWqfOb+t/7Uo8BbwU/Oxcsk1Zq4gVwyoP64mGtnBC6dvpfoy2w+//Qz7WjVQ1VUH37V1xTNgP7Lffzv3f4/82tKEnM0B/wyiGQgGwycik/YjNHuYZ6YBvedmGahVBkhWwnHFUhzyOsVMFs+VmVdC465zuVZifWe/usR8jWPf0ZwS6yQ7lWDyVnZD9F6lfEDRiHMGn/JKisk4dzFxZprzYCSDcXwHc75aqXJE2Re5DtlMlNAwe+3XhQW7tvD3GkUR61/+m1rO9vo/eI9Bhv9MD3KDn5/+Afd/3jg=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "80a1a482-ed26-4a4f-9d19-3d8c29742a85",
+        "text": "information is gathered from a thermocouple mounted just below the inner race.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVE1v4zYQ/SsDnVrAK1OKZEc5tkVboOgi6KanNDBG1MhiQZFakkocLPa/d4a2d5tuAV345vO9mdHjp4IszeTSwQzFHRQKVVfX44CdboaxaoeuapXeNRXd6nbEpthAMVPCAROy/6dCex8G4zBRzG+Lr35Nh4nMcUqM1LVSHHOBX8yQJkarfUYXb1ySuMfHquvKbgNV1amyetrAF6C53ZcqA63al7v/Rc5BDBXxNSaahcm9OZH9sKCm4jMbBkqkk/HuoC3GeFiC79lNlV3b3N6ww2gsHQYT2MuHV8mw/TNSiNsB3byStRS2P3m9ilhx+4tJv679Fin4KDUOesLU+7RlHZjRJZ/DmSSTgFW5DOPVkF6XbMBlsUaj9LW9mC2644rHLOdjQe5YPGU0psPsBzMayoOqVd28U/y1D3V9p9q7qpPohSMPbp17CuzVZCR8He+It2On6n27q2k3jtWuv6Hdvuv0zb7Tox6zVIlOMrniYSLgBjFgWiOskQYYfYA0USSg00LBZDEgcwaEaNzRcgwTsBhAe5dQJ+jRWugJA5tLkKznKYHnFLI4gImjn1Gv6wyWnkncUyKphQ7aUsEJKvVuD/e4gTH4GSpIHlql4I/73zewLvLkTftrVapXP264hwGsxyGKoWkVvH9TmclEGAgHeMmLmn25vRxHhikG7mgibszivADT7sUkCIU3qdBGDzNhXAPn1LwP8UoW+LZ0CjxgC2w0MaHTtIGXyegJzEVTbnD2zqSztBdRJDrQkQUu4YdLNvb4uHK49LoBXjiZMiycWWqfOb+t/7Uo8BbwU/Oxcsk1Zq4gVwyoP64mGtnBC6dvpfoy2w+//Qz7WjVQ1VUH37V1xTNgP7Lffzv3f4/82tKEnM0B/wyiGQgGwycik/YjNHuYZ6YBvedmGahVBkhWwnHFUhzyOsVMFs+VmVdC465zuVZifWe/usR8jWPf0ZwS6yQ7lWDyVnZD9F6lfEDRiHMGn/JKisk4dzFxZprzYCSDcXwHc75aqXJE2Re5DtlMlNAwe+3XhQW7tvD3GkUR61/+m1rO9vo/eI9Bhv9MD3KDn5/+Afd/3jg=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "d8554f75-1628-4ddb-bb65-c7a75bbe7fe0",
+        "text": "Wear Testing:",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtkUFrhDAQhf+K5LzVGHXtei60x0K39CCLjGbUQEwkjnRl6X9vIrv0UvDi994bZl7qG0ONExpqlGRVxKSEE4cMij4rgQtetBm0+TGVZZEXpTiyQ8QmJJBA4P031lnrpDJAuOz/Gja7UjOiGkbyRAjOfeaOv5Wk0dO03OlslaGQq2tviz1KC3GM+eUQ/YEii8sAsmcel/+CPeIJW7aFcAp3vKsr6o8ZOmQ/XuiVxkYqhx1ZtwVD8rmgWxIJZlpRa3TJi+3W0MSSvCp6W9sE0NkljGi6Eai1lPgj/br3eQYmDJMCTONZ9g+BtnkXYJ616oCUNcld1mCGFYa9q5qhGdhlpws1k5WqV7i/guAif+L+K85CVLyo0lNIzz7ZmHVq0XlXHg4jvIaW2ReCi85+E2WGKngfS5wVad/B5RcAa5UO"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "70761f4a-e15a-4646-bbe7-b27ed65df81f",
+        "text": "Three different wear rates were calculated including a mixed film in pure sliding, mixed film (rolling/sliding), and boundary (rolling/sliding). A normalized wear rate for all these tests were calculated to compare materials tested. The wear rate will indicate the volume of wear (µm3) over a distance traveled (in millimeters) which will normalize the data in the case of premature failures. For the",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVMGO4zYM/RXCpxkg6zhOvE7mtuhi2h5SFJ20l2wQ0BIdC5AlQ5Inky7230s6melst0CQOI/UI/ke5f3XjCz15NLR6OwBMqporRaqKdbLVbtSVaXXdVvoTbks1pumrrIZZD0l1JiQ879myvugjcNEcfpv8eLHdOzInLrESFkWBZ+5wWejU8foop7QwRuX5Nx+z2k5Q4uqWuXLwwzegHW1zGsBFlVR5/X/ItdDDGXxEhP1Msnv5oXs04CKsm8c0JRIJePdUVmM8TgE33BakW+q1WbBCa2xdNQmcJYPF2GY/xkpxLlG149kLYX5Z69GESvOfzbpl7GZIwUfpcZRdZgan+asA09043PYkzAJuMgH3b4G0mWYAjgM1iiUvua3sEV3GvE0ybnPyJ2yw4TGdOy9Nq2hyaiyKFcfCv5Uu7J8KKqHxUZOD3zy6Ma+ocBZqwkJ/9qrNW4KXGLVLmssyqJqltisPi50Xa2quvw4SZXoRZzLdl0gAi7ZklDAmTBAEKf5MRAotGq0/F+DccqOvAYnQOhZeA08Zc8wDCNnRmskOHsfuwveWgbnt+D9DNBpaPzoNIbLj/EcPoHzoUdr/maSt26g9QHQWkgdRYLJgB8aTB6U70UL6BkIBm2cUknnsOvoHd3ZMJdxWnwhIYVnb9l28O016+7LWBRN1S/vwT8T12aNYkKnODvgM18oDXc8es9Ehi8LL9E9nDujuiv32xATudwkEUqeFcapzBCIuxTlWjSWf2MOjzyl5LwXdJpgNsGfnnZb+Pyhqosanv74C37y1LZGGTGOGR+DmbZ/OgFnjDBGGV1YeW27ieOdO99ZIWekGneJ8B9bWFaXUHEXCGqMyfdALwMLLPcELfD8nddc7bocW+MM7AJem9mi6owjuNvutvdwx13Fzp+lzqM5yZws8WuvfN0P+/KwXx329WG/WB5y+PWqGh++atDIFkjn7IcC8VoH80xO3KSB+Msle7lZwbn+HDn9IpvRyCtMWmKtbhNOTLcprzvSE0buqr9p2r5qygvI3psI2jsxNfjxxAXAetSgaFpNTJKAibXqrvs4dcz7JKU6fxWIWd8G6T2/iFgQbFMuV/v1nfEbBt5Tnmsn9/Tb4R93/O9B"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "4c8005c0-6d22-40c1-b4fb-d3de35620e68",
+        "text": "pure sliding test, the ASTM D-5707 SRV Coefficient of Friction test was used. For both the mixed film and boundary testing in a rolling/sliding contact, a custom experimental method using a Mini Traction Machine (MTM) (as show in Figure 3) was used [1][2][4][7][13]. In the MTM, the ball and disc are driven independently which allows any combination of rolling and sliding. The measurement of",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVMGO4zYM/RXCpxkg6zhOvE7mtuhi2h5SFJ20l2wQ0BIdC5AlQ5Inky7230s6melst0CQOI/UI/ke5f3XjCz15NLR6OwBMqporRaqKdbLVbtSVaXXdVvoTbks1pumrrIZZD0l1JiQ879myvugjcNEcfpv8eLHdOzInLrESFkWBZ+5wWejU8foop7QwRuX5Nx+z2k5Q4uqWuXLwwzegHW1zGsBFlVR5/X/ItdDDGXxEhP1Msnv5oXs04CKsm8c0JRIJePdUVmM8TgE33BakW+q1WbBCa2xdNQmcJYPF2GY/xkpxLlG149kLYX5Z69GESvOfzbpl7GZIwUfpcZRdZgan+asA09043PYkzAJuMgH3b4G0mWYAjgM1iiUvua3sEV3GvE0ybnPyJ2yw4TGdOy9Nq2hyaiyKFcfCv5Uu7J8KKqHxUZOD3zy6Ma+ocBZqwkJ/9qrNW4KXGLVLmssyqJqltisPi50Xa2quvw4SZXoRZzLdl0gAi7ZklDAmTBAEKf5MRAotGq0/F+DccqOvAYnQOhZeA08Zc8wDCNnRmskOHsfuwveWgbnt+D9DNBpaPzoNIbLj/EcPoHzoUdr/maSt26g9QHQWkgdRYLJgB8aTB6U70UL6BkIBm2cUknnsOvoHd3ZMJdxWnwhIYVnb9l28O016+7LWBRN1S/vwT8T12aNYkKnODvgM18oDXc8es9Ehi8LL9E9nDujuiv32xATudwkEUqeFcapzBCIuxTlWjSWf2MOjzyl5LwXdJpgNsGfnnZb+Pyhqosanv74C37y1LZGGTGOGR+DmbZ/OgFnjDBGGV1YeW27ieOdO99ZIWekGneJ8B9bWFaXUHEXCGqMyfdALwMLLPcELfD8nddc7bocW+MM7AJem9mi6owjuNvutvdwx13Fzp+lzqM5yZws8WuvfN0P+/KwXx329WG/WB5y+PWqGh++atDIFkjn7IcC8VoH80xO3KSB+Msle7lZwbn+HDn9IpvRyCtMWmKtbhNOTLcprzvSE0buqr9p2r5qygvI3psI2jsxNfjxxAXAetSgaFpNTJKAibXqrvs4dcz7JKU6fxWIWd8G6T2/iFgQbFMuV/v1nfEbBt5Tnmsn9/Tb4R93/O9B",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "3dfc89c9-9e98-4964-b2a9-d63629016b8a",
+        "text": "friction force is done through a load cell that is attached to the bearing housing of the ball motor shaft.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtVMGO4zYM/RXCpxkg6zhOvE7mtuhi2h5SFJ20l2wQ0BIdC5AlQ5Inky7230s6melst0CQOI/UI/ke5f3XjCz15NLR6OwBMqporRaqKdbLVbtSVaXXdVvoTbks1pumrrIZZD0l1JiQ879myvugjcNEcfpv8eLHdOzInLrESFkWBZ+5wWejU8foop7QwRuX5Nx+z2k5Q4uqWuXLwwzegHW1zGsBFlVR5/X/ItdDDGXxEhP1Msnv5oXs04CKsm8c0JRIJePdUVmM8TgE33BakW+q1WbBCa2xdNQmcJYPF2GY/xkpxLlG149kLYX5Z69GESvOfzbpl7GZIwUfpcZRdZgan+asA09043PYkzAJuMgH3b4G0mWYAjgM1iiUvua3sEV3GvE0ybnPyJ2yw4TGdOy9Nq2hyaiyKFcfCv5Uu7J8KKqHxUZOD3zy6Ma+ocBZqwkJ/9qrNW4KXGLVLmssyqJqltisPi50Xa2quvw4SZXoRZzLdl0gAi7ZklDAmTBAEKf5MRAotGq0/F+DccqOvAYnQOhZeA08Zc8wDCNnRmskOHsfuwveWgbnt+D9DNBpaPzoNIbLj/EcPoHzoUdr/maSt26g9QHQWkgdRYLJgB8aTB6U70UL6BkIBm2cUknnsOvoHd3ZMJdxWnwhIYVnb9l28O016+7LWBRN1S/vwT8T12aNYkKnODvgM18oDXc8es9Ehi8LL9E9nDujuiv32xATudwkEUqeFcapzBCIuxTlWjSWf2MOjzyl5LwXdJpgNsGfnnZb+Pyhqosanv74C37y1LZGGTGOGR+DmbZ/OgFnjDBGGV1YeW27ieOdO99ZIWekGneJ8B9bWFaXUHEXCGqMyfdALwMLLPcELfD8nddc7bocW+MM7AJem9mi6owjuNvutvdwx13Fzp+lzqM5yZws8WuvfN0P+/KwXx329WG/WB5y+PWqGh++atDIFkjn7IcC8VoH80xO3KSB+Msle7lZwbn+HDn9IpvRyCtMWmKtbhNOTLcprzvSE0buqr9p2r5qygvI3psI2jsxNfjxxAXAetSgaFpNTJKAibXqrvs4dcz7JKU6fxWIWd8G6T2/iFgQbFMuV/v1nfEbBt5Tnmsn9/Tb4R93/O9B",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "c715d812-2459-43c3-838a-31578954ac5d",
+        "text": "304\n\nLoad Sensor Traction Sensor Standard Specimens (Disc and 3/4* ball) Wear Sensor ©\n\nFigure 3. Schematic of Mini Traction Machine, image courtesy of PCS Instruments",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJzlVE1r3DAQ/SvCp7ZsbVmy/JFrQttAA4FNyGEbzFga7wpsy8gyzTbkv1fy7jahpL3lFNBl3swbjeY9tHmMsMMeB1drFZ2RqMllDgWgqETLsSybrCppkbZCUiYylkUrEvXoQIEDX/8YSWOs0gM4nJa4g72ZXb1Dvd05jzBGqecc4Z9auZ1H02JBR6MHF3ibTcnyuFgRRgsR8/sV+QOklMd0AUr6OnCgeCSa9pPDPrzjWj9gtx5BYvTkE63usFbaonTG7kNBcjuhnRIFQz9j16FNLoycwyam5Kt23+YmAbRmCi1quQPXGJf4R/pxj/0G6DF0CmAaj6o9Jdx+XBIwjp2W4LQZkmO6g2E7w3bZ1SbCYRvdL+jk6t4o3WpcVGCUZZ+pP+KGsTMqztIqsEfPrIe5b9D6qmxB7LN2SkFFgYNXrgDKqGg4NFmeqkJkomD5sgmHD0GWiNNFy9Ost4MfFLfG6l+obkKNL/7bHN4BkKuWi7QUJSqaCxBNXrKMi4Jjq97MHJmgMQ1K04PyxzgvizgLccr+ARwY784a4qXS3w0ossZhMpbcWJDh0lO8djAosD4/otT+iRP5cKEnSTxMeJJ9Ig103Udyh2BPnB8zpVC9NM9l729/zTAtq9qmTJkqKua/FGBcVpUQrIIyB1nwNzMMz0SQv2BlXAU/nGJRHD6XlOcszl4DFsZ/DaPQ4bLEWnp1pnq0pvFlNC45T8V7cNQXvZ0tEh6Ttdxh7y+VxLTkSg/62WFXIHd6wBXRwR1Emtn64feh8Pp8TS6HydnDCl5a6dD6HMbQI3q6/w2PmAlc"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "c8f009bc-3043-4a69-aaa4-f8e22cc1abdf",
+        "text": "The experimental method using the MTM utilized a ball-on-disc configuration. In the MTM, the ball and disc are driven independently which allows any combination of rolling and sliding. The measurement of friction force is done through a load cell that is attached to the bearing housing of the ball motor shaft. In previous work by the author and when considering other scuffing tests, it was noted",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVdtuGzcQ/ZWBnlJA1i2WZfmxaOIUbRqjUfsQwxC4y9ldwlxyQXIlb4L8e89wJddtDBiCNJzLmTNnxvffJmy5ZZf2Rk9uaKL19vqqXF1v9fKqXF6u8Flt1pttsV3w5mp7NZnSpOWktEoK/t8mpfdBG6cSx/zbqsH3ad+wqZsEy2q1WCDmZD4anRpYl5ts7bxxSeLu75fbzex6Spvtdvb2YUrn38vV6nq2yYb1YjPbvGYZY2CZxCEmbqWPO/PE9nOnSp58x4PmxGUy3u1Lq2Lcd8EXcFvMtuvLa6SYVMbyXpsALx8GyTD/K3KIc61c27O1HOa/+LIXquL81qQPfTFXHHyUGvuyUanwaQ4W0M8pn1MtSyYxLmedrs4Paejyg+o6a0oluOanZ6tc3as6k3k/YVdPHrI1pn3rtakM5zGtFqvLiwX+1rvV6maxvlluJbpD5N71bcEBXmvpPPGTjGGya5j4qeNgpAVlCVNsvKY+GldTwuvH3Ufqk7HmK2tSVChrL7y70CaWVHpXmboPGeuMfnXniGn+Ir6knKbsrAKTDubAjozT3DE+XLIDHRtTNgRff4xwH5C2LUQ7SEq+ouCtFTSSKVoDWdUzEuAtq9iHrFPxq4LJw6TKh5LJRNLeMZAE39coQNYrTSWmBptK4qBSUmWDxpIfEbMKUqrxIwHI+txI66EBio2qUm61C3ww8KOjD49UDNlT9aAvZKjHBp2CoWg056QeDkhQ9lWVyRVRTMkkOqpIzieBIbhaHxNF0/Y2UxAxDD6jjwmzRGlfB45Rmr1fT6+my7cPQgk6KpVDFxQ505wxvf9yS2/e+xDLpnd1xC5At1T1gb6oxgUFeNQD8C2nYLjgQvU/Teny4mfp+t0dvXn3lIRlupOaIByvn//8e0qffqPfBdQOnUxzzzvTPqJwbm2ckXyVbjMWcyLrPJqR5OduDsDdscgsku86H8fBvHz/lwTk/yStOq5MGgclA+3gjZFKiUymENDg6Ajzo3bGGkBiRJ2iOhEMCG49FKrq51pHiIGgbRYQDdsOOq4qDpCbyVbZHcyyVOVwVorS2iQEA90Hf+QDh3EVOiyYCgMFSHZU6IsVe4WA/7SBYakynUTrgFRIFX2FEQRElsQhJskCl1LKsMibBMIwMjYiiVhkQXsO6lRCnRMZ0T9H/y/4JC/LCtSBjwqlGnIqlrJ9cvsthiEd4Zzkyb0a7/goh0C9RNCM8qeBE2mEWN/lUwM1Fh6HsR1XCVPGYWDpD/VPwVMSyHmX8/iseWScFBmYOvwwzSzJwGBfyBCRUujdyOkPKhsvobe+HkZ6cJ8xa4v0OXeljMUyZJYzsYm7F+xhG7Ib9AXtBdw7/G8scEfTMJOjfL72f6gg9/PAOznJ3x/+AVqkmN4="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "20254399-d8d9-4cc0-aaf4-372101f5e525",
+        "text": "that most simulations use a load stage progression [5,6,13]. This can be seen in the FZG (Forschungsstelle fur Zahnrader und Getriebebau), 4-Ball EP (Extreme Pressure), SRV, OK Load Test, and Timken tests. The testing in this work is done using progressive speed as opposed to progressive load stages. On benefit of this approach is that the higher sliding speeds will allow for a more aggressive",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVdtuGzcQ/ZWBnlJA1i2WZfmxaOIUbRqjUfsQwxC4y9ldwlxyQXIlb4L8e89wJddtDBiCNJzLmTNnxvffJmy5ZZf2Rk9uaKL19vqqXF1v9fKqXF6u8Flt1pttsV3w5mp7NZnSpOWktEoK/t8mpfdBG6cSx/zbqsH3ad+wqZsEy2q1WCDmZD4anRpYl5ts7bxxSeLu75fbzex6Spvtdvb2YUrn38vV6nq2yYb1YjPbvGYZY2CZxCEmbqWPO/PE9nOnSp58x4PmxGUy3u1Lq2Lcd8EXcFvMtuvLa6SYVMbyXpsALx8GyTD/K3KIc61c27O1HOa/+LIXquL81qQPfTFXHHyUGvuyUanwaQ4W0M8pn1MtSyYxLmedrs4Paejyg+o6a0oluOanZ6tc3as6k3k/YVdPHrI1pn3rtakM5zGtFqvLiwX+1rvV6maxvlluJbpD5N71bcEBXmvpPPGTjGGya5j4qeNgpAVlCVNsvKY+GldTwuvH3Ufqk7HmK2tSVChrL7y70CaWVHpXmboPGeuMfnXniGn+Ir6knKbsrAKTDubAjozT3DE+XLIDHRtTNgRff4xwH5C2LUQ7SEq+ouCtFTSSKVoDWdUzEuAtq9iHrFPxq4LJw6TKh5LJRNLeMZAE39coQNYrTSWmBptK4qBSUmWDxpIfEbMKUqrxIwHI+txI66EBio2qUm61C3ww8KOjD49UDNlT9aAvZKjHBp2CoWg056QeDkhQ9lWVyRVRTMkkOqpIzieBIbhaHxNF0/Y2UxAxDD6jjwmzRGlfB45Rmr1fT6+my7cPQgk6KpVDFxQ505wxvf9yS2/e+xDLpnd1xC5At1T1gb6oxgUFeNQD8C2nYLjgQvU/Teny4mfp+t0dvXn3lIRlupOaIByvn//8e0qffqPfBdQOnUxzzzvTPqJwbm2ckXyVbjMWcyLrPJqR5OduDsDdscgsku86H8fBvHz/lwTk/yStOq5MGgclA+3gjZFKiUymENDg6Ajzo3bGGkBiRJ2iOhEMCG49FKrq51pHiIGgbRYQDdsOOq4qDpCbyVbZHcyyVOVwVorS2iQEA90Hf+QDh3EVOiyYCgMFSHZU6IsVe4WA/7SBYakynUTrgFRIFX2FEQRElsQhJskCl1LKsMibBMIwMjYiiVhkQXsO6lRCnRMZ0T9H/y/4JC/LCtSBjwqlGnIqlrJ9cvsthiEd4Zzkyb0a7/goh0C9RNCM8qeBE2mEWN/lUwM1Fh6HsR1XCVPGYWDpD/VPwVMSyHmX8/iseWScFBmYOvwwzSzJwGBfyBCRUujdyOkPKhsvobe+HkZ6cJ8xa4v0OXeljMUyZJYzsYm7F+xhG7Ib9AXtBdw7/G8scEfTMJOjfL72f6gg9/PAOznJ3x/+AVqkmN4=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "acaa5302-6eae-4c87-9c7c-7fdfe9b321de",
+        "text": "wear rate to help differentiate the efficacy of the additives. However, the primary reason for using the progressive speed approach is the fact that in a test where the contact stress increases at every stage, the size of contact patch will also increase at every stage. This leads to fresh nascent metal being exposed at every stage. This new area of contact has not yet developed a tribofilm when",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVdtuGzcQ/ZWBnlJA1i2WZfmxaOIUbRqjUfsQwxC4y9ldwlxyQXIlb4L8e89wJddtDBiCNJzLmTNnxvffJmy5ZZf2Rk9uaKL19vqqXF1v9fKqXF6u8Flt1pttsV3w5mp7NZnSpOWktEoK/t8mpfdBG6cSx/zbqsH3ad+wqZsEy2q1WCDmZD4anRpYl5ts7bxxSeLu75fbzex6Spvtdvb2YUrn38vV6nq2yYb1YjPbvGYZY2CZxCEmbqWPO/PE9nOnSp58x4PmxGUy3u1Lq2Lcd8EXcFvMtuvLa6SYVMbyXpsALx8GyTD/K3KIc61c27O1HOa/+LIXquL81qQPfTFXHHyUGvuyUanwaQ4W0M8pn1MtSyYxLmedrs4Paejyg+o6a0oluOanZ6tc3as6k3k/YVdPHrI1pn3rtakM5zGtFqvLiwX+1rvV6maxvlluJbpD5N71bcEBXmvpPPGTjGGya5j4qeNgpAVlCVNsvKY+GldTwuvH3Ufqk7HmK2tSVChrL7y70CaWVHpXmboPGeuMfnXniGn+Ir6knKbsrAKTDubAjozT3DE+XLIDHRtTNgRff4xwH5C2LUQ7SEq+ouCtFTSSKVoDWdUzEuAtq9iHrFPxq4LJw6TKh5LJRNLeMZAE39coQNYrTSWmBptK4qBSUmWDxpIfEbMKUqrxIwHI+txI66EBio2qUm61C3ww8KOjD49UDNlT9aAvZKjHBp2CoWg056QeDkhQ9lWVyRVRTMkkOqpIzieBIbhaHxNF0/Y2UxAxDD6jjwmzRGlfB45Rmr1fT6+my7cPQgk6KpVDFxQ505wxvf9yS2/e+xDLpnd1xC5At1T1gb6oxgUFeNQD8C2nYLjgQvU/Teny4mfp+t0dvXn3lIRlupOaIByvn//8e0qffqPfBdQOnUxzzzvTPqJwbm2ckXyVbjMWcyLrPJqR5OduDsDdscgsku86H8fBvHz/lwTk/yStOq5MGgclA+3gjZFKiUymENDg6Ajzo3bGGkBiRJ2iOhEMCG49FKrq51pHiIGgbRYQDdsOOq4qDpCbyVbZHcyyVOVwVorS2iQEA90Hf+QDh3EVOiyYCgMFSHZU6IsVe4WA/7SBYakynUTrgFRIFX2FEQRElsQhJskCl1LKsMibBMIwMjYiiVhkQXsO6lRCnRMZ0T9H/y/4JC/LCtSBjwqlGnIqlrJ9cvsthiEd4Zzkyb0a7/goh0C9RNCM8qeBE2mEWN/lUwM1Fh6HsR1XCVPGYWDpD/VPwVMSyHmX8/iseWScFBmYOvwwzSzJwGBfyBCRUujdyOkPKhsvobe+HkZ6cJ8xa4v0OXeljMUyZJYzsYm7F+xhG7Ib9AXtBdw7/G8scEfTMJOjfL72f6gg9/PAOznJ3x/+AVqkmN4=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "5338e245-11a7-4549-8e23-435b6e8d3204",
+        "text": "it comes into contact, so it is more likely to have aggressive wear. Therefore, tests run in a progressive load methodology will typically have failures at the step increase and have lower repeatability.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVdtuGzcQ/ZWBnlJA1i2WZfmxaOIUbRqjUfsQwxC4y9ldwlxyQXIlb4L8e89wJddtDBiCNJzLmTNnxvffJmy5ZZf2Rk9uaKL19vqqXF1v9fKqXF6u8Flt1pttsV3w5mp7NZnSpOWktEoK/t8mpfdBG6cSx/zbqsH3ad+wqZsEy2q1WCDmZD4anRpYl5ts7bxxSeLu75fbzex6Spvtdvb2YUrn38vV6nq2yYb1YjPbvGYZY2CZxCEmbqWPO/PE9nOnSp58x4PmxGUy3u1Lq2Lcd8EXcFvMtuvLa6SYVMbyXpsALx8GyTD/K3KIc61c27O1HOa/+LIXquL81qQPfTFXHHyUGvuyUanwaQ4W0M8pn1MtSyYxLmedrs4Paejyg+o6a0oluOanZ6tc3as6k3k/YVdPHrI1pn3rtakM5zGtFqvLiwX+1rvV6maxvlluJbpD5N71bcEBXmvpPPGTjGGya5j4qeNgpAVlCVNsvKY+GldTwuvH3Ufqk7HmK2tSVChrL7y70CaWVHpXmboPGeuMfnXniGn+Ir6knKbsrAKTDubAjozT3DE+XLIDHRtTNgRff4xwH5C2LUQ7SEq+ouCtFTSSKVoDWdUzEuAtq9iHrFPxq4LJw6TKh5LJRNLeMZAE39coQNYrTSWmBptK4qBSUmWDxpIfEbMKUqrxIwHI+txI66EBio2qUm61C3ww8KOjD49UDNlT9aAvZKjHBp2CoWg056QeDkhQ9lWVyRVRTMkkOqpIzieBIbhaHxNF0/Y2UxAxDD6jjwmzRGlfB45Rmr1fT6+my7cPQgk6KpVDFxQ505wxvf9yS2/e+xDLpnd1xC5At1T1gb6oxgUFeNQD8C2nYLjgQvU/Teny4mfp+t0dvXn3lIRlupOaIByvn//8e0qffqPfBdQOnUxzzzvTPqJwbm2ckXyVbjMWcyLrPJqR5OduDsDdscgsku86H8fBvHz/lwTk/yStOq5MGgclA+3gjZFKiUymENDg6Ajzo3bGGkBiRJ2iOhEMCG49FKrq51pHiIGgbRYQDdsOOq4qDpCbyVbZHcyyVOVwVorS2iQEA90Hf+QDh3EVOiyYCgMFSHZU6IsVe4WA/7SBYakynUTrgFRIFX2FEQRElsQhJskCl1LKsMibBMIwMjYiiVhkQXsO6lRCnRMZ0T9H/y/4JC/LCtSBjwqlGnIqlrJ9cvsthiEd4Zzkyb0a7/goh0C9RNCM8qeBE2mEWN/lUwM1Fh6HsR1XCVPGYWDpD/VPwVMSyHmX8/iseWScFBmYOvwwzSzJwGBfyBCRUujdyOkPKhsvobe+HkZ6cJ8xa4v0OXeljMUyZJYzsYm7F+xhG7Ib9AXtBdw7/G8scEfTMJOjfL72f6gg9/PAOznJ3x/+AVqkmN4=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "541a1a32-58de-43cf-b96d-e2244c1a21bb",
+        "text": "The experimental testing methodology is as follows [1,7]: The testing apparatus is assembled and filled with oil for the experiment. The temperature of the oil is then heated to 150oC while the ball and disc are rotated at a slow speed while not in contact. This continues for 30 minutes to allow for any chemical absorption of the additives on the surfaces. After this, there is a 10-minute run-in",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVF1r3DoQ/SuDn1LYeO1NvLnJW+mF9qW3JUmfQljG0tgWyJKR5G62pf+9M7I3TeHCLshH83HmnLGffhZkaSSXDkYXd1AorFu67rSihrqu7VS9r3Wtr+pm37StwmIDxUgJNSbk+J+F8j5o4zBRzM8WT35Oh4FMPyRGdruq4pwVPhqdBkbrm4xO3rgkeU9P9e0/JUP1bl+X1fMGXoFmf1XeZqCpbsr9/yJLEkNFPMVEo0zy1byQfZhQUfGLLzQlUsl4d1AWYzxMwbccVpW3zfX1DQd0xtJBm8BRPpykwvZbpBC3Gt04k7UUtv96NYtYcfvRpE9zu0UKPkqPgxowtT5tWQeeaK3ncCSpJGBdTro7X6TTlC9wmqxRKLy267VF18/YZzmfCnJ98ZzRmA6j16YzlI3aVbvry4p/zeNud1c1d/WtZE+ceXDz2FLgqEYmT/QiRhSPAwG9TBSMjIAWhJVxPbCfg9fe+v4EJgJG6Ly1/hhZ4c3N8x1I5jmYGWPANMclNNLYWtKATgMPJsejSQN4Y7lKgPRX03ItNTLANQKB73KIhHM9PjoYiJdJQ/LsdOU/wHFgwXJUi9bmTtpEBcjpwaccjAkQInOGOJFwyDnOJzAOlOdxVW7OPeTJuJli5ndVwchPPJ00RBk74+hOoAYa2Rxu2UYfJjHpzBe1Nsl85yzGBIhz6HgNYgnvu0Qyt4kbuWGSIhTU1eXSCMLsLpmVaOJXtRA+UUg/DL6ShZgCxSj96nLXwMevmCdHeLBGixFM955tkuO9LBBcPNzfv1sS4ItTi2RrswFl8HHizSO94Sq8/r004BlWycRg7oohxYUUpzqpzli/qlWvYmUqYU3o/0gZienruNjMdGT07xjM4hChGpYEcYU/G6KThxH5I8D/ZVdcCnyWZVl5Sek3me0snqpAGJcJ46rHEs1tBHxj+bK6b2yf+WCBjJgjjp9nuGjqd3mpXoWCixFfzDiPb6h8fvzMIgeIau466XskDFmPSOZHXmml5hBLeRvPr/l/GHjfWetHeRd/Pf8GmW/Y2A=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "dff65b88-fb1e-476e-9990-62bea3403fdb",
+        "text": "period with a Hertzian contact stress of 1.25 GPa and a Sliding to Rolling Ratio (SRR) of 1. Once the run-in has completed, a progressive speed test starts with running stages for 1 minute and rest stages for 30 seconds. The SRR is varied at each stage in order to maintain the entrainment speed for each stage but increase the sliding speed at the contact. The test continues until either all stages",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVF1r3DoQ/SuDn1LYeO1NvLnJW+mF9qW3JUmfQljG0tgWyJKR5G62pf+9M7I3TeHCLshH83HmnLGffhZkaSSXDkYXd1AorFu67rSihrqu7VS9r3Wtr+pm37StwmIDxUgJNSbk+J+F8j5o4zBRzM8WT35Oh4FMPyRGdruq4pwVPhqdBkbrm4xO3rgkeU9P9e0/JUP1bl+X1fMGXoFmf1XeZqCpbsr9/yJLEkNFPMVEo0zy1byQfZhQUfGLLzQlUsl4d1AWYzxMwbccVpW3zfX1DQd0xtJBm8BRPpykwvZbpBC3Gt04k7UUtv96NYtYcfvRpE9zu0UKPkqPgxowtT5tWQeeaK3ncCSpJGBdTro7X6TTlC9wmqxRKLy267VF18/YZzmfCnJ98ZzRmA6j16YzlI3aVbvry4p/zeNud1c1d/WtZE+ceXDz2FLgqEYmT/QiRhSPAwG9TBSMjIAWhJVxPbCfg9fe+v4EJgJG6Ly1/hhZ4c3N8x1I5jmYGWPANMclNNLYWtKATgMPJsejSQN4Y7lKgPRX03ItNTLANQKB73KIhHM9PjoYiJdJQ/LsdOU/wHFgwXJUi9bmTtpEBcjpwaccjAkQInOGOJFwyDnOJzAOlOdxVW7OPeTJuJli5ndVwchPPJ00RBk74+hOoAYa2Rxu2UYfJjHpzBe1Nsl85yzGBIhz6HgNYgnvu0Qyt4kbuWGSIhTU1eXSCMLsLpmVaOJXtRA+UUg/DL6ShZgCxSj96nLXwMevmCdHeLBGixFM955tkuO9LBBcPNzfv1sS4ItTi2RrswFl8HHizSO94Sq8/r004BlWycRg7oohxYUUpzqpzli/qlWvYmUqYU3o/0gZienruNjMdGT07xjM4hChGpYEcYU/G6KThxH5I8D/ZVdcCnyWZVl5Sek3me0snqpAGJcJ46rHEs1tBHxj+bK6b2yf+WCBjJgjjp9nuGjqd3mpXoWCixFfzDiPb6h8fvzMIgeIau466XskDFmPSOZHXmml5hBLeRvPr/l/GHjfWetHeRd/Pf8GmW/Y2A==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "c13856a6-5252-4d8e-ae5c-325746ba65bb",
+        "text": "(51) are completed (maximum speed for MTM) or scuffing wear and seizure occurs.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVF1r3DoQ/SuDn1LYeO1NvLnJW+mF9qW3JUmfQljG0tgWyJKR5G62pf+9M7I3TeHCLshH83HmnLGffhZkaSSXDkYXd1AorFu67rSihrqu7VS9r3Wtr+pm37StwmIDxUgJNSbk+J+F8j5o4zBRzM8WT35Oh4FMPyRGdruq4pwVPhqdBkbrm4xO3rgkeU9P9e0/JUP1bl+X1fMGXoFmf1XeZqCpbsr9/yJLEkNFPMVEo0zy1byQfZhQUfGLLzQlUsl4d1AWYzxMwbccVpW3zfX1DQd0xtJBm8BRPpykwvZbpBC3Gt04k7UUtv96NYtYcfvRpE9zu0UKPkqPgxowtT5tWQeeaK3ncCSpJGBdTro7X6TTlC9wmqxRKLy267VF18/YZzmfCnJ98ZzRmA6j16YzlI3aVbvry4p/zeNud1c1d/WtZE+ceXDz2FLgqEYmT/QiRhSPAwG9TBSMjIAWhJVxPbCfg9fe+v4EJgJG6Ly1/hhZ4c3N8x1I5jmYGWPANMclNNLYWtKATgMPJsejSQN4Y7lKgPRX03ItNTLANQKB73KIhHM9PjoYiJdJQ/LsdOU/wHFgwXJUi9bmTtpEBcjpwaccjAkQInOGOJFwyDnOJzAOlOdxVW7OPeTJuJli5ndVwchPPJ00RBk74+hOoAYa2Rxu2UYfJjHpzBe1Nsl85yzGBIhz6HgNYgnvu0Qyt4kbuWGSIhTU1eXSCMLsLpmVaOJXtRA+UUg/DL6ShZgCxSj96nLXwMevmCdHeLBGixFM955tkuO9LBBcPNzfv1sS4ItTi2RrswFl8HHizSO94Sq8/r004BlWycRg7oohxYUUpzqpzli/qlWvYmUqYU3o/0gZienruNjMdGT07xjM4hChGpYEcYU/G6KThxH5I8D/ZVdcCnyWZVl5Sek3me0snqpAGJcJ46rHEs1tBHxj+bK6b2yf+WCBjJgjjp9nuGjqd3mpXoWCixFfzDiPb6h8fvzMIgeIau466XskDFmPSOZHXmml5hBLeRvPr/l/GHjfWetHeRd/Pf8GmW/Y2A==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "49d3307d-f6ba-4769-b130-83d3c9d8d17f",
+        "text": "Samples",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtkctqwzAQRX8laN3a8kMxybrQLgtJVyGYsTS2BXoYe0xjQv+9kkjopqCNzp07mju63BkatOio1Yodd+zQdaKpxL6pSy57ybu6V1AXAEKog2iAveyYRQIFBKH+zqT3s9IOCJd0N7D5ldoR9TBSIGXJefA88LdWNAZaNIlOXjuKvssllGUBFXu+z/j1ZfcHqiprIqgKkTX/gmQJhC3bQmhjjk99Q3OaQCL7CUKvDbZKzyjJz1ssyL8WnJdcgbMrGoNz/ublGjex5O+aPtYuB5z9Elu0cgTqPOUhZBj30c+BxdgpwiKbVP8UaJuSANNktATS3uUP2YAbVhjSri4M3cCuiS7UWq90rzH9QsnL+pWHI85leeTiWByiewrO1q22wzlUiRiM8Ba3zE5gJ4NptufzZ00mpL/+Ai7fk4I="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "4cb30504-f49e-4c6c-900e-e3cf25bc9799",
+        "text": "The test plates for the SOT were machined from 440C stainless steel with a surface roughness of <0.05 microns. Balls used were 12.7-mm or 7.14-mm 440C stainless steel depending on the contact stress requirements. For the vacuum bearing tests, SKF 7204 Angular contact ball bearings made from 52100 steel were used. In the SRV testing, AISI 52100 steel balls and discs were used with a Young’s Modulus",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJy1VN9v2zYQ/lcOetoAR6Zk0aqCvWQd2gRD1iD2BgxZYJzFk01MIlWSapIW/d93pO2mK4qtLwXy4NyP7777vqPuPmTU00AmbLTKziHrpCyVaqpy2UksKqXqBZYLUSF2i7LqimwG2UABFQbk+g9Za61T2mAgn/7v8clOYbMnvdsHjpSlENxzDD9oFfYcLeoUHa02Ifbd3RXNi3w5g2K5qHJ5P4NPgWZZ5yIFpKjz+quRQxOHMv/kAw1xkxv9SP1qxJayj5xQFKgN2ppN26P3m9HZLZeJvJGykVzQ6Z42Sjuusu4pIsx/9+T8XKEZJup7cvNfbDtFsfz8tQ6X03aO5KyPMzbtHsPWhjnrwBsd8QwOFJFisMhH1Z0S4WlMCRzHXrcYec2P6R7NbsJdkvMuI7PL7lPUh81gle40JaNKUVZngv/kuizPhTwvmtg9cufGTMOWHFfJFHHP9jbbrawXcllXpWi7VmyrTmFVIEqpGlljkirQY3QuW+8JInMY+2gvdNZB4NjqzRoeyBEM2O61IQWdswNUlXgJPqA2PXnPv4h6eNBhDwh+ch2rBM5Ou72JadvBTyIXEgbdOmt8Dj9j33uYPOMl9KLM67NhAJ5a50UVf351hKKRDJ/gDqxJ/FprAraB0y5WOXo7sa3JtxxeHZd4h+00DbAldLE12TaD1a+voC5FBRdsQo/uE9aWyZ2KPS+u6LC0LAshTrtG1pF/DlcHJqvbPxIyN83g4mp19a/6bVoYjQKlfeuf+0+q/Wkns/trKkXReLi2auqnJBxjwOsbTK0IN1Z7z6u7eEYxLfKFyCG6d5iwx1hWiKig0nySgdxpxLMhP9zijwlcghmO0Le2/fuBT58hnDrZtizh8vblYUBZJczIns/sJCq6llU/G6gPvEyEOlD4HEW+iCgnGj0/BC49nUngx8TV/guC7xNByQKaIYcL5hWOJ3oUz00GtAE1HV4VpdnHEQM+6oHJXZIL7zWaL88krp4X5WfC+l6ns/IjMTfOL3jyMMz9YXd6HMnpeFbYw/X6+vBWkn/fZvV3cbnhN/V/Rr9NOhbiP4yO35LTR+o3dHHqO1rHD8PH+38AQDkCPg=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "b428ccd7-0b26-41e6-9203-5afe75efb583",
+        "text": "of 210 GPa and a Poisson ratio of 0.30. The balls had a 10-mm diameter with a roughness (Ra) of 25 nm and a Rockwell hardness of 62 HRC. The 24mm discs are vacuum arc re-melted and had a hardness of 58 HRC with a lapped surface that has a roughness (Rz) of 500 nm. All the tests were run in duplicate and with a maximum Hertzian contact stress of 2.12 GPa and a sliding speed of 300 mm/s. The",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJy1VN9v2zYQ/lcOetoAR6Zk0aqCvWQd2gRD1iD2BgxZYJzFk01MIlWSapIW/d93pO2mK4qtLwXy4NyP7777vqPuPmTU00AmbLTKziHrpCyVaqpy2UksKqXqBZYLUSF2i7LqimwG2UABFQbk+g9Za61T2mAgn/7v8clOYbMnvdsHjpSlENxzDD9oFfYcLeoUHa02Ifbd3RXNi3w5g2K5qHJ5P4NPgWZZ5yIFpKjz+quRQxOHMv/kAw1xkxv9SP1qxJayj5xQFKgN2ppN26P3m9HZLZeJvJGykVzQ6Z42Sjuusu4pIsx/9+T8XKEZJup7cvNfbDtFsfz8tQ6X03aO5KyPMzbtHsPWhjnrwBsd8QwOFJFisMhH1Z0S4WlMCRzHXrcYec2P6R7NbsJdkvMuI7PL7lPUh81gle40JaNKUVZngv/kuizPhTwvmtg9cufGTMOWHFfJFHHP9jbbrawXcllXpWi7VmyrTmFVIEqpGlljkirQY3QuW+8JInMY+2gvdNZB4NjqzRoeyBEM2O61IQWdswNUlXgJPqA2PXnPv4h6eNBhDwh+ch2rBM5Ou72JadvBTyIXEgbdOmt8Dj9j33uYPOMl9KLM67NhAJ5a50UVf351hKKRDJ/gDqxJ/FprAraB0y5WOXo7sa3JtxxeHZd4h+00DbAldLE12TaD1a+voC5FBRdsQo/uE9aWyZ2KPS+u6LC0LAshTrtG1pF/DlcHJqvbPxIyN83g4mp19a/6bVoYjQKlfeuf+0+q/Wkns/trKkXReLi2auqnJBxjwOsbTK0IN1Z7z6u7eEYxLfKFyCG6d5iwx1hWiKig0nySgdxpxLMhP9zijwlcghmO0Le2/fuBT58hnDrZtizh8vblYUBZJczIns/sJCq6llU/G6gPvEyEOlD4HEW+iCgnGj0/BC49nUngx8TV/guC7xNByQKaIYcL5hWOJ3oUz00GtAE1HV4VpdnHEQM+6oHJXZIL7zWaL88krp4X5WfC+l6ns/IjMTfOL3jyMMz9YXd6HMnpeFbYw/X6+vBWkn/fZvV3cbnhN/V/Rr9NOhbiP4yO35LTR+o3dHHqO1rHD8PH+38AQDkCPg==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "fe5fc432-4fb8-400f-941f-228e284624df",
+        "text": "experimental MTM test used AISI 52100 steel balls and discs were with a Young’s Modulus of 210 GPa and a Poisson ratio of 0.30. The balls had a 19.05-mm diameter with a roughness (Rq) of 10 nm and a Rockwell hardness",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJy1VN9v2zYQ/lcOetoAR6Zk0aqCvWQd2gRD1iD2BgxZYJzFk01MIlWSapIW/d93pO2mK4qtLwXy4NyP7777vqPuPmTU00AmbLTKziHrpCyVaqpy2UksKqXqBZYLUSF2i7LqimwG2UABFQbk+g9Za61T2mAgn/7v8clOYbMnvdsHjpSlENxzDD9oFfYcLeoUHa02Ifbd3RXNi3w5g2K5qHJ5P4NPgWZZ5yIFpKjz+quRQxOHMv/kAw1xkxv9SP1qxJayj5xQFKgN2ppN26P3m9HZLZeJvJGykVzQ6Z42Sjuusu4pIsx/9+T8XKEZJup7cvNfbDtFsfz8tQ6X03aO5KyPMzbtHsPWhjnrwBsd8QwOFJFisMhH1Z0S4WlMCRzHXrcYec2P6R7NbsJdkvMuI7PL7lPUh81gle40JaNKUVZngv/kuizPhTwvmtg9cufGTMOWHFfJFHHP9jbbrawXcllXpWi7VmyrTmFVIEqpGlljkirQY3QuW+8JInMY+2gvdNZB4NjqzRoeyBEM2O61IQWdswNUlXgJPqA2PXnPv4h6eNBhDwh+ch2rBM5Ou72JadvBTyIXEgbdOmt8Dj9j33uYPOMl9KLM67NhAJ5a50UVf351hKKRDJ/gDqxJ/FprAraB0y5WOXo7sa3JtxxeHZd4h+00DbAldLE12TaD1a+voC5FBRdsQo/uE9aWyZ2KPS+u6LC0LAshTrtG1pF/DlcHJqvbPxIyN83g4mp19a/6bVoYjQKlfeuf+0+q/Wkns/trKkXReLi2auqnJBxjwOsbTK0IN1Z7z6u7eEYxLfKFyCG6d5iwx1hWiKig0nySgdxpxLMhP9zijwlcghmO0Le2/fuBT58hnDrZtizh8vblYUBZJczIns/sJCq6llU/G6gPvEyEOlD4HEW+iCgnGj0/BC49nUngx8TV/guC7xNByQKaIYcL5hWOJ3oUz00GtAE1HV4VpdnHEQM+6oHJXZIL7zWaL88krp4X5WfC+l6ns/IjMTfOL3jyMMz9YXd6HMnpeFbYw/X6+vBWkn/fZvV3cbnhN/V/Rr9NOhbiP4yO35LTR+o3dHHqO1rHD8PH+38AQDkCPg==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "9b9b0b9b-92d6-4e37-be1a-efa2a8814b8b",
+        "text": "305\n\nof 62.5. The discs had a hardness of 60.5 and a roughness (Rq) of 11 nm. All the tests were run in duplicate and with a maximum Hertzian contact stress of 1.25 GPa.\n\nProcedures\n\nSample Preparation",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJzllU1r3DAQhv+K8KmF1CvJlmXnVigkp7I0m1MIy1ga7wps2ZXlJpvQ/17Ju9uGdNtDSi4pGON550PSzIN885hgix1avzY6OScJh6KRCgSUUNKSNkzWgnKqsVSIiuXJGUk69KDBQ4h/TFTfO20seBxnu4VdP/n1Fs1m64PCOaUh5yDfGe23QWVyVofeWB/zbm5KXqTyjHAqRZrdnpGfAqNZSmehpKeFfUpQknE3euziOZbmHturARQm34OjMS2utXGofO92MWBxPaIbFxpsN2Hbolt86tUUOzEuLoy/nOoFoOvHWGKttuDr3i/CIcN2D/UsdBgrRZGlg26ODr8bZgcMQ2sUeNPbxcHdgt1MsJl7dZOg3SS3szr6dddr0xjcT4Hy/AMNj1hxfk7FOati9hAy13bqanQhSsyK+zW7qq6FzEQhc05Vo2idNxpyBiCEroSEuRMe7+NYkoyKWPK412sbNoqb3pkH1KsYE4Kfw9HklKus5rSomdBlzmrKVFhF5bXABvSrwRHCUhonnadVnPzRLqpURpsJKtPilDBn/BUNjT5QEWa0VmEO43pwfR3CaFqxTOZvlJ3in9jpG1LwVKRktUWizahGsgVNILydtjiOJEbQVBCwUXb9tNnO+rsvX99HJ2PEdin52LbEhxpzb8gdOiRussRYoqf9+XEucWf8NtTp4N50U0cu0fkHA5ao3npQnozeHVZlKRfkYgnpU7g/g3Ohld/wT2ALXbCyLLMId2iA4FDJjGGDBW1kuP9eDWwpszQwllG2B/toZ3LPcZXlEfTf7Dn+ZVhLkYm3SvVTSJeuV6inAMZTFFbGt3gKAZ4jKxCbQoUvmgOreFMyWVUi40xj8dp3W7hr9n+1g50f/3K5mJF4bu/jX4hAnsn/AYEr6IYWydJhuOvmJU+gcPsDbQTETQ=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "3bc2878f-0499-4cf6-ac52-156197ff9eb1",
+        "text": "All test specimens are ultrasonically cleaned in heptane followed by acetone. For the SOT testing, the fluid lubricants were plated via the preparation of a solution of lubricant diluted into an appropriate solvent. This solution was then applied directly to a rotating ball and the solvent allowed to evaporate from the surface. This left the fluid lubricant on the ball’s surface. The lubricant",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtU8Fu2zAM/RXC5yyxnTipexswbLt0G9Zsl7QwaIu2BciWIclJg6L/Pkp22qwoEAQWRb73+CgeniNS1FHvCimiW4jSdYZZlda4udnlRFW9FrReJ3mciF1+U+bRAqKOHAp0yPnPUaW1EbJHRzacFZ716IqWZNM6jqRpHHPNHD5J4VqOJrsQHbTsna87HJJ8t9wsYBOny/XjAi7n7TZf7sI5i3fL/IPAVMGRyJ6to8538Us+kbofsKLohS8EOaqc1H1RKbS2GIwuOS1e5tl2zfe1VFQIaThJm7MHWP2xZOxKYN+NpBSZ1Rddjd4nu/om3fexXCEZbT1FUbXoSu1WbAE3M+P12JFH8sFkOYj6cuHOQ7jAYVCyQi9rNV8r7JsRm+DkIaK+iR5D1Lqi00LWkqYZxenmU8y/bJ+mt3F2m4SxDFxZ9GNXkuGsbYiYq8luKNkS1duKv+INJnla3yS7PM/WaSJoG5xy9OSHFn1WCrxysANVkvu2wFgwKmfQ6p51K3WGShH2JED20NLg+BtqrZQ+caw8A3vjdE9L+KoNuJbg/uc+oMq+WYRArUYpQI2lYUT2Fk7ELIPi1yTgKDEkDYa4kWAU6BoQrFbj5fRaC0JyNIhxGrAH9tfowUjG8hVHdmIJ+1bat/oTWs8QchWbC9Mb4M48BBjt0GuFkrtlSBHkzFiAc6OcSkcctPFEtdHdlDWamvufGRXV7qOGgUX4sCd4GNM4ye11JV1lelO8Fl6+VouJ3bLdk7NXj8m7ciRzBtsF2Z0evbPXXk3Y72oaQ2gpeCJ4an6AZixLz3mRCCW5E7FfYfBGc6+NQcEj0urMuoj/wbZEzMekcjKNjr5CT/L/G5nnmq2fJDk0DblZcxj2PJi3Gt8xL1s7WWkDwyR9fj1ZDA9jvC6rZsKsdO+wcv794qtf97//BnYvi+FPkgEz6NQ7fS3va8i/299drULgqUe/ArXSWrB8v4CXzf6Bxj/XI+39Nr08/gOMCdWD"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "eba8320e-0f6f-4792-b7f6-b0abba7617ac",
+        "text": "plating method allows for the application of very small amounts of lubricant. The application of grease was done by rubbing the ball between cleanroom grade polyethelye sheets until and even coating of lubricant was applied. The target amount of applied lubricant for both fluids and greases were 50 μg. The contact area for the SRV was coated with 5 ml of lubricant while the MTM specimens were",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtU8Fu2zAM/RXC5yyxnTipexswbLt0G9Zsl7QwaIu2BciWIclJg6L/Pkp22qwoEAQWRb73+CgeniNS1FHvCimiW4jSdYZZlda4udnlRFW9FrReJ3mciF1+U+bRAqKOHAp0yPnPUaW1EbJHRzacFZ716IqWZNM6jqRpHHPNHD5J4VqOJrsQHbTsna87HJJ8t9wsYBOny/XjAi7n7TZf7sI5i3fL/IPAVMGRyJ6to8538Us+kbofsKLohS8EOaqc1H1RKbS2GIwuOS1e5tl2zfe1VFQIaThJm7MHWP2xZOxKYN+NpBSZ1Rddjd4nu/om3fexXCEZbT1FUbXoSu1WbAE3M+P12JFH8sFkOYj6cuHOQ7jAYVCyQi9rNV8r7JsRm+DkIaK+iR5D1Lqi00LWkqYZxenmU8y/bJ+mt3F2m4SxDFxZ9GNXkuGsbYiYq8luKNkS1duKv+INJnla3yS7PM/WaSJoG5xy9OSHFn1WCrxysANVkvu2wFgwKmfQ6p51K3WGShH2JED20NLg+BtqrZQ+caw8A3vjdE9L+KoNuJbg/uc+oMq+WYRArUYpQI2lYUT2Fk7ELIPi1yTgKDEkDYa4kWAU6BoQrFbj5fRaC0JyNIhxGrAH9tfowUjG8hVHdmIJ+1bat/oTWs8QchWbC9Mb4M48BBjt0GuFkrtlSBHkzFiAc6OcSkcctPFEtdHdlDWamvufGRXV7qOGgUX4sCd4GNM4ye11JV1lelO8Fl6+VouJ3bLdk7NXj8m7ciRzBtsF2Z0evbPXXk3Y72oaQ2gpeCJ4an6AZixLz3mRCCW5E7FfYfBGc6+NQcEj0urMuoj/wbZEzMekcjKNjr5CT/L/G5nnmq2fJDk0DblZcxj2PJi3Gt8xL1s7WWkDwyR9fj1ZDA9jvC6rZsKsdO+wcv794qtf97//BnYvi+FPkgEz6NQ7fS3va8i/299drULgqUe/ArXSWrB8v4CXzf6Bxj/XI+39Nr08/gOMCdWD",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "ebc9f1cd-a313-40c1-908e-149920e55ded",
+        "text": "fully flooded.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtU8Fu2zAM/RXC5yyxnTipexswbLt0G9Zsl7QwaIu2BciWIclJg6L/Pkp22qwoEAQWRb73+CgeniNS1FHvCimiW4jSdYZZlda4udnlRFW9FrReJ3mciF1+U+bRAqKOHAp0yPnPUaW1EbJHRzacFZ716IqWZNM6jqRpHHPNHD5J4VqOJrsQHbTsna87HJJ8t9wsYBOny/XjAi7n7TZf7sI5i3fL/IPAVMGRyJ6to8538Us+kbofsKLohS8EOaqc1H1RKbS2GIwuOS1e5tl2zfe1VFQIaThJm7MHWP2xZOxKYN+NpBSZ1Rddjd4nu/om3fexXCEZbT1FUbXoSu1WbAE3M+P12JFH8sFkOYj6cuHOQ7jAYVCyQi9rNV8r7JsRm+DkIaK+iR5D1Lqi00LWkqYZxenmU8y/bJ+mt3F2m4SxDFxZ9GNXkuGsbYiYq8luKNkS1duKv+INJnla3yS7PM/WaSJoG5xy9OSHFn1WCrxysANVkvu2wFgwKmfQ6p51K3WGShH2JED20NLg+BtqrZQ+caw8A3vjdE9L+KoNuJbg/uc+oMq+WYRArUYpQI2lYUT2Fk7ELIPi1yTgKDEkDYa4kWAU6BoQrFbj5fRaC0JyNIhxGrAH9tfowUjG8hVHdmIJ+1bat/oTWs8QchWbC9Mb4M48BBjt0GuFkrtlSBHkzFiAc6OcSkcctPFEtdHdlDWamvufGRXV7qOGgUX4sCd4GNM4ye11JV1lelO8Fl6+VouJ3bLdk7NXj8m7ciRzBtsF2Z0evbPXXk3Y72oaQ2gpeCJ4an6AZixLz3mRCCW5E7FfYfBGc6+NQcEj0urMuoj/wbZEzMekcjKNjr5CT/L/G5nnmq2fJDk0DblZcxj2PJi3Gt8xL1s7WWkDwyR9fj1ZDA9jvC6rZsKsdO+wcv794qtf97//BnYvi+FPkgEz6NQ7fS3va8i/299drULgqUe/ArXSWrB8v4CXzf6Bxj/XI+39Nr08/gOMCdWD",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "b1931453-235e-4acf-922f-04bc95d4c0b2",
+        "text": "Results and Discussion\n\nSRV (Sliding in Atmospheric and Vacuum Conditions)",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJzdUk1vnDAQ/SvIp1baggGDYW9VI7XHKpvmslqhwR7AkrERNmpWUf97bbLpoY1666WSL/PmvfF8vPMzQY0zGt8pSY4JgarIKWs5F7wUFWvyVvKqHnDggkpaNeSQkBk9SPAQ+M9EWLtKZcCj22MNV7v5bkI1Tj4gRUFp0Nzg70r6KaA539HFKuOj7nyuW5ryQ8JpkdLLIfkVlzxtYpzTnKXlW8CuCAhxV+dxjlN8VU+oTwsIJD9CQqJH4ZU1ndDgXLestg80mjaMNW0gDEpjJ9UaWHa9xgrZN4eryySYeUOtcc3urNjiolz2WfkvW58BrtbFPzoxge+tz8IOwjS3egZmjJUimKeLHF4T/rrsCVgWrQTEvrJbWoMZNxj3VZ4JmpFcdtT5brZSDQr3IxW0YB9oeNVDURxpdczbqF6CsjPb3OMaWHWc3ONTPAK5R7dp7xIwMrlTTmzOhW+j6LWbB+X1vq3fHVEhg76FOh+YECAGZEPbQy+LvgRsiuGfOSLQ0gDxhqdlPPgtbvLqxSFN3aTsz/iF/1c//PfnPt0/Ju9OWoUzjIkyyUc/h94nXJXYLfAIYtvm5JM1UsWG3Ps3rHD5CZevRc8="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "8adf0c3a-a33e-437a-94ef-87eb58d026d9",
+        "text": "The results in Tables 1-3 and Figure 4 are from the experiment on the MAC with 0%, 3%, and 5% lead naphthenate when tested in a boundary lubricating regime, at 20°C on the SRV under both atmospheric and vacuum conditions. These plots illustrate the wear rate of each material which is determined by the total wear volume (µm3) per millimeter traveled in the test. The wear volumes were measured using",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtU8Fu2zAM/RXCQIENSB3biZO4t6LFtsu2Ys12yYqAluhYmCwZkpw0KPrvo7QG22FAgoBPfI/kI7N7yUjTQCbslcxuIGvKqlkt6qWo6o7KptwQYY0rwkYUq03TZDPIBgooMSDnv2TCWieVwUA+xRrPdgr7ntShD4xUVVEw5w0+KRl6Rst1QkerTIi83a5smryZwaas8/JpBpe42ZT5OsV1sc7X/wH+MBjJ/NkHGuIUD+qZ9OOIgrJXfpAUSARlzV5o9H4/OttyWpE3ddFUnNApTXupHGdZd44K8++enJ9LNMNEWpOb31sxRaP8/KMKn6Z2juSsjzX2osfQ2jBnD3iaNz2DA0WlCJb5KLvLQziP6QHHUSuBsa/527NGc5jwkKzcZWQO2VNCfdgPVqpOUVpSVVTL64I/9baqbor6pkx7GZm5N9PQkuOsVULc39XWtMS2wVXZLYVA0dGya1psZdUukDZVl6wK9By3lm17Akd+0sGDMrDFVpOH8noBaCR8UIfJESyB9aFzdoDA+fQ8klPRI7AmIZ9v7+CkQg/F1QwW/I3k+go0oQSDY89J8XTgxL8QnSIZyyG0djIS3Rn01LrkkjlwQweWZ5UAVfFzKoq2uLuUevz2A5hCjqlcEMPAy+m5H5GKHlFM0wDCGqmi4z4HHtETjNrGEbWefHCxlSh2InSQItsBoehh4MAp1Nyp4lB5iEflBmW44/acWMGGmBC5R6v5WOBdarIeFu+BrYGBy/AAzAOudeR/Xpo2cXn21NK/fM8BGzwQerZbwuSjC2jgNor8gsU9fB0Du6PhwVm+LZvE83gMlyv7go4HUUfaxs2+Pv0GwY5JiQ=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "2ad26984-0176-4e62-a796-188bc970163c",
+        "text": "an Ametek 3D Optical Profilometer.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtU8Fu2zAM/RXCQIENSB3biZO4t6LFtsu2Ys12yYqAluhYmCwZkpw0KPrvo7QG22FAgoBPfI/kI7N7yUjTQCbslcxuIGvKqlkt6qWo6o7KptwQYY0rwkYUq03TZDPIBgooMSDnv2TCWieVwUA+xRrPdgr7ntShD4xUVVEw5w0+KRl6Rst1QkerTIi83a5smryZwaas8/JpBpe42ZT5OsV1sc7X/wH+MBjJ/NkHGuIUD+qZ9OOIgrJXfpAUSARlzV5o9H4/OttyWpE3ddFUnNApTXupHGdZd44K8++enJ9LNMNEWpOb31sxRaP8/KMKn6Z2juSsjzX2osfQ2jBnD3iaNz2DA0WlCJb5KLvLQziP6QHHUSuBsa/527NGc5jwkKzcZWQO2VNCfdgPVqpOUVpSVVTL64I/9baqbor6pkx7GZm5N9PQkuOsVULc39XWtMS2wVXZLYVA0dGya1psZdUukDZVl6wK9By3lm17Akd+0sGDMrDFVpOH8noBaCR8UIfJESyB9aFzdoDA+fQ8klPRI7AmIZ9v7+CkQg/F1QwW/I3k+go0oQSDY89J8XTgxL8QnSIZyyG0djIS3Rn01LrkkjlwQweWZ5UAVfFzKoq2uLuUevz2A5hCjqlcEMPAy+m5H5GKHlFM0wDCGqmi4z4HHtETjNrGEbWefHCxlSh2InSQItsBoehh4MAp1Nyp4lB5iEflBmW44/acWMGGmBC5R6v5WOBdarIeFu+BrYGBy/AAzAOudeR/Xpo2cXn21NK/fM8BGzwQerZbwuSjC2jgNor8gsU9fB0Du6PhwVm+LZvE83gMlyv7go4HUUfaxs2+Pv0GwY5JiQ==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "2da1e4c1-d7c0-4d0f-a946-a90585d64702",
+        "text": "Table 1: Wear Performance for MAC fluid with 0% Lead at 20°C\n\nMaterial Temp (°C) Environment Specimen Avg Wear Scar (mm2) Disc Wear Volume (μm3) Wear Rate (μm3/mm) 0% Lead 20 Atmosphere 440C 1.302 599,972 0.28 0% Lead 20 Vacuum 440C 1.294 518,400 0.24 0% Lead 20 Atmosphere 52100 1.499 481,018 0.22 0% Lead 20 Vacuum 52100 1.420 410,400 0.19",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "text_as_html": "<table><thead><tr><th>Material</th><th>[Temp (°C)|</th><th>Environment</th><th>|Specimen|</th><th>Avg Wear Scar (mm’)</th><th>| Disc Wear Volume (um?)</th><th>Wear Rate (um?/mm)</th></tr></thead><tbody><tr><td>0% Lead</td><td>20</td><td>Atmosphere</td><td>440C</td><td>1.302</td><td>599,972</td><td>0.28</td></tr><tr><td>0% Lead</td><td>20</td><td>Vacuum</td><td>440C</td><td>1.294</td><td>518,400</td><td>0.24</td></tr><tr><td>0% Lead</td><td>20</td><td>Atmosphere</td><td>id 52100</td><td>1.499</td><td>481,018</td><td>0.22</td></tr><tr><td>0% Lead</td><td>20</td><td>Vacuum</td><td>id 52100</td><td>1.420</td><td>410,400</td><td>0.19</td></tr></tbody></table>",
+            "orig_elements": "eJztVW2L2zgQ/ivCcLALOVuS5dhelj2W7XH34VpKd6/3IV2MXsaJwLKNLW8b2v73So4Tu21KuSv9dhASzTPPzGhmntib9wFUYKC2hVbBFQpoTNYlLyXwlEhM4zhnqVAxiByAMsWDFQoMWK645Y7/PpBN0yldcwv9aFd83wy22IHe7qxDKMXYxUzwW63szqEkHdG20bX1cZsNS9IwXSGCSRyyxxWaAZaFsQcITXCIzyNjkIOCft9bML6Tl/odVPctlxB8dA4FFqTVTV3Iivd90XaNcDQcxiyNqSOUuoJC6c6xmm7vM0R/99D1keK1GaCqoIueNXLww+qjP7T9cxARh67pfY1C7rgVjY3cHFxHU76aG/CZPEjCVpVHh923o4O3baUl9/eKJnfF6+3At+M4NwHU2+BxRHtbmEbpUsNhUZiyX7H7JA+UXuHkiuQ+unWRRT0YAZ1jrUekm9ebAOMi52tSMim5LIGVueBCURFzyGg5jsrCO7+54IGLChC5Qv8A79BL6MqmM7yWgNwBPb+9Q2U1aIXeartD+Bf0F3CFuEUUvxkwFvjOX+jY6Qveda7PJ3jw2V2ZL5UXrwVNMyEFzZIslmUqeYZxomKpREo4+2nKo3gdEi+iJA+Jl9URoHEW0lFnCU7C5CxyCPpvysvJOiH/K29S3iS8gvfFzprKx1xbr8Cba7tzynI/nT/ePHcb7zSvriNneGDzAKZFF5PoLj+cHL/XT7praj+3E/bhvgWpHTTTbp+2B4nfS/d1YcybgWKSX84x6Jnu5YHzuqncItDFYH6bCaPnlbvXiEfGTK7IXzk6Xl80aj91oW6m/4vzqtGm+HS8tcatdgcdnCDG8N3JIGGM6clK8nyVp7ONQ5odjLH698u95nIYzLdK0ZzNpUi2YhgvS7F/VepMZ+75kVCySEpClufzbTKywiRblqQ/0t25cgs2I/iLDkm+KBdNO4wOwvzsaXmUJfpcjWghQnTUHvpKcvTyjMZcjlhIE1+ihcCOoFfZ6alLMZpni/wK0agSNKkDeVUs2YexHJluyWharmeyb+QdJ4fGBaFpMZ5OzyQ+UR00DRX5YS5fCeP7Jfj4+AmA3JNa"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "c28c9290-f65e-4d97-ba6a-9db50f90ab5a",
+        "text": "Table 2: Wear Performance for MAC fluid with 3% Lead at 20°C\n\nMaterial Temp (°C) Environment Specimen Avg Wear Scar (mm2) Disc Wear Volume (μm3) Wear Rate (μm3/mm) 3% Lead 20 Atmosphere 440C 2.409 410,400 0.19 3% Lead 20 Vacuum 440C 1.942 216,000 0.10 3% Lead 20 Atmosphere 52100 1.950 342,356 0.16 3% Lead 20 Vacuum 52100 1.820 259,200 0.12",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "text_as_html": "<table><thead><tr><th>3% Lead</th><th>20</th><th>Atmosphere</th><th>440C</th><th>2.409</th><th>410,400</th><th>0.19</th></tr></thead><tbody><tr><td>3% Lead</td><td>20</td><td>Vacuum</td><td>440C</td><td>1.942</td><td>216,000</td><td>0.10</td></tr><tr><td>3% Lead</td><td>20</td><td>Atmosphere</td><td>i 52100</td><td>1.950</td><td>342,356</td><td>0.16</td></tr><tr><td>3% Lead</td><td>20</td><td>Vacuum</td><td>r 52100</td><td>1.820</td><td>259,200</td><td>0.12</td></tr></tbody></table>",
+            "orig_elements": "eJztVG2L3DYQ/ivCUMjB1pbk9+MIHJfQfmhK6F3TD9fDjK3xrsCyjSxfsoT890qyb72XpJQG8i2weDXPvDyemce6/xhghwp7U0kRXJKAtZymLWIBgsaQMGjjAu2TxcKCOQQ7Eig0IMCAjf8YNMOghezB4OTtDo7DbKoDyv3BWIRzSm3OCr+XwhwsynKPjoPsjcu7v0/SPMx2hPGchvnDjpyAmGYLwHhKQ/pVZEmyUDAdJ4PKdfJWfsDudoQGg0/WIdBgY+TQV00H01SNeqhtGA1Tlpa5DWhlh5WQ2kYN+ugqRH9OqKdIQK9m7DrU0auhmd2wpugXaX6d6whQD5PjqJoDmHowkZ2D7Wit14NCV8mBLBxF++Qwx9E7YBw72YB7r2h1d9DvZ9j7cd4H2O+DB49OplKDkK1EvyhOefIztb/0jvNLml6y0mWPNrPqZ1WjtlGZR/S23hQTqEvIWJs0DTQtJm1ZQy14HQMWvPWjMvjBbS64g7pDwi/JXwiavEXdDlpB3yCxB/Lm+oa03SwFeS/NgcQ/kd8QBAFDOP17prSmN+6Fnjr9HbS2fT7inatuaT5XXi0Eb8u4KJOsKHNkDIEVtKAUs9Q6+HdTHivLMHey4jQsvKxWICnTkHsgpYnX2ZfIkvRtyitpmSc/lLcqbxVeBVN1MKpzOVfGKfDllTlYZdk/7Y4vV6VdRfbsbE5Px2uj7FAOqPEEJQm92ULDhJabi9FdQrdsGrLVGTmq6Im2HsRxZRdn7MLbnn05voNmntXJXJkXg4Vlwrcklu0o3TIt82p45v+metboAkmScnZW0zKmmxUnfBen2Tlj9r8YP2tOf8FWnAXztNzx5/3xM7ZoHWm07PfZpfPGfs9aQkfuUI3kxXqTXJDX/aPUQ+++AXI7YiPtiVw/7pfL6baxjxdK8QvySk7NAr4bOvvN+Bpx3aj4YoH/sAwbGCl1cbq8OCXbZIlbIPGSIatUiJPIefQylSXSr5isq3WR9F/q+skRvx+y7sWFZ18p/BRqh0vWobpQfn6z+ms6+PTwD/lwVX0="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "f0c68948-5418-4341-a7e2-5052c7b2cafb",
+        "text": "Table 3: Wear Performance for MAC fluid with 5% Lead at 20°C\n\nMaterial Temp (°C) Environment Specimen Avg Wear Scar (mm2) Disc Wear Volume (μm3) Wear Rate (μm3/mm) 5% Lead 20 Atmosphere 440C 1.468 291,600 0.14 5% Lead 20 Vacuum 440C 1.259 172,800 0.08 5% Lead 20 Atmosphere 52100 1.389 259,200 0.12 5% Lead 20 Vacuum 52100 1.242 216,000 0.10\n\n306",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "text_as_html": "<table><thead><tr><th>Material</th><th>[Temp (°C)</th><th>Environment</th><th>|Specimen|</th><th>Avg Wear Scar (mm’) |</th><th>Disc Wear Volume (um?)</th><th>Wear Rate (um?/mm)</th></tr></thead><tbody><tr><td>5% Lead</td><td>20</td><td>Atmosphere</td><td>440C</td><td>1.468</td><td>291,600</td><td>0.14</td></tr><tr><td>5% Lead</td><td>20</td><td>Vacuum</td><td>440C</td><td>1.259</td><td>172,800</td><td>0.08</td></tr><tr><td>5% Lead</td><td>20</td><td>Atmosphere</td><td>id 52100</td><td>1.389</td><td>259,200</td><td>0.12</td></tr><tr><td>5% Lead</td><td>20</td><td>Vacuum</td><td>id 52100</td><td>1.242</td><td>216,000</td><td>0.10</td></tr></tbody></table>",
+            "orig_elements": "eJztVltv2zYU/iuEgAEJ4EkkdQ+CDEE6bA9rUSxp++AGAkUe2gR0A0Wl9dr995GSbNmNu2Eb+lbAsMXvXD6ecz6TWn/yoIIaGlMo4V0hj0JKMEslxTnPYooZkyUBCPM4THiMS2+FvBoME8ww6//J422rhWqYgX5cV2zXDqbYgtpsjUUoxdjGzPAHJczWoiQd0a5VjXFx63UUp36yQiSmmZ89rtACJNRPHUBoTPzsPDIGWcjrd72B2lXyWn2E6r5jHLw/rUGAAW5U2xS8Yn1fdLotrRv2ozxMLY8nVQWFUNp6tXrnMgRvetB9IFhTD1BVoIMXLR9cs/rgF2V+HcqAgW57x1HwLTNlawLbB1vRnK9hNbhMDiR+J+TeYHbdaGBdVynO3L6C2VyxZjOwzdjOtQfNxnsc0d4UdSuUVDANCtPoR2w/8QOlVzi+IrmL7mxk0Qx1Cdp6JSOil/HGELEyZwmREeeMS4hkXrJS0DJkkFE5tsrARzc574GVFaDwCr0DptFr0LLVNWs4IPuAXt7eIVkNSqAPymxR/AP6DZhAzCCK3w8Yl/jObWhf6Sumta3zCR5cdkvzTHmCEUJlWWICmaRRikPGE55KnuYylNE3Ux7JE586EaXhLKsZSGM6SZHEOBl19hyZgv6b8nISJdl35c3Km4VXsL7YmrpyMdfGKfDm2mytsuyPdo83L+3EtWLVdWAXDlg/QN2hi1l0lwf85+ZJ6bZxbTtgn+874MpCnw/Q7dNmUvg9t18Xdf1+oJjkl2hxeaF6Pvm8bSs7B3Qx1D8tRKPld7utEQ/qejYFbsfBfvdlK3ZzEeJm/rtYqxjXFB8eb01tJ7sFDQcoivDdYUF8K5slMCerBC/R2CfRtBjZ/5nuLePDUH+Nisb5skrpKjuhwtm/ojpTmT0+YkqOkhI/zBZKS7+ip9XR/1PdGToa0SWQJCt8SoeP6IJ5hsGky5PDcq9KdCpGdCRCtNceeiY5eomea8zmCEteh5foSGB70KnscOhSjJbeIjdCNKoEzepAThXH3lNb9p62y2geLnJD/UresXNoHBCaB+MS0zOJ9662uWhuqnPFxzfCeL2cuwnKBEtMM8iShDKgUpKER3GUUiFTgUn6zW6CjCZ+urJlpLEfumN+DxAc+ngEMnwemEL+9h74fsx/+YIR4uRYEG8au1HYtFr9AWJ6TXj8CwbMN7s="
+        }
+    }
+]

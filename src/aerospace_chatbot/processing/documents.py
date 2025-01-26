@@ -89,6 +89,35 @@ class DocumentProcessor:
 
         os.makedirs(self.work_dir, exist_ok=True)
 
+    def load_partitioned_documents(self, documents: List[str], partition_dir: str) -> List[str]:
+        """
+        Load existing partitioned documents from a directory.
+        Checks if partition doc exists for document. Raises exception if no partition file exists for one or more documents.
+        """
+        partitioned_docs = []
+        missing_files = []
+        
+        for doc in documents:
+            # Get base filename without extension
+            base_name = os.path.splitext(os.path.basename(doc))[0]
+            
+            # Construct expected partitioned file path
+            partitioned_file = os.path.join(partition_dir, 'partitioned', f"{base_name}-partitioned.json")
+            
+            print(partitioned_file)
+            if os.path.exists(partitioned_file):
+                self.logger.info(f"Found existing partitioned file: {partitioned_file}")
+                partitioned_docs.append(partitioned_file)
+            else:
+                self.logger.warning(f"No partitioned file found for document: {doc}")
+                missing_files.append(doc)
+                
+        if missing_files:
+            raise FileNotFoundError(f"No partitioned JSON files found for the following documents: {', '.join(missing_files)}")
+            
+        self.logger.info(f"Loaded {len(partitioned_docs)} partitioned documents from {partition_dir}")
+        return partitioned_docs
+
     def load_and_partition_documents(
         self,
         documents,

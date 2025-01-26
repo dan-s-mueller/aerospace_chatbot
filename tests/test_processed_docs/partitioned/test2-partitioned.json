@@ -1,0 +1,2230 @@
+[
+    {
+        "type": "NarrativeText",
+        "element_id": "6daafd23b9f62f1bc4667b6d10bbd852",
+        "text": "of safety of two. The analysis model from the torsional stiffness investigation was utilized again for the torque output investigation, with the application of tip load changed and a small perturbation force added on the compressed hinge tape to promote a controlled buckling of the hinge (Figure 12).",
+        "metadata": {
+            "detection_class_prob": 0.940081775188446,
+            "coordinates": {
+                "points": [
+                    [
+                        199.9889999999998,
+                        208.24267578125
+                    ],
+                    [
+                        199.9889999999998,
+                        302.9983333333332
+                    ],
+                    [
+                        1507.698266666666,
+                        302.9983333333332
+                    ],
+                    [
+                        1507.698266666666,
+                        208.24267578125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "links": [
+                {
+                    "text": "( Figure 12",
+                    "url": null,
+                    "start_index": 307
+                }
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "d49a81fae3440ec9c2459aaa50c62329",
+        "text": "Pure Moment Perturbation force 4",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        456.25,
+                        333.333163888889
+                    ],
+                    [
+                        456.25,
+                        660.6983380555555
+                    ],
+                    [
+                        1243.0951686111111,
+                        660.6983380555555
+                    ],
+                    [
+                        1243.0951686111111,
+                        333.333163888889
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "FigureCaption",
+        "element_id": "15bc9d6b4d7bac1bc1fa8b2d612f711d",
+        "text": "Figure 12: Hinge torque trade study model setup",
+        "metadata": {
+            "detection_class_prob": 0.6635906100273132,
+            "coordinates": {
+                "points": [
+                    [
+                        552.0196666666662,
+                        669.8635864257812
+                    ],
+                    [
+                        552.0196666666662,
+                        698.991333333333
+                    ],
+                    [
+                        1155.706333333333,
+                        698.991333333333
+                    ],
+                    [
+                        1155.706333333333,
+                        669.8635864257812
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "073c3b28040f95c564a636a3f83afc10",
+        "text": "To maximize the torque output of the hinge the “w” term from Figure 5 was minimized in order to maximize the potential energy of the hinge. Verification of this design consisted of first evaluating the material survivability by modeling the folded hinge with finite elements and using the evaluation methods described",
+        "metadata": {
+            "detection_class_prob": 0.9411497712135315,
+            "coordinates": {
+                "points": [
+                    [
+                        196.59536743164062,
+                        736.361572265625
+                    ],
+                    [
+                        196.59536743164062,
+                        858.1532592773438
+                    ],
+                    [
+                        1507.6180333333325,
+                        858.1532592773438
+                    ],
+                    [
+                        1507.6180333333325,
+                        736.361572265625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "624fe3df0026b93262fea8089fb6a901",
+        "text": "earlier.",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        199.98899999999966,
+                        838.0163333333331
+                    ],
+                    [
+                        199.98899999999966,
+                        865.6829999999999
+                    ],
+                    [
+                        292.672333333333,
+                        865.6829999999999
+                    ],
+                    [
+                        292.672333333333,
+                        838.0163333333331
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "767c0f188954d9d49d5bd3627829f15a",
+        "text": "Hinge Geometry Effect on Torque Output",
+        "metadata": {
+            "detection_class_prob": 0.926906406879425,
+            "coordinates": {
+                "points": [
+                    [
+                        237.54473876953125,
+                        895.3809814453125
+                    ],
+                    [
+                        237.54473876953125,
+                        1454.3662109375
+                    ],
+                    [
+                        1454.6007080078125,
+                        1454.3662109375
+                    ],
+                    [
+                        1454.6007080078125,
+                        895.3809814453125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "3825432ab75e47f5f5b53a7364e6e9b5",
+        "text": "",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        247.01209611111108,
+                        902.5016113888887
+                    ],
+                    [
+                        247.01209611111108,
+                        1462.4985588888887
+                    ],
+                    [
+                        557.1509505555555,
+                        1462.4985588888887
+                    ],
+                    [
+                        557.1509505555555,
+                        902.5016113888887
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "FigureCaption",
+        "element_id": "de6c8b2c650140c2c1ac237383cfa12e",
+        "text": "Figure 13: Initial torque output capabilities based on hinge geometry and material allowable prediction",
+        "metadata": {
+            "detection_class_prob": 0.892505943775177,
+            "coordinates": {
+                "points": [
+                    [
+                        225.99566666666627,
+                        1471.1768798828125
+                    ],
+                    [
+                        225.99566666666627,
+                        1499.0283333333334
+                    ],
+                    [
+                        1481.3429999999994,
+                        1499.0283333333334
+                    ],
+                    [
+                        1481.3429999999994,
+                        1471.1768798828125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "83e1af1f05cb2e5df84a507fda49106c",
+        "text": "Results of the analytical hinge studies were to select hinges with minimalized “d” and “L” terms for the hinge, however further investigations using a longer boom which allowed for more continuous deformation of the tube cross section resulted in the hinge getting deformed far passed its material allowable limits. The reason this was not seen in the initial investigation was due to the end conditions creating a rigid circle relatively close to the hinge cutout area, resulting in artificially positive margins for the area around the circular cutout. To address this issue the hinges were re-evaluated using a longer tube section (Figure 14). This allowed for more natural curvature regions to form around the hinges.",
+        "metadata": {
+            "detection_class_prob": 0.9488692879676819,
+            "coordinates": {
+                "points": [
+                    [
+                        199.273193359375,
+                        1534.00537109375
+                    ],
+                    [
+                        199.273193359375,
+                        1765.7350000000001
+                    ],
+                    [
+                        1507.7120999999995,
+                        1765.7350000000001
+                    ],
+                    [
+                        1507.7120999999995,
+                        1534.00537109375
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "links": [
+                {
+                    "text": "( Figure 14",
+                    "url": null,
+                    "start_index": 673
+                }
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "4328cb5da11e6c4d995245b818b4a9d3",
+        "text": "390",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "5f771e156542e0fcbbeea965fb79616a",
+        "text": "",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        230.6946436111111,
+                        200.0
+                    ],
+                    [
+                        230.6946436111111,
+                        631.9444138888889
+                    ],
+                    [
+                        1468.979123611111,
+                        631.9444138888889
+                    ],
+                    [
+                        1468.979123611111,
+                        200.0
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "FigureCaption",
+        "element_id": "78fb966c4e188900d15c976c3493f68a",
+        "text": "Figure 14: Lengthened hinge geometry trade analysis model",
+        "metadata": {
+            "detection_class_prob": 0.8731558918952942,
+            "coordinates": {
+                "points": [
+                    [
+                        479.3393333333332,
+                        640.5254516601562
+                    ],
+                    [
+                        479.3393333333332,
+                        669.6646666666664
+                    ],
+                    [
+                        1228.027,
+                        669.6646666666664
+                    ],
+                    [
+                        1228.027,
+                        640.5254516601562
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "4ada22c4f8a9bd01625cb56c3bd8ddd7",
+        "text": "This effect was exacerbated by the ability for the full ROC-PDS system to seat itself into a system low energy state (Figure 15), where the local curvatures around the hinge often resulted in negative margin. Analysis results did not conclude with a geometric result which closed for this case, however a design alteration to the overall system was devised to add rigidity to the local area and hold the hinge open. This design feature is known as a “power band” and is the topic of another study paper currently in progress at Roccor.",
+        "metadata": {
+            "detection_class_prob": 0.9553645253181458,
+            "coordinates": {
+                "points": [
+                    [
+                        199.9889999999998,
+                        704.4927978515625
+                    ],
+                    [
+                        199.9889999999998,
+                        903.033
+                    ],
+                    [
+                        1507.6650666666665,
+                        903.033
+                    ],
+                    [
+                        1507.6650666666665,
+                        704.4927978515625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "links": [
+                {
+                    "text": "( Figure 15",
+                    "url": null,
+                    "start_index": 136
+                }
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "eae5b0a816944df3e34bd5da411c9de5",
+        "text": "  ",
+        "metadata": {
+            "detection_class_prob": 0.9457294344902039,
+            "coordinates": {
+                "points": [
+                    [
+                        210.51377868652344,
+                        931.9353637695312
+                    ],
+                    [
+                        210.51377868652344,
+                        1470.938720703125
+                    ],
+                    [
+                        1510.0753173828125,
+                        1470.938720703125
+                    ],
+                    [
+                        1510.0753173828125,
+                        931.9353637695312
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "d45d0e705b474f38ae0994d1d9f12c2d",
+        "text": "",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        1012.7772013888888,
+                        1213.3334691666666
+                    ],
+                    [
+                        1012.7772013888888,
+                        1493.282478888889
+                    ],
+                    [
+                        1484.9994166666665,
+                        1493.282478888889
+                    ],
+                    [
+                        1484.9994166666665,
+                        1213.3334691666666
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "8b8082c32ad383871bf7991f568a4ecd",
+        "text": "Figure 15: (Left) High curvatures in full system analysis; (Right) hinge shift into low energy state.",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        260.3333333333333,
+                        1501.9916666666666
+                    ],
+                    [
+                        260.3333333333333,
+                        1529.6583333333333
+                    ],
+                    [
+                        1447.344,
+                        1529.6583333333333
+                    ],
+                    [
+                        1447.344,
+                        1501.9916666666666
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "6f164d2e21d44a27e88bba352f381c8f",
+        "text": "Hinge Torque and Long-term Storage Testing",
+        "metadata": {
+            "detection_class_prob": 0.6862929463386536,
+            "coordinates": {
+                "points": [
+                    [
+                        200.0,
+                        1595.6566162109375
+                    ],
+                    [
+                        200.0,
+                        1629.6583333333333
+                    ],
+                    [
+                        768.384,
+                        1629.6583333333333
+                    ],
+                    [
+                        768.384,
+                        1595.6566162109375
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "95db80773efb2ecd619ed74f45710747",
+        "text": "Full-scale hinged boom testing was used to validate the analysis results and determine the properties of the hinges where analytical techniques were unable to predict the behavior of this complex system. The primary test used was hinge torque testing under ambient temperatures and operational temperature extremes. This was coupled with long-term storage testing to evaluate material survivability and viscoelastic effects on strain energy relaxation.",
+        "metadata": {
+            "detection_class_prob": 0.9465561509132385,
+            "coordinates": {
+                "points": [
+                    [
+                        199.97233333333338,
+                        1631.719482421875
+                    ],
+                    [
+                        199.97233333333338,
+                        1796.345
+                    ],
+                    [
+                        1507.6733000000002,
+                        1796.345
+                    ],
+                    [
+                        1507.6733000000002,
+                        1631.719482421875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "parent_id": "6f164d2e21d44a27e88bba352f381c8f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "490855a62626e8ccf555e9ada3b129cc",
+        "text": "A torque test fixture was developed and qualified to accurately measure the hinge output torque. This fixture is shown in Figure 16; the fixture uses torque cells to measure the output torque of each hinge as the boom is slowly allowed to deploy, resulting in a semi-static torque measurement. This fixture was qualified and validated by measuring the torque output of an easily modelled metallic leaf spring.",
+        "metadata": {
+            "detection_class_prob": 0.9417240023612976,
+            "coordinates": {
+                "points": [
+                    [
+                        198.32794189453125,
+                        1832.4183349609375
+                    ],
+                    [
+                        198.32794189453125,
+                        1963.0366666666666
+                    ],
+                    [
+                        1507.5654000000006,
+                        1963.0366666666666
+                    ],
+                    [
+                        1507.5654000000006,
+                        1832.4183349609375
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "links": [
+                {
+                    "text": "Figure 16 ;",
+                    "url": null,
+                    "start_index": 123
+                }
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "parent_id": "6f164d2e21d44a27e88bba352f381c8f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "5530b1bdcde46dc6056441d3c3c3a891",
+        "text": "391",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "parent_id": "6f164d2e21d44a27e88bba352f381c8f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "5e1f8806e9ee9a40bbd2f0e74763aff6",
+        "text": "Hinge Torque Validation Empirical vs Analytical",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        206.24997888888888,
+                        200.0
+                    ],
+                    [
+                        206.24997888888888,
+                        1437.3694033333334
+                    ],
+                    [
+                        1493.0351355555554,
+                        1437.3694033333334
+                    ],
+                    [
+                        1493.0351355555554,
+                        200.0
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "daf9e4a4924b9ff6a87076431178b207",
+        "text": "Figure 16: Structural testing of integrated solid-state HSC hinge",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        460.02800000000025,
+                        1446.3233333333335
+                    ],
+                    [
+                        460.02800000000025,
+                        1473.9900000000002
+                    ],
+                    [
+                        1247.3660000000002,
+                        1473.9900000000002
+                    ],
+                    [
+                        1247.3660000000002,
+                        1446.3233333333335
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "4e2ae0f92bdf4d0977d1360ff77f18f2",
+        "text": "The primary resistive torque in this design was due to a flat, flexible electrical harness inside the boom. The behavior of this harness depends intimately on the boundary conditions supplied by the boom, so testing of the harness alone proved impossible. Instead, the hinge torque was measured with and without the harness, and the harness torque was derived by comparing these two torque curves. These values were then used to derive and show deployment torque margin. A typical torque curve derived from this testing is shown below in Figure 17.",
+        "metadata": {
+            "detection_class_prob": 0.9500136971473694,
+            "coordinates": {
+                "points": [
+                    [
+                        200.0166666666666,
+                        1506.8701171875
+                    ],
+                    [
+                        200.0166666666666,
+                        1707.3583333333333
+                    ],
+                    [
+                        1507.7093333333332,
+                        1707.3583333333333
+                    ],
+                    [
+                        1507.7093333333332,
+                        1506.8701171875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "daf9e4a4924b9ff6a87076431178b207",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "78f7a89fa8f51ff6dfeda97f88e5b37e",
+        "text": "392",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "daf9e4a4924b9ff6a87076431178b207",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "6d9f06ac13024099f42f721a60a174e5",
+        "text": "Measured Hinge Torque Torque (Nem) ° 20 co Co 0 ° 0 700 760 ‘Angle (de) Angle (dea) Hinge torque without harness (measured) Hinge torque with harness (measured) Harness torque (calculated)",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        227.08333333333331,
+                        200.0
+                    ],
+                    [
+                        227.08333333333331,
+                        724.8610730555555
+                    ],
+                    [
+                        1472.0651405555554,
+                        724.8610730555555
+                    ],
+                    [
+                        1472.0651405555554,
+                        200.0
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "FigureCaption",
+        "element_id": "227ff14582c7969af4b02b0bfd8930c0",
+        "text": "Figure 17 Typical hinge torque of proximal hinge (left) and distal hinge (right).",
+        "metadata": {
+            "detection_class_prob": 0.8606329560279846,
+            "coordinates": {
+                "points": [
+                    [
+                        375.6723333333333,
+                        733.4143676757812
+                    ],
+                    [
+                        375.6723333333333,
+                        761.3243333333331
+                    ],
+                    [
+                        1331.6940000000002,
+                        761.3243333333331
+                    ],
+                    [
+                        1331.6940000000002,
+                        733.4143676757812
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "e9fe1ddde25aaff84c80e1db573a8d86",
+        "text": "Later tests at operational temperature extremes were enabled by constructing a thermal chamber around the torque test hardware. This testing was both used to directly verify the torque margin and validate the analytical predictions.",
+        "metadata": {
+            "detection_class_prob": 0.9370522499084473,
+            "coordinates": {
+                "points": [
+                    [
+                        199.96133333333353,
+                        800.3343333333331
+                    ],
+                    [
+                        199.96133333333353,
+                        894.6776666666666
+                    ],
+                    [
+                        1507.5682333333332,
+                        894.6776666666666
+                    ],
+                    [
+                        1507.5682333333332,
+                        800.3343333333331
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "810a20c36c5fac4ed18e2e06d684c2d6",
+        "text": "The impacts of the viscoelasticity on the deployment kinematics were also a key risk, and due to a lack of standardized test methods and stress relaxation failure models these impacts are very difficult to analytically model. Long-term storage testing was therefore used to simulate the impact of storage before deployment. Full-length booms were stowed in the anticipated storage shape, as shown in Figure 18, and the time- temperature superposition relationship was used to reduce the storage time required from years to days.",
+        "metadata": {
+            "detection_class_prob": 0.9520986676216125,
+            "coordinates": {
+                "points": [
+                    [
+                        199.9613333333335,
+                        930.7166137695312
+                    ],
+                    [
+                        199.9613333333335,
+                        1094.7076666666667
+                    ],
+                    [
+                        1508.14599609375,
+                        1094.7076666666667
+                    ],
+                    [
+                        1508.14599609375,
+                        930.7166137695312
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "links": [
+                {
+                    "text": "Figure  18 ,",
+                    "url": null,
+                    "start_index": 415
+                }
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "2117497de0a2e8e7b15e7c110003f167",
+        "text": "",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        304.16664555555553,
+                        1125.000084722222
+                    ],
+                    [
+                        304.16664555555553,
+                        1652.7518008333332
+                    ],
+                    [
+                        1394.4443272222222,
+                        1652.7518008333332
+                    ],
+                    [
+                        1394.4443272222222,
+                        1125.000084722222
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "FigureCaption",
+        "element_id": "dbdec54fa10fa189494d5720e49eb864",
+        "text": "Figure 18 Long-term storage testing",
+        "metadata": {
+            "detection_class_prob": 0.8247136473655701,
+            "coordinates": {
+                "points": [
+                    [
+                        628.4425048828125,
+                        1660.2337646484375
+                    ],
+                    [
+                        628.4425048828125,
+                        1690.703
+                    ],
+                    [
+                        1078.2950000000008,
+                        1690.703
+                    ],
+                    [
+                        1078.2950000000008,
+                        1660.2337646484375
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "15fdb21d84862ca544ca46f7f6fcc97a",
+        "text": "During and after storage the boom was inspected for damage. The corners of each hinge were at particular risk of stress rupture during long-term storage, so these areas were subjected to extra scrutiny. Detailed images of these areas are shown in Figure 19. After storage at elevated temperature the kick-off force, hinge torque, and final boom geometry was measured. These measured values were fed into the analytical model to better predict the deployment of the hinged boom after storage.",
+        "metadata": {
+            "detection_class_prob": 0.954842209815979,
+            "coordinates": {
+                "points": [
+                    [
+                        199.93366666666708,
+                        1724.5201416015625
+                    ],
+                    [
+                        199.93366666666708,
+                        1890.7330000000002
+                    ],
+                    [
+                        1507.6097333333337,
+                        1890.7330000000002
+                    ],
+                    [
+                        1507.6097333333337,
+                        1724.5201416015625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "links": [
+                {
+                    "text": "Figure 19 .",
+                    "url": null,
+                    "start_index": 249
+                }
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "0512cac385f198a3dd5c5218fa6e6346",
+        "text": "393",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "242aebf9a39b5165a11b7209d43ed5a5",
+        "text": "—",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        220.83331222222222,
+                        200.0
+                    ],
+                    [
+                        220.83331222222222,
+                        631.9072341666665
+                    ],
+                    [
+                        1478.3332447222222,
+                        631.9072341666665
+                    ],
+                    [
+                        1478.3332447222222,
+                        200.0
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "FigureCaption",
+        "element_id": "7d3f4f546978d41509b669d7bd8a3d32",
+        "text": "Figure 19 Inspection of the proximal hinge (left) and distal hinge (right).",
+        "metadata": {
+            "detection_class_prob": 0.8553289771080017,
+            "coordinates": {
+                "points": [
+                    [
+                        414.3503333333334,
+                        639.6011962890625
+                    ],
+                    [
+                        414.3503333333334,
+                        669.6646666666664
+                    ],
+                    [
+                        1293.0436666666667,
+                        669.6646666666664
+                    ],
+                    [
+                        1293.0436666666667,
+                        639.6011962890625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "f63f2306d47e78f518bc97fd3002ca84",
+        "text": "The results of this testing were then used to validate the analytical model, show compliance with requirements, and provide knock-down factors for post-storage deployments. In particular, the requirements for long-term storage survival and deployment torque margins were verified directly through test.",
+        "metadata": {
+            "detection_class_prob": 0.935471773147583,
+            "coordinates": {
+                "points": [
+                    [
+                        197.2360382080078,
+                        706.5465698242188
+                    ],
+                    [
+                        197.2360382080078,
+                        836.3563333333333
+                    ],
+                    [
+                        1507.692733333333,
+                        836.3563333333333
+                    ],
+                    [
+                        1507.692733333333,
+                        706.5465698242188
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "22cf7ed7b4045ab7295b44d55edd5b90",
+        "text": "Final Boom Laminate Architecture Features",
+        "metadata": {
+            "detection_class_prob": 0.7569282054901123,
+            "coordinates": {
+                "points": [
+                    [
+                        576.7664794921875,
+                        870.5492553710938
+                    ],
+                    [
+                        576.7664794921875,
+                        904.4439999999998
+                    ],
+                    [
+                        1178.5404052734375,
+                        904.4439999999998
+                    ],
+                    [
+                        1178.5404052734375,
+                        870.5492553710938
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "262470173549a9d35fc6415cd58c4b45",
+        "text": "At the culmination of the development program, there were several design features resulting from detailed analysis and testing efforts done at Roccor. First, the hinges were strengthened by “power bands” in order to keep the slit from collapsing when the system is required to be compressed beyond the material limits of the hinge deformation. Next, the “razor backs” were added which are localized areas with adjusted thickness used to tune the required torque output of the hinge tapes to develop the required strain energy balance for the deployment. Last, the “lateral lines” 12 were added in the boom, which are a localized laminate change which is utilized to tune the kickoff energy of the system. All these features were developed using the methods described in the previous section for material allowable calculations, as well as physical testing for validation of concepts and verification against flight qualification environments.",
+        "metadata": {
+            "detection_class_prob": 0.9593664407730103,
+            "coordinates": {
+                "points": [
+                    [
+                        199.2938690185547,
+                        936.3851928710938
+                    ],
+                    [
+                        199.2938690185547,
+                        1236.34
+                    ],
+                    [
+                        1507.7306333333333,
+                        1236.34
+                    ],
+                    [
+                        1507.7306333333333,
+                        936.3851928710938
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "parent_id": "22cf7ed7b4045ab7295b44d55edd5b90",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "30907c4d7248fcfa975b3fd331ac40c6",
+        "text": "Razor Backs Power Bands \\ 0.5mm Lateral Lines",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        222.91666666666666,
+                        1270.8333333333333
+                    ],
+                    [
+                        222.91666666666666,
+                        1866.6221919444445
+                    ],
+                    [
+                        1478.05551,
+                        1866.6221919444445
+                    ],
+                    [
+                        1478.05551,
+                        1270.8333333333333
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "b20b200bd29ebc74a24b3788142320c5",
+        "text": "Figure 20: ROC-PDS boom design features",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        582.0233333333335,
+                        1879.673
+                    ],
+                    [
+                        582.0233333333335,
+                        1907.3396666666667
+                    ],
+                    [
+                        1125.3690000000004,
+                        1907.3396666666667
+                    ],
+                    [
+                        1125.3690000000004,
+                        1879.673
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "f49dd63225b9a72d7b2b665cd4638163",
+        "text": "394",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "parent_id": "b20b200bd29ebc74a24b3788142320c5",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "becd14a701e4971bd30e95dd80d1a83f",
+        "text": "Conclusions and Lessons Learned",
+        "metadata": {
+            "detection_class_prob": 0.7696564793586731,
+            "coordinates": {
+                "points": [
+                    [
+                        647.0745239257812,
+                        203.51426696777344
+                    ],
+                    [
+                        647.0745239257812,
+                        237.7326666666666
+                    ],
+                    [
+                        1117.6646666666668,
+                        237.7326666666666
+                    ],
+                    [
+                        1117.6646666666668,
+                        203.51426696777344
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "30250f332d2eafb19160d120f546eb98",
+        "text": "The primary lesson learned from this mission goes back to the age old saying of “test early and test often”. Much of the issues in this program stemmed from not doing enough validation testing up front to develop a better understanding of early concepts. A notable lesson from testing early however is that care should be taken to understand the applicable boundary conditions of the system. Early trade studies using both analysis and testing should be carried out with an effort to emulate the final system boundary conditions. Early effort test booms in this program experienced several stress ruptures; these were eliminated by including the long-term storage test in the development and qualification test flows. In addition, early hinge torque tests did not include the boom end fittings or even full-length booms. It was found that the parts of the boom outside the hinge regions, especially the proximal end fitting, change the boundary conditions of the hinge significantly and therefore increased the hinge output torque. Without this increased torque the hinges would not have met the torque margin requirements, but the increased torque with the end fitting overcame the resistive torque from the electrical harness.",
+        "metadata": {
+            "detection_class_prob": 0.9566242098808289,
+            "coordinates": {
+                "points": [
+                    [
+                        199.9613333333333,
+                        271.8246154785156
+                    ],
+                    [
+                        199.9613333333333,
+                        669.7199999999999
+                    ],
+                    [
+                        1507.5959000000003,
+                        669.7199999999999
+                    ],
+                    [
+                        1507.5959000000003,
+                        271.8246154785156
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "becd14a701e4971bd30e95dd80d1a83f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "9e54e844126e23ad4a3c54123fb86b0a",
+        "text": "Additional critical lessons learned in this program were based on the lack of accepted qualification methods for high strain composite materials. At the start of this program, it was identified that the allowable material properties based on existing standards would not be enough for characterizing the relevant performance properties for thin flexible composite structures. To qualify these structures in a relevant manor the simple methods described in this paper were devised to satisfy the needs of a high value new space customer.",
+        "metadata": {
+            "detection_class_prob": 0.9500778317451477,
+            "coordinates": {
+                "points": [
+                    [
+                        196.6812286376953,
+                        702.8848266601562
+                    ],
+                    [
+                        196.6812286376953,
+                        869.7500000000001
+                    ],
+                    [
+                        1507.659533333333,
+                        869.7500000000001
+                    ],
+                    [
+                        1507.659533333333,
+                        702.8848266601562
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "becd14a701e4971bd30e95dd80d1a83f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "0849c7a35fbf5367864cd488f84fc62c",
+        "text": "References",
+        "metadata": {
+            "detection_class_prob": 0.8525416254997253,
+            "coordinates": {
+                "points": [
+                    [
+                        804.185791015625,
+                        902.3036499023438
+                    ],
+                    [
+                        804.185791015625,
+                        937.8376666666668
+                    ],
+                    [
+                        962.3163333333333,
+                        937.8376666666668
+                    ],
+                    [
+                        962.3163333333333,
+                        902.3036499023438
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "c11206f6c53ce258652fcda49549e201",
+        "text": "1 Adams, D., Mobrem, M., “MARSIS Antenna Flight Deployment Anomaly and Resolution”, AIAA.ASME.ASCE.AHS.ASC Structure, Structural Dynamics, and Materials Conference, Newport, Rhode Island. (2006)",
+        "metadata": {
+            "detection_class_prob": 0.9040883779525757,
+            "coordinates": {
+                "points": [
+                    [
+                        195.5793914794922,
+                        972.5325317382812
+                    ],
+                    [
+                        195.5793914794922,
+                        1069.3470000000002
+                    ],
+                    [
+                        1447.5379638671875,
+                        1069.3470000000002
+                    ],
+                    [
+                        1447.5379638671875,
+                        972.5325317382812
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "f166b14b9893c48e655034acd4a573c5",
+        "text": "2 Yee, J., Pellegrino, S., “Composite Tube Hinges”, Journal of Aerospace Engineering, October 2005, pp 224-231.",
+        "metadata": {
+            "detection_class_prob": 0.9053752422332764,
+            "coordinates": {
+                "points": [
+                    [
+                        192.13890075683594,
+                        1068.3634033203125
+                    ],
+                    [
+                        192.13890075683594,
+                        1133.3353333333334
+                    ],
+                    [
+                        1507.4781333333308,
+                        1133.3353333333334
+                    ],
+                    [
+                        1507.4781333333308,
+                        1068.3634033203125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "15f6a3c9869fb821736d934d659b96ab",
+        "text": "3 Mallikarachchi, H., Pellegrino, “Deployment Dynamics of Composite Booms with Integral Slotted Hinges”, 50th AIAA/ASME/ASDCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference, Palm Springs, California (2009)",
+        "metadata": {
+            "detection_class_prob": 0.9228734374046326,
+            "coordinates": {
+                "points": [
+                    [
+                        193.1369171142578,
+                        1133.106689453125
+                    ],
+                    [
+                        193.1369171142578,
+                        1229.0033333333333
+                    ],
+                    [
+                        1507.626733333334,
+                        1229.0033333333333
+                    ],
+                    [
+                        1507.626733333334,
+                        1133.106689453125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "090bd1b6cb6789871c3c919cb2d12c74",
+        "text": "4 Mallikarachchi, H., Pellegrino, S., “Design and Validation of Thin-Walled Composite Deployable Booms with Tape-Spring Hinges”, 52nd AIAA/ASME/ASDCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference, Denver, Colorado (2011)",
+        "metadata": {
+            "detection_class_prob": 0.9181423783302307,
+            "coordinates": {
+                "points": [
+                    [
+                        187.7990264892578,
+                        1226.863525390625
+                    ],
+                    [
+                        187.7990264892578,
+                        1325.0020000000002
+                    ],
+                    [
+                        1508.2789306640625,
+                        1325.0020000000002
+                    ],
+                    [
+                        1508.2789306640625,
+                        1226.863525390625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "4756c20c5fc1c66f47523e1703cd5900",
+        "text": "5 Mallikarachchi, H., Pellegrino, S,. “Optimized Designs of Composite Booms with Integral Tape-Spring Hinges” 51st AIAA/ASME/ASDCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference, Orlando, Florida (2010)",
+        "metadata": {
+            "detection_class_prob": 0.9218425154685974,
+            "coordinates": {
+                "points": [
+                    [
+                        199.50631713867188,
+                        1325.34619140625
+                    ],
+                    [
+                        199.50631713867188,
+                        1420.67
+                    ],
+                    [
+                        1510.4876708984375,
+                        1420.67
+                    ],
+                    [
+                        1510.4876708984375,
+                        1325.34619140625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "97d43287758b6279e5ea259a1aff1564",
+        "text": "6 Pellegrino, S., Kebadze, E., Lefort, T., and Watt, A., “Low-Cost Hinge for Deployable Structures” Caltech, July 2002(http://www.pellegrino.caltech.edu/publications)",
+        "metadata": {
+            "detection_class_prob": 0.9081997275352478,
+            "coordinates": {
+                "points": [
+                    [
+                        192.67169189453125,
+                        1417.5299072265625
+                    ],
+                    [
+                        192.67169189453125,
+                        1484.6686666666667
+                    ],
+                    [
+                        1507.5943333333335,
+                        1484.6686666666667
+                    ],
+                    [
+                        1507.5943333333335,
+                        1417.5299072265625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "9483b60d411fd5ba80d9fbb2fe50440a",
+        "text": "7 Fernandez, J., and Murphey, T., “A Simple Test Method for Large Deformation Bending of Thin High Strain Composite Flexures” AIAA SciTech Forum, Kissimmee, FL. (2018).",
+        "metadata": {
+            "detection_class_prob": 0.9006845355033875,
+            "coordinates": {
+                "points": [
+                    [
+                        189.97547912597656,
+                        1480.898681640625
+                    ],
+                    [
+                        189.97547912597656,
+                        1548.6686666666665
+                    ],
+                    [
+                        1507.6607333333309,
+                        1548.6686666666665
+                    ],
+                    [
+                        1507.6607333333309,
+                        1480.898681640625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "21394a877c8b7e6f67f90c7afbf8aa7f",
+        "text": "8 Sanford, G., Biskner, A., and Murphey, T., “Large Strain Behavior of Thin Unidirectional Composite Flexures,” 51st AIAA/ASME/ASCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference, Orlando FL. (2010)",
+        "metadata": {
+            "detection_class_prob": 0.9166315793991089,
+            "coordinates": {
+                "points": [
+                    [
+                        190.1772003173828,
+                        1547.4482421875
+                    ],
+                    [
+                        190.1772003173828,
+                        1644.347
+                    ],
+                    [
+                        1507.6026333333316,
+                        1644.347
+                    ],
+                    [
+                        1507.6026333333316,
+                        1547.4482421875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "b64b10b6a7312f199961676d5b73ccbd",
+        "text": "9 Murphey, T., Peterson, M., Grigoriev, M., “Large Strain Four-Point Bending of Thin Unidirectional Composites”, Journal of Spacecraft and Rockets, 52, Feb 2015, pp 882-895.",
+        "metadata": {
+            "detection_class_prob": 0.8976778388023376,
+            "coordinates": {
+                "points": [
+                    [
+                        183.7941436767578,
+                        1641.0517578125
+                    ],
+                    [
+                        183.7941436767578,
+                        1708.3353333333332
+                    ],
+                    [
+                        1508.2379150390625,
+                        1708.3353333333332
+                    ],
+                    [
+                        1508.2379150390625,
+                        1641.0517578125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "cca922b9aab4483eb08af7d2aa7bf6d3",
+        "text": "10 Rose, T., K. Medina, W. Francis, K. Kawai, A. Bergan, and J. Fernandez. \"Viscoelastic Behaviors of High Strain Composites.\" In 2019 AIAA Spacecraft Structures Conference. 2019.",
+        "metadata": {
+            "detection_class_prob": 0.8715031743049622,
+            "coordinates": {
+                "points": [
+                    [
+                        192.58102416992188,
+                        1706.905029296875
+                    ],
+                    [
+                        192.58102416992188,
+                        1772.3353333333332
+                    ],
+                    [
+                        1507.5291999999984,
+                        1772.3353333333332
+                    ],
+                    [
+                        1507.5291999999984,
+                        1706.905029296875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "1c0e43d63e531b0ec37a1b5f1db9cf75",
+        "text": "11 Sharma, A. H., T. J. Rose, A. Seamone, T. W. Murphey, and F. Lopez Jimenez. \"Analysis of the Column Bending Test for Large Curvature Bending of High Strain Composites.\" In AIAA Scitech 2019 Forum, p. 1746. 2019.",
+        "metadata": {
+            "detection_class_prob": 0.9249720573425293,
+            "coordinates": {
+                "points": [
+                    [
+                        187.33644104003906,
+                        1769.765869140625
+                    ],
+                    [
+                        187.33644104003906,
+                        1868.0123333333331
+                    ],
+                    [
+                        1507.6758333333335,
+                        1868.0123333333331
+                    ],
+                    [
+                        1507.6758333333335,
+                        1769.765869140625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "5d1b05f7899bd17c75b4c4fd6f637e7c",
+        "text": "395",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "0849c7a35fbf5367864cd488f84fc62c",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf"
+        }
+    }
+]

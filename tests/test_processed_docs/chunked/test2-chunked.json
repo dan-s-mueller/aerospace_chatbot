@@ -1,0 +1,687 @@
+[
+    {
+        "type": "CompositeElement",
+        "element_id": "3f519e51-6bdb-49a5-ba1d-d93c2eac45cd",
+        "text": "of safety of two. The analysis model from the torsional stiffness investigation was utilized again for the torque output investigation, with the application of tip load changed and a small perturbation force added on the compressed hinge tape to promote a controlled buckling of the hinge (Figure 12).\n\nPure Moment Perturbation force 4\n\nFigure 12: Hinge torque trade study model setup",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJzlVE1v2zAM/SuCTxvQObL8kbjXDVt32FBg3SkoAtqiHaGy5Ely26zofx/lJEW3Fj0M6GUDYiB84qOox4/1XYIaBzRho2RyypJKAnRS5E3dVaLLmraoqmVTyYw3jVyVIjlhyYABJAQg/7uktdZJZSCgn20NOzuFzRZVvw2ECME5cQ7wjZJhS2i2nNHRKhMib70mt5QgwVepuDxhRzvnecqjnZV8mS6fAfYMQhK/8wGH+IpzdYv62wgtJvd0IDFgG5Q1m1aD95vR2YbceFoXnK/IoVMaN1I58rJuFyMsvnt0fiHBDBNqjW7xwbZTFMovPqlwNjULQGd9vGPTbiE0NixIA3rNIZ6BAWOkCIp0lN3xIOzG+QDGUasWYl6Lw7EG00/Qz1KuEzR9cjmjPmwGK1WncC6S4KJ4x+lXXghxysvTrJ7ZylzNzLvEB3BUUiPxloCck06UyG0sSPKGfVT95JBlczUnpwk1k9b38bKRrt+YaWjQxTrdPyLajnnoKH9G/8KNTdnFFhkY0DuvPKMMUbPO2YEFwklJT08DzXxQXWfQe6bMNamh+vnR7AY8m4LS6idKBj0owzrrjuQfEzJqmXEKv9NO2I0K29nrkYJzSmpk2oJkVA/Tx5iGPuYH0JqN6MLkmr0zXdMSXUpyIjPGau0wOsqRkK0iNgswxjwYNctgA3mTiwnOUjNI1kztFcndz9cSe0958yDs2zRKe6z0V3COLr7Gi6gkSfrn1MmihlXWAeZFwbGtW1GUNQCUvK1ELupXm7qirFJBQ5XnaR6H6mBXFU+X85CJIk+zZ4A948Wp+zeG6oV5OI+1/mJj/uz8aXsVj1vg80Bxnit9VjZtLaumkMsGWlq41AarRsgqE90yy+Srlb4sRVywVVWndazs0a7rw37NyjLu16fAzPi7hVtVeVn/D73xsAlO2dl+new3WnAgkTbiJHeHhekxTOPjVtlT38MYE03uL38Bir5s0Q=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "320b65bf-a091-40db-bb62-0ea2dfe2b2ed",
+        "text": "To maximize the torque output of the hinge the “w” term from Figure 5 was minimized in order to maximize the potential energy of the hinge. Verification of this design consisted of first evaluating the material survivability by modeling the folded hinge with finite elements and using the evaluation methods described",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtUsuO2zAM/BXC5zR+JM5jz0XbU1Gg217ShSFLtE1Allw9kriL/fdSTnJYYAELhobDoTjk6TVDjSOa0JDKniAr9hu5aatDsS26Yy3r3VbsNjux6Q4b0cmyyFaQjRiEEkEw/zWT1jpFRgT0y12L2cbQDEj9EBipqqLgnDt8IRUGRsv9gk6WTEh5p1N53K13K9hvduvtywoe90N9WFfLvS72HwK3DEYyP/uAY+riB11R/5yExOyNAwoDykDWNFIL75vJ2ZZpxfq4LcuaCR1pbBQ5Zlk3J4X8l0fncyXMGFFrdPlnK2MyyudfKXyLbS7QWZ9qNHIQobUhZw+4m7ueESMmpQRW60l1j0CYpyUgpkmTFOld+T2shemj6BcrTxmaPntZUB+a0SrqCJchVUW1/VTwVz9X1VNRP5XHlD1xZmPi2KJLFqfOA17TELJnC6O40kj/EMLAx7q/EYFHMsUAtlvAgUx/C/+JVVHKy/JTENCN0Dk7whfqo0Oo4SI8jGQWQQVkgJcAHcu+LzPZwI6R0IAGXT+/q7SG3+i4p5sFtxB5UOipNyCt8cTzVCnQkfMB8Cx0ZLLpF5GRd84lbR/dmc6iJU1hhnYG9gr1g9ZZrVjl1tyFwsBqhgLCffE9CKMg+gf/UYWfxIs+WLU8STpq2fxk6X1834VzTDvjc/L47eU//pYWdg=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "6159ec32-5c5e-415a-bca2-8b185c80ed57",
+        "text": "earlier.\n\nHinge Geometry Effect on Torque Output\n\nFigure 13: Initial torque output capabilities based on hinge geometry and material allowable prediction",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJzlVE1r3DAQ/SvC59QryZZs7bUfSU4tND0twcjSeFcgW64tkywh/72SvFtCWUop7Cngg+fNvLFn3szsXjKw0MPgG6OzLco4LTsodIcx5a0oKKcdyBrXomu5FJhkNyjrwUstvQzxL5lybtJmkB7mZFt5dItvDmD2Bx8QSjEOnBP8ZLQ/BJRUCR2dGXzk7XYhLA9QXdQ5frxBv23O8irZgubVBTvFByCbj7OHPtbwzTyD/T5KBdlrcHTGQqPNBMq76RgDNj9mmOaNlkO/gLUwbT45tcQuzJtb4++WdiNhcnNM0aiD9K3zm1Bg+NVTvkH2EDNFkOaj7s4OfxyTQ46jNUp644bNyW3lsF/kPvVpl8Gwzx4TOvumd9p0BpICFNPyAw4Pe6B0i9mWiMgeA7MZlr6FKfYvFubhOXY4AzlZA1Mew87ffzDepvL/FLjilcIdqWvBSi10KTRrdcFpVVPRESavJ3BR5SwIJlheJgFXm5SsXIH0xi8hK+evImvwQd/Q7UaFjs7NOLk2hOFcUC7Ie5iCOzPsAd2CC+pNR/S560KpyA3owU0/F0BfFz8u/u2M3Pch26UZKWrKyoLKtmJQVh3rWMsKWRW8BA6iZdebkbKKSy8wzVmakdUmJT8BjFU5vQCsjPd9Bv5JWg1c1S1VnGFSYkUVkSpsYlEXqpOEwvWkpXyVsiI5TdqeASHWi0/KmuTFZSSR/u8A1IKyd3EAvpj9MgEixRbdD8YbaZFfV9+l1UdKjrI1NrhgRq2cQcfzcEh3Y3++G3LQqA9qT5EvrXVPsrWAxgm0Sf19O2brJz/KMTleH38BGjePcQ=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "3441841f-9efe-4a0a-9ea4-63cde8f84a29",
+        "text": "Results of the analytical hinge studies were to select hinges with minimalized “d” and “L” terms for the hinge, however further investigations using a longer boom which allowed for more continuous deformation of the tube cross section resulted in the hinge getting deformed far passed its material allowable limits. The reason this was not seen in the initial investigation was due to the end",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtVNtu20gM/RVCT13AtSXFjuM8L7Z9KIrFbvqUBgY9Q0nEjmaEuTjxBvn3ckZ20htg2NYZ8pDnkKP754oMjWTjnnV1C9XNFTXYNV29UYeWNrq7WeOm3nYa17umvlbVAqqRImqMKPHPlXLOa7YYKZRngyeX4n4g7ocoSNvWteSc4UfWcRC02RZ0cmxjzru/b3a75dUCms3Velk/LOAV2F5vltsCSB/L7W+ROUmgKpxCpDEr+ZufyPw7oaLqRQ40RVKRnd0rgyHsJ+8OElYvd+ubG+GoOja01+wlyvlTZlh9CeTDSqMdExlDfvWnUymbFVYfOH5MhxWSdyHX2KsB48HFlfggis58FkfKTBlsl5PuLgfxNJUDnCbDCnNfq/OxQdsn7Iud9xXZvnooaIj70WnumMqg2rpdv6/ls7lr29t6c9vsSjbb/0rmcxUiehmr1fQkwPVWzJRGnvJQqnfwF/fJEzTrnJW8EdQmY15ysUnK720aD+TzrF6+S/yHQjIxgOsgDgRo0ZyiKDAwsO0JQkyaKcAjCXl0EGS9VJwPBeU4wMiWRzT8P2n4mtq6Ubr8aGG7IJ/OSCQ/BuicL9UKywIG90hH8tAlL6gHtkfxl/tiY4AUJAwQjJNoDwfnRngcWA2AxkiqLnyjkwaVs5FtcimAJkHHQnERF9NBQmTAQWSU3QFf5AsF27eOoKcYc82ZIxdAD5NsWQ4Us4SWPItHpQE8GALDo5ws4U5IPGFwmY/FIQxgXZSCZC9FxK+Ys3/QWSJ1KibnIBLvRI7m2QQlpHH2wXPPcsZemVzLCH4kcwJlXHhNn4WoFOWWAkry4qw1c0gfskqyekrakMzJBc4kIsz3bN8GlBPlyyVpJj/nosmIGTOxyHWAWgtzmOVyCFnCpYHz3nh6T0c0CbPTP42zDOUyjnevW/xHtlIIfxmxvJmSF/NU8sf8N7P3xSJRnsf1fb9zE8t8JS439DN6Xxy7yzfg5eEb9SjEFA=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "0f6b6ed3-5b33-455e-af2c-4880089a846d",
+        "text": "conditions creating a rigid circle relatively close to the hinge cutout area, resulting in artificially positive margins for the area around the circular cutout. To address this issue the hinges were re-evaluated using a longer tube section (Figure 14). This allowed for more natural curvature regions to form around the hinges.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJxtVNtu20gM/RVCT13AtSXFjuM8L7Z9KIrFbvqUBgY9Q0nEjmaEuTjxBvn3ckZ20htg2NYZ8pDnkKP754oMjWTjnnV1C9XNFTXYNV29UYeWNrq7WeOm3nYa17umvlbVAqqRImqMKPHPlXLOa7YYKZRngyeX4n4g7ocoSNvWteSc4UfWcRC02RZ0cmxjzru/b3a75dUCms3Velk/LOAV2F5vltsCSB/L7W+ROUmgKpxCpDEr+ZufyPw7oaLqRQ40RVKRnd0rgyHsJ+8OElYvd+ubG+GoOja01+wlyvlTZlh9CeTDSqMdExlDfvWnUymbFVYfOH5MhxWSdyHX2KsB48HFlfggis58FkfKTBlsl5PuLgfxNJUDnCbDCnNfq/OxQdsn7Iud9xXZvnooaIj70WnumMqg2rpdv6/ls7lr29t6c9vsSjbb/0rmcxUiehmr1fQkwPVWzJRGnvJQqnfwF/fJEzTrnJW8EdQmY15ysUnK720aD+TzrF6+S/yHQjIxgOsgDgRo0ZyiKDAwsO0JQkyaKcAjCXl0EGS9VJwPBeU4wMiWRzT8P2n4mtq6Ubr8aGG7IJ/OSCQ/BuicL9UKywIG90hH8tAlL6gHtkfxl/tiY4AUJAwQjJNoDwfnRngcWA2AxkiqLnyjkwaVs5FtcimAJkHHQnERF9NBQmTAQWSU3QFf5AsF27eOoKcYc82ZIxdAD5NsWQ4Us4SWPItHpQE8GALDo5ws4U5IPGFwmY/FIQxgXZSCZC9FxK+Ys3/QWSJ1KibnIBLvRI7m2QQlpHH2wXPPcsZemVzLCH4kcwJlXHhNn4WoFOWWAkry4qw1c0gfskqyekrakMzJBc4kIsz3bN8GlBPlyyVpJj/nosmIGTOxyHWAWgtzmOVyCFnCpYHz3nh6T0c0CbPTP42zDOUyjnevW/xHtlIIfxmxvJmSF/NU8sf8N7P3xSJRnsf1fb9zE8t8JS439DN6Xxy7yzfg5eEb9SjEFA==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "8c30d2f8-bf1f-42d3-9096-6e2bb414db97",
+        "text": "390\n\nFigure 14: Lengthened hinge geometry trade analysis model",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 1,
+            "orig_elements": "eJzlk0+PmzAQxb8K4pyCbbDBubbqH6mHSt09RREy9gCWwEbGqJuu9rvXJkkVbaPe9rQSl3nz3hjPDw7PKYwwgfGNVuk+ScuC1LKlSmAMTJaKc0pK2ta4bkvBVZHuknQCL5TwIvifU2mtU9oID8tWj+JkV98MoPvBB4UQhELmIv/Syg9BxdWmzlYbH3OHQ01YVu0SgiqaFcdd8lfAqMjQJtTovnCOBCVdTouHKd7jh36C8ecsJKQvodHpERqlHUhv3Ska8scF3JIrYaYVxhFc/snKNW5iyb9o/3VtcwHOLnFEIwfhW+vzcMnwupd5RkwQJ0WRZLPqrg1/mreGmOdRS+G1NfmlPQrTr6LfdnVIwfTpcVMX30xW6U7DRoEgUn5A4aEPhOwR3WMe03NINmadWnBxh/FiHp7iltOCo+i4Hv1owrnQW6d/g3qInmB+zZp2VYUBU0ZLAqiTbQsgOKNdW3GGmXgz1qS4gENnkJeaFTjjscYl4xm6I5wT7440uSV9i/nbFHz30FZ113IWfmDAdc0RUphKXjFZlLzoWP12aMuKZ0UgV6KMRnLXOvCrNpKE1Bvaf4Qt8V+0CnygGnbcyLDHpZmdbYMNZXVVYPYe2H/W/eogweU++R7G+gEMqGTQpoekBxuIulPinVCQCCPG06KXJJwI4+1Hcx7yUczxldOX4x+0OtgG"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "45ff5736-c5d8-4096-a9fa-7824178f2c6b",
+        "text": "This effect was exacerbated by the ability for the full ROC-PDS system to seat itself into a system low energy state (Figure 15), where the local curvatures around the hinge often resulted in negative margin. Analysis results did not conclude with a geometric result which closed for this case, however a design alteration to the overall system was devised to add rigidity to the local area and hold",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtU8Fu2zAM/RXCpw1IHceNm6a3YcW201a03SkrDFqibaGyZEhyUqPIv49SkmEDBvggPpJPfI/y7j0jTQOZUCuZ3UG2RollKdbtLW4bWaxuyko01Y24buStlHKTLSAbKHBVQK5/z4S1TiqDgXyKNc52CnVPqusDI2VZFNxzhg9Khp7R1Saho1UmxL7djstyhjbFOq9eFnCJt8V1XsR4VRWbfPMf4NTBSOZnH2iIKh7UG+mnEQVlR05ICiSCsqYWGr2vR2cbLivybVVd33BBqzTVUjmusm6ODMufnpxfSjTDRFqTW95bMUWj/PKrCt+mZonkrI931KLH0NiwZA9YzZnP4ECRKYJlPsr2kgjzmBI4jloJjHMtz2mNppuwS1buMjJd9pJQH+rBStUqSksqi3J9VfBXPZflXVHdrbapW5nX1Pme+YCOV2okvUW3k8hAb3Eh2Qf4orrJEayq2DU5zaiZtD7Gy0a+vjbT0JCL2zv+1fjcKw/UtuwSHJCPbyzeNbx6Cc0MoSfARmkVZmitS3HLtPD44/PVw/0TnPYDwYInDKCCJ90CvwALeElqewAy5LoZWEMg+PBn2I8LOPTEx0isrUANYnJ7DJz2gM5ORqZcr0xHYNtABjg16TigMmCoY7f3BAO6TpkcPhnUs2dRpyoPUkkwNoCwRuhJEhxU6Hm4jiw/eqfEuZIHUaIHoa1n6pNYphHoaQG9PdCeHLdJ8qozgDyAS3uO2uOElvPIzpxFRzMl7VUki2ZICU51SkYnzx0nvegIAVlmb/U/WkdiOWk/5ztbSr4AI6/GHngItgh+TWWxEiMP6KBhnhTLxMiFkS/YkVXaljHLseMtTHKGEUc+s92O/wA9Rzf5J+rYDaYN8GiFsC6Pz+nyur+jc8nt5/h6ji+/ASi/eI0="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "7439c631-d6bc-4a54-b7f4-43512b309311",
+        "text": "the hinge open. This design feature is known as a “power band” and is the topic of another study paper currently in progress at Roccor.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtU8Fu2zAM/RXCpw1IHceNm6a3YcW201a03SkrDFqibaGyZEhyUqPIv49SkmEDBvggPpJPfI/y7j0jTQOZUCuZ3UG2RollKdbtLW4bWaxuyko01Y24buStlHKTLSAbKHBVQK5/z4S1TiqDgXyKNc52CnVPqusDI2VZFNxzhg9Khp7R1Saho1UmxL7djstyhjbFOq9eFnCJt8V1XsR4VRWbfPMf4NTBSOZnH2iIKh7UG+mnEQVlR05ICiSCsqYWGr2vR2cbLivybVVd33BBqzTVUjmusm6ODMufnpxfSjTDRFqTW95bMUWj/PKrCt+mZonkrI931KLH0NiwZA9YzZnP4ECRKYJlPsr2kgjzmBI4jloJjHMtz2mNppuwS1buMjJd9pJQH+rBStUqSksqi3J9VfBXPZflXVHdrbapW5nX1Pme+YCOV2okvUW3k8hAb3Eh2Qf4orrJEayq2DU5zaiZtD7Gy0a+vjbT0JCL2zv+1fjcKw/UtuwSHJCPbyzeNbx6Cc0MoSfARmkVZmitS3HLtPD44/PVw/0TnPYDwYInDKCCJ90CvwALeElqewAy5LoZWEMg+PBn2I8LOPTEx0isrUANYnJ7DJz2gM5ORqZcr0xHYNtABjg16TigMmCoY7f3BAO6TpkcPhnUs2dRpyoPUkkwNoCwRuhJEhxU6Hm4jiw/eqfEuZIHUaIHoa1n6pNYphHoaQG9PdCeHLdJ8qozgDyAS3uO2uOElvPIzpxFRzMl7VUki2ZICU51SkYnzx0nvegIAVlmb/U/WkdiOWk/5ztbSr4AI6/GHngItgh+TWWxEiMP6KBhnhTLxMiFkS/YkVXaljHLseMtTHKGEUc+s92O/wA9Rzf5J+rYDaYN8GiFsC6Pz+nyur+jc8nt5/h6ji+/ASi/eI0=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "f3547c3f-e809-4705-bd27-f5578aeb480d",
+        "text": "Figure 15: (Left) High curvatures in full system analysis; (Right) hinge shift into low energy state.\n\nHinge Torque and Long-term Storage Testing",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJzllU1r3DAQhv+K8CmBxCvJki1vr6VNIYfSJKclGNkaewW25dpyk23of+/IG0Mo21IKuTSwFz/zYc28r9a7pwha6KD3hTXRlkSgQZZUK5bmQpg6gUSURhotGKtyAzK6IFEHXhvtNeY/RZVzo7G99jAtz60+uNkXe7DN3iPhnFKsecYP1vg9UpYtdHC296Fut+OMxvKC5AmL8/sLsj4zkdEjYBIJO0WONUii6TB56MIcn+0jtDeDriD6gQEDHipvXV9UrZ6mYhhdiWnYSMgswYTatlAYO2KWGw+hw+ZugnHaGN13M7QtjJv3rprDqqbNR+uv5nKjYXRTeEdR7bUvnd/gFnCe53697iB0CpDHg6nXgD8MS0APQ2srHc61eQ63um9m3SzL3EXQN9H9QidfdM7Y2sIiE6dcXFL8yVvOt1RuWR6qB6ws+rkrYQyrD5N7eAwyRISEhPXNnzrMDJv5VX8jpKGQUVmKTNSJ0kDzXBhm8prxiptX059RxmOF8nKWxMki70pEvhKhZExPkmPVHz3w30v8VwKrUlHFq4Rrk6hEZaysszxntUyVFlC9nsA8pTHeNCYpj+lyw1fA8zg7iimy35Gl6G3L+8E28wi4iy05u4ban5MrlIBU8/hNe4xMxPakntuWHHdEdK/bw2Snd+TsSxDrnOxt3wCZ9rb2mOwdad0DgR7G5kAmjxLHLz101+Nk0LjRfgdzG05xwk9pzVJhOHBmhNA8A6XKUieS458Hq1T9en6idLn5MpdHs6wgXd2TpSoWp8Cx5N8+GKnCdm/BbleLV27d+HUGtJIh165vLj2MHbnBkXUI4jkx66Vnbq1vcYP3PwF30pAr"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "283c3f10-147e-483f-98f1-a4953b3894d1",
+        "text": "Full-scale hinged boom testing was used to validate the analysis results and determine the properties of the hinges where analytical techniques were unable to predict the behavior of this complex system. The primary test used was hinge torque testing under ambient temperatures and operational temperature extremes. This was coupled with long-term storage testing to evaluate material survivability",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtU01v2zAM/SuCz61jO06c9DxsOw0D1p2CIqAl2iYgS54+0hhF//soJe0uAwIDeiTfIx+Z01uBGmc04UyqeBLFcaf6Q9V1Wxz6BqXa10dUXTu0u66uurYrHkQxYwAFATj/rZDWOkUGAvr81rDaGM4T0jgFRpqmqrjmDr+SChOjdZfRxZIJqe504rSSoXq/rcvu5UF8At1xX24TUO+qruz+i9yKGCr86gPOaZKfdEX9awGJxTsHFAaUgaw5Sw3enxdne06rymO73+05YSCNZ0WOs6xbE8Pmt0fnNwrMHFFrdJsvVsZklt98o/A99htAZ33SOMsJQm/Dhn3gie58BmZMTAlsykUNH4GwLjkAy6JJQuprcw9rMGOEMdt5KtCMxUtGfTjPVtFAmBfVVE37WPFv99w0T9XuqT6m6oUrzybOPbpkfkbcv/Xuh3rfqgabWrUtNB0eDn0P210zbA+1PAzZqoDXtLnia9T60UvQKCYyIyrRWzuLNAw/xSt4ET2jwYoLaOKTQBEmFGBAr568cOijDp4BJZL/biZzS2H3F3SB0As7ZCQrePE6obszBDZGs5qcDP2JKZZC0UDPDbHm4lCRDLm6xwkuZN2NjaWlnReNV3G7h1I8Z1Gawa15gFvnaYQszHyONT5ni0ahEzD3xN4xOnO3ECIPlIex+clLyw1+BgUb5/jf5JMeN5HopY3cCEtRmIS2ZnxMPgjPgjD+E+R5kE2MycOZP46Y2kd3oQv0pCmsWfhCXlpMx0BS4DDwsbKDhukckBFo0I0r+67hmvsr0018HNsPcKnrCz6nBb+//AVbZlcC"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "78f39168-bbd7-4f02-9bcc-1bbfe5497b94",
+        "text": "and viscoelastic effects on strain energy relaxation.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtU01v2zAM/SuCz61jO06c9DxsOw0D1p2CIqAl2iYgS54+0hhF//soJe0uAwIDeiTfIx+Z01uBGmc04UyqeBLFcaf6Q9V1Wxz6BqXa10dUXTu0u66uurYrHkQxYwAFATj/rZDWOkUGAvr81rDaGM4T0jgFRpqmqrjmDr+SChOjdZfRxZIJqe504rSSoXq/rcvu5UF8At1xX24TUO+qruz+i9yKGCr86gPOaZKfdEX9awGJxTsHFAaUgaw5Sw3enxdne06rymO73+05YSCNZ0WOs6xbE8Pmt0fnNwrMHFFrdJsvVsZklt98o/A99htAZ33SOMsJQm/Dhn3gie58BmZMTAlsykUNH4GwLjkAy6JJQuprcw9rMGOEMdt5KtCMxUtGfTjPVtFAmBfVVE37WPFv99w0T9XuqT6m6oUrzybOPbpkfkbcv/Xuh3rfqgabWrUtNB0eDn0P210zbA+1PAzZqoDXtLnia9T60UvQKCYyIyrRWzuLNAw/xSt4ET2jwYoLaOKTQBEmFGBAr568cOijDp4BJZL/biZzS2H3F3SB0As7ZCQrePE6obszBDZGs5qcDP2JKZZC0UDPDbHm4lCRDLm6xwkuZN2NjaWlnReNV3G7h1I8Z1Gawa15gFvnaYQszHyONT5ni0ahEzD3xN4xOnO3ECIPlIex+clLyw1+BgUb5/jf5JMeN5HopY3cCEtRmIS2ZnxMPgjPgjD+E+R5kE2MycOZP46Y2kd3oQv0pCmsWfhCXlpMx0BS4DDwsbKDhukckBFo0I0r+67hmvsr0018HNsPcKnrCz6nBb+//AVbZlcC",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "e8d9caef-55e3-4d9f-9d65-eeaa3eea83f4",
+        "text": "A torque test fixture was developed and qualified to accurately measure the hinge output torque. This fixture is shown in Figure 16; the fixture uses torque cells to measure the output torque of each hinge as the boom is slowly allowed to deploy, resulting in a semi-static torque measurement. This fixture was qualified and validated by measuring the torque output of an easily modelled metallic",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtU8Fu2zAM/RXB59SxlTh12tOAYdtpGLDuFBQGLdGxMFnyLKlJUPTfR7pxiw6DAzh64iMfH+nDc4YWB3SxMTq7E9l2X9RVBTtJD9ZKdVVV4R40bNpS7pXKViIbMBIQgeKfM+X9pI2DiGE+W7j4FJsezbGPhEhZFMS5wiejY09oeTujozcuMu9wKPd1vlmJst7IfPu4Em/AfrfJixmoitt891/klURQFi4h4sCd/DBntD9HUJi90IXGiCoa7xplIYRmnHxLYUW+35a3kgI6Y7HRZqIoP104w/pXwCmsNbghobU4rT97ldissP5q4rfUrgEnH7hGo3qIrY9r8oE6uuZzMCBnYlDmo+6Wi3gZ5wsYR2sUsK719dqCOyY4znYeMnTH7HFGQ2wGr01ncB6ULOT2pqBf9SDlXVHdlfuZbdzvmfmchQgTjdVpPLPjkswkIWceSvbFHNOEotyJe2alyRLqkrUvXGyk8o1LQ4sTT3BGpvcd2XXlbqslylJvtyBvsa7bFjaV7DZ1qepu9nup9EmQnX8SCvZAdOYcufAJgtD4hNaPqAU4Lf4ksHNzFC9AqTTRStmLGBACM2KPojfuiIL2aEzxmjYXD70Jb3npb+j9yQnjxFuP9zN5CUkBw6JJ0Vj58KHKh/zCdwJB9dfaJJtDWu+HuZb1J9IIlt6vyjWO1l9WYsKQbCQOKwERcDA3NJBo1JL4WpLX6Z8m2Jx3O9icJzrQF0endnGEU7OURearaFILjgQHw9Z5zWurBX+wlvZMWIROhJHJOc99WcPvMJHd5gkfeGovj38BMuhYsw=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "e57a177b-7b9f-41f9-8c29-3533c05d19e1",
+        "text": "leaf spring.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJxtU8Fu2zAM/RXB59SxlTh12tOAYdtpGLDuFBQGLdGxMFnyLKlJUPTfR7pxiw6DAzh64iMfH+nDc4YWB3SxMTq7E9l2X9RVBTtJD9ZKdVVV4R40bNpS7pXKViIbMBIQgeKfM+X9pI2DiGE+W7j4FJsezbGPhEhZFMS5wiejY09oeTujozcuMu9wKPd1vlmJst7IfPu4Em/AfrfJixmoitt891/klURQFi4h4sCd/DBntD9HUJi90IXGiCoa7xplIYRmnHxLYUW+35a3kgI6Y7HRZqIoP104w/pXwCmsNbghobU4rT97ldissP5q4rfUrgEnH7hGo3qIrY9r8oE6uuZzMCBnYlDmo+6Wi3gZ5wsYR2sUsK719dqCOyY4znYeMnTH7HFGQ2wGr01ncB6ULOT2pqBf9SDlXVHdlfuZbdzvmfmchQgTjdVpPLPjkswkIWceSvbFHNOEotyJe2alyRLqkrUvXGyk8o1LQ4sTT3BGpvcd2XXlbqslylJvtyBvsa7bFjaV7DZ1qepu9nup9EmQnX8SCvZAdOYcufAJgtD4hNaPqAU4Lf4ksHNzFC9AqTTRStmLGBACM2KPojfuiIL2aEzxmjYXD70Jb3npb+j9yQnjxFuP9zN5CUkBw6JJ0Vj58KHKh/zCdwJB9dfaJJtDWu+HuZb1J9IIlt6vyjWO1l9WYsKQbCQOKwERcDA3NJBo1JL4WpLX6Z8m2Jx3O9icJzrQF0endnGEU7OURearaFILjgQHw9Z5zWurBX+wlvZMWIROhJHJOc99WcPvMJHd5gkfeGovj38BMuhYsw==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "e2455e4f-7541-41ec-b441-0731b709d9f0",
+        "text": "391\n\nHinge Torque Validation Empirical vs Analytical\n\nFigure 16: Structural testing of integrated solid-state HSC hinge",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 2,
+            "orig_elements": "eJzllE2PmzAQhv+KxXk32MYYyK3qV3qrlGwvURQZPBBLgKkx7aar/veOIbsbqbnuaQWXeWfGDPM+sH+KoIUOen80OlqTKE0TWrJSVxqE1JWkqRSC6aTCS+UFi+5I1IFXWnmF9U9RZa3Tplcexjlu1dlO/ngC05w8KpxTij0X+bfR/oQqy2Z1sKb3oW+/z7lcZXeE0yxdJYc78iIwmqzoLOT0trC0oBKN59FDF97ju3mEdjuoCqK/mKhNC0dtHFTeunMoiB9GcGOsVd9N0Lbg4k+2msImxvir8ZupjBU4O4YjjtVJ+dL6GF8Sx72c16sOwklB5KtB188Jfx7mhBqG1lTKG9vHl3Sr+mZSzbyrfQR9Ex1mdfTHzmpTG5hd4JSLe4p3uuN8TdM1K0L3gJ3HfupKcGGzs+JevZM1k0Jz4EwLoXgGeV6WKkl5neSsyut5Ex4egy1Rsnj5POtDj4NCY535A3oXarD4PziA1bh0CQVAoQQtS81rCpnIZKLqWr4ZHJzKFQ9O08X5S8xEkq1EEJgoEIpbytLz7uBIrr3emL4BsrPu5wTkh2qNnp9LPneDcThES36N5EOv2rMP0TUX3zo89hYLWtUFCCUKLsoCvVd5RjMpEsayvMRP8s1YEJIuTgu5/ChehEwsdDAuEILbytz0vmn4YprJAWFyTbbeTZWfHBIQRkNMiK0Jrhoah0ZpMlqE5X70GJDN9iM5BZKu+dgZ3+LeDv8A1Hntkw=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "54ca5f88-747f-4dc5-9f6c-341b6ef75554",
+        "text": "The primary resistive torque in this design was due to a flat, flexible electrical harness inside the boom. The behavior of this harness depends intimately on the boundary conditions supplied by the boom, so testing of the harness alone proved impossible. Instead, the hinge torque was measured with and without the harness, and the harness torque was derived by comparing these two torque curves.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJxtU01v2zAM/SuCz5ktu05c9zZg2MdlGLDuFBQGbVG2AFnyJDmpUfS/j7KTNIcBQaA88j2Sj8zxLUGNI5rQKJE8saTEApDLumiFLAWvq0rkDwcuZVXJ/FEWyY4lIwYQEIDy35LOWieUgYB+/a1hsXNoBlT9EAgpCs6Jc4HPSoSB0Lxa0ckqEyLveKS0lKB8zw9p/bJjN6DiVVpGgEJVWv0X2UgEJX7xAcc4yS/1ivr3BB0m7xQQGLALypqm0+B9MznbUhpP6z3nOSVIpbERylGWdUtUyP54dD4TYMYZtUaXfbHdHM3y2TcVvs9tBuisjzWaboDQ2pCRDzTRRc/AiFEpgkU6CXkNhGVaAzBNWnUQ+8ouYQ2mn6Ff7TwmaPrkZUV9aEYrlFS4LqrgRfmJ02f/XBRPfP+U15E9EbMx89iio6yHFXEf6xUgayyhrIuyraU8wCOZeSgf8rx6bAterVYFfI2bS54HZJNTI7iFOfTKB3VCRu78nZEpw8KgPBMU6A07Az3nGGXApIawo298Va1GRhfWBUdjajaAM+g9sb0SlE0VWmvHlMVaLQ5wUtYxKzfta7bACY2IrEDdBNQLs+ZCno2I/XXWCBVt9MzP0VQUrF1uBXbMWxa3oEy/yeNNHbQ1cVB7Io4aJ+t9bDtlPwzdEojdlk3M2/Bx2hHBz44oZxUGBmZ70JHfi+/WwH21OwWBTp22Pjs70p5ic5Trqc7ZXjO72Z3Qrw5R4AR6Rs/O6Fb3DJs9KZDrm9hazg/2HD3TdonHehWiPfbKpOwzo+tbt3Ff4daNdHbc7L/6Rc8oaWhBmpRp819VT6PTPzGNN3c95p/gHMQbeY4H9P7yD1prdi4="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "c2a050c8-2181-4555-9853-930f82439588",
+        "text": "These values were then used to derive and show deployment torque margin. A typical torque curve derived from this testing is shown below in Figure 17.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJxtU01v2zAM/SuCz5ktu05c9zZg2MdlGLDuFBQGbVG2AFnyJDmpUfS/j7KTNIcBQaA88j2Sj8zxLUGNI5rQKJE8saTEApDLumiFLAWvq0rkDwcuZVXJ/FEWyY4lIwYQEIDy35LOWieUgYB+/a1hsXNoBlT9EAgpCs6Jc4HPSoSB0Lxa0ckqEyLveKS0lKB8zw9p/bJjN6DiVVpGgEJVWv0X2UgEJX7xAcc4yS/1ivr3BB0m7xQQGLALypqm0+B9MznbUhpP6z3nOSVIpbERylGWdUtUyP54dD4TYMYZtUaXfbHdHM3y2TcVvs9tBuisjzWaboDQ2pCRDzTRRc/AiFEpgkU6CXkNhGVaAzBNWnUQ+8ouYQ2mn6Ff7TwmaPrkZUV9aEYrlFS4LqrgRfmJ02f/XBRPfP+U15E9EbMx89iio6yHFXEf6xUgayyhrIuyraU8wCOZeSgf8rx6bAterVYFfI2bS54HZJNTI7iFOfTKB3VCRu78nZEpw8KgPBMU6A07Az3nGGXApIawo298Va1GRhfWBUdjajaAM+g9sb0SlE0VWmvHlMVaLQ5wUtYxKzfta7bACY2IrEDdBNQLs+ZCno2I/XXWCBVt9MzP0VQUrF1uBXbMWxa3oEy/yeNNHbQ1cVB7Io4aJ+t9bDtlPwzdEojdlk3M2/Bx2hHBz44oZxUGBmZ70JHfi+/WwH21OwWBTp22Pjs70p5ic5Trqc7ZXjO72Z3Qrw5R4AR6Rs/O6Fb3DJs9KZDrm9hazg/2HD3TdonHehWiPfbKpOwzo+tbt3Ff4daNdHbc7L/6Rc8oaWhBmpRp819VT6PTPzGNN3c95p/gHMQbeY4H9P7yD1prdi4=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "69ab4ffb-d2c9-4070-8380-0edb36e10922",
+        "text": "392\n\nMeasured Hinge Torque Torque (Nem) ° 20 co Co 0 ° 0 700 760 ‘Angle (de) Angle (dea) Hinge torque without harness (measured) Hinge torque with harness (measured) Harness torque (calculated)\n\nFigure 17 Typical hinge torque of proximal hinge (left) and distal hinge (right).",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 3,
+            "orig_elements": "eJzlVMGOmzAQ/RWLUyJtiW0Ihr1VW7XbQ6tKzZ7SCBk8JpYAUzDaTVf77x0Tko2qqLc9rYQE8+bNMJ735O1zADU00LrcqOCWBCLVQqaZlqleM60TpUHJTOg0hXURCQhuSNCAk0o6ifznoLS2V6aVDoYpruXBji7fg6n2DhHOKcWaGX40yu0RZWJCO2ta5+u225QnobghnIp1GO1uyBlgNArpBKT0OnAsQSQYDoODxp/jh3mC+mcnSwheMKFNDbkyPZTO9gdPWD0M0A8rJdtmhLqGfvXJlqPfxLD6Ytz9WKwk9HbwLfJyL11h3QoPiePO/VrZgO/kQR52Sp8S7tBNCdl1tSmlM7ZdzelattUoq2lX2wDaKthN6ODyxiqjDUwqcMrjDxSf9YbzW7q+ZZmv7rAyb8emgB5Z0YT0r9opqTOIZZzxuMhQO5kKKpI4YkykBW5p2oSDJy9LEGXctzzN+tDioFDZ3vwBtfEcJP9rjkRlmiayZBHOR7NMx1wLzmRCJRMxrN/MHJyLkHml6VH5ORY8DjMfs1jwq8Cx4t1ZI75U+hvIYexBkXvTVkA2tv89nl+L79Asya+R0oLitkhpyZ0l9IRQgloQkXiAU5Z+bKsaixQsyflTLufO7tjy0bg9ykn2sm9hGMiimQe4wrtKmqGZtihlXY41ekgtLx37tcEjX3MpmkNrFq9TXoosyaSOC8oLWmiVZhEt6Zu5NMJ7CO8jEUVh7E14ihN2vNFYFLHrwFTxX5cqcGhQtEteoiWGvOttgTQapglNovdg48+mQn/g2snm0OFPa7K/dJPVBHfyZJpzYlGDdksiW0WUGdwr3ntdl+GlmY7N72TnjxK87P4C3Jkwug=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "995eb6e3-62eb-46e2-9191-26de4ede80d8",
+        "text": "Later tests at operational temperature extremes were enabled by constructing a thermal chamber around the torque test hardware. This testing was both used to directly verify the torque margin and validate the analytical predictions.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtUk2L2zAQ/StC563tOPHm41xoD6UUmp5CMGNrbAtkyZVGyZpl/3tHarb0sGAw8+a9+Xijy6tEgzNaarWSJyHxOOBGKYV1AzAMh11/qBjomv0WDurwLJ+EnJFAAQHzX2XvnFfaAmHIsYHVRWon1ONEjNR1VbHmAd+1oonRzT6ji9OWku5yYVrB0IF/2+uT+Bcfd8U+xZum2hfPHwFZwYgMayCc0xY/9Auanwv0KN84oZCwJ+1s2xsIoV2865hWFcftvmqYMGiDrdKeWc6vqUL5K6APpQI7RzQGffnZ9TEZFcovmr7GrgT0LqQebT8BdY5K9oC3edSzMGOqlMC6WNTwnqB1yQlYFqN7SHOVj7QBO0YYs5UXiXaU14wGamen9KAxH6mu6t2nir/mXNenqjltjkm9sLK1ce7QM2uXNid8SUeQ3/g+XuT5BJBwC/rcGAyDc46iR8Fsz68hiDumyEJnUIluFb2zgXxkE+0oQNCEfmYtL566CfAuWpVgwQb+jphbiQm8uoPHQpwnHTKW9HcIgu2aRAxcnZz467xZxQ29Htb/68zgR20FcPUbGM3PDnMaePSV2D4jFo9K5/OGItnw7u938GnJG56TCW/XP2h89lg="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "b301b01c-29ef-43d2-a7f2-a18159928fdd",
+        "text": "The impacts of the viscoelasticity on the deployment kinematics were also a key risk, and due to a lack of standardized test methods and stress relaxation failure models these impacts are very difficult to analytically model. Long-term storage testing was therefore used to simulate the impact of storage before deployment. Full-length booms were stowed in the anticipated storage shape, as shown in",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtU01v2zAM/SuCz4lju0mW9Dx0OwzDgHWnoDAYibaF6MPTRxOvyH8fJSftDgN8kB75Hskn+vBWoEKNJrRSFI+s2NUVNBV/2PJNB3yNot5hg9VWbHdr3ohtsWCFxgACAlD+W8GtdUIaCOjzXcFkY2gHlP0QCGmaqiLODT5LEQZC608ZHa00IfEOB0orCdo/VOWnlwW73+tqv56BelPtyvp/yMwhpPCTD6jTHD/kBdXPETgWVwoIDMiDtKblCrxvR2ePlFaV+01DCkUnFbZCOkqybkoCq18enV8JMDqiUuhWny2PySm/+iLD13hcATrrU4mWDxCONqzIBBrnpmdAY1JKYFOOorsHwjTmAIyjkhxSW6tbWIHpI/TZy0OBpi9eMupDq62QncT8Sk3VrJcVfZvnpnmsNo/1PrOlOWXmW+EDOHpTI/BCwLreLFIjl/QixZPso0PG6h1bJFp0imATlbqmaiPVb03UR3SJev2H+Twgk5pGDp7ZjgW6vkrPLaYOJZdhYtZkWOCo7JTsYidpUNOU3LMzUl1Q3jJgJ5yYk/60YGAEExFZSLACfkraNIARQKv1BwVLFjJau8EKn9N9cOg9c1T4kg1kHUiVpiKbUPnUg//oFSjwim5iZGEneVQhFzOgJuoLlJpmXsm+WdMvAzpNJawjJ3JtaXp2hqzqsLOkFn1qyzIvdVS0/Hnoudzc/Uw+ztkfbpTsiXxe0nb0YWBHa/XNFWKcSVLO9oFJdo4kLN61/AAjklueTvZsUurtJevdbGJiBqlxSU3rER2EFPWRjqP1MvuULEsHP8gxz3SfxKGIfJ7jfXTSIvx3pB9DsM5ZzSYE51O6gMmXaXvu2/wdHBWUr/icluX68hchTXa2"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "1b3b977e-0a3a-4121-92fa-d7359b573c60",
+        "text": "Figure 18, and the time- temperature superposition relationship was used to reduce the storage time required from years to days.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtU01v2zAM/SuCz4lju0mW9Dx0OwzDgHWnoDAYibaF6MPTRxOvyH8fJSftDgN8kB75Hskn+vBWoEKNJrRSFI+s2NUVNBV/2PJNB3yNot5hg9VWbHdr3ohtsWCFxgACAlD+W8GtdUIaCOjzXcFkY2gHlP0QCGmaqiLODT5LEQZC608ZHa00IfEOB0orCdo/VOWnlwW73+tqv56BelPtyvp/yMwhpPCTD6jTHD/kBdXPETgWVwoIDMiDtKblCrxvR2ePlFaV+01DCkUnFbZCOkqybkoCq18enV8JMDqiUuhWny2PySm/+iLD13hcATrrU4mWDxCONqzIBBrnpmdAY1JKYFOOorsHwjTmAIyjkhxSW6tbWIHpI/TZy0OBpi9eMupDq62QncT8Sk3VrJcVfZvnpnmsNo/1PrOlOWXmW+EDOHpTI/BCwLreLFIjl/QixZPso0PG6h1bJFp0imATlbqmaiPVb03UR3SJev2H+Twgk5pGDp7ZjgW6vkrPLaYOJZdhYtZkWOCo7JTsYidpUNOU3LMzUl1Q3jJgJ5yYk/60YGAEExFZSLACfkraNIARQKv1BwVLFjJau8EKn9N9cOg9c1T4kg1kHUiVpiKbUPnUg//oFSjwim5iZGEneVQhFzOgJuoLlJpmXsm+WdMvAzpNJawjJ3JtaXp2hqzqsLOkFn1qyzIvdVS0/Hnoudzc/Uw+ztkfbpTsiXxe0nb0YWBHa/XNFWKcSVLO9oFJdo4kLN61/AAjklueTvZsUurtJevdbGJiBqlxSU3rER2EFPWRjqP1MvuULEsHP8gxz3SfxKGIfJ7jfXTSIvx3pB9DsM5ZzSYE51O6gMmXaXvu2/wdHBWUr/icluX68hchTXa2",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "23f18635-9c2d-4a09-8dba-913da2c57155",
+        "text": "Figure 18 Long-term storage testing",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJzlkkFvnDAQhf8K8nkDttdg2GurNpF6qNT0tFohgwfWEtjINmpWUf57xuwmqqqot54qwYFv3ht75nF8JjDBDDa2RpNDRjhjUjRSA1UcapAdK0H2jFFK9wOrJNllZIaotIoK9c+kd85rY1WEsH1P6uLW2J7BjOeIhHNK0XPDv4yOZ6RMbnRxxsbkOx73VOR8lzHGy5yedtk7qEqe1wmwfSNy8SG5mhCRcAkR5jTJd/ME049F9UBesDCYCVptPPTR+UsSFD8D+FBoZecVpgl88dn1a9pFKL6aeL92hQLvQmrR9mcVOxcLHBMvfOtn1QypU4I8X/TwVoiXZSuoZZlMr6JxtriVJ2XHVY3bto4E7EhOGw2xnZ02g4FrDpSLO4pP+cj5gZYH1iT3gs7WrnMHHlUiDRbhKe2ZpPLbuQ8z6tLYf8arOw19KQbFKL51IxqhS8kpiAa6uhL/LN6K19fsKprzlN07aGgutzCprPP9x2Qz/TVeDRGTxT23Pe4ytIt3HcpoXnMh2f+Q/xczrh4yVmffnB3vIvg5CzgrOrJ0QYNH/faLXOWf1JIuR15OrwXdO6A="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "2a872dc0-55a7-49e9-acb4-6e76492bec35",
+        "text": "During and after storage the boom was inspected for damage. The corners of each hinge were at particular risk of stress rupture during long-term storage, so these areas were subjected to extra scrutiny. Detailed images of these areas are shown in Figure 19. After storage at elevated temperature the kick-off force, hinge torque, and final boom geometry was measured. These measured values were fed",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtU8tu2zAQ/BVCZ0eWBcm2citgtD0VBZqejEBYkSuJNUWqfMQRAv97l7QdJEABXTj7mpldHd8yVDih9q0U2SPLNnUvunIj9tV+W3Koq4pDte13/bbnvNlBtmLZhB4EeKD8t4wbY4XU4NGlt4LFBN+OKIfRE1KWRUE1N/gshR8J3ewSOhupfaw7HjdNkzcrCpRVXj+v2Duwb4p8l4C62OXb/yLXIoIytziPU1TyU76i+jUDx+xCAYEeuZdGt1yBc+1sTUdpRd7U1b6ihF4qbIW0lGXsEjusfzu0bi1ATwGVQrs+GB6iWW79TfrvoVsDWuPijJaP4Dvj1+QDKbr10zBh7BTBMp9Ffw/4ZU4BmGclOURe61tYgR4CDMnOY4Z6yJ4T6nw7GSF7iWlRZVFWDwV99VNZPhb146ZJ1VKfUuVb5jxYWqsW+Br3UJGZROQ1LiX7KodgkW0alseqYBWhOih1icNmGt/qMHVoCa4uHwoPwUo9MNCCQe/RMkduUTrzI7LOmImdwTGp3Uw+omC9sUzARBk5e6IUbqwmU5npGQIf2UjdkJ2RyIBnMzGWPCiwzEp3ilnOW3SO2TD7yFhc5yujhwcaP93nr5gzkYOjPhaJQmrpQvfnysMbRgosMMdt8FIvOTvQGdMqBJORXqL0sQHE+tGcNalh737l7Msn2USafqAXSDNwmtFC4hntOEl+ejB9H03gxPCqlQr/BnpFC3v6cdTVtgEN/Vd2Sf5NRIC6iOQZMbq/2QuogDdxfaSufZJN3UAt5B21oytBFQV36CPVmQol9ylN4KzMEk/4JvdKSlw5fNpoOoz7nf4AS8LkCz7FO7g8/wPIjmeq"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "593b7402-7a69-4297-aba2-fb8cc7837df7",
+        "text": "into the analytical model to better predict the deployment of the hinged boom after storage.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJxtU8tu2zAQ/BVCZ0eWBcm2citgtD0VBZqejEBYkSuJNUWqfMQRAv97l7QdJEABXTj7mpldHd8yVDih9q0U2SPLNnUvunIj9tV+W3Koq4pDte13/bbnvNlBtmLZhB4EeKD8t4wbY4XU4NGlt4LFBN+OKIfRE1KWRUE1N/gshR8J3ewSOhupfaw7HjdNkzcrCpRVXj+v2Duwb4p8l4C62OXb/yLXIoIytziPU1TyU76i+jUDx+xCAYEeuZdGt1yBc+1sTUdpRd7U1b6ihF4qbIW0lGXsEjusfzu0bi1ATwGVQrs+GB6iWW79TfrvoVsDWuPijJaP4Dvj1+QDKbr10zBh7BTBMp9Ffw/4ZU4BmGclOURe61tYgR4CDMnOY4Z6yJ4T6nw7GSF7iWlRZVFWDwV99VNZPhb146ZJ1VKfUuVb5jxYWqsW+Br3UJGZROQ1LiX7KodgkW0alseqYBWhOih1icNmGt/qMHVoCa4uHwoPwUo9MNCCQe/RMkduUTrzI7LOmImdwTGp3Uw+omC9sUzARBk5e6IUbqwmU5npGQIf2UjdkJ2RyIBnMzGWPCiwzEp3ilnOW3SO2TD7yFhc5yujhwcaP93nr5gzkYOjPhaJQmrpQvfnysMbRgosMMdt8FIvOTvQGdMqBJORXqL0sQHE+tGcNalh737l7Msn2USafqAXSDNwmtFC4hntOEl+ejB9H03gxPCqlQr/BnpFC3v6cdTVtgEN/Vd2Sf5NRIC6iOQZMbq/2QuogDdxfaSufZJN3UAt5B21oytBFQV36CPVmQol9ylN4KzMEk/4JvdKSlw5fNpoOoz7nf4AS8LkCz7FO7g8/wPIjmeq",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "9ff2ad05-a2d3-4e8e-a3ad-42ebdbfa8675",
+        "text": "393\n\n—\n\nFigure 19 Inspection of the proximal hinge (left) and distal hinge (right).\n\nThe results of this testing were then used to validate the analytical model, show compliance with requirements, and provide knock-down factors for post-storage deployments. In particular, the requirements for long-term storage survival and deployment torque margins were verified directly through test.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 4,
+            "orig_elements": "eJzlVU1v3DYQ/SuETg2w1lKiqA9fW7TNpShQ5+QYC0ocaYlQpEJSu94G/e8dUnbqJoseCvhkQJd5nBnOvPcI3X/JQMMMJhyUzG5JRnlRDmJgLR+LrhVMSj7wsmhHUUPNqjrbkWyGIKQIAvO/ZIO1TiojAvgUa3GxazgcQU3HgEhZUoo1T/BZyXBEtGgSulhlQqy7v2/LOm92pKQNz9nDjnwFCspymoCWXge2EkQyf/EB5rjH7+oR9B+LGCD7Cw9GpeEglYMhWHeJCfsPHpzfS2HmFbQGt//JDmtkwu9/UeHXtd8LcNbHFofhKEJvwx6XxHGf+hkxQ+wUwTJf5Ph8EC5LOhDLotUggrJm/3SshZlWMSWu7jMwU/aQUB8Os5VqVJBUKGlZ3VD8+F1Z3lJ+W3SxesHKg1nnHhxmVXGxAI+R5Yx1LGY8X/3B4L0wWaf+BHkXczD5W63LqhTQj51gXc+Lmoui6JuSdrJiILngr6Y15uVtFI5uQj7FNSvyLsZF1bQ5uwJsFW9Oaf5S6Y9rSYvqpdjvZ8y+JnAj2ViNvKq7ppVVwWnX13Unm17Gl83KVxO4Kqq8ivp1eR31e47rLm+SnmWHb/gakCr+U2AJAbVFpg8DsukPi7M9pqGDOGfsLTjgZzWtDkjRkffGLxsZxI4kHIEgG49qFpoclZmA/KBhDO+IMJJI5cM/uIuKvstf2mhr+6NYYr9rdhprNpaM1rJqoGlHXrT90DWjZJTiP6OtXs1ORdfk5Y40tM55cssWt6zOqxRz2sQ/wXfAVvH/7NQxXjVvwU53aBsHftXBby5SnsTB0CjkDGg09JUhqwdJgiUnoRUKnFD0ldCXgINqgjOA3hF/tGcy2BnHF2YAclbhiN0/r0hgYmiXzIgsn5QE8snY4dONtGdDRhEJ9mS0jizWhxuPIU5NJCzaXlJxjo4ni3B45aqF26UhXnZP1dqa6SaAm8lzC7+6k8LJt4fwtR/u4z6vQGbhJmX8tu0JXCKTbJrrC17i7DodEyn/ejG/CedQoxNsf9iHvwEohO5v"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "4c01c9b5-fa28-4c07-a9e2-811dbfd0029b",
+        "text": "Final Boom Laminate Architecture Features",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtUUtr4zAQ/itG56ytqFYd59alZPfQQ6HdUwhmLE1igR5GGtOGsv99JTe5LRjMfI/RzDfHL4YWHXoajGb7igmhzh3qbmx5K2HsRC/HttVSotZy7DnbVMwhgQaCrP9iKoSojQfCtNYWrmGhYUJzmSgjQnCePTf4w2iaMrrtVnQOxlPxHY+ye6x3m2rX8VqeNtW97nlbt6XebrtdLf8DfDsywtI1Ebqyxav5RPs2g0L2NxMaCRWZ4AdlIaVhjmHMMl538rF/yIKzsThoE7MqxGvp0PxJGFOjwbsFrcXYPAe1lKBS88vQ72VsAGNI5Y1BTUBjoCZnkLe59fPgsHQqoKhnfb4TdJ1XAubZGgVlruZGW/CXBS5rlEeG/sJOK5pocEGbs8HvI3HR/uD5k+9C7Lncb/vinrNz8IsbMWaVLJsTfpYjsEO+kK1+huCqF3DruaqnqCZTglkiVgeE8l+nvw/4bsjmAE//AF70qng="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "ab7ae9b2-4e01-43e5-904a-1a4692409bb6",
+        "text": "At the culmination of the development program, there were several design features resulting from detailed analysis and testing efforts done at Roccor. First, the hinges were strengthened by “power bands” in order to keep the slit from collapsing when the system is required to be compressed beyond the material limits of the hinge deformation. Next, the “razor backs” were added which are localized",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVE2P2zYQ/SuEzltZlqV1tbcARdpDERRtetoujBE5kpilRC1J2XGC/Pc+UvauFwhgW9Z88b03w3n8nrHhkadw0Cp7EFl5X1b7Yrvf1VVDjdrVnbyvtrVU9a+yaqs6uxPZyIEUBUL890xa65SeKLBP74bOdgmHgXU/BFjKsiiQczGftAoDrNt9ss5WTyHmPT5umybf3Ylmd59XT3fi+r4tYdglQ13s8/3PLGsOLJk/+8Bj5PGX/srmn5kkZz/gUBxYBm2ngzTk/WF2tkVYkTd1s0OJrNOGD0o7RFl3jhU2/3p2fqNoGhc2ht3mNyuXKJXf/K7DH0u7IXbWxzMOcqDQ2rCBCuBzqTfRyLFSNJb5rLqrI5zn5KB5NlpSxLW5uA1N/UJ9EvMx46nPnpLVh8Nole40r20qyuqXAp/6c1k+FPXDtonZMzIP0zK27BBVJ4u7aW4puz2rfVsVVU3tvmzqtqpUXbNSddsUSarAX2Pfsg9BhIGFXMwY2wuMwnbJpPjIxs5RCgEhe0fjXXQ4Fqf44+F3ZBDndT+Jjiksjr3AdzFBT73onB3hDgQxlKCJzNlrjz9KRLFiCHeddcELZScWFMTfVkrrcvFROx/ScWJAHMquZwbw7GGdULA9i/+WstjK2cIpWtT1yaCEBgunYAxWPDPPqZA3OqyYpDWGZh8BnFBr9aahEjoSeFkwIiomt5DGjjM4+Xgin20Ej/ARV8Fp0Dd61CBwES2BBWewGpOaufgEpVcmK1pH32xEK5+vaBM1UgonnAYtB4FuCmMlGf0tCueYwF8HONSXBTAjBC2fJ6ASi1+RhgUKxlNu4LuXhQUu5LyE9wADzZAUWZcmv0+EygQFIbLrz0CKaZUsQOkyF7Ox5zgWufiT/DtuJqqSRAG2C7tteUtQr2q31mKa3tjSDV9DaRSh/EAR7BqFxixBrxG3dJ8hhO26K9oLzbWbufhgTHz3/DafCcyFN2otaQxSSzkMVvk40NLp9g0s2n/UdvEY+bRdkhSvA0DG2BO1BnjJ4B6ltvs7EXuGjRKf84DBh/d17GOBI+iq1xsnLTSew3o7cLGwA9aVIahHMzwm18RdK14W5L06eTpqZ6e0r/K4G65L5xM5h5Ajf44X/cfT/xJJEIQ="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "62837619-aa33-4840-a9bb-c396c5b57f32",
+        "text": "areas with adjusted thickness used to tune the required torque output of the hinge tapes to develop the required strain energy balance for the deployment. Last, the “lateral lines” 12 were added in the boom, which are a localized laminate change which is utilized to tune the kickoff energy of the system. All these features were developed using the methods described in the previous section for",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVE2P2zYQ/SuEzltZlqV1tbcARdpDERRtetoujBE5kpilRC1J2XGC/Pc+UvauFwhgW9Z88b03w3n8nrHhkadw0Cp7EFl5X1b7Yrvf1VVDjdrVnbyvtrVU9a+yaqs6uxPZyIEUBUL890xa65SeKLBP74bOdgmHgXU/BFjKsiiQczGftAoDrNt9ss5WTyHmPT5umybf3Ylmd59XT3fi+r4tYdglQ13s8/3PLGsOLJk/+8Bj5PGX/srmn5kkZz/gUBxYBm2ngzTk/WF2tkVYkTd1s0OJrNOGD0o7RFl3jhU2/3p2fqNoGhc2ht3mNyuXKJXf/K7DH0u7IXbWxzMOcqDQ2rCBCuBzqTfRyLFSNJb5rLqrI5zn5KB5NlpSxLW5uA1N/UJ9EvMx46nPnpLVh8Nole40r20qyuqXAp/6c1k+FPXDtonZMzIP0zK27BBVJ4u7aW4puz2rfVsVVU3tvmzqtqpUXbNSddsUSarAX2Pfsg9BhIGFXMwY2wuMwnbJpPjIxs5RCgEhe0fjXXQ4Fqf44+F3ZBDndT+Jjiksjr3AdzFBT73onB3hDgQxlKCJzNlrjz9KRLFiCHeddcELZScWFMTfVkrrcvFROx/ScWJAHMquZwbw7GGdULA9i/+WstjK2cIpWtT1yaCEBgunYAxWPDPPqZA3OqyYpDWGZh8BnFBr9aahEjoSeFkwIiomt5DGjjM4+Xgin20Ej/ARV8Fp0Dd61CBwES2BBWewGpOaufgEpVcmK1pH32xEK5+vaBM1UgonnAYtB4FuCmMlGf0tCueYwF8HONSXBTAjBC2fJ6ASi1+RhgUKxlNu4LuXhQUu5LyE9wADzZAUWZcmv0+EygQFIbLrz0CKaZUsQOkyF7Ox5zgWufiT/DtuJqqSRAG2C7tteUtQr2q31mKa3tjSDV9DaRSh/EAR7BqFxixBrxG3dJ8hhO26K9oLzbWbufhgTHz3/DafCcyFN2otaQxSSzkMVvk40NLp9g0s2n/UdvEY+bRdkhSvA0DG2BO1BnjJ4B6ltvs7EXuGjRKf84DBh/d17GOBI+iq1xsnLTSew3o7cLGwA9aVIahHMzwm18RdK14W5L06eTpqZ6e0r/K4G65L5xM5h5Ajf44X/cfT/xJJEIQ=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "1af50154-cf21-46f2-b128-afb12acac354",
+        "text": "material allowable calculations, as well as physical testing for validation of concepts and verification against flight qualification environments.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJxtVE2P2zYQ/SuEzltZlqV1tbcARdpDERRtetoujBE5kpilRC1J2XGC/Pc+UvauFwhgW9Z88b03w3n8nrHhkadw0Cp7EFl5X1b7Yrvf1VVDjdrVnbyvtrVU9a+yaqs6uxPZyIEUBUL890xa65SeKLBP74bOdgmHgXU/BFjKsiiQczGftAoDrNt9ss5WTyHmPT5umybf3Ylmd59XT3fi+r4tYdglQ13s8/3PLGsOLJk/+8Bj5PGX/srmn5kkZz/gUBxYBm2ngzTk/WF2tkVYkTd1s0OJrNOGD0o7RFl3jhU2/3p2fqNoGhc2ht3mNyuXKJXf/K7DH0u7IXbWxzMOcqDQ2rCBCuBzqTfRyLFSNJb5rLqrI5zn5KB5NlpSxLW5uA1N/UJ9EvMx46nPnpLVh8Nole40r20qyuqXAp/6c1k+FPXDtonZMzIP0zK27BBVJ4u7aW4puz2rfVsVVU3tvmzqtqpUXbNSddsUSarAX2Pfsg9BhIGFXMwY2wuMwnbJpPjIxs5RCgEhe0fjXXQ4Fqf44+F3ZBDndT+Jjiksjr3AdzFBT73onB3hDgQxlKCJzNlrjz9KRLFiCHeddcELZScWFMTfVkrrcvFROx/ScWJAHMquZwbw7GGdULA9i/+WstjK2cIpWtT1yaCEBgunYAxWPDPPqZA3OqyYpDWGZh8BnFBr9aahEjoSeFkwIiomt5DGjjM4+Xgin20Ej/ARV8Fp0Dd61CBwES2BBWewGpOaufgEpVcmK1pH32xEK5+vaBM1UgonnAYtB4FuCmMlGf0tCueYwF8HONSXBTAjBC2fJ6ASi1+RhgUKxlNu4LuXhQUu5LyE9wADzZAUWZcmv0+EygQFIbLrz0CKaZUsQOkyF7Ox5zgWufiT/DtuJqqSRAG2C7tteUtQr2q31mKa3tjSDV9DaRSh/EAR7BqFxixBrxG3dJ8hhO26K9oLzbWbufhgTHz3/DafCcyFN2otaQxSSzkMVvk40NLp9g0s2n/UdvEY+bRdkhSvA0DG2BO1BnjJ4B6ltvs7EXuGjRKf84DBh/d17GOBI+iq1xsnLTSew3o7cLGwA9aVIahHMzwm18RdK14W5L06eTpqZ6e0r/K4G65L5xM5h5Ajf44X/cfT/xJJEIQ=",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "214fb0e1-7ec1-45d7-9f64-d3b6c553d9bd",
+        "text": "Razor Backs Power Bands \\ 0.5mm Lateral Lines\n\nFigure 20: ROC-PDS boom design features\n\n394\n\nConclusions and Lessons Learned",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 5,
+            "orig_elements": "eJzllV1vmzAUhv+KxXVKbGNsyOVa7UOKtKrtrtIKGfuQWAOMsFGbVvvvs0kzdWs0aRe9WSUu4D0f+Ph9MJunBFrooPeV0ckKJRkusVBMC8qKRjWyFHmdNTrLiFQMK54sUNKBl1p6GfKfEmXtqE0vPbj5uZV7O/lqB2a780GhFONQ8yzfG+13QSViVgdreh/rNhtKaVouEKECp8XdAv0SCs5THgXCRJGSk8qhKEiJ2zsPXZzk0jxAez1IBcmPEGhMC5U2Iyhvx31MWH5zMLqlln03QdvCuLywaop74ZafjP881UsJo3WxRaV20tfWL8OYYcHP/XrZQewURZoOujkG/H6YA3IYWqOkN7ZfPodb2W8nuZ13a5NAv03uZtX5qrPaNAZmHyim7AyHK7+hdIXzFSlj9RAqq37qahhDVh4H8/AQ9zm5ko92RB+k+u7Qpb2HeN9rh25vEU7zrkPr4NEoW7Q2PcwjHFf5pQtd4yb9CUNNcbhwrWkJtRJMUlZnoigIoxnFKn8zGPKCpjg6LcpURKePQoAzzWbrCc1TdlI5FL1vGD6a7TQConiFrr6en11eXKPa2g5pcGbbowakD/HfKLgxvj1JQcNKrXlGaV6XUlAtalpznivNeFYQnr0ZBQXlqViEIUR+sPgoEJyleBYKfFo4lLw/BmZl/Icv+CU0WcleAvGtDwuFrR3NI+ibmHPqiAClCZMCE2ClILXOMJS51gXWRBZZ82ZwcCbi0U+D83l0/vicicOJQQgRMwqvhLnir2ho8IGK4FGlgg+uGkZbh7SAFi85/0/Z4S9ROLe9aicXXuVQ+IugNTgX79cgxz40fX1u3P0EQo2HSQ=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "d5f96106-fb95-46ed-9613-8c6ba343b130",
+        "text": "The primary lesson learned from this mission goes back to the age old saying of “test early and test often”. Much of the issues in this program stemmed from not doing enough validation testing up front to develop a better understanding of early concepts. A notable lesson from testing early however is that care should be taken to understand the applicable boundary conditions of the system. Early",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJx9VV1v4zYQ/CsLPye2rMROnD4VaNH2oUWBpuhDGhiUuJKIo0iFH3GMw/33zlLWJcAdCgRIxF3uDmdmN0+fV2x5ZJeORq8eaHVT1buqu7mpdc2qa7aH7b7S27rqdrd7bg73qytajZyUVkkh//Oq9T5o41TiWL6tOvucjgObfkg4qeuqwp3L8cnoNOB0e1dOJ29ckntPT0hb46i+267vn69o+d7vD+s7+d7uqrv1/jsH8w2crOI5Jh7lFX+aN7Z/Tarl1RcENCduk/Hu2FoV43EKvkFatT7s9vsaCZ2xfNQmIMuHs1TY/B05xI1WbsxsLYfNT77NQlTc/GLSr7nZKA4+So9jO6jU+LQBB3jNpZ5TI0slOazXk+6WQDpPJaCmyZpWCa7NJWyV67PqC5VPK3b96rmcxnQcvTad4SJSXdW31xV+do91/VDtHrYHuT3h5tHlseGArH05Ce/SNtzq7a26q7Z8e7jbNvqm4sNO63sIrO5vukJV4jdRbfU4ME3BjCqcyXKM3uGXCo41dcGPlAYTaTQxAj31niM1qv1EySPCBCDkraaozsb15Dv6N9fVthUuCGXsmZTTVD59l9iVsF7T77kdJF2KoHhGXePmZhCtD2ok0XhcYDifSHvpwc7nfqBXZY0unJbqEsmT5Lok4DS/svUTKWo4JQ6UnYbOCWguQGd0rXctTymu6UfpoRrLCw3z8y+15+zBn1A3ADGgqkQtaKc4+AwKGqakPrGT7u/NZpZmA0jtxiMmXKOxNgI/LjTMrl7Tz6VVCkrjLGVtwE2OAgLWG8CnsucIBAuxEnnHAEgB7iEMIZ1MySfuOh8KLTxmiwku/ToMs710/R6uBclyWzRsvB+/VYrfJkZTMAknCEFSNwXQSCFPKeOvH6RlZDoxGGNrxrJJgPiMaq3NRRVBZb3rryGY6O+D+Ks0Li15kVXGs7z/JcMG3WW45szO+hOw/+ZI6fklV4t66IFyPrzkuWokbXSx1oxh5kXeCJfBeCYJuRAoEPrCEdnaawx8D1oLE2gDllWkTuibPSElMI7pq66lHuSI5tJgxhG4F5YBLk7cGmVF9DKM/g3jaD9CuCJsngJ++F8LzZWj6V0hxaVl/gbQDhVZHhpYRdYf8oFtyulCzJr+gWvEPUXiD/kX3pZrkU7Fc0LfoF6Z8N+iRC+J2Cg9VAv8krFvy0K9oibPOd+ULVaVyIdXk4eVWmzXEoCJDMz++rXBZT2JnbDOA95rAQSbK8a1bMll/f6BiVBy8VFW3pfn/wArenZv"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "9d6b61f9-2275-434d-8ce7-ce5f383e6f57",
+        "text": "trade studies using both analysis and testing should be carried out with an effort to emulate the final system boundary conditions. Early effort test booms in this program experienced several stress ruptures; these were eliminated by including the long-term storage test in the development and qualification test flows. In addition, early hinge torque tests did not include the boom end fittings or",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJx9VV1v4zYQ/CsLPye2rMROnD4VaNH2oUWBpuhDGhiUuJKIo0iFH3GMw/33zlLWJcAdCgRIxF3uDmdmN0+fV2x5ZJeORq8eaHVT1buqu7mpdc2qa7aH7b7S27rqdrd7bg73qytajZyUVkkh//Oq9T5o41TiWL6tOvucjgObfkg4qeuqwp3L8cnoNOB0e1dOJ29ckntPT0hb46i+267vn69o+d7vD+s7+d7uqrv1/jsH8w2crOI5Jh7lFX+aN7Z/Tarl1RcENCduk/Hu2FoV43EKvkFatT7s9vsaCZ2xfNQmIMuHs1TY/B05xI1WbsxsLYfNT77NQlTc/GLSr7nZKA4+So9jO6jU+LQBB3jNpZ5TI0slOazXk+6WQDpPJaCmyZpWCa7NJWyV67PqC5VPK3b96rmcxnQcvTad4SJSXdW31xV+do91/VDtHrYHuT3h5tHlseGArH05Ce/SNtzq7a26q7Z8e7jbNvqm4sNO63sIrO5vukJV4jdRbfU4ME3BjCqcyXKM3uGXCo41dcGPlAYTaTQxAj31niM1qv1EySPCBCDkraaozsb15Dv6N9fVthUuCGXsmZTTVD59l9iVsF7T77kdJF2KoHhGXePmZhCtD2ok0XhcYDifSHvpwc7nfqBXZY0unJbqEsmT5Lok4DS/svUTKWo4JQ6UnYbOCWguQGd0rXctTymu6UfpoRrLCw3z8y+15+zBn1A3ADGgqkQtaKc4+AwKGqakPrGT7u/NZpZmA0jtxiMmXKOxNgI/LjTMrl7Tz6VVCkrjLGVtwE2OAgLWG8CnsucIBAuxEnnHAEgB7iEMIZ1MySfuOh8KLTxmiwku/ToMs710/R6uBclyWzRsvB+/VYrfJkZTMAknCEFSNwXQSCFPKeOvH6RlZDoxGGNrxrJJgPiMaq3NRRVBZb3rryGY6O+D+Ks0Li15kVXGs7z/JcMG3WW45szO+hOw/+ZI6fklV4t66IFyPrzkuWokbXSx1oxh5kXeCJfBeCYJuRAoEPrCEdnaawx8D1oLE2gDllWkTuibPSElMI7pq66lHuSI5tJgxhG4F5YBLk7cGmVF9DKM/g3jaD9CuCJsngJ++F8LzZWj6V0hxaVl/gbQDhVZHhpYRdYf8oFtyulCzJr+gWvEPUXiD/kX3pZrkU7Fc0LfoF6Z8N+iRC+J2Cg9VAv8krFvy0K9oibPOd+ULVaVyIdXk4eVWmzXEoCJDMz++rXBZT2JnbDOA95rAQSbK8a1bMll/f6BiVBy8VFW3pfn/wArenZv",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "2d512038-7152-4b17-8c19-8960e36b2157",
+        "text": "even full-length booms. It was found that the parts of the boom outside the hinge regions, especially the proximal end fitting, change the boundary conditions of the hinge significantly and therefore increased the hinge output torque. Without this increased torque the hinges would not have met the torque margin requirements, but the increased torque with the end fitting overcame the resistive",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJx9VV1v4zYQ/CsLPye2rMROnD4VaNH2oUWBpuhDGhiUuJKIo0iFH3GMw/33zlLWJcAdCgRIxF3uDmdmN0+fV2x5ZJeORq8eaHVT1buqu7mpdc2qa7aH7b7S27rqdrd7bg73qytajZyUVkkh//Oq9T5o41TiWL6tOvucjgObfkg4qeuqwp3L8cnoNOB0e1dOJ29ckntPT0hb46i+267vn69o+d7vD+s7+d7uqrv1/jsH8w2crOI5Jh7lFX+aN7Z/Tarl1RcENCduk/Hu2FoV43EKvkFatT7s9vsaCZ2xfNQmIMuHs1TY/B05xI1WbsxsLYfNT77NQlTc/GLSr7nZKA4+So9jO6jU+LQBB3jNpZ5TI0slOazXk+6WQDpPJaCmyZpWCa7NJWyV67PqC5VPK3b96rmcxnQcvTad4SJSXdW31xV+do91/VDtHrYHuT3h5tHlseGArH05Ce/SNtzq7a26q7Z8e7jbNvqm4sNO63sIrO5vukJV4jdRbfU4ME3BjCqcyXKM3uGXCo41dcGPlAYTaTQxAj31niM1qv1EySPCBCDkraaozsb15Dv6N9fVthUuCGXsmZTTVD59l9iVsF7T77kdJF2KoHhGXePmZhCtD2ok0XhcYDifSHvpwc7nfqBXZY0unJbqEsmT5Lok4DS/svUTKWo4JQ6UnYbOCWguQGd0rXctTymu6UfpoRrLCw3z8y+15+zBn1A3ADGgqkQtaKc4+AwKGqakPrGT7u/NZpZmA0jtxiMmXKOxNgI/LjTMrl7Tz6VVCkrjLGVtwE2OAgLWG8CnsucIBAuxEnnHAEgB7iEMIZ1MySfuOh8KLTxmiwku/ToMs710/R6uBclyWzRsvB+/VYrfJkZTMAknCEFSNwXQSCFPKeOvH6RlZDoxGGNrxrJJgPiMaq3NRRVBZb3rryGY6O+D+Ks0Li15kVXGs7z/JcMG3WW45szO+hOw/+ZI6fklV4t66IFyPrzkuWokbXSx1oxh5kXeCJfBeCYJuRAoEPrCEdnaawx8D1oLE2gDllWkTuibPSElMI7pq66lHuSI5tJgxhG4F5YBLk7cGmVF9DKM/g3jaD9CuCJsngJ++F8LzZWj6V0hxaVl/gbQDhVZHhpYRdYf8oFtyulCzJr+gWvEPUXiD/kX3pZrkU7Fc0LfoF6Z8N+iRC+J2Cg9VAv8krFvy0K9oibPOd+ULVaVyIdXk4eVWmzXEoCJDMz++rXBZT2JnbDOA95rAQSbK8a1bMll/f6BiVBy8VFW3pfn/wArenZv",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "d91a2131-1e1b-4406-85bf-6ca37660096f",
+        "text": "torque from the electrical harness.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJx9VV1v4zYQ/CsLPye2rMROnD4VaNH2oUWBpuhDGhiUuJKIo0iFH3GMw/33zlLWJcAdCgRIxF3uDmdmN0+fV2x5ZJeORq8eaHVT1buqu7mpdc2qa7aH7b7S27rqdrd7bg73qytajZyUVkkh//Oq9T5o41TiWL6tOvucjgObfkg4qeuqwp3L8cnoNOB0e1dOJ29ckntPT0hb46i+267vn69o+d7vD+s7+d7uqrv1/jsH8w2crOI5Jh7lFX+aN7Z/Tarl1RcENCduk/Hu2FoV43EKvkFatT7s9vsaCZ2xfNQmIMuHs1TY/B05xI1WbsxsLYfNT77NQlTc/GLSr7nZKA4+So9jO6jU+LQBB3jNpZ5TI0slOazXk+6WQDpPJaCmyZpWCa7NJWyV67PqC5VPK3b96rmcxnQcvTad4SJSXdW31xV+do91/VDtHrYHuT3h5tHlseGArH05Ce/SNtzq7a26q7Z8e7jbNvqm4sNO63sIrO5vukJV4jdRbfU4ME3BjCqcyXKM3uGXCo41dcGPlAYTaTQxAj31niM1qv1EySPCBCDkraaozsb15Dv6N9fVthUuCGXsmZTTVD59l9iVsF7T77kdJF2KoHhGXePmZhCtD2ok0XhcYDifSHvpwc7nfqBXZY0unJbqEsmT5Lok4DS/svUTKWo4JQ6UnYbOCWguQGd0rXctTymu6UfpoRrLCw3z8y+15+zBn1A3ADGgqkQtaKc4+AwKGqakPrGT7u/NZpZmA0jtxiMmXKOxNgI/LjTMrl7Tz6VVCkrjLGVtwE2OAgLWG8CnsucIBAuxEnnHAEgB7iEMIZ1MySfuOh8KLTxmiwku/ToMs710/R6uBclyWzRsvB+/VYrfJkZTMAknCEFSNwXQSCFPKeOvH6RlZDoxGGNrxrJJgPiMaq3NRRVBZb3rryGY6O+D+Ks0Li15kVXGs7z/JcMG3WW45szO+hOw/+ZI6fklV4t66IFyPrzkuWokbXSx1oxh5kXeCJfBeCYJuRAoEPrCEdnaawx8D1oLE2gDllWkTuibPSElMI7pq66lHuSI5tJgxhG4F5YBLk7cGmVF9DKM/g3jaD9CuCJsngJ++F8LzZWj6V0hxaVl/gbQDhVZHhpYRdYf8oFtyulCzJr+gWvEPUXiD/kX3pZrkU7Fc0LfoF6Z8N+iRC+J2Cg9VAv8krFvy0K9oibPOd+ULVaVyIdXk4eVWmzXEoCJDMz++rXBZT2JnbDOA95rAQSbK8a1bMll/f6BiVBy8VFW3pfn/wArenZv",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "c85db98b-b340-41c5-a2e6-26b52601a8ef",
+        "text": "Additional critical lessons learned in this program were based on the lack of accepted qualification methods for high strain composite materials. At the start of this program, it was identified that the allowable material properties based on existing standards would not be enough for characterizing the relevant performance properties for thin flexible composite structures. To qualify these",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtU02P2jAQ/SujnCkkIQGyt5UqtaeqUrcntIom9gSsOnZqT2Dpqv+948AKDpWQwG/mvfl4w/49I0sDOW6Nzp4ga6iuaFdVRbmhco26wrWq5bXuu92myzFbQDYQo0ZGyX/PlPdBG4dMcX5bvPiJ2yOZw5EFKcs8F84NPhvNR0GL7YyO3jhOvP2+aDbL7QK2eblsXhfw8d5tmuVuftf59r/AlSFIFi+RaUhTfDdvZH+MqCj7KwFNTIqNd62yGGM7Bt9JWr5s6jzfSUJvLLXaBMny4ZIUVj8jhbjS6IaJrKWw+uzVlBYVV18Mf526FVLwMdVo1RG587ySHcg0Nz2HAyWlBJbLUfcfAb6McwDH0RqFqa/VLWzRHSY8zKvcZ+QO2euMRm4Hr01vaDapzMvqUy6f+qUsn/L6qWgSexRm66ahoyBZmxkJd2s7UrqocJsXVDXbotPrnJpa612uC9yt+3lVTG/JtexZa5M6QwsqyC8lPyzF6F2UbwyONBgHfDQRZJ2HgAOcKRB0GCXkU4jAovoFvgdUikYW/PeEVsa4Tg1ySEevI/Q+wFHuBSIHFFXlh9FHwwSD3FUwaOMSnnmWjIyBk+Zj6QUYhjNGMFrmnfckcbwy0Fp/xs7e1RJtpMCG4r1fejORjTukCk5jkL7OfrIanGfoCMj5SVpMvYrfAVXS+pMIqUiQv9EJHYPoSsqATtFjmUSTjh30VgqlZu5DytST4imQTPnibzu6JNn4GEz7xnshKTFrSooZxjTdbZuaoljWPRqE0sbVHk0nkwZmD1FMiNc64IiEmZy6GnFCOyX0DPOFg5oi+4HCMt3ZxwF/wxBE40Qv6Wj+vv4Dhx50Ig=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "41cae992-bc6f-4f9f-a35a-b4b39e24e28b",
+        "text": "structures in a relevant manor the simple methods described in this paper were devised to satisfy the needs of a high value new space customer.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtU02P2jAQ/SujnCkkIQGyt5UqtaeqUrcntIom9gSsOnZqT2Dpqv+948AKDpWQwG/mvfl4w/49I0sDOW6Nzp4ga6iuaFdVRbmhco26wrWq5bXuu92myzFbQDYQo0ZGyX/PlPdBG4dMcX5bvPiJ2yOZw5EFKcs8F84NPhvNR0GL7YyO3jhOvP2+aDbL7QK2eblsXhfw8d5tmuVuftf59r/AlSFIFi+RaUhTfDdvZH+MqCj7KwFNTIqNd62yGGM7Bt9JWr5s6jzfSUJvLLXaBMny4ZIUVj8jhbjS6IaJrKWw+uzVlBYVV18Mf526FVLwMdVo1RG587ySHcg0Nz2HAyWlBJbLUfcfAb6McwDH0RqFqa/VLWzRHSY8zKvcZ+QO2euMRm4Hr01vaDapzMvqUy6f+qUsn/L6qWgSexRm66ahoyBZmxkJd2s7UrqocJsXVDXbotPrnJpa612uC9yt+3lVTG/JtexZa5M6QwsqyC8lPyzF6F2UbwyONBgHfDQRZJ2HgAOcKRB0GCXkU4jAovoFvgdUikYW/PeEVsa4Tg1ySEevI/Q+wFHuBSIHFFXlh9FHwwSD3FUwaOMSnnmWjIyBk+Zj6QUYhjNGMFrmnfckcbwy0Fp/xs7e1RJtpMCG4r1fejORjTukCk5jkL7OfrIanGfoCMj5SVpMvYrfAVXS+pMIqUiQv9EJHYPoSsqATtFjmUSTjh30VgqlZu5DytST4imQTPnibzu6JNn4GEz7xnshKTFrSooZxjTdbZuaoljWPRqE0sbVHk0nkwZmD1FMiNc64IiEmZy6GnFCOyX0DPOFg5oi+4HCMt3ZxwF/wxBE40Qv6Wj+vv4Dhx50Ig==",
+            "is_continuation": true
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "c4b6a398-24e4-40b9-9b76-bda5d8711e3b",
+        "text": "References\n\n1 Adams, D., Mobrem, M., “MARSIS Antenna Flight Deployment Anomaly and Resolution”, AIAA.ASME.ASCE.AHS.ASC Structure, Structural Dynamics, and Materials Conference, Newport, Rhode Island. (2006)\n\n2 Yee, J., Pellegrino, S., “Composite Tube Hinges”, Journal of Aerospace Engineering, October 2005, pp 224-231.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJztk99r2zAQx/8V4acNXMeWJcfuW2i7tWXdStI9jKwYWT4nAlsyskwXyv73nZy0lC0vK/RlDIKj+96dfD8+Xj8G0EIH2pWqDk5JEOeskHOR8qZqeJrN84zJmuV5k7NGZlQGIQk6cKIWTmD8YyCNsbXSwsEw2a3YmdGVW1CbrUOF0jjGnIP8oGq3RTWZT2pvlHY+b73OYxbRkBQxjdL7kDzb6TzKvV1k6DhiT/EoBMNucND5Hm7VD2hXvZAQ/ERHDQ6kU0aXshXDUPbWVBgWRzmnnGFAo1ooa2Uxytidv2H2dQA7zGqhuxHaFuzs3MjRj2mYfVTucqxmAqwZ/DtKuRWuMm6GE8BeDvdp0YG/yYs06uvmyeF2/eQQfd8qKXxds4O7FXozis00yHUAehPcT+rgys7UqlEwrYjGlJ3E+ON3lJ7G/DQpfHaPmaUeuwosRmW+cwc//AqCJTRgQUuYynuq4E65dprQ7wzIJKFx1mSSpxIozzNOG1kLVnBWAI2TN2MgKXiU4U7nNOJ+xwc7ibNiD0XC2Dzix5R9zus4KGIWF/8qB5Ni/+IDfwlOQha16IaQnEchuTGVhQ7/8fx9RA7kzWK5ulqRhXagtSAfWr9vcg59a3Z+SOgxnWh3ROiaLGEw7ej7nJLrkCyuFotosbq5wMcZPi5X/kBWzo7SjRbC56NoyfkOR6kk1uIvu0HWrBLtQM6MPsAdks/w0BvrQrLcmhrI1YCTrCPyDvHL3r9E/5Ma3JWn5Aj9TZJlVcKqIi9SyXLIOI9TJnBIgs9Tyd+QfholE9t5xPb474UkTQ+w83iP/5/KPum1/PM0/8//Ef4p+QbI1TUSf+v731ilDWL5/AWcma43g3JA7sYKyKXSWPYT39dmtBrRNQ1ZPE2JXOiN0oDw6k1IvuCksU6ChOAS+x5ZYSc0TaLjsN7/AoxRWoU="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "5bffd6c0-3320-4b9e-9c3b-e6c6fcba9c75",
+        "text": "3 Mallikarachchi, H., Pellegrino, “Deployment Dynamics of Composite Booms with Integral Slotted Hinges”, 50th AIAA/ASME/ASDCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference, Palm Springs, California (2009)",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtUlFr2zAQ/ivCTxt4sS3Hjt23LBlLYYVCuqesmLN0TsRkyUgybSj97zt5bfcyMLL03fed7r7T6SVBjSOa0CmZ3LCkqIYaStE2dTv0DS82ZS3bci3rqu3bGvokZcmIASQEIP5LIqx1UhkI6JezhqudQ3dBdb4EQjjPc9K8wU9KhguhxWZBJ6tMiLrTqWjLVZGyoijp/5iyD4DzdpUvQJVvVvV/kb8ighJ/9QHH2Mm9ekZ9nEBg8koBiQFFUNZ0QoP33eRsT7R81XLebIgwKI2dVI5Y1l1jhuynR+czCWacUWt02d6KOZrls+8qHOY+A3TWxzs6cYHQ25CRD9TRWz4DI8ZMEeSrSQ7vgXCdlgBMk1YCYl3ZW1iDOc9wXuw8JWjOyeOC+tCNVqpB4TIonvP1l5y+6oHzm7y6KdqonkjZmXns0RGrXhD3b7x5s27FBspq6IeqrDdNvRZy3TRDsx5EzcViVcDnOLmkZHegtfoNDsRFXFTKDquU3Ucrzk4Zm7JfM88LscdJ22v0he2v1LISntmB7ew4Wa8Csq/Wjp49qXBhtyaQGDQ7ahsCSnZQhnpdEsmUVTlxtrfbbbY93n2jZb+j9XCk3Y4dg5tFmB369GNPmd7vTBkYSSUHdAq0p/vNgNS7QCoa9MiOE1V9Jt4OtBqsMwrYJ3qe7efo3PtIfigfbuMben38A4OG+Yw="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "af539bcd-8e3c-42d5-a253-3b07b7cea0e9",
+        "text": "4 Mallikarachchi, H., Pellegrino, S., “Design and Validation of Thin-Walled Composite Deployable Booms with Tape-Spring Hinges”, 52nd AIAA/ASME/ASDCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference, Denver, Colorado (2011)",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJxtkm9r2zAQxr+K8KsNHP9R7MTuuywZS2GFQrrtRVaMLJ1tMVkykrw2lH73nby07MXACOt3d49Oz+n8EoGCEbRvpIhuSJTVWSvydsPbzbaqq23O17zOa95SkVO+LaKYRCN4JphnmP8ScWOskJp5cMtesYuZfTOA7AePhNIsw5orfpLCD0jz7UInI7UPdedzXm2TKiY5pZukfozJO1jTMskWUGZVsv4v+VuEKHIX52EMN7mXz6BOE+MQvWJAgAfupdENV8y5ZrKmxbQsqfMqLzChkwoaIS1mGXsJCuk3B9algulxBqXApgfD52CWS79If5zblIE1LpzR8IH51vgUfcAbXfU0GyEoBUiTSXRvAX+ZlgCbJiU5C32l17Biup9Zv9h5jkD30eNCnW9GI2QnYRkUzWixyvArHyi9ycqbvA7VE1Y2eh5bsJi1WYj9Z7xVUfMtW5dd25VrHPGm4KKoqq4qOr6hfLHKw3OYXFSQO6aU/MUs4wMfZEyOSUzugxW9ldrE5IT7nzPNcn4AJ3tNmBbkO1NSLFcipiMPg9SrH6gDguzNOBknPZADTMpcWKuAfDJmdORJ+oE8sAlWpwm1e3LEBdwiLmJSUhTe3e526e509xmXwx7X4wn/9uTk7cz9bMHF7/9MkcMF7ZccYejqDl+olUw57EJ3gJ5wiLEP/RtsjEwZy4QhH/C8/GNw8m1EX6Xzt+FNvT7+ATq8/jo="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "cb183cb3-1727-4e97-a1bd-8b4b08b8349b",
+        "text": "5 Mallikarachchi, H., Pellegrino, S,. “Optimized Designs of Composite Booms with Integral Tape-Spring Hinges” 51st AIAA/ASME/ASDCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference, Orlando, Florida (2010)\n\n6 Pellegrino, S., Kebadze, E., Lefort, T., and Watt, A., “Low-Cost Hinge for Deployable Structures” Caltech, July 2002(http://www.pellegrino.caltech.edu/publications)",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJztU01v2zgQ/SuETl1AkSha1EdurtM22U3RAs5iD2lgUOTIIkqJAknBdYr+9x3JTtpdtJcCvRUQCM3jzGj05r37zxEY6GEIO62iSxLlJS8ko5K3MpNF0WLMVpCVdCUVrymNYhL1EIQSQWD+50ha65QeRAC/xEYc7RR2Heh9FxBhjFKsOcMHrUKHKDac0dHqIcx19/dZXSc8JtmK8WT1EJNnIGc0KReAZ/QHyKkIocgffYB+/pP3+hOY7SgkRF/wQkEAGbQddtII73ejsw2m0aRmWZVjQqsN7JR2mGXdce6Q/u3B+VSJoZ/AGHDplZXTTJZP3+hwPTWpAGf9/I2d7ERobEiRB/yjc79B9DB3mkGWjKp9ugjHcbkQ42i0FPNc6fnaiGE/if1C530Ewz56WFAfdr1VutWwLIpRll9QfPgdY5eUX2b1XD1i5W6Y+gYcZhUL4r6ul1Z5LUux4m3T8lVRVkUuVV5VbZW3smByoSrAp3lzESdvhTH6o3BCdrLTMblOYvJ+pmLv9GBjso0T8mFiNJPvxqB7/QiKXIHX+8ET25KN7UfrdQDy0trek4MOHbkZApYLQ+7ECBfbETvtyTUe4JdWivDMB7K+Wa/T9fbtKzyuNnheb/FtQ7bBTTJMDnz8/I7Nro7ItZYIikHh3AGcFsbjCEMLSICEmLxzyK3CsV8b67QS5AV+jv4x0/a0j1vtw80sIOTh/9aoS5WvWFWWvGoKVtbAQTBei0y0bcaL/BdagyXlrPusTPjJGmegyp+MQMuk+D6yFP2kNWjFfjvjO84o/usCdMVf0Aj1iCJ7hcEttNaFmNwlJzn+IwJGa4xOZrm1h4uNRZEvsieYjK4ZjT2KxsA3Cj/7YSMMLqiLyZ+TORIUDXvRhTBepunhcEjG50kSeUpMQE3pODVP/PkfSPzhX/sM280="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "559379f2-b3cd-4896-9749-73de038e2a22",
+        "text": "7 Fernandez, J., and Murphey, T., “A Simple Test Method for Large Deformation Bending of Thin High Strain Composite Flexures” AIAA SciTech Forum, Kissimmee, FL. (2018).\n\n8 Sanford, G., Biskner, A., and Murphey, T., “Large Strain Behavior of Thin Unidirectional Composite Flexures,” 51st AIAA/ASME/ASCE/AHS/ASC Structures, Structural Dynamics, and Materials Conference, Orlando FL. (2010)",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJztk01vnDAQhv+KxamRKBiWz9w2STdJm6iVdnPaRitjD4tVsJFt2myj/vcO7Eelanup1FslhIbXM2Pm9eP1qwctdKDcRgrvknhlUsyqjIokimqRVqygoqyrKq4hpUlCmecTrwPHBHMM8189rrURUjEHdvpu2U4PbtOA3DYOlTimFGsO8jcpXINqlE9qr6VyY916HZU0QClKChqUzz45CWlSBPkkpDQP8rPKvgglz+6sg26c5JN8gXbZMw7eD1wQ4IA7qdWGt8zaTW90hWlYR2lWYEItW9gIaTBLm93YIXyyYGwomOoGaFsw4Y3mw2iWDW+luxuqkIHRdtxjwxvmKu1C9AEnOvRTrIOx0yjGQS/q44Lb9dMC6/tWcjb+V3hYbpnaDmw72bn2QG2950m1btNpIWsJ00HFNE7eUnzSVRxf0vQyKsfqHis3augqMJiVTYr5dby0SEqes1laV3U6y/IiS7hIiqIukppnMZ+scvAynpyXkwUYxZSA7z55H/gEQ/I4mL6BnU9WKHweYhrxOVnKrm+BrHBM8giu0YLU2pAHZrZAbgDjbpqRXIFCWLZE12TVSEXukBKydIZhfK27XlvpgCxaeBkM2Km9IPP7OW7B5Qp4QxbaDJ1PPkhrZdcB+GTxEJA3mFhcBKMDR2sfpHX3Iws40u+Ux9GsTFiR57yocsjqLK9Lir6gKwVjef1PKY8nhPMgOVI+ClmSBLMT09lZZV/0l5RHWTb7T/kZyguyZAoJFT65RaSvpP2iwPhk/mfg91wfsL2Chn2VSPuR6Scl9wbjuKw9g7V/4DqN8LqMcIfz5eM7fF3j6245BmPzgbsp+xRjs5sdmi25Pfwa8mgkay1uompABzjeh48GzRX6dC/oxflr8fwTEc3aMg=="
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "0c9647db-48f5-4940-ad9b-9c8904ada6bf",
+        "text": "9 Murphey, T., Peterson, M., Grigoriev, M., “Large Strain Four-Point Bending of Thin Unidirectional Composites”, Journal of Spacecraft and Rockets, 52, Feb 2015, pp 882-895.\n\n10 Rose, T., K. Medina, W. Francis, K. Kawai, A. Bergan, and J. Fernandez. \"Viscoelastic Behaviors of High Strain Composites.\" In 2019 AIAA Spacecraft Structures Conference. 2019.",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJztk8tu2zAQRX+F0FqRJVrP7NIWeQcImqRdJIExIkc2UZkUSCqpG/TfO5TjpGjTTYHuCnhh3plLae4c3T5F2OMatV8oGe2zqC3zNkvbEqp5xrusaZoyK6tSFm01F6KVUcyiNXqQ4IH6nyJhjJVKg0c3nXvYmNEvVqiWK08K52lKnmf5UUm/IjWrJnUwSvvgu73N6nlSxywr8yzJ7mP2IlRpncwnoaB//E1layIpchvncR0muVRfsb8aQGD0nQoSPQqvjF6IHpxbDNa01JYmdVOV9JyoUz0upLLUZewm3DC7cWjdTIJej9j3aGcfjBhDWG52pPzx2M4ArXHhGQuxAt8aP6McaKLn+zSsMdwURJ4MstsV/GaYCjAMvRIQ3mv2XO5BL0dYTnHeRqiX0f2kOr9YG6k6hdOieMrzvZR+xTXn+2mxnzXBPZBzocd1i5a6ykmxr+tN67wRFcyLru2KeVnVZS5kXtddnXei5GKKyuPXsLmoYRejHVa4idl1ErNLStA6o2N2Qacjq5bGKnzYHu9GnmbiHOwS2ZW3oDQ7NKPduwwbZu9QEyNLZjp2vaLSjVbbpGlu6Nl7sx6MU5TSdI2M2Sl5Q4UM0wqFhc4z0JJ9NOILehezghZ/iC0jQxGzYWB1zffqpkhCDLt8z5XzJwEImutX1IWAhvO2AWjzvJ5jm9bQVZIDVG1Xyvm/Q73hSTlxXCbNxPFOqPgL2FVSvK1Mpr9EvQpR/Sf9N9KzlLhyuOX8LGEXGPYcs88JO7SghXKTfAaPoGJ2kBDQdgn0JQQiT6kJiVYt8VvC7qJPygmDYQwlqHEFD8pYF1A+JlB2X8cr88ldxE504LhhBycHBz8TT82j8KNFRwbdIQ0oMJl6/8D5/Q9oJMqA"
+        }
+    },
+    {
+        "type": "CompositeElement",
+        "element_id": "d694c1cf-89d7-428c-82f6-7bc7c324021a",
+        "text": "11 Sharma, A. H., T. J. Rose, A. Seamone, T. W. Murphey, and F. Lopez Jimenez. \"Analysis of the Column Bending Test for Large Curvature Bending of High Strain Composites.\" In AIAA Scitech 2019 Forum, p. 1746. 2019.\n\n395",
+        "metadata": {
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test2.pdf",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "last_modified": "2024-04-05T22:05:19",
+            "page_number": 6,
+            "orig_elements": "eJztk01vnDAQhv/KiPPWmG/IbdsqTaJUqrob9bCJkLEHsAQ2sk2bTZT/HkM+WkVRb71V4sIz8w749TuH+wAHHFG5WorgBIKIU0wTkSeYJVFDkScFi5qsjURT8bbIgg0EIzommGO+/z7gWhshFXNo1/eBHfXs6h5l1ztP4phSr3nGv6RwvadRsdJJS+UW3eEQlQVJNr6QV6S82cArKPOS0BVktCDFu+RJ5FFgj9bhuJzkm7zFYTcxjsGDLwh0yJ3UquYDs7aejG58GyVVnFZ+RtDKAWshje/S5rhMCK8sGhsKpsYZhwFN+FnzeTHLhl+kO5ubkKHRdvlGzXvmGu1C74M/0fM8xUZcJi0wJpNoXwruOK0FNk2D5Gz5r/C5PDDVzaxb7TwEqLrgZqXW1aMWspW4XlRM4/QD9U+2j+MTmp1E1aKevLJW89ig8V35Sszv66VlWvGCJVnbtFmSF2WecpGWZVumLc9jvlrl8NatWYhg1zMzsg1sCZyRDewJXBD4ri2uaIds1ApX/oPA19lMPR43wJSAUwKXesI7uJDeMbwjcB1sFRuOVlrQLbge4ZMe5lHBR1Q+QR3svUvQagOXzHS+OpufzM0GXxu87MzHCnbOMKm8fJy0ld5cch3AuYLt+XYLO+4J7yGmUQWn2szjBibiM5LmZIVk8enlAi6ldedLYvzB3+5CJvwGZG1RVlUjooIXWZPytBV5mycFFvyf7UIZ50usY1pkJFmC/gIimjwlvyzp++BJ8tdN+B/0t0FPquzPTFwp/6PYaSPvUOyXnoebRx7skiU="
+        }
+    }
+]

@@ -327,9 +327,9 @@ def test_chunking_result(setup_fixture):
     )
     
     # Get chunks
-    partitioned_docs = doc_processor.load_and_partition_documents(
+    partitioned_docs = doc_processor.load_partitioned_documents(
         setup_fixture['docs'],
-        partition_by_api=False
+        partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
     )
     chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
     
@@ -563,9 +563,9 @@ def test_get_available_indexes(setup_fixture, test_index):
         )
         
         # Get chunks
-        partitioned_docs = doc_processor.load_and_partition_documents(
+        partitioned_docs = doc_processor.load_partitioned_documents(
             setup_fixture['docs'],
-            partition_by_api=False
+            partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
         )
         chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
 
@@ -692,9 +692,9 @@ def test_index_with_different_metadatas(setup_fixture, test_index):
         )      
 
         # Process and index documents
-        partitioned_docs = doc_processor.load_and_partition_documents(
+        partitioned_docs = doc_processor.load_partitioned_documents(
             setup_fixture['docs'],
-            partition_by_api=False
+            partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
         )
         chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
         db_service.index_data(chunk_obj)
@@ -758,9 +758,9 @@ def test_get_docs_df(setup_fixture, test_index):
         )
 
         # Process and index documents
-        partitioned_docs = doc_processor.load_and_partition_documents(
+        partitioned_docs = doc_processor.load_partitioned_documents(
             setup_fixture['docs'],
-            partition_by_api=False
+            partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
         )
         chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
         db_service.index_data(chunk_obj)
@@ -835,9 +835,9 @@ def test_add_clusters(setup_fixture, test_index):
         db_service.initialize_database(
             clear=True
         )
-        partitioned_docs = doc_processor.load_and_partition_documents(
+        partitioned_docs = doc_processor.load_partitioned_documents(
             setup_fixture['docs'],
-            partition_by_api=False
+            partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
         )
         chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
         db_service.index_data(chunk_obj)
@@ -933,9 +933,9 @@ def test_database_setup_and_query(test_input, setup_fixture):
         logger.info('Vectorstore created.')
 
         # Process and index documents
-        partitioned_docs = doc_processor.load_and_partition_documents(
+        partitioned_docs = doc_processor.load_partitioned_documents(
             setup_fixture['docs'],
-            partition_by_api=False
+            partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
         )
         chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
         db_service.index_data(chunk_obj)
@@ -1003,9 +1003,9 @@ def test_process_user_doc_uploads(setup_fixture):
         )
         
         # Process and index initial documents
-        partitioned_docs = doc_processor.load_and_partition_documents(
+        partitioned_docs = doc_processor.load_partitioned_documents(
             setup_fixture['docs'],
-            partition_by_api=False
+            partition_dir=os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
         )
         chunk_obj, _ = doc_processor.chunk_documents(partitioned_docs)
         db_service.index_data(chunk_obj) 

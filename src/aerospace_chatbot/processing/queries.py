@@ -69,24 +69,6 @@ class QAModel:
             {"messages": [("human", query)]}, 
             self.memory_config
         )
-        # if not hasattr(self, 'result') or self.result is None:
-        #     self.result = [answer_result]
-        # else:
-        #     self.result.append(answer_result)
-
-        # # Add sources to response, create an array as more prompts come in
-        # answer_sources = [data.metadata for data in self.result[-1]['references']]
-        # answer_scores =  self.result[-1]['scores']
-        # if not hasattr(self, 'sources') or self.sources is None:
-        #     self.sources = [answer_sources]
-        #     self.scores = [answer_scores]
-        # else:
-        #     self.sources.append(answer_sources)
-        #     self.scores.append(answer_scores)
-
-        # Add answer to memory
-        # self.ai_response = self.result[-1]['answer'].content
-        # self.memory.save_context({'question': query}, {'answer': self.ai_response})
 
     class State(MessagesState):
         """
@@ -114,11 +96,11 @@ class QAModel:
                 retrieved_docs, 
                 top_n=self.k_rerank
             )
+            self.logger.info(f"Reranked docs")
         else:
             reranked_docs = retrieved_docs
             if self.k_rerank is not None:
                 self.logger.warning(f"Rerank service is not set, but k_rerank is set to {self.k_rerank}. Reranking will not be performed.")
-        self.logger.info(f"Reranked docs")
 
         return {"context": reranked_docs}
 
