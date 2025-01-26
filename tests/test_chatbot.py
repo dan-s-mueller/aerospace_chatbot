@@ -275,6 +275,72 @@ def test_load_documents(setup_fixture):
         os.remove(invalid_path)
     except:
         pass
+def test_load_partitioned_documents(setup_fixture):
+    """
+    Test loading partitioned documents with various scenarios.
+    """
+    logger = setup_fixture['logger']
+    logger.info("Starting load_partitioned_documents test")
+    
+    doc_processor = DocumentProcessor(
+        embedding_service=setup_fixture['mock_embedding_service']
+    )
+    
+    # Test Case 1: Loading from existing partitioned files in test_processed_docs
+    partition_dir = os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'test_processed_docs')
+    assert os.path.exists(partition_dir), "test_processed_docs directory should exist"
+    
+    partitioned_docs = doc_processor.load_partitioned_documents(
+        setup_fixture['docs'],
+        partition_dir=partition_dir
+    )
+    # Verify the files exist and have correct format
+    assert len(partitioned_docs) > 0, "Should find partitioned documents"
+    for doc in partitioned_docs:
+        assert os.path.exists(doc), f"Partitioned file {doc} should exist"
+        assert doc.endswith('-partitioned.json'), f"File {doc} should end with -partitioned.json"
+        # Verify the JSON is valid and has expected structure
+        with open(doc, 'r') as f:
+            data = json.load(f)
+            assert isinstance(data, list), "Partitioned file should contain a list"
+            assert len(data) > 0, "Partitioned file should not be empty"
+            # Check first element has expected keys
+            assert all(key in data[0] for key in ['text', 'type']), "Partitioned data should have required fields"
+    
+    # Test Case 2: Loading with non-existent partition directory
+    non_existent_dir = os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'non_existent_dir')
+    with pytest.raises(FileNotFoundError):
+        doc_processor.load_partitioned_documents(
+            setup_fixture['docs'],
+            partition_dir=non_existent_dir
+        )
+    
+    # Test Case 3: Loading with empty partition directory
+    empty_dir = os.path.join(os.path.dirname(setup_fixture['docs'][0]), 'empty_dir')
+    os.makedirs(empty_dir, exist_ok=True)
+    with pytest.raises(FileNotFoundError):
+        doc_processor.load_partitioned_documents(
+            setup_fixture['docs'],
+            partition_dir=empty_dir
+        )
+    
+    # Test Case 4: Loading with invalid JSON in partitioned file
+    invalid_json_path = os.path.join(partition_dir, 'invalid-partitioned.json')
+    with open(invalid_json_path, 'w') as f:
+        f.write('{"invalid": json}')  # Intentionally malformed JSON
+    
+    with pytest.raises(FileNotFoundError):
+        doc_processor.load_partitioned_documents(
+            [invalid_json_path],
+            partition_dir=partition_dir
+        )
+    
+    # Cleanup only the files we created for testing
+    try:
+        os.remove(invalid_json_path)
+        os.rmdir(empty_dir)
+    except:
+        pass
 
 def test_partition_methods(setup_fixture):
     """
