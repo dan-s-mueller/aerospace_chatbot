@@ -31,7 +31,6 @@ from aerospace_chatbot.services import (
     EmbeddingService, 
     RerankService,
     LLMService,
-    NoSourceCitationsFound,
     InLineCitationsResponse,
     CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
@@ -865,7 +864,7 @@ def test_qa_prompt_generation(setup_fixture):
         logger.error(f"Failed to parse response: {response.content}")
         raise e
 
-    # Test with empty context - should raise NoSourceCitationsFound
+    # Test with empty context
     empty_prompt = QA_PROMPT.format(
         context="",
         question=test_question
@@ -875,7 +874,7 @@ def test_qa_prompt_generation(setup_fixture):
 
     with pytest.raises(Exception) as exc_info:
         PydanticOutputParser(pydantic_object=InLineCitationsResponse).parse(response.content)
-    assert "No source citations found" in str(exc_info.value)
+    assert "no source citations were found" in str(exc_info.value)  # TODO use custom exception
 
 def test_database_setup_and_query(test_input, setup_fixture):
     """

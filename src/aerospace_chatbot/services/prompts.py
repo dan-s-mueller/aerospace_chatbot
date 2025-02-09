@@ -6,10 +6,6 @@ import re
 from typing import List
 import logging
 
-class NoSourceCitationsFound(ValueError):
-    """Raised when no source citations are found in the content, indicating no relevant information in the knowledge base."""
-    pass
-
 class InLineCitationsResponse(BaseModel):
     content: str = Field(description="The main content of the response with in-line citations.")
     citations: List[str] = Field(description='List of extracted source IDs from the response. Expected format (ignore any forward or back slashes between <>): <source id="#">')
@@ -31,7 +27,7 @@ class InLineCitationsResponse(BaseModel):
         
         # If no citations are found at all, raise our custom exception
         if not correct_matches:
-            raise NoSourceCitationsFound('No source citations found. This likely means no relevant information was found in the knowledge base. Consider rephrasing your question.')
+            raise ValueError("Sorry, but I don't know the answer to your question because no source citations were found. This means your last question did not have any relevant answers from the knowledge base. Reprase your question and ask again.")
         
         return v
 
