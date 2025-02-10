@@ -465,22 +465,23 @@ class DatabaseService:
         """
         Upsert documents or questions. Used for all RAG types.
         """
-        @pinecone_retry
         def _upsert_pinecone(batch, batch_ids):
+            # TODO the upsert validation is being cagey. Eventually, the upsert quantity looks consistent, but it's not deterministic when to check.
             # Get fresh count before upserting
-            stats = pc_index.describe_index_stats()
-            current_count = stats['total_vector_count']
-            if self.namespace:
-                current_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)
+            # stats = pc_index.describe_index_stats()
+            # current_count = stats['total_vector_count']
+            # if self.namespace:
+            #     current_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)
             
-            self.logger.info(f"Current vector count before batch: {current_count}")
+            # self.logger.info(f"Current vector count before batch: {current_count}")
             self.logger.info(f"Upserting {len(batch)} vectors for this batch...")
             
             self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+            time.sleep(1)   # Mitigate rate limit/batch issues
             
             # Verify this batch was uploaded successfully
-            expected_batch_count = current_count + len(batch)
-            self._verify_pinecone_upload(pc_index, expected_batch_count)
+            # expected_batch_count = current_count + len(batch)
+            # self._verify_pinecone_upload(pc_index, expected_batch_count)
 
         if self.db_type == "Pinecone":
             pc_index = self.db_client.Index(self.index_name)
@@ -536,7 +537,7 @@ class DatabaseService:
                 self.logger.info(f"Successfully verified {current_count} vectors in Pinecone index{f' namespace {self.namespace}' if self.namespace else ''}")
                 break
                 
-            self.logger.info(f"Waiting for vectors to be indexed in Pinecone... Current count: {current_count}, Expected: {expected_count}")
+            self.logger.info(f"Retry {retry_count + 1} of {max_retries}: Waiting for vectors to be indexed in Pinecone... Current count: {current_count}, Expected: {expected_count}")
             time.sleep(5) 
             retry_count += 1
             

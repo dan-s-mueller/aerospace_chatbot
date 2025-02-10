@@ -801,7 +801,7 @@ def test_prompt_validation():
     # Test response with no citations (should raise NoSourceCitationsFound)
     with pytest.raises(Exception) as exc_info:
         InLineCitationsResponse(content="This is a test response with no citations.", citations=[])
-    assert "No source citations found" in str(exc_info.value)
+    assert "no source citations were found" in str(exc_info.value)
 
     # Test response with malformed citations
     malformed_cases = [
