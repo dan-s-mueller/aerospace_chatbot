@@ -86,7 +86,11 @@ class DatabaseService:
             raise ValueError("Database not initialized. Call initialize_database() before indexing data.")
 
         self._store_index_metadata(chunks)    # Only store metadata if documents are being indexed
-        chunks.chunk_convert()
+        try:
+            chunks.chunk_convert()
+        except AttributeError as e:
+            self.logger.warning(f"Chunks already converted into doc format: {str(e)}")
+            pass
         self._upsert_data(chunks, batch_size)
 
     def get_retriever(self, k=8):
@@ -463,33 +467,44 @@ class DatabaseService:
         """
         @pinecone_retry
         def _upsert_pinecone(batch, batch_ids):
+            # Get fresh count before upserting
+            stats = pc_index.describe_index_stats()
+            current_count = stats['total_vector_count']
+            if self.namespace:
+                current_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)
+            
+            self.logger.info(f"Current vector count before batch: {current_count}")
+            self.logger.info(f"Upserting {len(batch)} vectors for this batch...")
+            
             self.vectorstore.add_documents(documents=batch, ids=batch_ids, namespace=self.namespace)
+            
+            # Verify this batch was uploaded successfully
+            expected_batch_count = current_count + len(batch)
+            self._verify_pinecone_upload(pc_index, expected_batch_count)
 
         if self.db_type == "Pinecone":
-            # pinecone_client, _, _, _, _ = Dependencies.Storage.get_db_clients()
-
             pc_index = self.db_client.Index(self.index_name)
             stats = pc_index.describe_index_stats()
             initial_count = stats['total_vector_count']
             if self.namespace:
                 initial_count = stats['namespaces'].get(self.namespace, {}).get('vector_count', 0)   
             self.logger.info(f"Initial vector count: {initial_count}")
+            self.logger.info(f"Upserting {len(upsert_data.chunks)} vectors")
 
-            total_batches = (len(upsert_data.chunks) + batch_size - 1) // batch_size  # Calculate total number of batches
+            total_batches = (len(upsert_data.chunks) + batch_size - 1) // batch_size
             for i in range(0, len(upsert_data.chunks), batch_size):
-                current_batch = (i // batch_size) + 1  # Calculate current batch number (1-based index)
+                current_batch = (i // batch_size) + 1
                 self.logger.info(f"Upserting batch {current_batch} of {total_batches}")
                 batch = upsert_data.chunks[i:i + batch_size]
                 batch_ids = [chunk.metadata['element_id'] for chunk in batch]
                 
                 if self.db_type == "Pinecone":
+                    # Update current_count after each successful batch
                     _upsert_pinecone(batch, batch_ids)
                 elif self.db_type == "RAGatouille":
                     continue
                 else:
                     raise NotImplementedError
-            expected_count = initial_count + len(upsert_data.chunks)
-            self._verify_pinecone_upload(pc_index, expected_count)
         
         # RAGatouille for all chunks at once
         if self.db_type == "RAGatouille":
@@ -510,7 +525,7 @@ class DatabaseService:
         retry_count = 0
         
         while retry_count < max_retries:
-            time.sleep(5)   # Added delay to reduce likelihood of overlap with delayed delete responses
+            time.sleep(2.5)   # Added delay to reduce likelihood of overlap with delayed delete responses
             stats = index.describe_index_stats()
             current_count = stats['total_vector_count']
             if self.namespace:
@@ -522,7 +537,7 @@ class DatabaseService:
                 break
                 
             self.logger.info(f"Waiting for vectors to be indexed in Pinecone... Current count: {current_count}, Expected: {expected_count}")
-            time.sleep(4) 
+            time.sleep(5) 
             retry_count += 1
             
         if retry_count == max_retries:

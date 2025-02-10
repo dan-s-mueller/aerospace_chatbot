@@ -47,5 +47,5 @@
         "rerankers": ["rerank_service", "rerank_model"],
         "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"]
     },
-    "available_indexes": ["text-embedding-3-large-test"]
+    "available_indexes": ["text-embedding-3-large-mech-demo2-2000"]
 }
