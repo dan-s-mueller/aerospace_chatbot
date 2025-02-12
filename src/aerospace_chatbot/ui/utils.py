@@ -87,15 +87,8 @@ def display_sources(sources, n_display, message_id, expanded=False):
                 with st.expander(f":memo: Source {message_id}.{i+1} (Score: {formatted_score})", expanded=expanded):
                     selected_url = f"https://storage.googleapis.com/{pdf_source}"
                     st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page_range[0]}")
-                    # tab1, tab2 = st.tabs(["Relevant Context+5 Pages", "Full"])
                     try:
-                    #     extracted_pdf = _extract_pages_from_pdf(selected_url, page)
-                        
-                        # with tab1:
                         display_pdf(annotated_pdf)
-                        
-                        # with tab2:
-                        #     st.write("Disabled for now...see download link above!")
                             
                     except Exception as e:
                         logger.error(f"Failed to display source: {e}")
@@ -109,7 +102,7 @@ def process_source_documents(sources, n_display):
     """
     logger = logging.getLogger(__name__)
 
-    def extract_pages_from_pdf(url, page_range, page_buffer=1):
+    def extract_pages_from_pdf(url, page_range, page_buffer=3):
         """
         Extracts specified pages from a PDF file.
         page_range is a list with the first and last page number of the source
