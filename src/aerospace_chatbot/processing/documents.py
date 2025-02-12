@@ -64,10 +64,23 @@ class ChunkingResult:
                 doc_metadata['chunk_size']=self.chunk_size
                 doc_metadata['chunk_overlap']=self.chunk_overlap
 
-                doc=Document(
-                    page_content=chunk['text'], 
-                    metadata=doc_metadata, 
-                )
+
+                if chunk['type'] == 'Table':
+                    # For tables, text_as_html is the HTML representation of the table, use that for embedding
+                    if not chunk['metadata']['text_as_html'] or chunk['metadata']['text_as_html'].isspace():
+                        raise ValueError(f"text_as_html is empty for table chunk with element_id: {chunk['element_id']}")
+                    doc=Document(
+                        page_content=chunk['metadata']['text_as_html'], 
+                        metadata=doc_metadata, 
+                    )
+                else:
+                    # For all other types, use the text field for embedding
+                    if not chunk['text'] or chunk['text'].isspace():
+                        raise ValueError(f"text is empty for chunk with element_id: {chunk['element_id']}")
+                    doc=Document(
+                        page_content=chunk['text'], 
+                        metadata=doc_metadata, 
+                    )
                 converted_chunks.append(doc)
         self.chunks=converted_chunks
 

@@ -129,19 +129,23 @@ class SidebarManager:
         # Check if the configuration is set to 'tester'
         if os.getenv('AEROSPACE_CHATBOT_CONFIG') == 'tester':
             # Use the index from the config and disable the selection
-            tester_config = self._config.get('available_indexes', [])
-            if tester_config:
-                self.sb_out['index_selected'] = tester_config[0]
+            # tester_config = self._config.get('available_indexes', [])
+
+            available_indexes=self._config['experts'][os.getenv('EXPERT')]['available_indexes']
+            if available_indexes:
+                self.sb_out['index_selected'] = available_indexes[0]
                 st.session_state.index_selected_disabled = True
                 st.sidebar.selectbox(
                     'Index selected',
-                    tester_config,
+                    available_indexes,
                     disabled=True,
                     help='Index is pre-selected for tester configuration.',
                     key='index_selected_select'
                 )
                 self.logger.info(f"Index selected: {self.sb_out['index_selected']}")
-                return tester_config, {}  # Return the pre-selected index
+                return available_indexes, {}  # Return the pre-selected index
+            else:
+                raise ValueError(f"No available indexes found for {os.getenv('EXPERT')}. Must specify available_indexes in config for tester access.")
         else:
             # Original code for rendering index selection
             self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out}")

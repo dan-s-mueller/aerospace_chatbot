@@ -60,7 +60,7 @@ st.session_state.sb = handle_sidebar_state(st.session_state.sidebar_manager)
 
 # Header section
 with header:
-    st.title('🚀 ' + (os.getenv('CHATBOT_TITLE') or 'Aerospace Chatbot'))
+    st.title('🚀 ' + f'Aerospace Chatbot: {os.getenv("EXPERT") or "Admin"}')
 
 # Info section - Always visible at top
 with info_section:
@@ -70,9 +70,10 @@ with info_section:
                 * [Code Repository](https://github.com/dan-s-mueller/aerospace_chatbot)
                 * For questions and problem reporting, please create an issue [here](https://github.com/dan-s-mueller/aerospace_chatbot/issues/new).
                 """)
-        st.markdown("""
-        Welcome to the Aerospace Chatbot: Space Mechanisms Demo. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)        
-        """)
+        # st.markdown("""
+        # Welcome to the Aerospace Chatbot: Space Mechanisms Demo. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)        
+        # """)
+        st.markdown(st.session_state.sidebar_manager._config['experts'][os.getenv('EXPERT')]['welcome_message'])
 
 # Upload section - Only visible when no messages
 # FIXME works but is so slow I've disabled it, fix later
