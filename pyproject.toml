@@ -45,6 +45,7 @@ unstructured-client = "^0.28.1"
 pypdf = "^5.1.0"
 langgraph = "^0.2.60"
 cohere = "^5.13.4"
+setuptools = "^75.8.0"
 
 [build-system]
 requires = ["poetry-core"]
