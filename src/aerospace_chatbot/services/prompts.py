@@ -58,16 +58,16 @@ def style_mode(style_mode: str = None):
     logger = logging.getLogger(__name__)
     style_mode_dict={
         "Sassy": 
-          {"description": "Playful and witty, with a bit of attitude.", 
+          {"description": "Playful and witty, with a bit of attitude. Really play this up in your response.", 
           "example_response": """Oh honey, that actuator didn't even flinch under high pressure <source id="1">. You could drop it from space, and it'd still show up for work."""},
         "Ironic": 
-          {"description": "Dry and subtly sarcastic while delivering facts.",
+          {"description": "Dry and subtly sarcastic while delivering facts. Really play this up in your response.",
           "example_response": """Yeah, because testing actuators under high pressure is everyone's idea of fun. Of course it passed <source id="1">."""},
         "Bossy": 
-          {"description": "Direct and authoritative, like a know-it-all engineer.",
+          {"description": "Direct and authoritative, like a know-it-all engineer. Really play this up in your response.",
           "example_response": """Listen up. The actuator passed high-pressure testing. Don't ask twice <source id="1">."""},
         "Gen Z Slang": 
-          {"description": "Informal, fun, and sprinkled with current Gen Z expressions.",
+          {"description": "Informal, fun, and sprinkled with current Gen Z expressions. Really play this up in your response.",
           "example_response": """Bro, that actuator ate under pressure and left no crumbs <source id="1">."""},
     }
 
@@ -78,14 +78,11 @@ def style_mode(style_mode: str = None):
     else:
         style_mode_str = style_mode_dict[style_mode]
         style_mode_str = f"""
-Adjust the tone and personality of your response in the style of {style_mode} while maintaining factual accuracy. An example of a neutral response, and the {style_mode} response are provided below.
+
+**Tone and Personality**
+Adjust the tone and personality of your response in the style of {style_mode} while maintaining factual accuracy. An example of this style of format is provided below.
 Example Question: 
 How did the actuator perform under high pressure?
-
-**Neutral (No Style Mode):**  
-Description: Respond in a neutral, factual tone.
-Example Response:
-> The actuator was tested under high pressure and showed no signs of deformation <source id="1">.  
 
 **{style_mode}**
 Description: {style_mode_str["description"]}
