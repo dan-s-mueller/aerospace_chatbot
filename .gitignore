@@ -20,6 +20,7 @@ data/**/*.jsonl
 *.pickle
 *.parquet
 profile_stats.txt
+*document_processing*
 
 # Notebooks
 notebooks/playground.ipynb
@@ -41,3 +42,4 @@ docs/build/
 
 # Backups
 _bak/
+Dockerfile_old

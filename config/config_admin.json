@@ -31,6 +31,12 @@
                        "Dedicated Endpoint"]
         }
     ],
+    "rerankers": [
+        {
+            "service": "Cohere",
+            "models": ["rerank-v3.5"]
+        }
+    ],
     "llms": [
         {
             "service": "OpenAI",
@@ -51,7 +57,9 @@
             "service": "LM Studio (local)"
         }
     ],
-    "rag_types": ["Standard",
-                  "Parent-Child",
-                  "Summary"]
+    "style_modes": ["Standard",
+                    "Sassy",
+                    "Ironic",
+                    "Bossy",
+                    "Gen Z Slang"]
 }

@@ -1,15 +1,18 @@
 from .database import (
     DatabaseService, 
-    get_docs_questions_df, 
+    get_docs_df, 
     add_clusters, 
     export_to_hf_dataset, 
     get_database_status,
     get_available_indexes
 )
-from .embeddings import EmbeddingService
+from .embeddings import EmbeddingService, RerankService
 from .llm import LLMService
 from .prompts import (
-    CONDENSE_QUESTION_PROMPT,
+    InLineCitationsResponse,
+    AltQuestionsResponse,
+    style_mode,
+    CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
     SUMMARIZE_TEXT,
     GENERATE_SIMILAR_QUESTIONS_W_CONTEXT,
@@ -19,14 +22,18 @@ from .prompts import (
 
 __all__ = [
     'DatabaseService',
-    'get_docs_questions_df', 
+    'get_docs_df', 
     'add_clusters', 
     'export_to_hf_dataset', 
     'get_database_status',
     'get_available_indexes',
     'EmbeddingService',
+    'RerankService',
     'LLMService',
-    'CONDENSE_QUESTION_PROMPT',
+    'InLineCitationsResponse',
+    'AltQuestionsResponse',
+    'style_mode',
+    'CHATBOT_SYSTEM_PROMPT',
     'QA_PROMPT',
     'SUMMARIZE_TEXT',
     'GENERATE_SIMILAR_QUESTIONS_W_CONTEXT',

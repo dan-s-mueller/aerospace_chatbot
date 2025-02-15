@@ -11,6 +11,12 @@
             "models": ["text-embedding-3-large"]
         }
     ],
+    "rerankers": [
+        {
+            "service": "Cohere",
+            "models": ["rerank-v3.5"]
+        }
+    ],
     "llms": [
         {
             "service": "OpenAI",
@@ -27,14 +33,28 @@
             ]
         }
     ],
-    "rag_types": ["Standard"],
+    "style_modes": ["Standard",
+                    "Sassy",
+                    "Ironic",
+                    "Bossy",
+                    "Gen Z Slang"],
     "disabled_controls": {
-        "embeddings": ["embedding_service", "embedding_model", "embedding_endpoint"],
+        "index": ["index_type"],
         "rag": ["rag_type", "rag_llm_service", "rag_llm_model", "rag_endpoint"],
         "llm": ["llm_service", "llm_model", "llm_endpoint"],
-        "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"],
-        "index": ["index_type"],
-        "model_options": ["output_level", "search_type"]
+        "model_options": ["output_level", "search_type"],
+        "embeddings": ["embedding_service", "embedding_model", "embedding_endpoint"],
+        "rerankers": ["rerank_service", "rerank_model"],
+        "api_keys": ["openai_key", "hf_key", "voyage_key", "pinecone_key"]
     },
-    "available_indexes": ["text-embedding-3-large-mech-demo-2m"]
+    "experts": {
+        "Space Mechanisms": {
+            "available_indexes": ["text-embedding-3-large-mech-demo2-2000"],
+            "welcome_message": "Welcome to the Aerospace Chatbot: Space Mechanisms Demo. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)"
+        },
+        "Design Criteria": {
+            "available_indexes": ["text-embedding-3-large-dc-demo2-2000"],
+            "welcome_message": "Welcome to the Aerospace Chatbot: Design Criteria Demo. To view the latest status of what papers are included, please see the [Aerospace Chatbot Documents Library](https://docs.google.com/spreadsheets/d/1Fv_QGENr2W8Mh_e-TmoWagkhpv7IImw3y3_o_pJcvdY/edit?usp=sharing)"
+        }
+    }
 }

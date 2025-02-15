@@ -1,0 +1,2596 @@
+[
+    {
+        "type": "Title",
+        "element_id": "a3e9296347f1f64a76773fa9d573878b",
+        "text": "Efficacy of Lead Naphthenate for Wear Protection in High Vacuum Space Mechanisms",
+        "metadata": {
+            "detection_class_prob": 0.6035847067832947,
+            "coordinates": {
+                "points": [
+                    [
+                        302.7106628417969,
+                        202.14414978027344
+                    ],
+                    [
+                        302.7106628417969,
+                        282.19999999999965
+                    ],
+                    [
+                        1402.52099609375,
+                        282.19999999999965
+                    ],
+                    [
+                        1402.52099609375,
+                        202.14414978027344
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "5e6218ab3b09f814c36d1e1702dc44f9",
+        "text": "Jason T. Galary*",
+        "metadata": {
+            "detection_class_prob": 0.6033543944358826,
+            "coordinates": {
+                "points": [
+                    [
+                        746.005859375,
+                        310.6766662597656
+                    ],
+                    [
+                        746.005859375,
+                        346.33000000000004
+                    ],
+                    [
+                        960.0246666666666,
+                        346.33000000000004
+                    ],
+                    [
+                        960.0246666666666,
+                        310.6766662597656
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "parent_id": "a3e9296347f1f64a76773fa9d573878b",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "4f1eeda64f1a9207b6ef660cece4a1a3",
+        "text": "Abstract",
+        "metadata": {
+            "detection_class_prob": 0.7780668139457703,
+            "coordinates": {
+                "points": [
+                    [
+                        793.5426635742188,
+                        412.0734558105469
+                    ],
+                    [
+                        793.5426635742188,
+                        447.75100000000015
+                    ],
+                    [
+                        914.0149999999999,
+                        447.75100000000015
+                    ],
+                    [
+                        914.0149999999999,
+                        412.0734558105469
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "ee898b8214bf44b9951c2831726ad997",
+        "text": "The purpose of this research is to investigate the efficacy of lead naphthenate as a wear additive in a multi- alkylated cyclopentane (MAC) fluid for use in high vacuum space mechanism applications. The use of lead naphthenate in MAC lubricants has a spaceflight history of over thirty years. However, despite the history of use for this additive in a variety of rolling and sliding applications, little is known or understood about the tribochemical process by which these additives function.",
+        "metadata": {
+            "detection_class_prob": 0.9475983381271362,
+            "coordinates": {
+                "points": [
+                    [
+                        199.50814819335938,
+                        478.51031494140625
+                    ],
+                    [
+                        199.50814819335938,
+                        646.3700000000001
+                    ],
+                    [
+                        1507.6420666666666,
+                        646.3700000000001
+                    ],
+                    [
+                        1507.6420666666666,
+                        478.51031494140625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "parent_id": "4f1eeda64f1a9207b6ef660cece4a1a3",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "2b72f75b4d5d79569cce2e47eb6eb316",
+        "text": "This research looks at the performance of this additive in simulated contact tests using SRV (Sliding in Atmospheric and Vacuum Conditions), as well as a scuffing test performed in a mixed rolling/sliding contact. In addition, application simulation tests are being performed including high vacuum spiral orbit tribometry (SOT) and vacuum angular contact ball bearing testing. This test program evaluates the additive in both a mixed film and boundary lubrication contact under vacuum and atmospheric conditions to better understand how the additive functions on a metal surface. This report of the test programs current progress will include high vacuum bearing life testing, boundary/mixed lubrication scuffing wear, outgassing, and SOT.",
+        "metadata": {
+            "detection_class_prob": 0.9523129463195801,
+            "coordinates": {
+                "points": [
+                    [
+                        199.39749145507812,
+                        680.7972412109375
+                    ],
+                    [
+                        199.39749145507812,
+                        913.0766666666669
+                    ],
+                    [
+                        1508.2686767578125,
+                        913.0766666666669
+                    ],
+                    [
+                        1508.2686767578125,
+                        680.7972412109375
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "parent_id": "4f1eeda64f1a9207b6ef660cece4a1a3",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "eb68e3c958f16540bdceecca50e840c3",
+        "text": "The results of this work will help the design engineer understand how materials, including lubricants, play a critical role in the performance and life of space mechanisms in demanding high vacuum environments. A greater understanding of the relationship between lead content and tribological performance will be developed along with further understanding of the tribochemical degradation process. Data gathered from wear testing and application simulation work will provide mechanism design engineers with a better understanding of the tribological performance of this lubricant additive.",
+        "metadata": {
+            "detection_class_prob": 0.9499874711036682,
+            "coordinates": {
+                "points": [
+                    [
+                        196.7913360595703,
+                        945.01220703125
+                    ],
+                    [
+                        196.7913360595703,
+                        1146.4450000000004
+                    ],
+                    [
+                        1507.4981999999993,
+                        1146.4450000000004
+                    ],
+                    [
+                        1507.4981999999993,
+                        945.01220703125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "parent_id": "4f1eeda64f1a9207b6ef660cece4a1a3",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "7081853c7b2264651dbcbf94ed75e074",
+        "text": "Introduction and Background",
+        "metadata": {
+            "detection_class_prob": 0.8367099165916443,
+            "coordinates": {
+                "points": [
+                    [
+                        650.5513305664062,
+                        1177.8121337890625
+                    ],
+                    [
+                        650.5513305664062,
+                        1214.532666666667
+                    ],
+                    [
+                        1051.9333333333327,
+                        1214.532666666667
+                    ],
+                    [
+                        1051.9333333333327,
+                        1177.8121337890625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "51093fb8c18b7c6074f9b8cbefb432c2",
+        "text": "Lead naphthenate has been used heavily as an anti-wear and extreme pressure additive in multi alkylated cyclopentane lubricants for high vacuum space mechanisms. The additive consists of a centralized lead ion that is bonded with the oxygen atoms of two carboxylate groups each attached to naphthenate aromatic rings. The naphthenate aromatic hydrocarbon rings provide solubility of the lead naphthenate in different hydrocarbon oils, but the way the additive reacts with steel and protects against wear in various lubrication regimes is still not fully understood.",
+        "metadata": {
+            "detection_class_prob": 0.953438401222229,
+            "coordinates": {
+                "points": [
+                    [
+                        199.9999999999998,
+                        1249.57666015625
+                    ],
+                    [
+                        199.9999999999998,
+                        1451.3500000000001
+                    ],
+                    [
+                        1507.6456333333333,
+                        1451.3500000000001
+                    ],
+                    [
+                        1507.6456333333333,
+                        1249.57666015625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "parent_id": "7081853c7b2264651dbcbf94ed75e074",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "3da65be535819587c92f41e78e7eb72c",
+        "text": "The historical use of lead naphthenate originates from industrial gears and bearings where it was used an extreme pressure additive over fifty years ago. Over the last thirty years, it has gained a lot of spaceflight history although there are still many questions regarding its efficacy, primarily how does it function in various lubrication regimes, the effects of different metallurgy, and how environmental pressure effect its performance.",
+        "metadata": {
+            "detection_class_prob": 0.9473238587379456,
+            "coordinates": {
+                "points": [
+                    [
+                        198.80526733398438,
+                        1485.2606201171875
+                    ],
+                    [
+                        198.80526733398438,
+                        1651.3799999999999
+                    ],
+                    [
+                        1507.6345666666662,
+                        1651.3799999999999
+                    ],
+                    [
+                        1507.6345666666662,
+                        1485.2606201171875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "parent_id": "7081853c7b2264651dbcbf94ed75e074",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "9328e8bb120a9007676a4277f763b99a",
+        "text": "With the increasing number of space mechanisms being developed and launched as well as the increasing length of mission time required, it is critical to have a robust design with high reliability. To improve the reliability, it is necessary to have long lives for all of the components in the design. This will require that the lubricants used for space mechanisms must also improve. The use of lead naphthenate additive in multi alkylated cyclopentane fluids is a proven additive package with spaceflight history but in order to develop",
+        "metadata": {
+            "detection_class_prob": 0.9402639269828796,
+            "coordinates": {
+                "points": [
+                    [
+                        199.7272186279297,
+                        1686.270263671875
+                    ],
+                    [
+                        199.7272186279297,
+                        1851.41
+                    ],
+                    [
+                        1507.6788333333332,
+                        1851.41
+                    ],
+                    [
+                        1507.6788333333332,
+                        1686.270263671875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "parent_id": "7081853c7b2264651dbcbf94ed75e074",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Footer",
+        "element_id": "f6dc587fc5fa1ad02dcf8ca551e59680",
+        "text": "* Nye Lubricants, Inc., Fairhaven, MA",
+        "metadata": {
+            "detection_class_prob": 0.5504823327064514,
+            "coordinates": {
+                "points": [
+                    [
+                        196.41505432128906,
+                        1912.0933837890625
+                    ],
+                    [
+                        196.41505432128906,
+                        1942.3249999999998
+                    ],
+                    [
+                        664.0256666666667,
+                        1942.3249999999998
+                    ],
+                    [
+                        664.0256666666667,
+                        1912.0933837890625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "7956cc2ed4ab8f9b4b53bb827c7de5cb",
+        "text": "Proceedings of the 45th Aerospace Mechanisms Symposium, NASA Johnson Space Center, 2020",
+        "metadata": {
+            "detection_class_prob": 0.8756256103515625,
+            "coordinates": {
+                "points": [
+                    [
+                        304.414794921875,
+                        1975.0833333333333
+                    ],
+                    [
+                        304.414794921875,
+                        2002.7916666666665
+                    ],
+                    [
+                        1397.6166666666666,
+                        2002.7916666666665
+                    ],
+                    [
+                        1397.6166666666666,
+                        1975.0833333333333
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "3bc21ec4b4db1941979d9859f61b1bf1",
+        "text": "301",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 1,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "817514ce80d1615a0e375e60be5d3438",
+        "text": "and advance the lubrication technology for high vacuum space mechanisms, additional understanding of its tribological performance is needed to facilitate innovations.",
+        "metadata": {
+            "detection_class_prob": 0.914046049118042,
+            "coordinates": {
+                "points": [
+                    [
+                        200.01666666666665,
+                        206.65777587890625
+                    ],
+                    [
+                        200.01666666666665,
+                        269.65999999999985
+                    ],
+                    [
+                        1507.5322666666677,
+                        269.65999999999985
+                    ],
+                    [
+                        1507.5322666666677,
+                        206.65777587890625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "5363f2786a84a92cd9dc9abaf0ba115c",
+        "text": "When considering how to research the efficacy of lead naphthenate and how it functions as a tribofilm, it is important to look at various methodologies to characterize its performance. In the beginning stages, this is easiest performed by using simulated contact testing. In this respect, an SRV makes the best choice as it is very flexible regarding the contact mechanics and environmental conditions. The availability of SOT testing is somewhat limited but a Mini Traction Machine (MTM) can be used in a manner to simulate the same type of application conditions with a ball running in an orbital pattern on a disc with a mixture of rolling/sliding. While the MTM cannot currently run in a vacuum condition, it can be used to understand the fundamental complexities of lead naphthenate operating in a rolling/sliding mixed application. When this is combined with the vacuum/atmospheric testing on the SRV, the performance of the lead naphthenate can be made clearer.",
+        "metadata": {
+            "detection_class_prob": 0.9551202654838562,
+            "coordinates": {
+                "points": [
+                    [
+                        200.0166666666666,
+                        304.7118225097656
+                    ],
+                    [
+                        200.0166666666666,
+                        636.3816666666667
+                    ],
+                    [
+                        1507.7591333333332,
+                        636.3816666666667
+                    ],
+                    [
+                        1507.7591333333332,
+                        304.7118225097656
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "e7486fcf65eb404ece90659db7e6c018",
+        "text": "In more recent research done on lead naphthenate using the SRV and other sliding tribometers, results have typically been inconclusive regarding the efficacy of this additive to protect a lubricated contact. The standard SRV testing includes conditions that could be inappropriate for evaluating many anti-wear additives including lead naphthenate. This includes the sliding speed which would create a thicker film preventing the additive function from being studied. The contact stress is also much higher in standard ASTM tests which will influence how the tribofilms are created and in the case of lead naphthenate, the higher contact stresses will create additional wear which will react and consume available lead naphthenate making it unavailable to create a protective tribofilm.",
+        "metadata": {
+            "detection_class_prob": 0.9568910598754883,
+            "coordinates": {
+                "points": [
+                    [
+                        197.99700000000007,
+                        659.4459838867188
+                    ],
+                    [
+                        197.99700000000007,
+                        925.4153333333336
+                    ],
+                    [
+                        1508.748291015625,
+                        925.4153333333336
+                    ],
+                    [
+                        1508.748291015625,
+                        659.4459838867188
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "9a64ceeb1d80572e5b0a679eef60de46",
+        "text": "From the authors previous research [7], the following was determined: In oscillatory testing, Lead Naphthenate had better anti-wear performance at lower temperatures (~20°C) and increasing the amount of lead directly reduced the wear rate. Under high vacuum conditions, the samples with lead naphthenate offered twice the wear protection with 440C performing the best. At higher temperatures (75°C) the wear rate was almost double for the samples with a higher content of lead across all experiments. The 75°C testing in pure oscillatory sliding on 52100 steel, showed that samples with lead naphthenate in an atmospheric environment performed worse as the concentration of lead increased. However, when in a vacuum environment, as the concentration increased the wear rate decreased. In 440C testing, samples with lead offered up to twice the wear protection over the neat samples in a vacuum environment. In mixed rolling/sliding experiments, Lead Naphthenate had better anti-wear performance at high temperatures and increasing the amount of lead directly reduced the wear rate. At lower temperatures (50°C) in the counter- rotation wear test, lead naphthenate offered three times the wear protection when in a 3% concentration and eleven times the protection for 5% lead compared to the neat MAC fluid. At higher temperatures (150°C) in the counter-rotation wear test, lead naphthenate offered five times the wear protection when in a 3% concentration and twenty times the protection for 5% lead compared to the neat MAC fluid. There appears to be is a transition point between 3% and 5% lead naphthenate where the available lead can react with both the surface and worn metal to create a strong lead anti-wear tribofilm. This tribofilm that is created is between 2-4µm thick and while it will cause an overall increase in friction at the surface, the wear of the contact is greatly reduced.",
+        "metadata": {
+            "detection_class_prob": 0.9504485726356506,
+            "coordinates": {
+                "points": [
+                    [
+                        199.93366666666628,
+                        962.6863403320312
+                    ],
+                    [
+                        199.93366666666628,
+                        1592.1820000000002
+                    ],
+                    [
+                        1507.6844333333333,
+                        1592.1820000000002
+                    ],
+                    [
+                        1507.6844333333333,
+                        962.6863403320312
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "4043db92c338e012361a2808dd40e56a",
+        "text": "Previous Lessons Learned from AMS 2018:",
+        "metadata": {
+            "detection_class_prob": 0.8036060333251953,
+            "coordinates": {
+                "points": [
+                    [
+                        199.84230041503906,
+                        1623.5594482421875
+                    ],
+                    [
+                        199.84230041503906,
+                        1658.658333333333
+                    ],
+                    [
+                        745.0333333333334,
+                        1658.658333333333
+                    ],
+                    [
+                        745.0333333333334,
+                        1623.5594482421875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "025eec699f8d2e6d3bf0382a9a412df6",
+        "text": "- The additive function of lead naphthenate is a combination of physical absorption through rubbing or pressure and chemisorption.",
+        "metadata": {
+            "detection_class_prob": 0.9043288826942444,
+            "coordinates": {
+                "points": [
+                    [
+                        244.159423828125,
+                        1660.0179443359375
+                    ],
+                    [
+                        244.159423828125,
+                        1725.33
+                    ],
+                    [
+                        1507.419566666665,
+                        1725.33
+                    ],
+                    [
+                        1507.419566666665,
+                        1660.0179443359375
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "9e8a4a4e36462566602ab205b06ef020",
+        "text": "- Depending on the mechanics in the contact (sliding versus rolling), the effect of temperature had a significant influence. This appears to indicate that higher concentrations of lead would be required for more severe applications involving pure sliding and/or high temperatures as the lead is consumed faster through reaction with surface layer steel oxides and sublayers.",
+        "metadata": {
+            "detection_class_prob": 0.9332888126373291,
+            "coordinates": {
+                "points": [
+                    [
+                        249.9723333333333,
+                        1725.955078125
+                    ],
+                    [
+                        249.9723333333333,
+                        1858.6833333333332
+                    ],
+                    [
+                        1509.6746826171875,
+                        1858.6833333333332
+                    ],
+                    [
+                        1509.6746826171875,
+                        1725.955078125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "4e5525a021943d6e73c2d05849dae1aa",
+        "text": "- In rolling and mixed contacts, lead naphthenate creates a strong tribofilm on the steel surface that aids in protecting from wear but at the same time will increase the friction in the contact.",
+        "metadata": {
+            "detection_class_prob": 0.9022057056427002,
+            "coordinates": {
+                "points": [
+                    [
+                        248.97007751464844,
+                        1860.4322509765625
+                    ],
+                    [
+                        248.97007751464844,
+                        1925.36
+                    ],
+                    [
+                        1511.4273681640625,
+                        1925.36
+                    ],
+                    [
+                        1511.4273681640625,
+                        1860.4322509765625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "b7d122417d576b0f6e72694ef229be3a",
+        "text": "- The formation and durability of lead naphthenate tribofilm is dependent on the environment with higher performance coming under vacuum conditions. It is also believed the lack of oxygen",
+        "metadata": {
+            "detection_class_prob": 0.9101179838180542,
+            "coordinates": {
+                "points": [
+                    [
+                        249.97233333333324,
+                        1925.8836669921875
+                    ],
+                    [
+                        249.97233333333324,
+                        1992.0366666666666
+                    ],
+                    [
+                        1509.24951171875,
+                        1992.0366666666666
+                    ],
+                    [
+                        1509.24951171875,
+                        1925.8836669921875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "c6c502ddcc99d8ed54c32d6a7fe71fb0",
+        "text": "302",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 2,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "e79dfecccdf1bc3652dd027fc1dadd5d",
+        "text": "promotes this life due to the lack of oxide formation on the steel and degradation of the lead naphthenate.",
+        "metadata": {
+            "detection_class_prob": 0.9226922392845154,
+            "coordinates": {
+                "points": [
+                    [
+                        295.234375,
+                        208.6550000000001
+                    ],
+                    [
+                        295.234375,
+                        269.65999999999985
+                    ],
+                    [
+                        1507.5986666666656,
+                        269.65999999999985
+                    ],
+                    [
+                        1507.5986666666656,
+                        208.6550000000001
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "852f44659aae2bf4314211fd34f78322",
+        "text": "In general, an increase in lead content will decrease the wear rate.",
+        "metadata": {
+            "detection_class_prob": 0.8475778102874756,
+            "coordinates": {
+                "points": [
+                    [
+                        250.01033333333336,
+                        274.8336666666666
+                    ],
+                    [
+                        250.01033333333336,
+                        302.9983333333332
+                    ],
+                    [
+                        1132.6876666666667,
+                        302.9983333333332
+                    ],
+                    [
+                        1132.6876666666667,
+                        274.8336666666666
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "9c05d8c90392d65788d2e44df4062b70",
+        "text": "Mixed Lubrication Wear Rate 20°C Mixed Lubrication Wear Rate 75°C e (um ?/mer y y ee Y : 5 ZuZe : Z Z F 5 GaZ Y Z g 7, ‘. 5. GUGn 7 ) 2 GOZh 2 Ze Y : go Y GEG GG — -su = G AY AY Ziggy 20Ge 7 A AA A WM AA WZ V AWA AN An 0 ABZ ZEZ ZEZ Poe witied ead",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        235.62486444444443,
+                        333.3333333333333
+                    ],
+                    [
+                        235.62486444444443,
+                        746.5277250000001
+                    ],
+                    [
+                        1462.2344638888887,
+                        746.5277250000001
+                    ],
+                    [
+                        1462.2344638888887,
+                        333.3333333333333
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "FigureCaption",
+        "element_id": "514121e6cd162ac8fba6da9b333e56f2",
+        "text": "Figure 1: Mixed Film Oscillatory Wear Results from AMS 2018",
+        "metadata": {
+            "detection_class_prob": 0.7430990934371948,
+            "coordinates": {
+                "points": [
+                    [
+                        466.66800000000023,
+                        753.9434814453125
+                    ],
+                    [
+                        466.66800000000023,
+                        783.0149999999999
+                    ],
+                    [
+                        1238.7063333333335,
+                        783.0149999999999
+                    ],
+                    [
+                        1238.7063333333335,
+                        753.9434814453125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "a3e5f11c3971d5905a79958e940be6c1",
+        "text": "Scope of Work",
+        "metadata": {
+            "detection_class_prob": 0.6571676731109619,
+            "coordinates": {
+                "points": [
+                    [
+                        752.686,
+                        816.5654296875
+                    ],
+                    [
+                        752.686,
+                        851.1026666666664
+                    ],
+                    [
+                        954.7080000000002,
+                        851.1026666666664
+                    ],
+                    [
+                        954.7080000000002,
+                        816.5654296875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "1913c707f7442e9bec01f3040d56293f",
+        "text": "The following work was covered in this research.",
+        "metadata": {
+            "detection_class_prob": 0.8545665144920349,
+            "coordinates": {
+                "points": [
+                    [
+                        200.01666666666674,
+                        882.098388671875
+                    ],
+                    [
+                        200.01666666666674,
+                        916.3683333333332
+                    ],
+                    [
+                        820.7183333333336,
+                        916.3683333333332
+                    ],
+                    [
+                        820.7183333333336,
+                        882.098388671875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "a3e5f11c3971d5905a79958e940be6c1",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "278528c0869d9a5be3d42e1a89dee5d2",
+        "text": "• Fluid Lubricant Evaluation: The performance of five multi-alkylated cyclopentane (MAC) fluid lubricants were performed included the heritage material Synthetic Oil 2001A, two lead naphthenate versions (2001-3PB and 2001-5PB), and comparable versions that utilize triphenyl phosphate (2001B) and tricresyl phosphate (2001T).",
+        "metadata": {
+            "detection_class_prob": 0.9355665445327759,
+            "coordinates": {
+                "points": [
+                    [
+                        248.1760711669922,
+                        950.2164306640625
+                    ],
+                    [
+                        248.1760711669922,
+                        1083.3919999999998
+                    ],
+                    [
+                        1507.772966666667,
+                        1083.3919999999998
+                    ],
+                    [
+                        1507.772966666667,
+                        950.2164306640625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "a3e5f11c3971d5905a79958e940be6c1",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "ListItem",
+        "element_id": "90c426b7cd3ee0dec91f78c3eae4756a",
+        "text": "• Grease Lubricant Evaluation: The grease counterparts to the materials in the fluid evaluation (Rheolube 2000F, 2004, 2000-5PB, 2000B, and 2000T) were tested under a vacuum bearing configuration.",
+        "metadata": {
+            "detection_class_prob": 0.929528534412384,
+            "coordinates": {
+                "points": [
+                    [
+                        242.619384765625,
+                        1084.053466796875
+                    ],
+                    [
+                        242.619384765625,
+                        1183.7389999999998
+                    ],
+                    [
+                        1513.50341796875,
+                        1183.7389999999998
+                    ],
+                    [
+                        1513.50341796875,
+                        1084.053466796875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "a3e5f11c3971d5905a79958e940be6c1",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "fd408ea8f5d0b6b2a9ccff4073e25b43",
+        "text": "Testing Apparatus",
+        "metadata": {
+            "detection_class_prob": 0.86750328540802,
+            "coordinates": {
+                "points": [
+                    [
+                        728.0073333333336,
+                        1214.691650390625
+                    ],
+                    [
+                        728.0073333333336,
+                        1251.8266666666664
+                    ],
+                    [
+                        979.6910000000003,
+                        1251.8266666666664
+                    ],
+                    [
+                        979.6910000000003,
+                        1214.691650390625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "e5de974393411cc16eae48ac86e21443",
+        "text": "Three different tribological test methods were used in this research. One of the methods is run in pure sliding under both atmospheric and vacuum conditions (5 x 10-5 Torr Min) while the other two methods utilize a mixed rolling/sliding contact in atmospheric conditions for both mixed film and boundary lubrication. The friction/traction properties along with the wear rates were measured for two multiply alkylated cyclopentane (MAC) hydrocarbon oils formulated with 3% and 5% lead naphthenate (2001-3PB and 2001-5PB) along with unformulated MAC oil (2001A). The lead naphthenate used in these samples was vacuum treated prior to formulation to improve vacuum outgassing characteristics and make it suitable for a space mechanism lubricant.",
+        "metadata": {
+            "detection_class_prob": 0.9581674337387085,
+            "coordinates": {
+                "points": [
+                    [
+                        199.87548828125,
+                        1282.4217529296875
+                    ],
+                    [
+                        199.87548828125,
+                        1550.3549999999998
+                    ],
+                    [
+                        1507.800537109375,
+                        1550.3549999999998
+                    ],
+                    [
+                        1507.800537109375,
+                        1282.4217529296875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "fd408ea8f5d0b6b2a9ccff4073e25b43",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "2d1461df1033d003e941263c0dd533d2",
+        "text": "Spiral Orbit Tribometer",
+        "metadata": {
+            "detection_class_prob": 0.7780479788780212,
+            "coordinates": {
+                "points": [
+                    [
+                        200.0,
+                        1583.1971435546875
+                    ],
+                    [
+                        200.0,
+                        1616.9916666666666
+                    ],
+                    [
+                        488.70166666666665,
+                        1616.9916666666666
+                    ],
+                    [
+                        488.70166666666665,
+                        1583.1971435546875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "e558723ec5b786b4eff001bb0889bfc2",
+        "text": "The Spiral Orbit Tribometer (SOT) is a single contact simulation that replicates Angular Contact Ball Bearings in a semi-starved lubrication mode while under vacuum. It is simply a ball held between two parallel plates which essentially makes it a thrust bearing. The SOT utilizes two flat, concentric discs between which a ½” lubricated ball rolls and pivots during test operation. A very small amount of lubricant, approximately 50μg, is applied to the ball to ensure the system operates in the boundary lubrication regime, providing a fast and efficient screening method of lubricant performance. The upper disc applies a load which can be varied depending on the desired Hertzian Contact Stress (material, load, and ball diameter dependent).",
+        "metadata": {
+            "detection_class_prob": 0.9568801522254944,
+            "coordinates": {
+                "points": [
+                    [
+                        199.97233333333324,
+                        1617.625
+                    ],
+                    [
+                        199.97233333333324,
+                        1883.6933333333332
+                    ],
+                    [
+                        1507.6401,
+                        1883.6933333333332
+                    ],
+                    [
+                        1507.6401,
+                        1617.625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "2d1461df1033d003e941263c0dd533d2",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "e8c5d222d13e9da9c73959034f43f2a4",
+        "text": "During test operation, the lack of a ball retainer allows the ball to orbit in an opening spiral pattern whose orbit radius continuously increases throughout the course of one revolution of the bottom sample disc. Since",
+        "metadata": {
+            "detection_class_prob": 0.9239991307258606,
+            "coordinates": {
+                "points": [
+                    [
+                        199.94466666666662,
+                        1918.326171875
+                    ],
+                    [
+                        199.94466666666662,
+                        1983.7083333333333
+                    ],
+                    [
+                        1507.6262666666669,
+                        1983.7083333333333
+                    ],
+                    [
+                        1507.6262666666669,
+                        1918.326171875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "2d1461df1033d003e941263c0dd533d2",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "8d8c4241b25ee30a65b0744e87858bd5",
+        "text": "303",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 3,
+            "parent_id": "2d1461df1033d003e941263c0dd533d2",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "119a790799a6b9dda3bda76f3d387d02",
+        "text": "there is no retainer, if this orbit was left unchecked, it would result in the ball orbiting out of the two parallel sample discs, causing the two plates to contact each other. Fortunately, as the ball reaches the completion of each revolution, it is pushed back into its original orbit radius by contacting what is known as the guide plate. The test is initiated with the sample ball touching the guide plate, which sets the initial orbit radius, and is adjustable. The guide plate is oriented in a position such that it contacts the center of the ball on each revolution. Attached to the guide plate is a charge amplifier force transducer. This force transducer measures the reactionary force required for the ball to be scrubbed back into its initial orbit diameter. This location throughout the orbit is identified as the scrub region. As the lubricant becomes consumed or degrades, this force will naturally increase.",
+        "metadata": {
+            "detection_class_prob": 0.955809473991394,
+            "coordinates": {
+                "points": [
+                    [
+                        199.96133333333304,
+                        205.25155639648438
+                    ],
+                    [
+                        199.96133333333304,
+                        503.02833333333325
+                    ],
+                    [
+                        1507.6180333333332,
+                        503.02833333333325
+                    ],
+                    [
+                        1507.6180333333332,
+                        205.25155639648438
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "parent_id": "2d1461df1033d003e941263c0dd533d2",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "ddc563cd45f627b1d39c48e046f5a4ef",
+        "text": "Stationary Plate 1 (tilted up for clarity) Spiral Orbit ——— Ball Orbit Guide Plate Force — transducer 2. Ball Scrub Spiral Orbit Rotating Plate",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        499.8607636111111,
+                        538.3300780555556
+                    ],
+                    [
+                        499.8607636111111,
+                        1084.0072797222222
+                    ],
+                    [
+                        1198.7416216666668,
+                        1084.0072797222222
+                    ],
+                    [
+                        1198.7416216666668,
+                        538.3300780555556
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "ba093eb3a9a006b60ba685f1fe5d5d69",
+        "text": "Figure 2. Spiral Orbit Tribometer mechanisms, Image courtesy of Spiralab",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        396.0,
+                        1088.8333333333333
+                    ],
+                    [
+                        396.0,
+                        1122.1666666666665
+                    ],
+                    [
+                        1313.2666666666667,
+                        1122.1666666666665
+                    ],
+                    [
+                        1313.2666666666667,
+                        1088.8333333333333
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "fa8f9027562e6ff16b3e6799c379cfcf",
+        "text": "Vacuum Bearing Testing:",
+        "metadata": {
+            "detection_class_prob": 0.7644197940826416,
+            "coordinates": {
+                "points": [
+                    [
+                        199.5464630126953,
+                        1154.2781982421875
+                    ],
+                    [
+                        199.5464630126953,
+                        1186.9916666666666
+                    ],
+                    [
+                        519.6883333333334,
+                        1186.9916666666666
+                    ],
+                    [
+                        519.6883333333334,
+                        1154.2781982421875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "0a0922fda9c4df15d9150c641e8c5fa4",
+        "text": "The apparatus used for these experiments tests a single angular contact ball bearing. The system operates at a vacuum level better than 5.0 x 10-7 Pa, from 1 to 500 RPM, up to 200°C, and loads to 450 N. The system uses dead weight loading and either a heat lamp or band heater. The system also measures cross bearing electrical resistance, which is used to monitor the operating regime. Bearing torque, load, chamber pressure, and cross bearing resistance are recorded using a data acquisition system. The system uses a single SKF 7204 1219 (52100 steel) angular contact bearing. The bearing has an outside diameter of 47 mm, a bore of 20 mm, eleven 12.7 mm balls and a steel retainer. The bearing is mounted in a fixture that holds the outer race and rotates the inner race. Temperature information is gathered from a thermocouple mounted just below the inner race.",
+        "metadata": {
+            "detection_class_prob": 0.9548261165618896,
+            "coordinates": {
+                "points": [
+                    [
+                        199.86166666666648,
+                        1190.0977783203125
+                    ],
+                    [
+                        199.86166666666648,
+                        1487.0316666666668
+                    ],
+                    [
+                        1507.6428666666666,
+                        1487.0316666666668
+                    ],
+                    [
+                        1507.6428666666666,
+                        1190.0977783203125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "parent_id": "fa8f9027562e6ff16b3e6799c379cfcf",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "dda90a3a5f37a0205b3ab461d7545726",
+        "text": "Wear Testing:",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        200.0,
+                        1525.9916666666666
+                    ],
+                    [
+                        200.0,
+                        1553.6583333333333
+                    ],
+                    [
+                        380.691,
+                        1553.6583333333333
+                    ],
+                    [
+                        380.691,
+                        1525.9916666666666
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "e5e8c1cb0834f4c55d87f0d923089b75",
+        "text": "Three different wear rates were calculated including a mixed film in pure sliding, mixed film (rolling/sliding), and boundary (rolling/sliding). A normalized wear rate for all these tests were calculated to compare materials tested. The wear rate will indicate the volume of wear (µm3) over a distance traveled (in millimeters) which will normalize the data in the case of premature failures. For the pure sliding test, the ASTM D-5707 SRV Coefficient of Friction test was used. For both the mixed film and boundary testing in a rolling/sliding contact, a custom experimental method using a Mini Traction Machine (MTM) (as show in Figure 3) was used [1][2][4][7][13]. In the MTM, the ball and disc are driven independently which allows any combination of rolling and sliding. The measurement of friction force is done through a load cell that is attached to the bearing housing of the ball motor shaft.",
+        "metadata": {
+            "detection_class_prob": 0.9549143314361572,
+            "coordinates": {
+                "points": [
+                    [
+                        199.98166666666637,
+                        1554.2723388671875
+                    ],
+                    [
+                        199.98166666666637,
+                        1853.6883333333333
+                    ],
+                    [
+                        1507.6604999999997,
+                        1853.6883333333333
+                    ],
+                    [
+                        1507.6604999999997,
+                        1554.2723388671875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "parent_id": "dda90a3a5f37a0205b3ab461d7545726",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "b6c6a7ae595f3e88b498071f5c025424",
+        "text": "304",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 4,
+            "parent_id": "dda90a3a5f37a0205b3ab461d7545726",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Image",
+        "element_id": "254a6df351858ed065a5b68243573efd",
+        "text": "Load Sensor Traction Sensor Standard Specimens (Disc and 3/4* ball) Wear Sensor ©",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        449.9999575,
+                        200.0
+                    ],
+                    [
+                        449.9999575,
+                        687.4282091666666
+                    ],
+                    [
+                        1249.999904722222,
+                        687.4282091666666
+                    ],
+                    [
+                        1249.999904722222,
+                        200.0
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "FigureCaption",
+        "element_id": "f29fb812d792e59a23c995529a86ac73",
+        "text": "Figure 3. Schematic of Mini Traction Machine, image courtesy of PCS Instruments",
+        "metadata": {
+            "detection_class_prob": 0.8331537842750549,
+            "coordinates": {
+                "points": [
+                    [
+                        345.01766666666657,
+                        728.9074096679688
+                    ],
+                    [
+                        345.01766666666657,
+                        757.340333333333
+                    ],
+                    [
+                        1362.3763333333334,
+                        757.340333333333
+                    ],
+                    [
+                        1362.3763333333334,
+                        728.9074096679688
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "dd986c289d16c14216cf7579b90e7696",
+        "text": "The experimental method using the MTM utilized a ball-on-disc configuration. In the MTM, the ball and disc are driven independently which allows any combination of rolling and sliding. The measurement of friction force is done through a load cell that is attached to the bearing housing of the ball motor shaft. In previous work by the author and when considering other scuffing tests, it was noted that most simulations use a load stage progression [5,6,13]. This can be seen in the FZG (Forschungsstelle fur Zahnrader und Getriebebau), 4-Ball EP (Extreme Pressure), SRV, OK Load Test, and Timken tests. The testing in this work is done using progressive speed as opposed to progressive load stages. On benefit of this approach is that the higher sliding speeds will allow for a more aggressive wear rate to help differentiate the efficacy of the additives. However, the primary reason for using the progressive speed approach is the fact that in a test where the contact stress increases at every stage, the size of contact patch will also increase at every stage. This leads to fresh nascent metal being exposed at every stage. This new area of contact has not yet developed a tribofilm when it comes into contact, so it is more likely to have aggressive wear. Therefore, tests run in a progressive load methodology will typically have failures at the step increase and have lower repeatability.",
+        "metadata": {
+            "detection_class_prob": 0.9548684358596802,
+            "coordinates": {
+                "points": [
+                    [
+                        197.8028564453125,
+                        799.280517578125
+                    ],
+                    [
+                        197.8028564453125,
+                        1228.7183333333335
+                    ],
+                    [
+                        1507.6843666666664,
+                        1228.7183333333335
+                    ],
+                    [
+                        1507.6843666666664,
+                        799.280517578125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "ca1be4fdce5effbfc161d1d31565bbca",
+        "text": "The experimental testing methodology is as follows [1,7]: The testing apparatus is assembled and filled with oil for the experiment. The temperature of the oil is then heated to 150oC while the ball and disc are rotated at a slow speed while not in contact. This continues for 30 minutes to allow for any chemical absorption of the additives on the surfaces. After this, there is a 10-minute run-in period with a Hertzian contact stress of 1.25 GPa and a Sliding to Rolling Ratio (SRR) of 1. Once the run-in has completed, a progressive speed test starts with running stages for 1 minute and rest stages for 30 seconds. The SRR is varied at each stage in order to maintain the entrainment speed for each stage but increase the sliding speed at the contact. The test continues until either all stages (51) are completed (maximum speed for MTM) or scuffing wear and seizure occurs.",
+        "metadata": {
+            "detection_class_prob": 0.9544740319252014,
+            "coordinates": {
+                "points": [
+                    [
+                        197.9673333333333,
+                        1260.95947265625
+                    ],
+                    [
+                        197.9673333333333,
+                        1563.9333333333334
+                    ],
+                    [
+                        1507.6428666666664,
+                        1563.9333333333334
+                    ],
+                    [
+                        1507.6428666666664,
+                        1260.95947265625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "9bb573567420cfc0b4fda41aa55d957a",
+        "text": "Samples",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        200.0,
+                        1605.9916666666663
+                    ],
+                    [
+                        200.0,
+                        1633.658333333333
+                    ],
+                    [
+                        315.70199999999994,
+                        1633.658333333333
+                    ],
+                    [
+                        315.70199999999994,
+                        1605.9916666666663
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "f552dd9426f5a14dd73a2304aaf324f1",
+        "text": "The test plates for the SOT were machined from 440C stainless steel with a surface roughness of <0.05 microns. Balls used were 12.7-mm or 7.14-mm 440C stainless steel depending on the contact stress requirements. For the vacuum bearing tests, SKF 7204 Angular contact ball bearings made from 52100 steel were used. In the SRV testing, AISI 52100 steel balls and discs were used with a Young’s Modulus of 210 GPa and a Poisson ratio of 0.30. The balls had a 10-mm diameter with a roughness (Ra) of 25 nm and a Rockwell hardness of 62 HRC. The 24mm discs are vacuum arc re-melted and had a hardness of 58 HRC with a lapped surface that has a roughness (Rz) of 500 nm. All the tests were run in duplicate and with a maximum Hertzian contact stress of 2.12 GPa and a sliding speed of 300 mm/s. The experimental MTM test used AISI 52100 steel balls and discs were with a Young’s Modulus of 210 GPa and a Poisson ratio of 0.30. The balls had a 19.05-mm diameter with a roughness (Rq) of 10 nm and a Rockwell hardness",
+        "metadata": {
+            "detection_class_prob": 0.9559463262557983,
+            "coordinates": {
+                "points": [
+                    [
+                        198.5789031982422,
+                        1634.5308837890625
+                    ],
+                    [
+                        198.5789031982422,
+                        1967.0366666666666
+                    ],
+                    [
+                        1507.703733333333,
+                        1967.0366666666666
+                    ],
+                    [
+                        1507.703733333333,
+                        1634.5308837890625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "parent_id": "9bb573567420cfc0b4fda41aa55d957a",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "2a6f7ca5a8a8080f17b5020de8ceec14",
+        "text": "305",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 5,
+            "parent_id": "9bb573567420cfc0b4fda41aa55d957a",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "f402c3b206b15d841b01cb4fc4b5efad",
+        "text": "of 62.5. The discs had a hardness of 60.5 and a roughness (Rq) of 11 nm. All the tests were run in duplicate and with a maximum Hertzian contact stress of 1.25 GPa.",
+        "metadata": {
+            "detection_class_prob": 0.9137440919876099,
+            "coordinates": {
+                "points": [
+                    [
+                        200.01666666666665,
+                        204.91323852539062
+                    ],
+                    [
+                        200.01666666666665,
+                        269.65999999999985
+                    ],
+                    [
+                        1507.6484666666665,
+                        269.65999999999985
+                    ],
+                    [
+                        1507.6484666666665,
+                        204.91323852539062
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "9bb573567420cfc0b4fda41aa55d957a",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "5d618883c3b242052a9731efe60f7502",
+        "text": "Procedures",
+        "metadata": {
+            "detection_class_prob": 0.7534993290901184,
+            "coordinates": {
+                "points": [
+                    [
+                        773.3530000000002,
+                        301.8500671386719
+                    ],
+                    [
+                        773.3530000000002,
+                        337.74766666666665
+                    ],
+                    [
+                        934.0410000000002,
+                        337.74766666666665
+                    ],
+                    [
+                        934.0410000000002,
+                        301.8500671386719
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "24e16eef6c24e04a192f817995321de6",
+        "text": "Sample Preparation",
+        "metadata": {
+            "detection_class_prob": 0.7437002062797546,
+            "coordinates": {
+                "points": [
+                    [
+                        200.0,
+                        374.02252197265625
+                    ],
+                    [
+                        200.0,
+                        402.9916666666667
+                    ],
+                    [
+                        453.3713333333333,
+                        402.9916666666667
+                    ],
+                    [
+                        453.3713333333333,
+                        374.02252197265625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "235a5c2fa4879eecf3de331901d798b9",
+        "text": "All test specimens are ultrasonically cleaned in heptane followed by acetone. For the SOT testing, the fluid lubricants were plated via the preparation of a solution of lubricant diluted into an appropriate solvent. This solution was then applied directly to a rotating ball and the solvent allowed to evaporate from the surface. This left the fluid lubricant on the ball’s surface. The lubricant plating method allows for the application of very small amounts of lubricant. The application of grease was done by rubbing the ball between cleanroom grade polyethelye sheets until and even coating of lubricant was applied. The target amount of applied lubricant for both fluids and greases were 50 μg. The contact area for the SRV was coated with 5 ml of lubricant while the MTM specimens were fully flooded.",
+        "metadata": {
+            "detection_class_prob": 0.9563045501708984,
+            "coordinates": {
+                "points": [
+                    [
+                        197.39707946777344,
+                        402.3287048339844
+                    ],
+                    [
+                        197.39707946777344,
+                        669.6933333333334
+                    ],
+                    [
+                        1507.8582763671875,
+                        669.6933333333334
+                    ],
+                    [
+                        1507.8582763671875,
+                        402.3287048339844
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "24e16eef6c24e04a192f817995321de6",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "a52104977c73c54819d756fef7c0d058",
+        "text": "Results and Discussion",
+        "metadata": {
+            "detection_class_prob": 0.8448941707611084,
+            "coordinates": {
+                "points": [
+                    [
+                        690.7141723632812,
+                        701.962158203125
+                    ],
+                    [
+                        690.7141723632812,
+                        737.7810000000001
+                    ],
+                    [
+                        1014.3406666666668,
+                        737.7810000000001
+                    ],
+                    [
+                        1014.3406666666668,
+                        701.962158203125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Title",
+        "element_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+        "text": "SRV (Sliding in Atmospheric and Vacuum Conditions)",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        200.0,
+                        787.325
+                    ],
+                    [
+                        200.0,
+                        814.9916666666668
+                    ],
+                    [
+                        868.3713333333334,
+                        814.9916666666668
+                    ],
+                    [
+                        868.3713333333334,
+                        787.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "91296354c25fe1918eea5a6ea9c06899",
+        "text": "The results in Tables 1-3 and Figure 4 are from the experiment on the MAC with 0%, 3%, and 5% lead naphthenate when tested in a boundary lubricating regime, at 20°C on the SRV under both atmospheric and vacuum conditions. These plots illustrate the wear rate of each material which is determined by the total wear volume (µm3) per millimeter traveled in the test. The wear volumes were measured using an Ametek 3D Optical Profilometer.",
+        "metadata": {
+            "detection_class_prob": 0.9509239196777344,
+            "coordinates": {
+                "points": [
+                    [
+                        199.91700000000017,
+                        815.0903930664062
+                    ],
+                    [
+                        199.91700000000017,
+                        981.6633333333334
+                    ],
+                    [
+                        1507.6696666666667,
+                        981.6633333333334
+                    ],
+                    [
+                        1507.6696666666667,
+                        815.0903930664062
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "2316fafcea71c0233947bd3eb9ee24da",
+        "text": "Table 1: Wear Performance for MAC fluid with 0% Lead at 20°C",
+        "metadata": {
+            "detection_class_prob": 0.34731560945510864,
+            "coordinates": {
+                "points": [
+                    [
+                        457.6643333333333,
+                        1013.4313354492188
+                    ],
+                    [
+                        457.6643333333333,
+                        1048.3400000000001
+                    ],
+                    [
+                        1250.0100000000002,
+                        1048.3400000000001
+                    ],
+                    [
+                        1250.0100000000002,
+                        1013.4313354492188
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Table",
+        "element_id": "36b278bcb28583cf7ca8005d3cdb71a4",
+        "text": "Material Temp (°C) Environment Specimen Avg Wear Scar (mm2) Disc Wear Volume (μm3) Wear Rate (μm3/mm) 0% Lead 20 Atmosphere 440C 1.302 599,972 0.28 0% Lead 20 Vacuum 440C 1.294 518,400 0.24 0% Lead 20 Atmosphere 52100 1.499 481,018 0.22 0% Lead 20 Vacuum 52100 1.420 410,400 0.19",
+        "metadata": {
+            "detection_class_prob": 0.9165093302726746,
+            "coordinates": {
+                "points": [
+                    [
+                        206.11376953125,
+                        1059.1405029296875
+                    ],
+                    [
+                        206.11376953125,
+                        1238.2200927734375
+                    ],
+                    [
+                        1505.4521484375,
+                        1238.2200927734375
+                    ],
+                    [
+                        1505.4521484375,
+                        1059.1405029296875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "text_as_html": "<table><thead><tr><th>Material</th><th>[Temp (°C)|</th><th>Environment</th><th>|Specimen|</th><th>Avg Wear Scar (mm’)</th><th>| Disc Wear Volume (um?)</th><th>Wear Rate (um?/mm)</th></tr></thead><tbody><tr><td>0% Lead</td><td>20</td><td>Atmosphere</td><td>440C</td><td>1.302</td><td>599,972</td><td>0.28</td></tr><tr><td>0% Lead</td><td>20</td><td>Vacuum</td><td>440C</td><td>1.294</td><td>518,400</td><td>0.24</td></tr><tr><td>0% Lead</td><td>20</td><td>Atmosphere</td><td>id 52100</td><td>1.499</td><td>481,018</td><td>0.22</td></tr><tr><td>0% Lead</td><td>20</td><td>Vacuum</td><td>id 52100</td><td>1.420</td><td>410,400</td><td>0.19</td></tr></tbody></table>",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "1f205fee8ad03a41af38e1af13dee87a",
+        "text": "Table 2: Wear Performance for MAC fluid with 3% Lead at 20°C",
+        "metadata": {
+            "detection_class_prob": 0.5159733891487122,
+            "coordinates": {
+                "points": [
+                    [
+                        457.63666666666666,
+                        1270.7020263671875
+                    ],
+                    [
+                        457.63666666666666,
+                        1306.6913333333334
+                    ],
+                    [
+                        1249.9823333333336,
+                        1306.6913333333334
+                    ],
+                    [
+                        1249.9823333333336,
+                        1270.7020263671875
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Table",
+        "element_id": "bdd2f938946897e11ea180800e652f92",
+        "text": "Material Temp (°C) Environment Specimen Avg Wear Scar (mm2) Disc Wear Volume (μm3) Wear Rate (μm3/mm) 3% Lead 20 Atmosphere 440C 2.409 410,400 0.19 3% Lead 20 Vacuum 440C 1.942 216,000 0.10 3% Lead 20 Atmosphere 52100 1.950 342,356 0.16 3% Lead 20 Vacuum 52100 1.820 259,200 0.12",
+        "metadata": {
+            "detection_class_prob": 0.9097391366958618,
+            "coordinates": {
+                "points": [
+                    [
+                        199.68533325195312,
+                        1320.8238525390625
+                    ],
+                    [
+                        199.68533325195312,
+                        1495.201904296875
+                    ],
+                    [
+                        1503.9859619140625,
+                        1495.201904296875
+                    ],
+                    [
+                        1503.9859619140625,
+                        1320.8238525390625
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "text_as_html": "<table><thead><tr><th>3% Lead</th><th>20</th><th>Atmosphere</th><th>440C</th><th>2.409</th><th>410,400</th><th>0.19</th></tr></thead><tbody><tr><td>3% Lead</td><td>20</td><td>Vacuum</td><td>440C</td><td>1.942</td><td>216,000</td><td>0.10</td></tr><tr><td>3% Lead</td><td>20</td><td>Atmosphere</td><td>i 52100</td><td>1.950</td><td>342,356</td><td>0.16</td></tr><tr><td>3% Lead</td><td>20</td><td>Vacuum</td><td>r 52100</td><td>1.820</td><td>259,200</td><td>0.12</td></tr></tbody></table>",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "NarrativeText",
+        "element_id": "2e710a7f209c8520aafb1ee39536c50b",
+        "text": "Table 3: Wear Performance for MAC fluid with 5% Lead at 20°C",
+        "metadata": {
+            "detection_class_prob": 0.4937569797039032,
+            "coordinates": {
+                "points": [
+                    [
+                        457.60900000000004,
+                        1528.8262939453125
+                    ],
+                    [
+                        457.60900000000004,
+                        1562.6910000000003
+                    ],
+                    [
+                        1251.7879638671875,
+                        1562.6910000000003
+                    ],
+                    [
+                        1251.7879638671875,
+                        1528.8262939453125
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "Table",
+        "element_id": "2da112fbb01e8f24703ac6c7fc79f3f4",
+        "text": "Material Temp (°C) Environment Specimen Avg Wear Scar (mm2) Disc Wear Volume (μm3) Wear Rate (μm3/mm) 5% Lead 20 Atmosphere 440C 1.468 291,600 0.14 5% Lead 20 Vacuum 440C 1.259 172,800 0.08 5% Lead 20 Atmosphere 52100 1.389 259,200 0.12 5% Lead 20 Vacuum 52100 1.242 216,000 0.10",
+        "metadata": {
+            "detection_class_prob": 0.9146831631660461,
+            "coordinates": {
+                "points": [
+                    [
+                        196.15696716308594,
+                        1573.6907958984375
+                    ],
+                    [
+                        196.15696716308594,
+                        1752.82958984375
+                    ],
+                    [
+                        1506.8255615234375,
+                        1752.82958984375
+                    ],
+                    [
+                        1506.8255615234375,
+                        1573.6907958984375
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "text_as_html": "<table><thead><tr><th>Material</th><th>[Temp (°C)</th><th>Environment</th><th>|Specimen|</th><th>Avg Wear Scar (mm’) |</th><th>Disc Wear Volume (um?)</th><th>Wear Rate (um?/mm)</th></tr></thead><tbody><tr><td>5% Lead</td><td>20</td><td>Atmosphere</td><td>440C</td><td>1.468</td><td>291,600</td><td>0.14</td></tr><tr><td>5% Lead</td><td>20</td><td>Vacuum</td><td>440C</td><td>1.259</td><td>172,800</td><td>0.08</td></tr><tr><td>5% Lead</td><td>20</td><td>Atmosphere</td><td>id 52100</td><td>1.389</td><td>259,200</td><td>0.12</td></tr><tr><td>5% Lead</td><td>20</td><td>Vacuum</td><td>id 52100</td><td>1.242</td><td>216,000</td><td>0.10</td></tr></tbody></table>",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    },
+    {
+        "type": "UncategorizedText",
+        "element_id": "b60f028e8662ae2ff16c45472df7d017",
+        "text": "306",
+        "metadata": {
+            "coordinates": {
+                "points": [
+                    [
+                        826.6666666666667,
+                        2075.325
+                    ],
+                    [
+                        826.6666666666667,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2102.991666666667
+                    ],
+                    [
+                        880.6996666666668,
+                        2075.325
+                    ]
+                ],
+                "system": "PixelSpace",
+                "layout_width": 1700,
+                "layout_height": 2200
+            },
+            "last_modified": "2024-04-05T22:05:19",
+            "filetype": "application/pdf",
+            "languages": [
+                "eng"
+            ],
+            "page_number": 6,
+            "parent_id": "5e4ab9a61f4ccacfe4f9babd2b3ae82f",
+            "file_directory": "/Users/danmueller/Documents/GitHub/aerospace_chatbot/tests",
+            "filename": "test1.pdf"
+        }
+    }
+]

@@ -20,6 +20,10 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "3.11.1"
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y poppler-utils tesseract-ocr
     - name: Install Poetry
       run: |
         python -m pip install poetry
@@ -41,6 +45,9 @@ jobs:
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
         VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+        COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+        UNSTRUCTURED_API_KEY: ${{ secrets.UNSTRUCTURED_API_KEY }}
+        UNSTRUCTURED_API_URL: ${{ secrets.UNSTRUCTURED_API_URL }}
       run: |
         cd ./tests
         python -m poetry run pytest -s -v

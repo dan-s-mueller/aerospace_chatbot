@@ -1,8 +1,3 @@
-from .cache import (
-    Dependencies,
-    cache_data,
-    cache_resource
-)
 from .config import (
     ConfigurationError,
     load_config,
@@ -13,9 +8,6 @@ from .config import (
 )
 
 __all__ = [
-    'Dependencies',
-    'cache_data',
-    'cache_resource',
     'ConfigurationError',
     'load_config',
     'get_secrets',

@@ -1,5 +1,5 @@
 import streamlit as st
-import os, time
+import os, time, re
 
 from langchain_core.exceptions import OutputParserException
 from aerospace_chatbot.core.config import setup_logging
@@ -9,9 +9,8 @@ from aerospace_chatbot.services import EmbeddingService, RerankService, LLMServi
 
 logger = setup_logging()
 
-# Clear Demo Expert if set since this should access the full app
-if "EXPERT" in os.environ:
-    del os.environ["EXPERT"]
+# Set demo expert
+os.environ["EXPERT"] = "Design Criteria"
 
 
 # Initialize session state variables if they don't exist
@@ -65,7 +64,7 @@ st.session_state.sb = handle_sidebar_state(st.session_state.sidebar_manager)
 
 # Header section
 with header:
-    st.title('🚀 Aerospace Chatbot: "Admin"')
+    st.title('🚀 ' + f'Aerospace Chatbot Demo: {os.getenv("EXPERT")}')
 
 # Info section - Always visible at top
 with info_section:

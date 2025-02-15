@@ -4,7 +4,7 @@ import streamlit as st
 import os, logging
 
 from ..core.config import load_config, ConfigurationError, get_secrets, set_secrets, get_required_api_keys
-from ..core.cache import Dependencies
+# from ..core.cache import Dependencies
 from ..services.database import DatabaseService, get_available_indexes
 
 class SidebarManager:
@@ -13,7 +13,7 @@ class SidebarManager:
     def __init__(self, config_file):
         self._config_file = config_file
         self._config = load_config(self._config_file)
-        self._deps = Dependencies()
+        # self._deps = Dependencies()
         self.sb_out = st.session_state.get('sb', {})
         if self.sb_out is None:
             self.sb_out = {}
@@ -22,14 +22,17 @@ class SidebarManager:
         self.logger = logging.getLogger(__name__)
         
     def initialize_session_state(self):
-        """Initialize session state for all sidebar elements."""
+        """
+        Initialize session state for all sidebar elements.
+        """
         if 'sidebar_state_initialized' not in st.session_state:
             elements = {
                 'index': ['index_selected', 'index_type'],
-                'embeddings': ['embedding_service', 'embedding_model', 'embedding_endpoint'],
-                'rag': ['rag_type', 'rag_llm_service', 'rag_llm_model', 'rag_endpoint'],
+                'rag': ['rag_llm_service', 'rag_llm_model', 'rag_endpoint'],
                 'llm': ['llm_service', 'llm_model', 'llm_endpoint'],
-                'model_options': ['temperature', 'output_level', 'k'],
+                'model_options': ['temperature', 'output_level', 'k_retrieve', 'k_rerank', 'style_mode'],
+                'embeddings': ['embedding_service', 'embedding_model', 'embedding_endpoint'],
+                'rerankers': ['rerank_service', 'rerank_model'],
                 'api_keys': ['openai_key', 'anthropic_key', 'hf_key', 'voyage_key', 'pinecone_key']
             }
             
@@ -51,10 +54,12 @@ class SidebarManager:
             st.session_state.sidebar_state_initialized = True
             
     def render_sidebar(self):
-        """Render the complete sidebar based on enabled options."""
+        """
+        Render the complete sidebar based on enabled options.
+        """
         try:
             # Sync any changed values from session state first
-            for key in ['index_type', 'rag_type', 'embedding_model', 'embedding_service', 
+            for key in ['index_type', 'embedding_model', 'embedding_service', 
                        'openai_key', 'anthropic_key', 'voyage_key', 'pinecone_key', 'hf_key']:
                 if f'{key}_select' in st.session_state:
                     self.sb_out[key] = st.session_state[f'{key}_select']
@@ -67,11 +72,11 @@ class SidebarManager:
 
             # Render GUI elements
             self.available_indexes, self.index_metadatas = self._render_index_selection()
-            self._render_rag_type()    
             self._render_llm()
             self._render_model_options()
             self._render_vector_database()
             self._render_embeddings()
+            self._render_rerankers()
             self._render_secret_keys()
 
             # Update session state with final values
@@ -102,12 +107,6 @@ class SidebarManager:
                 self.sb_out['embedding_model'] = embedding_config['models'][0]  # Default to first embedding model in config
             
             self.logger.info(f"Embedding service: {self.sb_out['embedding_service']}, embedding model: {self.sb_out['embedding_model']}")
-        
-        if 'rag_type' not in self.sb_out:
-            self.sb_out['rag_type'] = (
-                'Standard' if self.sb_out['index_type'] == 'RAGatouille'
-                else self._config['rag_types'][0]
-            )
 
         # Validate required API keys based on config
         secrets = get_secrets()
@@ -130,26 +129,29 @@ class SidebarManager:
         # Check if the configuration is set to 'tester'
         if os.getenv('AEROSPACE_CHATBOT_CONFIG') == 'tester':
             # Use the index from the config and disable the selection
-            tester_config = self._config.get('available_indexes', [])
-            if tester_config:
-                self.sb_out['index_selected'] = tester_config[0]
+            # tester_config = self._config.get('available_indexes', [])
+
+            available_indexes=self._config['experts'][os.getenv('EXPERT')]['available_indexes']
+            if available_indexes:
+                self.sb_out['index_selected'] = available_indexes[0]
                 st.session_state.index_selected_disabled = True
                 st.sidebar.selectbox(
                     'Index selected',
-                    tester_config,
+                    available_indexes,
                     disabled=True,
                     help='Index is pre-selected for tester configuration.',
                     key='index_selected_select'
                 )
                 self.logger.info(f"Index selected: {self.sb_out['index_selected']}")
-                return tester_config, {}  # Return the pre-selected index
+                return available_indexes, {}  # Return the pre-selected index
+            else:
+                raise ValueError(f"No available indexes found for {os.getenv('EXPERT')}. Must specify available_indexes in config for tester access.")
         else:
             # Original code for rendering index selection
             self.logger.info(f"Getting available indexes for sidebar with settings: {self.sb_out}")
             available_indexes, index_metadatas = get_available_indexes(
                 self.sb_out['index_type'],
                 self.sb_out['embedding_model'],
-                self.sb_out['rag_type']
             )
             self.logger.info(f"Available indexes for sidebar: {available_indexes}")
 
@@ -190,48 +192,6 @@ class SidebarManager:
         )
         self.logger.info(f"LLM service: {self.sb_out['llm_service']}, LLM model: {self.sb_out['llm_model']}")
 
-    def _render_rag_type(self):
-        """Render RAG type configuration section."""
-        st.sidebar.title('RAG Type')
-        if self.sb_out['index_type'] == 'RAGatouille':
-            rag_type = st.sidebar.selectbox(
-                'RAG type',
-                ['Standard'],
-                disabled=st.session_state.rag_type_disabled,
-                help='Only Standard is available for RAGatouille.',
-                key='rag_type_select'
-            )
-        else:
-            rag_type = st.sidebar.selectbox(
-                'RAG type',
-                self._config['rag_types'],
-                disabled=st.session_state.rag_type_disabled,
-                help='Parent-Child is for parent-child RAG. Summary is for summarization RAG.',
-                key='rag_type_select'
-            )
-        
-        # Update both local state and session state immediately
-        self.sb_out['rag_type'] = rag_type
-        st.session_state.sb = self.sb_out
-        
-        if rag_type == 'Summary':
-            self._render_rag_llm_config()
-
-        self.logger.info(f"RAG type: {self.sb_out['rag_type']}")
-
-    def _render_rag_llm_config(self):
-        """Render RAG LLM configuration section."""
-        self.sb_out['rag_llm_service'] = st.sidebar.selectbox(
-            'RAG LLM model',
-            list(self._config['llms'].keys()),
-            disabled=st.session_state.rag_llm_service_disabled,
-            help='Select the LLM model for RAG.'
-        )
-        
-        self._render_llm_model_selection('rag_')
-
-        self.logger.info(f"RAG LLM service: {self.sb_out['rag_llm_service']}")
-
     def _render_model_options(self):
         """Render model options section."""
         st.sidebar.title('LLM Options')
@@ -253,28 +213,47 @@ class SidebarManager:
             disabled=st.session_state.output_level_disabled,
             help='Max output tokens for LLM. Concise: 50, Verbose: 1000+. Limit depends on model.'
         )
+
+        style_mode = st.sidebar.selectbox(
+            'Style mode',
+            self._config['style_modes'],
+            disabled=st.session_state.style_mode_disabled,
+            help='Select the style mode for the chatbot. Standard is the default, which is neutral and informative. All styles will remain factual and accurate.'
+        )
         
         st.sidebar.title('Retrieval Options')
-        k = st.sidebar.number_input(
-            'Number of items per prompt',
+        k_retrieve = st.sidebar.number_input(
+            'Number of chunks retrieved per prompt',
             min_value=1,
             step=1,
-            value=8,
-            disabled=st.session_state.k_disabled,
-            help='Number of items to retrieve per query. Many retrievals max exceed model context window.'
+            value=20,
+            disabled=st.session_state.k_retrieve_disabled,
+            help='Number of items to retrieve per query.'
+        )
+
+        k_rerank = st.sidebar.number_input(
+            'Number of docs reranked to use for response',
+            min_value=1,
+            step=1,
+            value=5,
+            disabled=st.session_state.k_rerank_disabled,
+            help='Number of items to rerank from retrieved chunks. This many chunks are ranked by relevance and provided to the LLM for a response. Must be at least k_retrieve.'
         )
         
         if self.sb_out['index_type'] != 'RAGatouille':
             self.sb_out['model_options'] = {
                 'output_level': output_level,
-                'k': k,
-                'temperature': temperature
+                'style_mode': style_mode,
+                'k_retrieve': k_retrieve,
+                'k_rerank': k_rerank,
+                'temperature': temperature,
             }
         else:
             self.sb_out['model_options'] = {
                 'output_level': output_level,
-                'k': k,
-                'temperature': temperature
+                'style_mode': style_mode,
+                'k_retrieve': k_retrieve,
+                'temperature': temperature,
             }
 
         self.logger.info(f"Model options: {self.sb_out['model_options']}")
@@ -296,7 +275,9 @@ class SidebarManager:
         self.logger.info(f"Index type: {self.sb_out['index_type']}")
 
     def _render_embeddings(self):
-        """Render embeddings configuration section."""
+        """
+        Render embeddings configuration section.
+        """
         st.sidebar.title('Embeddings', 
                         help='See embedding leaderboard here for performance overview: https://huggingface.co/spaces/mteb/leaderboard')
         
@@ -345,8 +326,35 @@ class SidebarManager:
 
         self.logger.info(f"Embedding service: {self.sb_out['embedding_service']}, embedding model: {self.sb_out['embedding_model']}")
 
+    def _render_rerankers(self):
+        """
+        Render rerankers configuration section.
+        """
+        st.sidebar.title('Rerankers')
+
+        rerank_services = [reranker["service"] for reranker in self._config['rerankers']]
+
+        self.sb_out['rerank_service'] = st.sidebar.selectbox(
+            'Reranker service',
+            rerank_services,
+            disabled=st.session_state.rerank_service_disabled
+        )
+
+        # Find the reranker config for the selected model
+        reranker_config = next(e for e in self._config['rerankers'] if e['service'] == self.sb_out['rerank_service'])
+        
+        self.sb_out['rerank_model'] = st.sidebar.selectbox(
+            'Reranker model',
+            reranker_config['models'],
+            disabled=st.session_state.rerank_model_disabled
+        )
+
+        self.logger.info(f"Reranker service: {self.sb_out['rerank_service']}, reranker model: {self.sb_out['rerank_model']}")
+
     def _render_secret_keys(self):
-        """Render secret keys configuration section."""
+        """
+        Render secret keys configuration section.
+        """
         self.sb_out['keys'] = {}
         st.sidebar.title('Secret keys', help='See Home page under Connection Status for status of keys.')
         
@@ -423,11 +431,13 @@ class SidebarManager:
             st.stop()
 
     def _check_local_db_path(self):
-        """Check and set local database path if not already set"""
+        """
+        Check and set local database path if not already set.
+        """
         if not os.environ.get('LOCAL_DB_PATH'):
             local_db_path_input = st.empty()
             warn_db_path = st.warning('Local Database Path is required to initialize. Use an absolute path.')
-            local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. chroma).')
+            local_db_path = local_db_path_input.text_input('Update Local Database Path', help='Path to local database (e.g. RAGatouille).')
             
             if local_db_path:
                 os.environ['LOCAL_DB_PATH'] = local_db_path

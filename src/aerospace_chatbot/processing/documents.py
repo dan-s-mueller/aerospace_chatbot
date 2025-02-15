@@ -1,71 +1,321 @@
 """Document processing and chunking logic."""
 
-import hashlib, json, re
-from typing import List, Optional, Any
-from dataclasses import dataclass
-import tempfile
+import hashlib, json, os
 import logging
 
-from ..core.cache import Dependencies, cache_data
-from ..services.prompts import SUMMARIZE_TEXT
+# Parsers
+import unstructured_client
+from unstructured_client.models import operations, shared
+from unstructured.partition.pdf import partition_pdf
+from unstructured.chunking.title import chunk_by_title
+from unstructured.staging.base import elements_from_dicts
+from unstructured.documents.elements import Element
 
-@dataclass
+# Utilities
+from typing import List, Any, Optional
+from google.cloud import storage
+from langchain_core.documents import Document
+import fitz
+
+# from ..core.cache import Dependencies
+# from ..services.prompts import SUMMARIZE_TEXT
+
 class ChunkingResult:
-    """Container for chunking results."""
-    rag_type: str
-    pages: List[Any]
-    chunks: Optional[List[Any]] = None
-    splitters: Optional[Any] = None
-    merge_pages: Optional[int] = None
-    chunk_method: Optional[str] = None
-    chunk_size: Optional[int] = None
-    chunk_overlap: Optional[int] = None
-    parent_chunks: Optional[List[Any]] = None
-    summaries: Optional[List[Any]] = None
-    llm_service: Optional[Any] = None
+    def __init__(
+            self, 
+            chunks: List[Element], 
+            chunk_size: Optional[int], 
+            chunk_overlap: Optional[int]
+        ):
+        self.chunks = chunks
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
+    def chunk_convert(self, destination_type=Document):
+        """
+        Convert chunks to a destination type.
+        """
+
+        def _flatten_metadata(metadata, parent_key='', sep='.'):
+            """
+            Flatten a nested dictionary and ensure all values are strings, numbers, booleans, or lists of strings.
+            """
+            items = []
+            for k, v in metadata.items():
+                new_key = f"{parent_key}{sep}{k}" if parent_key else k
+                if isinstance(v, dict):
+                    items.extend(_flatten_metadata(v, new_key, sep=sep).items())
+                elif isinstance(v, list) and all(isinstance(i, str) for i in v):
+                    items.append((new_key, v))
+                elif isinstance(v, (str, int, float, bool)):
+                    items.append((new_key, v))
+                else:
+                    # Convert unsupported types to string
+                    items.append((new_key, str(v)))
+            return dict(items)
+
+        converted_chunks = []
+        if destination_type == Document:
+            for chunk in self.chunks:
+                chunk=chunk.to_dict()
+                doc_metadata = _flatten_metadata(chunk['metadata'])
+                doc_metadata['element_id']=chunk['element_id']
+                doc_metadata['type']=chunk['type']
+                doc_metadata['chunk_size']=self.chunk_size
+                doc_metadata['chunk_overlap']=self.chunk_overlap
+
+
+                if chunk['type'] == 'Table':
+                    # For tables, text_as_html is the HTML representation of the table, use that for embedding
+                    if not chunk['metadata']['text_as_html'] or chunk['metadata']['text_as_html'].isspace():
+                        raise ValueError(f"text_as_html is empty for table chunk with element_id: {chunk['element_id']}")
+                    doc=Document(
+                        page_content=chunk['metadata']['text_as_html'], 
+                        metadata=doc_metadata, 
+                    )
+                else:
+                    # For all other types, use the text field for embedding
+                    if not chunk['text'] or chunk['text'].isspace():
+                        raise ValueError(f"text is empty for chunk with element_id: {chunk['element_id']}")
+                    doc=Document(
+                        page_content=chunk['text'], 
+                        metadata=doc_metadata, 
+                    )
+                converted_chunks.append(doc)
+        self.chunks=converted_chunks
 
 class DocumentProcessor:
     """Handles document processing, chunking, and indexing."""
     
-    def __init__(self, 
-                 embedding_service,
-                 rag_type='Standard',
-                 chunk_method='character_recursive',
-                 chunk_size=500,
-                 chunk_overlap=0,
-                 merge_pages=None,
-                 llm_service=None):
+    def __init__(
+        self, 
+        embedding_service,
+        work_dir='./document_processing',
+        chunk_size=500,
+        chunk_overlap=0
+    ):
         self.embedding_service = embedding_service
-        self.rag_type = rag_type
-        self.chunk_method = chunk_method
-        self.splitter = None
+        self.work_dir = work_dir
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-        self.merge_pages = merge_pages
-        self.llm_service = llm_service  # Only for rag_type=='Summary', otherwise ignored
-        self._deps = Dependencies()
         self.logger = logging.getLogger(__name__)
 
-        if self.rag_type == 'Summary' and not self.llm_service:
-            raise ValueError("LLM service is required for Summary RAG type")
+        os.makedirs(self.work_dir, exist_ok=True)
 
-    def process_documents(self, documents):
-        """Process documents based on RAG type by chunking."""
+    def load_partitioned_documents(self, documents: List[str], partition_dir: str) -> List[str]:
+        """
+        Load existing partitioned documents from a directory.
+        Checks if partition doc exists for document. Raises exception if no partition file exists for one or more documents.
+        """
+        partitioned_docs = []
+        missing_files = []
+        
+        for doc in documents:
+            # Get base filename without extension
+            base_name = os.path.splitext(os.path.basename(doc))[0]
+            
+            # Construct expected partitioned file path
+            partitioned_file = os.path.join(partition_dir, 'partitioned', f"{base_name}-partitioned.json")
+            
+            print(partitioned_file)
+            if os.path.exists(partitioned_file):
+                self.logger.info(f"Found existing partitioned file: {partitioned_file}")
+                partitioned_docs.append(partitioned_file)
+            else:
+                self.logger.warning(f"No partitioned file found for document: {doc}")
+                missing_files.append(doc)
+                
+        if missing_files:
+            raise FileNotFoundError(f"No partitioned JSON files found for the following documents: {', '.join(missing_files)}")
+            
+        self.logger.info(f"Loaded {len(partitioned_docs)} partitioned documents from {partition_dir}")
+        return partitioned_docs
 
-        cleaned_docs = self._load_and_clean_documents(documents)
-        self.logger.info("Processing documents...")
-        if self.rag_type == 'Standard':
-            return self._process_standard(cleaned_docs)
-        elif self.rag_type == 'Parent-Child':
-            return self._process_parent_child(cleaned_docs)
-        elif self.rag_type == 'Summary':
-            return self._process_summary(cleaned_docs)
-        else:
-            raise ValueError(f"Unsupported RAG type: {self.rag_type}")
+    def load_and_partition_documents(
+        self,
+        documents,
+        partition_by_api=True,
+        upload_bucket=None
+    ):
+        """
+        Load and partition documents using either the Unstructured API or local processing.
+        partition_by_api specifies if unstructured API is to be used or local.
+        If upload_bucket is specified, upload the partitioned documents to the specified bucket on GCS.
+        """
+
+        def partition_with_api(pdf_path):
+            """
+            Partition documents using the Unstructured API.
+            TODO add in image extraction for multimodal. Not set up with embeddings yet.
+            TODO add async call for api https://docs.unstructured.io/api-reference/api-services/sdk-python#async-partitioning
+            """
+            client = unstructured_client.UnstructuredClient(
+                api_key_auth=os.getenv("UNSTRUCTURED_API_KEY"),
+                server_url=os.getenv("UNSTRUCTURED_API_URL"),
+            )
+
+            req = operations.PartitionRequest(
+                partition_parameters=shared.PartitionParameters(
+                    files=shared.Files(
+                        content=open(pdf_path, "rb"),
+                        file_name=pdf_path,
+                    ),
+                    strategy=shared.Strategy.HI_RES,
+                    languages=['eng'],
+                    coordinates=True,
+                    split_pdf_page=True,             # If True, splits the PDF file into smaller chunks of pages.
+                    split_pdf_allow_failed=True,     # If True, the partitioning continues even if some pages fail.
+                    split_pdf_concurrency_level=15,  # Set the number of concurrent request to the maximum value (number of pages): 15.
+                    infer_table_structure=True,      # If True, the partitioning will infer the structure of tables as html.
+                    # extract_image_block_types=["Image", "Table"]    # https://docs.unstructured.io/api-reference/how-to/extract-image-block-types#ingest-python-library
+                ),
+            )
+            res = client.general.partition(request=req)
+            return [element for element in res.elements]
+        
+        def partition_locally(pdf_path):
+            # TODO check that this is the same functionality as the API partition_pdf function.
+            elements = partition_pdf(
+                pdf_path,
+                strategy="hi_res",
+                languages=['eng'],
+                split_pdf_page=True,
+                split_pdf_allow_failed=True,
+                infer_table_structure=True,
+                # extract_image_block_types=["Image", "Table"],
+                # extract_image_block_to_payload=True
+            )
+            return [element.to_dict() for element in elements]
+
+        self.logger.info(f"Loading {len(documents)} documents...")
+        local_docs_to_process, valid_gcs_docs = self._load_documents(documents)
+
+        self.logger.info(f"Partitioning {len(local_docs_to_process)} documents...")
+        output_dir=os.path.join(self.work_dir, 'partitioned')
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Process directory of PDFs
+        partitioned_docs = []
+        for pdf_file in local_docs_to_process:
+            
+            if partition_by_api:
+                self.logger.info(f"Partitioning {pdf_file} with Unstructured API...")
+                partitioned_data = partition_with_api(pdf_file)
+            else:
+                self.logger.info(f"Partitioning {pdf_file} Locally...")
+                partitioned_data = partition_locally(pdf_file)
+
+            # Add GCS metadata if the PDF has a matching GCS source
+            pdf_basename = os.path.basename(pdf_file)
+            matching_gcs_doc = next((gcs_doc for gcs_doc in valid_gcs_docs 
+                                   if os.path.basename(gcs_doc) == pdf_basename), None)
+            if matching_gcs_doc:
+                # Parse GCS path components
+                bucket_name = matching_gcs_doc.split('/')[2]
+                remote_path = f"gs://{bucket_name}"
+                
+                # Add metadata to each element in partitioned_data
+                for element in partitioned_data:
+                    element['metadata']['data_source'] = {
+                        "url": matching_gcs_doc,
+                        "record_locator": {
+                            "protocol": "gs",
+                            "remote_file_path": remote_path
+                        }
+                    }
+
+            # Save the partitioned data to JSON
+            output_path = os.path.join(
+                output_dir, 
+                os.path.basename(os.path.splitext(pdf_file)[0]) + "-partitioned.json"
+            )
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(partitioned_data, f, ensure_ascii=False, indent=4)
+            self.logger.info(f"Partitioned data saved at {output_path}")
+            partitioned_docs.append(output_path)
+
+            # Upload to GCS bucket if specified
+            if upload_bucket:
+                self._upload_to_gcs(upload_bucket, pdf_file, os.path.basename(pdf_file)) # Upload original PDF file to GCS
+                self._upload_to_gcs(upload_bucket, output_path, os.path.join('partitioned', os.path.basename(output_path))) # Upload JSON file to GCS
+                self.logger.info(f"Uploaded {pdf_file} and {output_path} to {upload_bucket}")
+
+        return partitioned_docs
+    
+    def chunk_documents(self, partitioned_docs):
+        """
+        Chunk documents based on RAG type.
+        Partitioned docs is either a list of local or GCS json files.
+        """
+        # _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+
+        # Process GCS paths if present
+        local_partition_paths = []
+        for doc_path in partitioned_docs:
+            if doc_path.startswith('gs://'):
+                # Parse GCS path
+                bucket_name = doc_path.split('/')[2]
+                blob_name = '/'.join(doc_path.split('/')[3:])
+                
+                # Download file from GCS
+                storage_client = storage.Client()
+                bucket = storage_client.bucket(bucket_name)
+                blob = bucket.blob(blob_name)
+                
+                # Create local path
+                local_path = os.path.join(self.work_dir, os.path.basename(blob_name))
+                blob.download_to_filename(local_path)
+                local_partition_paths.append(local_path)
+                self.logger.info(f"Downloaded {doc_path} to {local_path}")
+            else:
+                local_partition_paths.append(doc_path)
+        
+        # Chunk documents
+        self.logger.info("Chunking documents...")
+        os.makedirs(os.path.join(self.work_dir, 'chunked'), exist_ok=True)
+        output_paths = []
+        chunks_out = []
+        for json_file in local_partition_paths:
+            print(f"Chunking {json_file}...")
+            
+            # Load partitioned data, convert to elements type
+            with open(json_file, "r") as file:
+                partitioned_data = json.load(file)
+            elements=elements_from_dicts(partitioned_data)
+
+            # Chunk the partitioned data by title
+            chunks = chunk_by_title(
+                elements,
+                multipage_sections=True,
+                max_characters=self.chunk_size,
+                overlap=self.chunk_overlap
+            )
+            chunks_out.extend(chunks)
+            chunks_output = [chunk.to_dict() for chunk in chunks]
+
+            # Save chunked output
+            output_path = os.path.join(os.path.join(self.work_dir, 'chunked'), os.path.basename(json_file).replace("-partitioned", "-chunked"))
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(chunks_output, f, ensure_ascii=False, indent=4)
+            output_paths.append(output_path)
+
+            print(f"Chunked data saved at {output_path}")
+
+        self.logger.info(f"Total number of chunks: {len(chunks_out)}")
+        self.logger.info(f"Output paths: {output_paths}")
+
+        chunk_obj=ChunkingResult(
+            chunks=chunks_out,
+            chunk_size=self.chunk_size,
+            chunk_overlap=self.chunk_overlap
+        )
+
+        return chunk_obj, output_paths
+            
     @staticmethod
     def list_available_buckets():
         """Lists all available buckets in the GCS project."""
-        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+        # _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         try:
             # Initialize the GCS client
@@ -77,10 +327,11 @@ class DocumentProcessor:
             return buckets
         except Exception as e:
             raise Exception(f"Error accessing GCS buckets: {str(e)}")
+        
     @staticmethod
     def list_bucket_pdfs(bucket_name: str):
         """Lists all PDF files in a Google Cloud Storage bucket."""
-        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+        # _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         logger = logging.getLogger(__name__)
         try:
@@ -110,16 +361,17 @@ class DocumentProcessor:
         """Calculates the stable hash of the given metadata dictionary."""
         return hashlib.sha1(json.dumps(metadata, sort_keys=True).encode()).hexdigest()
     
-    def _load_and_clean_documents(self, documents):
-        """Load PDF documents and clean their contents."""
-        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
-        _, _, storage, PyPDFLoader, _, _ = Dependencies.Document.get_processors()
+    def _load_documents(self, documents):
+        """
+        Load PDF documents and return a list of local file paths. Accepts GCS URLs and local file paths.
+        """
+        # _, _, storage, PyPDFLoader, _, _ = Dependencies.Document.get_processors()
 
-        def _download_and_validate_pdf(doc_in, temp_dir):
+        def _download_and_validate_pdf(doc_in):
             """Download and validate a PDF document."""
             
-            # Handle GCS URLs
-            if doc_in.startswith('gs://'):
+            if doc_in.startswith('gs://') and doc_in.lower().endswith('.pdf'):
+                self.logger.info(f"Downloading PDF from GCS: {doc_in}")
                 bucket_name = doc_in.split('/')[2]
                 blob_name = '/'.join(doc_in.split('/')[3:])
                 self.logger.info(f"Bucket name: {bucket_name}")
@@ -129,267 +381,86 @@ class DocumentProcessor:
                 storage_client = storage.Client()
                 bucket = storage_client.bucket(bucket_name)
                 blob = bucket.blob(blob_name)
-                local_path = f"{temp_dir}/{blob_name.split('/')[-1]}"
+                local_path = f"{self.work_dir}/{blob_name.split('/')[-1]}"
                 blob.download_to_filename(local_path)
                 doc_local_temp = local_path
-            else:
+            elif doc_in.lower().endswith('.pdf'):
                 doc_local_temp = doc_in
+            else:
+                self.logger.warning(f"Not a PDF document, skipping: {doc_in}")
+                return None
 
             # Validate the PDF
             try:
-                loader = PyPDFLoader(doc_local_temp)
-                loader.load()
+                doc = fitz.open(doc_local_temp)
+                doc.close()
             except Exception as e:
                 self.logger.error(f"Invalid PDF document: {doc_in}. Error: {str(e)}")
                 return None
 
             return doc_local_temp
         
-        cleaned_docs = []
+        local_docs_to_process = []
+        valid_gcs_docs = []
         invalid_docs = []
-        with tempfile.TemporaryDirectory() as temp_dir:
-            for i, doc_in in enumerate(documents):
-                self.logger.info(f"Checking document {i+1} of {len(documents)}: {doc_in}")
+        for i, doc_in in enumerate(documents):
+            self.logger.info(f"Checking document {i+1} of {len(documents)}: {doc_in}")
 
-                doc_local_temp = _download_and_validate_pdf(doc_in, temp_dir)
-                if doc_local_temp is None:
-                    invalid_docs.append(doc_in)
-                    continue
-
-                # Load and process the PDF
-                loader = PyPDFLoader(doc_local_temp)
-                doc_page_data = loader.load()
-
-                # Clean up page info, update some metadata
-                doc_pages = []
-                for doc_page in doc_page_data:
-                    doc_page = self._sanitize_page(doc_page)
-                    if doc_page is not None:
-                        doc_pages.append(doc_page)
-
-                # Set the metadata source key to the original document path
-                if doc_in.startswith('gs://'):
-                    for doc_page in doc_pages:
-                        doc_page.metadata['source'] = doc_in.replace('gs://', '')
-
-                # Merge pages if option is selected
-                if self.merge_pages is not None:
-                    for i in range(0, len(doc_pages), self.merge_pages):
-                        group = doc_pages[i:i+self.merge_pages]
-                        group_page_content = ' '.join([doc.page_content for doc in group])
-                        group_metadata = {'page': str([doc.metadata['page'] for doc in group]), 
-                                        'source': str([doc.metadata['source'] for doc in group])}
-                        merged_doc = Document(page_content=group_page_content, metadata=group_metadata)
-                        cleaned_docs.append(merged_doc)
-                else:
-                    cleaned_docs.extend(doc_pages)
-
-            if invalid_docs:
-                raise ValueError(f"Invalid PDF documents detected: {', '.join(invalid_docs)}")
-        
-        return cleaned_docs
-    def _process_standard(self, documents):
-        """Process documents for standard RAG."""
-        chunks = self._chunk_documents(documents)
-        self.logger.info(f"Number of chunks: {len(chunks)}")
-        return ChunkingResult(rag_type=self.rag_type,
-                              pages=documents,
-                              chunks=chunks, 
-                              splitters=self.splitter,
-                              chunk_method=self.chunk_method,
-                              merge_pages=self.merge_pages,
-                              chunk_size=self.chunk_size,
-                              chunk_overlap=self.chunk_overlap)
-    def _process_parent_child(self, documents):
-        """Process documents for parent-child RAG."""
-        chunks, parent_chunks = self._chunk_documents(documents)
-        self.logger.info(f"Number of chunks: {len(chunks)}")
-        return ChunkingResult(rag_type=self.rag_type,
-                              pages=parent_chunks,
-                              chunks=chunks, 
-                              splitters={'parent_splitter':self.parent_splitter,'child_splitter':self.child_splitter},
-                              chunk_method=self.chunk_method,
-                              merge_pages=self.merge_pages,
-                              chunk_size=self.chunk_size,
-                              chunk_overlap=self.chunk_overlap)
-    def _process_summary(self, documents):
-        """Process documents for summary RAG."""
-        _, StrOutputParser, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
-        
-        chunks = self._chunk_documents(documents)
-
-        # Create unique ids for each chunk, set up chain
-        id_key = "doc_id"
-        doc_ids = [str(self.stable_hash_meta(chunk.metadata)) for chunk in chunks]
-        # Setup the summarization chain
-        chain = (
-            {"doc": lambda x: x.page_content}
-            | SUMMARIZE_TEXT
-            | self.llm_service.get_llm()
-            | StrOutputParser()
-        )
-        
-        # Process documents in batches
-        summaries = []
-        batch_size=10   # TODO make this a parameter
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i:i + batch_size]
-            batch_summaries = chain.batch(batch, config={"max_concurrency": batch_size})
-            summaries.extend(batch_summaries)
-        
-        # Create summary documents with metadata
-        summary_docs = [
-            Document(page_content=summary, metadata={id_key: doc_ids[i]})
-            for i, summary in enumerate(summaries)
-        ]        
-            
-        self.logger.info(f"Number of summaries: {len(summary_docs)}")
-        return ChunkingResult(rag_type=self.rag_type,
-                              pages={'doc_ids':doc_ids,'docs':chunks},
-                              summaries=summary_docs, 
-                              llm_service=self.llm_service,
-                              merge_pages=self.merge_pages,
-                              chunk_method=self.chunk_method,
-                              chunk_size=self.chunk_size,
-                              chunk_overlap=self.chunk_overlap,
-        )
-
-    def _chunk_documents(self, documents):
-        """Chunk documents using specified parameters."""
-        RecursiveCharacterTextSplitter = Dependencies.Document.get_splitters()
-
-        chunks = []
-        if self.rag_type != 'Parent-Child':
-            if self.chunk_method == 'None' or self.chunk_method is None:
-                return documents
-            for i, doc in enumerate(documents):
-                if self.chunk_method == 'character_recursive':
-                    self.splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-                                                                   chunk_overlap=self.chunk_overlap,
-                                                                   add_start_index=True)
-                    page_chunks = self.splitter.split_documents([doc])
-                    chunks.extend(page_chunks)  # Use extend to flatten the list
-                else:
-                    raise NotImplementedError
-            return chunks
-        elif self.rag_type == 'Parent-Child':
-            parent_chunks = []
-            if self.chunk_method == 'None':
-                parent_chunks = documents
-                for i, doc in enumerate(documents):
-                    self.k_child = 4
-                    doc_ids = [str(self.stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
-                    id_key = "doc_id"
-                    for parent_chunk in parent_chunks:
-                        _id = doc_ids[i]
-                        # Default character recursive since no chunking method specified, use k_child to determine chunk size
-                        self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=len(parent_chunk.page_content) / self.k_child, 
-                                                                            chunk_overlap=0,
-                                                                            add_start_index=True)
-                        _chunks = self.child_splitter.split_documents([parent_chunk])
-                        for _doc in _chunks:
-                            _doc.metadata[id_key] = _id
-                        chunks.extend(_chunks)  # Use extend to flatten the list
-                return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
+            doc_local_temp = _download_and_validate_pdf(doc_in)
+            if doc_local_temp is None:
+                invalid_docs.append(doc_in)
+                continue
             else:
-                for i, doc in enumerate(documents):
-                    self.k_child = 4
-                    if self.chunk_method == 'character_recursive':
-                        self.parent_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, 
-                                                                            chunk_overlap=self.chunk_overlap,
-                                                                            add_start_index=True)
-                        parent_page_chunks = self.parent_splitter.split_documents([doc])
-                        parent_chunks.extend(parent_page_chunks)  # Use extend to flatten the list
-                    else:
-                        raise NotImplementedError
-                    
-                doc_ids = [str(self.stable_hash_meta(parent_chunk.metadata)) for parent_chunk in parent_chunks]
-                id_key = "doc_id"
-                for i, doc in enumerate(parent_chunks):
-                    _id = doc_ids[i]
-                    if self.chunk_method == 'character_recursive':
-                        self.child_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size / self.k_child, 
-                                                                            chunk_overlap=self.chunk_overlap,
-                                                                            add_start_index=True)
-                    else:
-                        raise NotImplementedError
-                    _chunks = self.child_splitter.split_documents([doc])
-                    for _doc in _chunks:
-                        _doc.metadata[id_key] = _id
-                    chunks.extend(_chunks)  # Use extend to flatten the list
-                return chunks, {'doc_ids': doc_ids, 'parent_chunks': parent_chunks}
-        else:
-            raise NotImplementedError
-    @staticmethod
-    def _sanitize_page(doc):
-        """Clean up page content and metadata."""
+                local_docs_to_process.append(doc_local_temp)
+                if doc_in.startswith('gs://'):
+                    valid_gcs_docs.append(doc_in)
+
+        if invalid_docs:
+            raise ValueError(f"Invalid PDF documents detected: {', '.join(invalid_docs)}")
         
-        # Clean up content
-        content = doc.page_content
-        content = re.sub(r"(\w+)-\n(\w+)", r"\1\2", content)
-        content = re.sub(r"(?<!\n\s)\n(?!\s\n)", " ", content.strip())
-        content = re.sub(r"\n\s*\n", "\n\n", content)
-        
-        # Validate content
-        if len(content) == 0:
-            return None
+        return local_docs_to_process, valid_gcs_docs
+    
+    def _chunk_standard(self, documents):
+        """Chunk documents for standard RAG."""
+
+        os.makedirs(os.path.join(self.work_dir, 'chunked'), exist_ok=True)
+        output_paths = []
+        chunks_out = []
+        for json_file in documents:
+            print(f"Chunking {json_file}...")
             
-        num_words = len(content.split())
-        alphanumeric_pct = sum(c.isalnum() for c in content) / len(content)
-        
-        if num_words < 5 or alphanumeric_pct < 0.3:
-            return None
-            
-        doc.page_content = content
-        return doc
+            # Load partitioned data, convert to elements type
+            with open(json_file, "r") as file:
+                partitioned_data = json.load(file)
+            elements=elements_from_dicts(partitioned_data)
 
+            # Chunk the partitioned data by title
+            chunks = chunk_by_title(
+                elements,
+                multipage_sections=True,
+                max_characters=self.chunk_size,
+                overlap=self.chunk_overlap
+            )
+            chunks_out.extend(chunks)
+            chunks_output = [chunk.to_dict() for chunk in chunks]
+
+            # Save chunked output
+            output_path = os.path.join(os.path.join(self.work_dir, 'chunked'), json_file.replace("-partitioned", "-chunked"))
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(chunks_output, f, ensure_ascii=False, indent=4)
+            output_paths.append(output_path)
+
+            print(f"Chunked data saved at {output_path}")
+
+        self.logger.info(f"Number of chunks: {len(chunks)}")
+        return chunks_out, output_paths
+    
     @staticmethod
-    def _merge_pages(docs, n_pages):
-        """Merge consecutive pages."""
-        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
-
-        merged = []
-        for i in range(0, len(docs), n_pages):
-            batch = docs[i:i + n_pages]
-            merged_content = "\n\n".join(d.page_content for d in batch)
-            merged_metadata = batch[0].metadata.copy()
-            merged_metadata['merged_pages'] = n_pages
-            merged.append(Document(
-                page_content=merged_content,
-                metadata=merged_metadata
-            ))
-        return merged
-
-    @staticmethod
-    def _upload_to_gcs(bucket_name, file_path, local_file_path):
+    def _upload_to_gcs(bucket_name, file_local, file_gcs):
         """Upload a file to Google Cloud Storage."""
-        _, _, storage, _, _, _ = Dependencies.Document.get_processors()
+        # _, _, storage, _, _, _ = Dependencies.Document.get_processors()
 
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(file_path)
-        blob.upload_from_filename(local_file_path)
-
-    def _store_parent_docs(self, index_name, chunking_result, rag_type):
-        """Store parent documents or original documents for Parent-Child or Summary RAG types."""
-        from pathlib import Path
-        import json
-        import os
-
-        # Create local file store directory if it doesn't exist
-        lfs_path = Path(os.getenv('LOCAL_DB_PATH')).resolve() / 'local_file_store' / index_name
-        lfs_path.mkdir(parents=True, exist_ok=True)
-
-        if rag_type == 'Parent-Child':
-            # Store parent documents
-            for doc_id, parent_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.parent_chunks):
-                file_path = lfs_path / str(doc_id)
-                with open(file_path, "w") as f:
-                    json.dump({"kwargs": {"page_content": parent_doc.page_content}}, f)
-        
-        elif rag_type == 'Summary':
-            # Store original documents
-            for doc_id, orig_doc in zip(chunking_result.metadata['doc_ids'], chunking_result.pages['docs']):
-                file_path = lfs_path / str(doc_id)
-                with open(file_path, "w") as f:
-                    json.dump({"kwargs": {"page_content": orig_doc.page_content}}, f)
+        blob = bucket.blob(file_gcs)
+        blob.upload_from_filename(file_local)

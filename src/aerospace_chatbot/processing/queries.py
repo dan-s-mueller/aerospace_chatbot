@@ -2,189 +2,264 @@
 
 import logging
 
-from ..core.cache import Dependencies
-from ..services.prompts import (CONDENSE_QUESTION_PROMPT, QA_PROMPT, 
-                                DEFAULT_DOCUMENT_PROMPT,
-                                GENERATE_SIMILAR_QUESTIONS_W_CONTEXT)
-from ..services.database import DatabaseService
-from ..processing.documents import DocumentProcessor
+# Utilities
+from langchain.docstore.document import Document
+from langchain_core.messages import SystemMessage, RemoveMessage
+from langchain.output_parsers import PydanticOutputParser
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.documents import Document
+from langgraph.graph import MessagesState, StateGraph, START, END
+
+# Typing
+from typing_extensions import List
+from typing import List, Literal, Tuple
+
+# Services
+from aerospace_chatbot.services.prompts import (InLineCitationsResponse, 
+                                                AltQuestionsResponse,
+                                                style_mode, 
+                                                CHATBOT_SYSTEM_PROMPT, 
+                                                QA_PROMPT, 
+                                                SUMMARIZE_TEXT, 
+                                                GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
+                                                )
 
 class QAModel:
-    """Handles question answering and retrieval."""
-    
+    """
+    Handles question answering and retrieval.
+    """
+
     def __init__(self,
                  db_service,
                  llm_service,
-                 k=8):
-        """Initialize QA model with necessary services."""
+                 k_retrieve=20,
+                 k_rerank=5,
+                 style=None,
+                 memory_config=None):
+        """
+        Initialize QA model with necessary services.
+        """
         self.db_service = db_service
         self.llm_service = llm_service
-        self.k = k
-        self.sources = []
-        self.ai_response = ""
-        self.result = []
-        self.conversational_qa_chain = None
+        self.k_retrieve = k_retrieve
+        self.k_rerank = k_rerank
+        self.style = style   # Validated when style_mode is called
+        self.workflow = None
+        self.result = None
+        self.memory_config = memory_config
         self.logger = logging.getLogger(__name__)
-
-        # Get chain utilities
-        _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
-
-        # Create a separate database service for query storage
-        if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
-            self.query_db_service = DatabaseService(
-                db_type=self.db_service.db_type,
-                index_name=self.db_service.index_name,
-                rag_type="Standard",
-                embedding_service=self.db_service.embedding_service,
-                doc_type='question'
-            )
-            self.query_db_service.initialize_database(clear=False)   # TODO decide if this should clear every time
         
         # Get retrievers from database services
-        self.db_service.get_retriever(k=k)
+        self.db_service.get_retriever(k=self.k_retrieve)
 
-        # Initialize memory
-        self.memory = ConversationBufferMemory(
-            return_messages=True, 
-            output_key='answer', 
-            input_key='question'
-        )
-        self.conversational_qa_chain = self._define_qa_chain()
-
-        if self.conversational_qa_chain is None:
-            raise ValueError("QA chain not initialized")
+        # Compile workflow
+        if self.memory_config is None: 
+            # Set to default memory config
+            self.memory_config = {"configurable": {"thread_id": "1"}}
+        self.workflow = self._compile_workflow()
         
     def query(self,query): 
-        """Executes a query and retrieves the relevant documents."""       
-        # Retrieve memory, invoke chain
-        self.memory.load_memory_variables({})
+        """
+        Executes a query and retrieves the relevant documents.
+        """
 
         # Add answer to response, create an array as more prompts come in
-        self.logger.info(f'Invoking QA chain with query: {query}')
-        answer_result = self.conversational_qa_chain.invoke({'question': query})
-        if not hasattr(self, 'result') or self.result is None:
-            self.result = [answer_result]
-        else:
-            self.result.append(answer_result)
+        self.logger.info(f'Running query through workflow: {query}')
+        self.result = self.workflow.invoke(
+            {"messages": [("human", query)]}, 
+            self.memory_config
+        )
 
-        # Add sources to response, create an array as more prompts come in
-        answer_sources = [data.metadata for data in self.result[-1]['references']]
-        if not hasattr(self, 'sources') or self.sources is None:
-            self.sources = [answer_sources]
-        else:
-            self.sources.append(answer_sources)
+    class State(MessagesState):
+        """
+        State class for the QA model.
+        """
+        context: List[Tuple[Document, float, float]]
+        cited_sources: List[Tuple[Document, float, float]]
+        alternative_questions: List[str]
+        summary: str
 
-        # Add answer to memory
-        if self.llm_service.get_llm().__class__.__name__=='ChatOpenAI' or self.llm_service.get_llm().__class__.__name__=='ChatAnthropic':
-            self.ai_response = self.result[-1]['answer'].content
-        else:
-            raise NotImplementedError   # To catch any weird stuff I might add later and break the chatbot
-        self.memory.save_context({'question': query}, {'answer': self.ai_response})
+    def _retrieve(self, state: State):
+        """
+        Retrieve the documents from the database.
+        """
+        self.logger.info(f"Node: retrieve")
 
-        # If compatible type, upsert query into query database
-        if self.db_service.db_type in ['ChromaDB', 'Pinecone']:
-            self.logger.info(f'Upserting question into query database {self.query_db_service.index_name}')
-            self.query_db_service.index_data(data=[self._question_as_doc(query, self.result[-1])])
-    def generate_alternative_questions(self, prompt):
-        """Generates alternative questions based on a prompt."""
-        _, StrOutputParser, _, _, _, _, _, _ = Dependencies.LLM.get_chain_utils()
-        # if self.ai_response:
-        prompt_template=GENERATE_SIMILAR_QUESTIONS_W_CONTEXT
-        invoke_dict={'question':prompt,'context':self.ai_response}
-        
-        chain = (
-                prompt_template
-                | self.llm_service.get_llm()
-                | StrOutputParser()
+        # Retrieve docs
+        retrieved_docs = self.db_service.retriever.invoke(state["messages"][-1].content)
+        self.logger.info(f"Retrieved docs")
+
+        # Rerank docs
+        if self.db_service.rerank_service is not None:
+            reranked_docs = self.db_service.rerank(
+                state["messages"][-1].content, 
+                retrieved_docs, 
+                top_n=self.k_rerank
             )
-        alternative_questions = chain.invoke(invoke_dict)
-        self.logger.info(f'Generated alternative questions: {alternative_questions}')
-        # Split the string into a list of questions, removing empty strings and stripping whitespace
-        alternative_questions = [question.strip() for question in alternative_questions.split('\n') if question.strip()]
-        self.logger.info(f'Alternative questions split up: {alternative_questions}')
-        return alternative_questions
-    def _setup_memory(self):
-        """Initialize conversation memory."""
-        _, _, _, _, ConversationBufferMemory, _, _, _ = Dependencies.LLM.get_chain_utils()
-        self.memory = ConversationBufferMemory(
-            return_messages=True,
-            output_key='answer',
-            input_key='question'
-        )
-    def _define_qa_chain(self):
-        """Defines the conversational QA chain."""
-        itemgetter, StrOutputParser, RunnableLambda, RunnablePassthrough, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
-        
-        # This adds a 'memory' key to the input object
-        loaded_memory = RunnablePassthrough.assign(
-            chat_history=RunnableLambda(self.memory.load_memory_variables) 
-            | itemgetter('history'))  
-        
-        # Assemble main chain
-        standalone_question = {
-            'standalone_question': {
-                'question': lambda x: x['question'],
-                'chat_history': lambda x: get_buffer_string(x['chat_history'])}
-            | CONDENSE_QUESTION_PROMPT
-            | self.llm_service.get_llm()
-            | StrOutputParser()}
-        
-        retrieved_documents = {
-            'source_documents': itemgetter('standalone_question') 
-                                | self.db_service.retriever,
-            'question': lambda x: x['standalone_question']}
-        
-        final_inputs = {
-            'context': lambda x: self._combine_documents(x['source_documents']),
-            'question': itemgetter('question')}
-        
-        answer = {
-            'answer': final_inputs 
-                        | QA_PROMPT 
-                        | self.llm_service.get_llm(),
-            'references': itemgetter('source_documents')}
-        
-        return loaded_memory | standalone_question | retrieved_documents | answer
-    def _combine_documents(self, docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator='\n\n'):
-        """Combines a list of documents into a single string using the format_document function."""
-        _, _, _, _, _, _, _, format_document = Dependencies.LLM.get_chain_utils()
-        
-        # Format each document using the cached format_document function
-        doc_strings = [format_document(doc, document_prompt) for doc in docs]
-        
-        # Join the formatted strings with the separator
-        return document_separator.join(doc_strings)
-    @staticmethod
-    def _question_as_doc(question, rag_answer):
-        """Creates a Document object based on the given question and RAG answer."""
-        _, _, _, _, _, _, Document, _ = Dependencies.LLM.get_chain_utils()
+            self.logger.info(f"Reranked docs")
+        else:
+            reranked_docs = retrieved_docs
+            if self.k_rerank is not None:
+                self.logger.warning(f"Rerank service is not set, but k_rerank is set to {self.k_rerank}. Reranking will not be performed.")
 
-        # TODO this feels really fragile, but it's the best I can think of for now.
-        for i, doc in enumerate(rag_answer['references']):
-            for key, value in doc.metadata.items():
-                if isinstance(value, float) and not isinstance(value, (bool, int, str)):
-                    doc.metadata[key] = int(value)
-                    rag_answer['references'][i] = doc
+        return {"context": reranked_docs}
 
-        sources = [DocumentProcessor.stable_hash_meta(doc.metadata) for doc in rag_answer['references']]
-        return Document(
-            page_content=question,
-            metadata={
-                "answer": rag_answer['answer'].content,
-                "sources": ','.join(sources),  # Now sources is a list of IDs, no need to join
-            },
-        )
-    def _get_standalone_question(self, question, chat_history):
-        """Generate standalone question from conversation context."""
-        _, _, _, _, _, get_buffer_string, _, _ = Dependencies.LLM.get_chain_utils()
+    def _generate_w_context(self, state: State):
+        """
+        Call the model with the prompt with context.
+        """
+        self.logger.info(f"Node: generate_w_context")
 
-        if not chat_history:
-            return question
+        # Get the summary, add system prompt
+        summary = state.get("summary", "")
+        system_prompt = CHATBOT_SYSTEM_PROMPT.format(style_mode=style_mode(self.style))
+        # self.logger.info(f" generate_w_context system prompt: {system_prompt.content}")
+        if summary:
+            system_message = f"Summary of conversation earlier: {summary}"
+            messages = [system_prompt] + [SystemMessage(content=system_message)] + state["messages"]
+        else:
+            messages = [system_prompt] + state["messages"]
+
+        # Add context to the prompt
+        docs_content = ""
+        for i, item in enumerate(state["context"]):
+            # Handle both 2-tuple (doc, retrieval_score) and 3-tuple (doc, retrieval_score, rerank_score) cases
+            doc = item[0]
+            retrieval_score = item[1]
             
-        prompt = CONDENSE_QUESTION_PROMPT.format(
-            chat_history=get_buffer_string(chat_history),
-            question=question
+            if len(item) == 3:
+                # If reranked, only include docs with a rerank score
+                rerank_score = item[2]
+                if rerank_score is not None:
+                    docs_content += f"Source ID: {i+1}\n{doc.page_content}\n\n"
+            else:
+                # If not reranked, include docs with a retrieval score
+                if retrieval_score is not None:
+                    docs_content += f"Source ID: {i+1}\n{doc.page_content}\n\n"
+
+        # Prompt with context and pydantic output parser
+        prompt_with_context = QA_PROMPT.format(
+            context=docs_content,
+            question=state["messages"][-1].content, 
         )
+        # Replace the last message (user question) with the prompt with context, return LLM response
+        messages[-1] = prompt_with_context 
+        response = self.llm_service.get_llm().invoke(messages)
+        self.logger.info('Response generated')
+
+        # Parse the response. This will return a InLineCitationsResponse object. 
+        # This object has two fields: content and citations.
+        # Replace the last message with the content of the parsed and validated response. 
+        # AIMessage metadata will be incorrect.
+        parsed_response = PydanticOutputParser(pydantic_object=InLineCitationsResponse).parse(response.content)
+        response.content = parsed_response.content
+        self.logger.info('Response parsed')
+
+        # Return cited_sources as the list of tuples that matched the citations.
+        existing_cited_sources = state.get("cited_sources", [])  # Grab whatever might already be in cited_sources
+        cited_sources = [state["context"][int(citation)-1] for citation in parsed_response.citations]
+        existing_cited_sources.append(cited_sources)  # Append the new list as a sublist
+        state["cited_sources"] = existing_cited_sources
+
+        # Update the state messages with the messages updated in this node.
+        state["messages"] = messages
+        return {"messages": [response], 
+                "cited_sources": state["cited_sources"]}
+
+    def _should_continue(self, state: State) -> Literal["summarize_conversation", END]:
+        """
+        Define the logic for determining whether to end or summarize the conversation
+        """
+        self.logger.info(f"Node: should_continue")
+
+        # If there are more than six messages, then we summarize the conversation
+        messages = state["messages"]
+        if len(messages) > 6:
+            self.logger.info(f"Summarizing conversation")
+            return "summarize_conversation"
         
+        # Otherwise just end
+        self.logger.info(f"Ending conversation")
+        return END
+
+    def _summarize_conversation(self, state: State):
+        """
+        Summarize the conversation
+        """
+        self.logger.info(f"Node: summarize_conversation")
+
+        summary = state.get("summary", "")
+        if summary:
+            # If a summary already exists, extend it
+            summary_message = SUMMARIZE_TEXT.format(
+                summary=summary,
+                augment="Extend the summary provided by taking into account the new messages above."
+            )
+        else:
+            # If no summary exists, create one
+            summary_text="""---\n**Conversation Summary to Date**:\n{summary}\n---"""
+            summary_message = SUMMARIZE_TEXT.format(
+                summary=summary_text,
+                augment="Create a summary of the conversation above."
+            )
+
+        messages = state["messages"] + [summary_message]
+        response = self.llm_service.get_llm().invoke(messages)
+
+        # Prune messages. This deletes all but the last two messages
+        delete_messages = [RemoveMessage(id=m.id) for m in state["messages"][:-2]]
+        return {"summary": response.content, "messages": delete_messages}
+    
+    def _generate_alternative_questions(self, state: State):
+        """
+        Generates alternative questions based on the prompt provided.
+        """
+        self.logger.info(f"Node: generate_alternative_questions")
+
+        prompt = GENERATE_SIMILAR_QUESTIONS_W_CONTEXT.format(
+            question=state["messages"][-2].content,  # Last user message is 2 messages back
+            context=state["messages"][-1].content    # Last AI message is 1 message back
+        )
         response = self.llm_service.get_llm().invoke(prompt)
-        return response.content.strip()
+        self.logger.info('Alternative questions generated.')
+
+        # Split the string into a list of questions, removing empty strings and stripping whitespace
+        alternative_questions = PydanticOutputParser(pydantic_object=AltQuestionsResponse).parse(response.content)
+        self.logger.info(f'Alternative questions parsed')
+
+        # Update the state with the new alternative questions
+        existing_alternative_questions = state.get("alternative_questions", [])  # Grab whatever might already be in cited_sources
+        existing_alternative_questions.append(alternative_questions.questions)  # Append the new list as a sublist
+        state["alternative_questions"] = existing_alternative_questions
+        
+        return {"alternative_questions": state["alternative_questions"]}
+    
+    def _compile_workflow(self):
+        """
+        Compile the workflow.
+        """
+        # Compile application and test
+        workflow = StateGraph(QAModel.State)
+
+        # Define nodes
+        workflow.add_node("retrieve", self._retrieve) 
+        workflow.add_node("generate_w_context", self._generate_w_context)
+        workflow.add_node("summarize_conversation", self._summarize_conversation)
+        workflow.add_node("generate_alternative_questions", self._generate_alternative_questions)
+        # Define edges
+        workflow.add_edge(START, "retrieve")
+        workflow.add_edge("retrieve", "generate_w_context")
+        workflow.add_edge("generate_w_context", "generate_alternative_questions")
+
+        # We now add a conditional edge
+        workflow.add_conditional_edges(
+            "generate_alternative_questions",     # Define the start node. We use `generate_alternative_questions`. This means these are the edges taken after the `conversation` node is called.
+            self._should_continue,                # Next, pass in the function that will determine which node is called next.
+        )
+
+        # Add a normal edge from `summarize_conversation` to END. This means that after `summarize_conversation` is called, we end.
+        workflow.add_edge("summarize_conversation", END)
+
+        # Compile the workflow
+        app = workflow.compile(checkpointer=MemorySaver())
+        return app

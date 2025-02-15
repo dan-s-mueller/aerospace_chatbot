@@ -1,7 +1,4 @@
 from .core import (
-    Dependencies, 
-    cache_data,
-    cache_resource,
     ConfigurationError,
     load_config,
     get_secrets,
@@ -10,34 +7,39 @@ from .core import (
     get_required_api_keys
 )
 from .processing import (
+    ChunkingResult,
     DocumentProcessor, 
-    QAModel,
-    ChunkingResult
+    QAModel
 )
 from .services import (
     DatabaseService, 
-    get_docs_questions_df, 
+    get_docs_df, 
     add_clusters, 
     export_to_hf_dataset, 
     get_database_status,
     get_available_indexes,
     EmbeddingService, 
+    RerankService,
     LLMService,
-    CONDENSE_QUESTION_PROMPT,
+    InLineCitationsResponse,
+    AltQuestionsResponse,
+    style_mode,
+    CHATBOT_SYSTEM_PROMPT,
     QA_PROMPT,
-    DEFAULT_DOCUMENT_PROMPT,
+    SUMMARIZE_TEXT,
     GENERATE_SIMILAR_QUESTIONS_W_CONTEXT,
     CLUSTER_LABEL,
-    SUMMARIZE_TEXT
+    DEFAULT_DOCUMENT_PROMPT,
 )
 from .ui import (
     SidebarManager,
     setup_page_config,
     handle_sidebar_state,
-    display_sources, 
+    replace_source_tags,
+    display_sources,
+    process_source_documents,
     show_connection_status,
-    handle_file_upload,
-    get_or_create_spotlight_viewer
+    handle_file_upload
 )
 
 __version__ = "0.0.9"
@@ -56,33 +58,38 @@ __all__ = [
 
     # Services
     'DatabaseService',
-    'get_docs_questions_df', 
+    'get_docs_df', 
     'add_clusters', 
     'export_to_hf_dataset', 
     'get_database_status',
     'get_available_indexes',
     'EmbeddingService',
+    'RerankService',
     'LLMService',
-    'CONDENSE_QUESTION_PROMPT',
+    'InLineCitationsResponse',
+    'AltQuestionsResponse',
+    'style_mode',
+    'CHATBOT_SYSTEM_PROMPT',
     'QA_PROMPT',
-    'DEFAULT_DOCUMENT_PROMPT',
+    'SUMMARIZE_TEXT',
     'GENERATE_SIMILAR_QUESTIONS_W_CONTEXT',
     'CLUSTER_LABEL',
-    'SUMMARIZE_TEXT',
+    'DEFAULT_DOCUMENT_PROMPT',
     
     # Processing
+    'ChunkingResult',
     'DocumentProcessor',
     'QAModel',
-    'ChunkingResult',
     
     # UI
     'SidebarManager',
     'setup_page_config',
     'handle_sidebar_state',
-    'display_sources', 
+    'replace_source_tags',
+    'display_sources',
+    'process_source_documents',
     'show_connection_status',
-    'handle_file_upload',
-    'get_or_create_spotlight_viewer'
+    'handle_file_upload'
 ]
 
 def get_version():

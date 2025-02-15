@@ -24,11 +24,11 @@ tool_dir="tools"
 
 if nav_bar=="admin":
     pages=[st.Page(os.path.join(tool_dir,"Aerospace_Chatbot.py"),icon='🚀'),
-           st.Page(os.path.join(tool_dir,"Database_Processing.py"),icon='📓'),
-           st.Page(os.path.join(tool_dir,"Visualize_Data.py"),icon='📈')]
+           st.Page(os.path.join(tool_dir,"Database_Processing.py"),icon='📓')]
     st.session_state.config_file=os.path.join('../','config','config_admin.json')
 elif nav_bar=="tester":
-    pages=[st.Page(os.path.join(tool_dir,"Aerospace_Chatbot.py"),icon='🚀')]
+    pages=[st.Page(os.path.join(tool_dir,"Aerospace_Chatbot_Space_Mechanisms.py"),icon='🚀'),
+           st.Page(os.path.join(tool_dir,"Aerospace_Chatbot_Design_Criteria.py"),icon='🚀')]
     st.session_state.config_file=os.path.join('../','config','config_tester.json')
 
 pg=st.navigation(pages)
