@@ -111,6 +111,7 @@ def setup_fixture():
         'VOYAGE_API_KEY': os.environ.get('VOYAGE_API_KEY'),
         'HUGGINGFACEHUB_API_KEY': os.environ.get('HUGGINGFACEHUB_API_KEY'),
         'PINECONE_API_KEY': os.environ.get('PINECONE_API_KEY'),
+        'COHERE_API_KEY': os.environ.get('COHERE_API_KEY'),
         'UNSTRUCTURED_API_KEY': os.environ.get('UNSTRUCTURED_API_KEY'),
         'UNSTRUCTURED_API_URL': os.environ.get('UNSTRUCTURED_API_URL'),
         'LOG_LEVEL': os.environ.get('LOG_LEVEL'),
@@ -139,6 +140,7 @@ def setup_fixture():
         'VOYAGE_API_KEY': os.getenv('VOYAGE_API_KEY'),
         'HUGGINGFACEHUB_API_KEY': os.getenv('HUGGINGFACEHUB_API_KEY'),
         'PINECONE_API_KEY': os.getenv('PINECONE_API_KEY'),
+        'COHERE_API_KEY': os.getenv('COHERE_API_KEY'),
         'UNSTRUCTURED_API_KEY': os.getenv('UNSTRUCTURED_API_KEY'),
         'UNSTRUCTURED_API_URL': os.getenv('UNSTRUCTURED_API_URL')
     }

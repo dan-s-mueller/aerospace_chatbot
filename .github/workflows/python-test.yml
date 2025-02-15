@@ -42,6 +42,8 @@ jobs:
         PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
         VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
         COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+        UNSTRUCTURED_API_KEY: ${{ secrets.UNSTRUCTURED_API_KEY }}
+        UNSTRUCTURED_API_URL: ${{ secrets.UNSTRUCTURED_API_URL }}
       run: |
         cd ./tests
         python -m poetry run pytest -s -v
