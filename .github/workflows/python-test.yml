@@ -23,7 +23,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y poppler-utils
+        sudo apt-get install -y poppler-utils tesseract-ocr
     - name: Install Poetry
       run: |
         python -m pip install poetry
