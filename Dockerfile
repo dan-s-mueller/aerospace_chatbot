@@ -5,7 +5,12 @@ RUN apt-get update && apt-get install -y \
     libhdf5-serial-dev \
     libsndfile1 \
     curl \
-    git \   
+    git \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create user and set up directories
@@ -35,12 +40,13 @@ RUN curl -sSL https://install.python-poetry.org | python3 - \
 # Clone repo and set up project with poetry
 RUN git clone https://github.com/dan-s-mueller/aerospace_chatbot.git /tmp/aerospace_chatbot && \
     cp /tmp/aerospace_chatbot/pyproject.toml /tmp/aerospace_chatbot/poetry.lock ./ && \
+    cp /tmp/aerospace_chatbot/README.md ./ && \
     cp -r /tmp/aerospace_chatbot/app/* $HOME/app/ && \
     cp -r /tmp/aerospace_chatbot/config/* $HOME/config/ && \
     cp -r /tmp/aerospace_chatbot/src/* $HOME/src/ && \
     python3 -m pip install --user --no-warn-script-location poetry && \
     poetry config virtualenvs.in-project true && \
-    poetry install --no-interaction --no-ansi && \
+    poetry install --no-interaction --no-ansi --no-root && \
     rm -rf /tmp/aerospace_chatbot
 
 # Set up run env variables
@@ -50,7 +56,7 @@ ENV PYTHONPATH=$HOME/src:$PYTHONPATH
 # Set final work directory
 WORKDIR $HOME/app
 
-# Expose port run streamlit
+# Print environment variables and then run streamlit
 CMD streamlit run app.py \
     --server.headless true \
     --server.enableCORS false \

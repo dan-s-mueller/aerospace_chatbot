@@ -1,5 +1,5 @@
 # Environment variables, logs, junk files, don't commit these
-*.env
+*.env*
 .venv/
 *.log
 *.DS_Store
