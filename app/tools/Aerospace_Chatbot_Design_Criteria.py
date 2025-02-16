@@ -167,9 +167,11 @@ with chat_section:
                             st.error(f"Database initialization failed: {str(e)}")
                             st.stop()
 
+                        # Set style mode
+                        style = None if st.session_state.sb['model_options']['style_mode'] == "Standard" else st.session_state.sb['model_options']['style_mode']
+
                         # Initialize QA model
                         if not st.session_state.qa_model_obj:
-                            style = None if st.session_state.sb['model_options']['style_mode'] == "Standard" else st.session_state.sb['model_options']['style_mode']
                             st.session_state.qa_model_obj = QAModel(
                                 db_service=db_service,
                                 llm_service=llm_service,
@@ -177,6 +179,11 @@ with chat_section:
                                 k_rerank=st.session_state.sb['model_options']['k_rerank'],
                                 style=style
                             )
+                        else:
+                            # Update parameters from sidebar
+                            st.session_state.qa_model_obj.k_retrieve = st.session_state.sb['model_options']['k_retrieve']
+                            st.session_state.qa_model_obj.k_rerank = st.session_state.sb['model_options']['k_rerank']
+                            st.session_state.qa_model_obj.style = style
 
                         # TODO Write the workflow node status. Rewrite this to use the structure from langgraph, lots of redundancy here.
                         st.write('*Searching vector database, generating prompt...*')

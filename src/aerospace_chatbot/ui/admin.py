@@ -235,7 +235,7 @@ class SidebarManager:
             'Number of docs reranked to use for response',
             min_value=1,
             step=1,
-            value=5,
+            value=10,
             disabled=st.session_state.k_rerank_disabled,
             help='Number of items to rerank from retrieved chunks. This many chunks are ranked by relevance and provided to the LLM for a response. Must be at least k_retrieve.'
         )

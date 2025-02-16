@@ -86,7 +86,9 @@ def display_sources(sources, n_display, message_id, expanded=False):
                 formatted_score = f"{score:.3f}"    # Format the score to 3 decimal places
                 with st.expander(f":memo: Source {message_id}.{i+1} (Score: {formatted_score})", expanded=expanded):
                     selected_url = f"https://storage.googleapis.com/{pdf_source}"
-                    st.markdown(f"[{pdf_source} (Download)]({selected_url}) - Page {page_range[0]}")
+                    encoded_url = requests.utils.quote(selected_url, safe=':/#')
+                    display_name = os.path.basename(pdf_source)  # Get just the filename for display
+                    st.markdown(f"[{display_name} (Download)]({encoded_url}) - Page {page_range[0]}")
                     try:
                         display_pdf(annotated_pdf)
                             
